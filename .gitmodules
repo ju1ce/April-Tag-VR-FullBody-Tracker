@@ -1,0 +1,4 @@
+[submodule "apriltag"]
+	path = apriltag
+	url = https://github.com/tgRobotics/apriltag.git
+	branch = fixPullRequestLibraryName
