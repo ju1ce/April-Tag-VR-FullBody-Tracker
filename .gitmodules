@@ -2,3 +2,6 @@
 	path = apriltag
 	url = https://github.com/tgRobotics/apriltag.git
 	branch = fixPullRequestLibraryName
+[submodule "wxWidgets"]
+	path = wxWidgets
+	url = https://github.com/wxWidgets/wxWidgets.git

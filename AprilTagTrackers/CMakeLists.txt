@@ -22,3 +22,4 @@ add_executable (AprilTagTrackers "AprilTagTrackers.cpp" "AprilTagTrackers.h")
 
 target_link_libraries( AprilTagTrackers ${OpenCV_LIBS} )
 target_link_libraries( AprilTagTrackers ${APRILTAG_LIB} )
+target_link_libraries( AprilTagTrackers wx::net wx::core wx::base)
