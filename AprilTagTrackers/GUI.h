@@ -43,5 +43,6 @@ private:
     wxTextCtrl* offsetyField;
     wxTextCtrl* offsetzField;
     wxCheckBox* circularField;
+    wxTextCtrl* smoothingField;
     void SaveParams(wxCommandEvent& );
 };

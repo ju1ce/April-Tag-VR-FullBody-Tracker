@@ -22,11 +22,11 @@ CameraPage::CameraPage(wxNotebook* parent)
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(5, 2, 20, 20);
 
-    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "Start/Stop camera");
-    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "Calibrate camera");
-    wxButton* btn3 = new wxButton(this, GUI::CONNECT_BUTTON, "Connect to SteamVR");
-    wxButton* btn4 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "Calibrate trackers");
-    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "Start/Stop");
+    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
+    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
+    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, "4. Connect to SteamVR");
+    wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
+    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "5. Start/Stop");
 
     wxCheckBox* cb = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
         wxPoint(20, 20));
@@ -55,12 +55,13 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(16, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
     wxStaticText* markerSizeText = new wxStaticText(this, -1, wxT("Size of markers in cm"));
     wxStaticText* prevValuesText = new wxStaticText(this, -1, wxT("Number of values for smoothing"));
+    wxStaticText* smoothingText = new wxStaticText(this, -1, wxT("Additional smoothing"));
     wxStaticText* quadDecimateText = new wxStaticText(this, -1, wxT("Quad decimate"));
     wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
     wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
@@ -76,6 +77,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     trackerNumField = new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum));
     markerSizeField = new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100));
     prevValuesField = new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues));
+    smoothingField = new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor));
     quadDecimateField = new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate));
     searchWindowField = new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow));
     usePredictiveField = new wxCheckBox(this, -1, wxT(""));
@@ -102,6 +104,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateField);
     fgs->Add(prevValuesText);
     fgs->Add(prevValuesField);
+    fgs->Add(smoothingText);
+    fgs->Add(smoothingField);
     fgs->Add(quadDecimateText);
     fgs->Add(quadDecimateField);
     fgs->Add(searchWindowText);
@@ -141,6 +145,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
         parameters->circularWindow = circularField->GetValue();
+        parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
         parameters->Save();
     }
     catch (std::exception & e)

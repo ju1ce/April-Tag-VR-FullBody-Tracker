@@ -26,6 +26,7 @@ void Connection::StartConnection()
 		for (int i = 0; i < hpipe.size(); i++)
 		{
 			DisconnectNamedPipe(hpipe[i]);
+			CloseHandle(hpipe[i]);
 		}
 		hpipe.clear();
 		Sleep(1000);
