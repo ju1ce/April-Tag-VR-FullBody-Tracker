@@ -22,6 +22,10 @@ Each of the methods has its pros and cons, so try them out and see what works be
 
 If you have a USB camera, you should try that first. If tracking is too bad, you can always switch to a phone later. A ps3 eye camera will work, but just barely due to its low resolution.
 
+#### Tutorial:
+
+Connect the camera to your PC and you are done! If you use a PS3 eye camera, also install the PS3 eye universal driver.
+
 ### Using IP-Webcam wireless:
 
 #### Pros:
@@ -35,6 +39,11 @@ If you have a USB camera, you should try that first. If tracking is too bad, you
 
 If you have your pc and android phone connected to the same router and you have a strong wifi connection on your phone, this is the option you should use.
 
+#### Tutorial:
+
+Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ration with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon 
+if you dont know how
+
 ### Using IP-Webcam wired:
 
 #### Pros:
@@ -45,6 +54,12 @@ If you have your pc and android phone connected to the same router and you have 
 * May not work on all phones and computers
 
 If you dont have a good wifi connection, but have a half recent android phone, you should try this option. It may not work, however.
+
+#### Tutorial:
+
+For this we will use our phones network over USB feature. This is usualy used to share the phones network or wifi with a computer, but if we disable wifi and mobile network on our phone, we can also use it as a direct connection between our phone and PC. First disable wifi and mobile network. Then connect your phone to your PC with a USB cable. Now enable the internet over USB option on your phone. Now, you can follow the same instructions as for the wireless one!
+
+NOTE: Make sure that your networks are disabled or this wont work!
 
 ### Using DroidCam OBS:
 
@@ -57,6 +72,18 @@ If you dont have a good wifi connection, but have a half recent android phone, y
 * Higher latency
 
 If previous options dont work for you or you have an iphone, this is the option you should choose. It should work on any device, either wireless or wired.
+
+#### Tutorial:
+
+First, follow the DroidCam OBS official tutorial to get the phone-OBS connection. Use the 720p video resolution to ensure there is no watermark.
+Then, follow the OBS VirtualCam plugin tutorial to stream to a virtual camera.
+The phone will now act as a regular webcam.
+
+## Using the program
+
+When we establish a connection to a camera, we can now start using the program.
+
+# TODO
 
 
 
