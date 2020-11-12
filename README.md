@@ -14,10 +14,10 @@ Each of the methods has its pros and cons, so try them out and see what works be
 ### Using a USB webcam:
 
 #### Pros:
-Simple to setup
-High quality cameras will offer good performance(1080p 60fps)
+*Simple to setup
+*High quality cameras will offer good performance(1080p 60fps)
 
 #### Cons:
-Most cameras have a too low resolution and too much motion blur to use effectively
+*Most cameras have a too low resolution and too much motion blur to use effectively
 
 If you have a USB camera, you should try that first. If tracking is too bad, you can always switch to a phone later. A ps3 eye camera will work, but just barely due to its low resolution.
