@@ -9,7 +9,7 @@ This program allows you to get working full-body tracking in SteamVR using some 
 ## Connecting a camera
 
 The first step is connecting a camera feed to you computer. This step is probably the most complex, since you will have to find out what works best for you.
-Each of the methods has its pros and cons, so try them out and see what works best.
+Each of the methods has its pros and cons, so try them out and see what works best. If you know of any other option, feel free to use that!
 
 ### Using a USB webcam:
 
