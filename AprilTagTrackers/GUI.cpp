@@ -1,7 +1,7 @@
 #include "GUI.h"
 
 GUI::GUI(const wxString& title, Parameters * params)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 550))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 650))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -71,6 +71,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
     wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
+    wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
+    wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
+    wxStaticText* camWitdthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
 
 
     cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
@@ -90,6 +93,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
     circularField = new wxCheckBox(this, -1, wxT(""));
     circularField->SetValue(parameters->circularWindow);
+    camFpsField = new wxTextCtrl(this, -1, std::to_string(parameters->camFps));
+    camWidthField = new wxTextCtrl(this, -1, std::to_string(parameters->camWidth));
+    camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
 
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
@@ -122,6 +128,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(offsetzField);
     fgs->Add(circularText);
     fgs->Add(circularField);
+    fgs->Add(camFpsText);
+    fgs->Add(camFpsField);
+    fgs->Add(camWitdthText);
+    fgs->Add(camWidthField);
+    fgs->Add(camHeightText);
+    fgs->Add(camHeightField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn1);
@@ -146,6 +158,9 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
         parameters->circularWindow = circularField->GetValue();
         parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
+        parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
+        parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
+        parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
         parameters->Save();
     }
     catch (std::exception & e)

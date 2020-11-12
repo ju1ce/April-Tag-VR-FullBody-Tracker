@@ -26,4 +26,7 @@ public:
 	double calibOffsetZ = 0;
 	bool circularWindow = true;
 	double smoothingFactor = 0.7;
+	int camFps = 30;
+	int camHeight = 0;
+	int camWidth = 0;
 };

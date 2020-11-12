@@ -31,6 +31,9 @@ private:
     const int SAVE_BUTTON = 2;
     Parameters* parameters;
     wxTextCtrl* cameraAddrField;
+    wxTextCtrl* camFpsField;
+    wxTextCtrl* camWidthField;
+    wxTextCtrl* camHeightField;
     wxTextCtrl* trackerNumField;
     wxTextCtrl* markerSizeField;
     wxTextCtrl* prevValuesField;

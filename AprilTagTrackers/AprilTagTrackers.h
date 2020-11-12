@@ -41,6 +41,8 @@ private:
     void CalibrateTracker();
     void MainLoop();
 
+    int drawImgSize = 480;
+
     cv::VideoCapture cap;
 
     cv::Mat retImage;

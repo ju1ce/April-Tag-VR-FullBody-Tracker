@@ -108,7 +108,11 @@ void Tracker::StartCamera(std::string id)
         dial->ShowModal();
         return;
     }
-    cap.set(cv::CAP_PROP_FPS, 60);
+    cap.set(cv::CAP_PROP_FPS, parameters->camFps);
+    if(parameters->camWidth != 0)
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
+    if (parameters->camHeight != 0)
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, parameters->camHeight);
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -235,7 +239,20 @@ void Tracker::CalibrateCamera()
         imageReady = false;
         retImage.copyTo(image);
         cv::putText(image, std::to_string(i) + "/15", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        cv::imshow("out", image);
+        cv::Mat drawImg;
+        int cols, rows;
+        if (image.cols > image.rows)
+        {
+            cols = image.cols * drawImgSize / image.rows;
+            rows = drawImgSize;
+        }
+        else
+        {
+            cols = drawImgSize;
+            rows = image.rows * drawImgSize / image.cols;
+        }
+        cv::resize(image, drawImg, cv::Size(cols,rows));
+        cv::imshow("out", drawImg);
         char key = (char)cv::waitKey(1);
         framesSinceLast++;
         if (key != -1 || framesSinceLast > 50)
@@ -258,7 +275,8 @@ void Tracker::CalibrateCamera()
                 imgpoints.push_back(corner_pts);
             }
 
-            cv::imshow("out", image);
+            cv::resize(image, drawImg, cv::Size(cols, rows));
+            cv::imshow("out", drawImg);
             cv::waitKey(1000);
         }
     }
@@ -365,7 +383,7 @@ void Tracker::CalibrateTracker()
     modelMarker.push_back(cv::Point3f(-markerSize / 2, -markerSize / 2, 0));
 
     apriltag_detector_t* td = apriltag_detector_create();
-    td->quad_decimate = 1;
+    td->quad_decimate = parameters->quadDecimate;
     apriltag_family_t* tf = tagStandard41h12_create();
     apriltag_detector_add_family(td, tf);
 
@@ -513,8 +531,20 @@ void Tracker::CalibrateTracker()
                 }
             }
         }
-
-        cv::imshow("out", image);
+        cv::Mat drawImg;
+        int cols, rows;
+        if (image.cols > image.rows)
+        {
+            cols = image.cols * drawImgSize / image.rows;
+            rows = drawImgSize;
+        }
+        else
+        {
+            cols = drawImgSize;
+            rows = image.rows * drawImgSize / image.cols;
+        }
+        cv::resize(image, drawImg, cv::Size(cols, rows));
+        cv::imshow("out", drawImg);
         cv::waitKey(1);
     }
     trackers.clear();
@@ -796,6 +826,18 @@ void Tracker::MainLoop()
         end = clock();
         double frameTime = double(end - start) / double(CLOCKS_PER_SEC);
 
+        int cols, rows;
+        if (image.cols > image.rows)
+        {
+            cols = image.cols * drawImgSize / image.rows;
+            rows = drawImgSize;
+        }
+        else
+        {
+            cols = drawImgSize;
+            rows = image.rows * drawImgSize / image.cols;
+        }
+        cv::resize(drawImg, drawImg, cv::Size(cols, rows));
         cv::putText(drawImg, std::to_string(frameTime).substr(0,5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::imshow("out", drawImg);
         cv::waitKey(1);
