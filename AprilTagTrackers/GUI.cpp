@@ -20,13 +20,13 @@ CameraPage::CameraPage(wxNotebook* parent)
 {
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(5, 2, 20, 20);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(6, 2, 20, 20);
 
     wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
     wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
     wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, "4. Connect to SteamVR");
     wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
-    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "5. Start/Stop");
+    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "6. Start/Stop");
 
     wxCheckBox* cb = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
         wxPoint(20, 20));
@@ -41,6 +41,8 @@ CameraPage::CameraPage(wxNotebook* parent)
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn4);
+    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(new wxStaticText(this, -1, wxT("5. Start up SteamVR!")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn5);
     fgs->Add(cb2);
