@@ -6,6 +6,8 @@ many improvements to make the system easier to use.
 
 This program allows you to get working full-body tracking in SteamVR using some printed markers, some cardboard, and either a USB camera or a phone.
 
+The program can be downloaded from the releases tab.
+
 ## Connecting a camera
 
 The first step is connecting a camera feed to you computer. This step is probably the most complex, since you will have to find out what works best for you.
@@ -79,9 +81,60 @@ First, follow the DroidCam OBS official tutorial to get the phone-OBS connection
 Then, follow the OBS VirtualCam plugin tutorial to stream to a virtual camera.
 The phone will now act as a regular webcam.
 
-## Using the program
+## Making the markers
 
-When we establish a connection to a camera, we can now start using the program.
+The next step is making the markers. Print the AprilTags.pdf page inside the Apriltag Trackers folder and cut the markers along the following lines:
+
+Now, for each of the three trackers, cut out a piece of cardboard the same size. Bend it down the middle at a 90 degree angle and glue the marker onto it, like this:
+
+Make sure you add some supports to ensure the tracker cant bend!
+
+Tracker 0 will be used on our hips, and should use some additional supports.
+
+Add some way of fixing the trackers to your body. I use some hooks, through which i can then fix the trackers using rubber bands.
+
+NOTE: Make sure the pattern on the trackers is clearly visible and is not obstructed! Ensure the markers bend as little as possible!
+
+## Installing the SteamVR driver
+
+Inside the driver_files folder, there is a apriltagtrackers folder. Copy this folder to "Steam/steamapps/common/SteamVR/drivers". Now, open "Steam/config/steamvr.vrsettings" and, under "steamvr", add the field ```"activateMultipleDrivers" : true,``` .
+
+This will ensure that every time we launch steamvr, it will attempt to connect to the ApriltagTrackers program through our driver.
+
+## Running Apriltag Trackers
+
+You can now run Start_ApriltagTrackers.bat! The first time you launch it, you may see a black console window for a few seconds.
+
+You should now see the window with buttons to start diffrent parts of our program. First, lets set the most important parameters of our program on the second tab.
+
+#### Ip or ID of camera:
+
+If you have a webcam or OBS, this value will be a number, usualy 0, 1, or more if you have more cameras connected. Best way to figure out the correct index of the camera is to try them: Type in 0, press save, go back to Camera tab, check preview camera and press Start/Stop camera. If the correct camera shows up, great, you can go to the next step! If not, repeat the process with 1, then 2 etc until you find it.
+
+If you use IP Webcam, you should enter your IP address, the same one as you used in your browser but ending with /video. The field should look something like this: ```http://192.168.1.100:8080/video``` but with some diffrent numbers.
+
+#### Number of trackers:
+
+The number of trackers you wish to use. For full body, you have to use 3.
+
+#### Size of markers in cm:
+
+Measure the size of your printed markers in cm, and input the value here. Measure like this:
+
+#### Rotate camera 90°:
+
+This will flip the camera view 90°. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera.
+
+#### Quad decimate:
+
+This is the quality setting. The value can either be 1, 1.5, 2, 3 or 4. The higher is this value, the faster will the tracking be, but the range will decrease. You should first try to run the program on 1, and then increase the value if the tracking is too slow.
+
+These were the settings important when setting up. I will explain the others later.
+
+### Calibrating the camera
+
+First, start the camera and disable the preview. Now press the Calibrate camera button. This will open two windows, one with a chessboard pattern, the other with the view from the camera. The camera will take a picture every few seconds. Try to film the chessboard pattern from as many angles as you can by slowly moving the camera around. When enough pictures are taken, you should get an alert that the camera has been calibrated.
+
 
 # TODO
 
