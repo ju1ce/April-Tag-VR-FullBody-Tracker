@@ -127,7 +127,25 @@ Two windows will open: one with a chessboard pattern, and one showing your camer
 
 Sometimes, if the picture is too blurry or the lightning is bad, the chessboard pattern wont be detected. In that case, change the angle slightly for the next picture until it works. If the pattern is detected very rarely, you can always print the pattern out and calibrate on that, or even use an actual chessboard.
 
+#### Calibrate trackers
 
+This will start tracker calibration. Camera should be running and calibrated. Before starting, put on your trackers in the same way you will use them in game. You must only do this step on first launch and whenever you change the trackers.
+
+Capture the trackers with the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Repeat this process until all markers on the trackers are green.
+
+#### Connect to SteamVR
+
+When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers. After this step, put on your hmd and do the rest from VR.
+
+#### Start
+
+This button should be pressed from the virtual desktop in the SteamVR dashboard (dont use oculus/WMR dashboard or you wont see the trackers!). It will start the program, and it will automatically be in calibration mode.
+
+When in calibration mode, a tracker should appear in the center of your playspace, one meter from the ground. Align your calibration tracker (tracker 0 by default) with the seen controller. Then rotate it until your leg trackers will align correctly as well. Once the trackers are aligned, turn of the calibration mode with the check mark. The trackers should now be calibrated! If there is still an offset between the trackers in VR and real life, you can always check the calibration mode again and retry.
+
+If you cant see the trackers: First make sure that you have your SteamVR dashboard open. The trackers dont appear in games or SteamVR home. Second, sometimes, the tracker will not apear at the center of your playspace. Look around. If the tracker is somewhere else, refer to the calibration offset parameters.
+
+### Params
 
 #### Ip or ID of camera:
 
