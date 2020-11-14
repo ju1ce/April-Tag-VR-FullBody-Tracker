@@ -39,11 +39,11 @@ Connect the camera to your PC and you are done! If you use a PS3 eye camera, als
 * Your PC and phone must be connected to the same network
 * Only for android phones
 
-If you have your pc and android phone connected to the same router and you have a strong wifi connection on your phone, this is the option you should use.
+If you have your PC and android phone connected to the same router and you have a strong wifi connection on your phone, this is the option you should use.
 
 #### Tutorial:
 
-Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ration with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon 
+Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ratio with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon 
 if you dont know how
 
 ### Using IP-Webcam wired:
@@ -61,7 +61,7 @@ If you dont have a good wifi connection, but have a half recent android phone, y
 
 For this we will use our phones network over USB feature. This is usualy used to share the phones network or wifi with a computer, but if we disable wifi and mobile network on our phone, we can also use it as a direct connection between our phone and PC. First disable wifi and mobile network. Then connect your phone to your PC with a USB cable. Now enable the internet over USB option on your phone. Now, you can follow the same instructions as for the wireless one!
 
-NOTE: Make sure that your networks are disabled or this wont work!
+NOTE: Make sure that your networks are disabled or this won't work!
 
 ### Using DroidCam OBS:
 
@@ -81,15 +81,17 @@ First, follow the DroidCam OBS official tutorial to get the phone-OBS connection
 Then, follow the OBS VirtualCam plugin tutorial to stream to a virtual camera.
 The phone will now act as a regular webcam.
 
-## Making the markers
+## The trackers
 
-The next step is making the markers. Print the AprilTags.pdf page inside the Apriltag Trackers folder and cut the markers along the following lines:
+### How the trackers work
 
-Now, for each of the three trackers, cut out a piece of cardboard the same size. Bend it down the middle at a 90 degree angle and glue the marker onto it, like this:
+This is a single Apriltag marker. Each marker has a white square in the middle that is used for detection and an unique pattern of black and white for identification. This means that a single marker must always be completely visible and completely flat in order to be detected.
 
-Make sure you add some supports to ensure the tracker cant bend!
+A tracker is composed of multiple markers facing diffrent directions, which ensures that at least one marker is visible when rotating it. They must all be fixed together and none of the markers that are included in a tracker should move or bend seperately. Tracker 0 is composed of marker id 0 and any number of extra markers of ids 1-44, tracker 1 is marker id 45 and any number of markers 46-89 etc.
 
-Tracker 0 will be used on our hips, and should use some additional supports.
+The simplest version of three trackers is the following: Tracker 0 made of marker 0 and 1, tracker 1 of marker 45 and 46 and tracker 3 of marker 90 and 91. To prevent bending, they are glued to cardboard. Each of them are glued together at an 90° angle. To make them yourselves, print the Apriltag.pdf file. Refer to the below photos to cut them out and glue them properly.
+
+Tracker 0 will be used on our hips, and should use some additional supports. I used some wire, but you can rather just use more cardboard.
 
 Add some way of fixing the trackers to your body. I use some hooks, through which i can then fix the trackers using rubber bands.
 
@@ -103,9 +105,29 @@ This will ensure that every time we launch steamvr, it will attempt to connect t
 
 ## Running Apriltag Trackers
 
-You can now run Start_ApriltagTrackers.bat! The first time you launch it, you may see a black console window for a few seconds.
+You can now run Start_ApriltagTrackers.bat! The first time you launch it, you may see a black console window for a few seconds. Below is a quick guide on what the buttons and parameters do.
 
-You should now see the window with buttons to start diffrent parts of our program. First, lets set the most important parameters of our program on the second tab.
+### Camera tab
+
+This is the main tab of the program that you will use most of the time.
+
+#### Start/Stop camera
+
+Start the camera or stop it if its already running. This button will open the camera that you have written in the parameters tab. To ensure its working correctly, enable the Show preview checkbox.
+
+If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id.
+
+If the camera is of incorrect resolution/shrunk, refer to the camera width and height parameters.
+
+#### Calibrate camera
+
+This will start the camera calibration sequence. Turn off camera preview before starting. This must only be done the first time you use this program and if you change the camera you are using.
+
+Two windows will open: one with a chessboard pattern, and one showing your camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the chessboard pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate.
+
+Sometimes, if the picture is too blurry or the lightning is bad, the chessboard pattern wont be detected. In that case, change the angle slightly for the next picture until it works. If the pattern is detected very rarely, you can always print the pattern out and calibrate on that, or even use an actual chessboard.
+
+
 
 #### Ip or ID of camera:
 
