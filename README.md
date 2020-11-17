@@ -133,9 +133,13 @@ This will start tracker calibration. Camera should be running and calibrated. Be
 
 Capture the trackers with the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Repeat this process until all markers on the trackers are green.
 
+If some of the markers only have a thin green outline, it means the markers are detected, but do not belong to any of the used trackers. You have probably set a too low number of trackers in the parameters.
+
 #### Connect to SteamVR
 
 When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers. After this step, put on your hmd and do the rest from VR.
+
+If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you have put EnableMultipleDrivers into the steamvr.config file.
 
 #### Start
 
@@ -145,7 +149,7 @@ When in calibration mode, a tracker should appear in the center of your playspac
 
 If you cant see the trackers: First make sure that you have your SteamVR dashboard open. The trackers dont appear in games or SteamVR home. Second, sometimes, the tracker will not apear at the center of your playspace. Look around. If the tracker is somewhere else, refer to the calibration offset parameters.
 
-### Params
+### Parameters
 
 #### Ip or ID of camera:
 
@@ -159,17 +163,27 @@ The number of trackers you wish to use. For full body, you have to use 3.
 
 #### Size of markers in cm:
 
-Measure the size of your printed markers in cm, and input the value here. Measure like this:
+Measure the size of your printed markers in cm, and input the value here. Measure the white square, like this:
 
 #### Rotate camera 90°:
 
-This will flip the camera view 90°. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera.
+This will flip the camera view 90°. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera (640x480). If you use a PS eye, you should use this.
 
 #### Quad decimate:
 
-This is the quality setting. The value can either be 1, 1.5, 2, 3 or 4. The higher is this value, the faster will the tracking be, but the range will decrease. You should first try to run the program on 1, and then increase the value if the tracking is too slow.
+This is the quality setting. The value can either be 1, 1.5, 2, 3 or 4. The higher is this value, the faster will the tracking be, but the range will decrease. It is dependant on the camera you use. In general, you will probably have to use 1 on 480p, 2 on 720p and 3 on 1080p. You can fine tune this parameter later based on the performance you are getting. (If you get high FPS, you can decrease it. If your trackers dont get detected well, increase it.)
 
-These were the settings important when setting up. I will explain the others later.
+#### Number of values for smoothing:
+
+The algorithm uses a sliding window mean smoothing. This is the number of previous position values that will be used for the window. It ensures that tracking outliers are removed, but introduces some delay. 5 seems to be the best balance between delay and performance.
+
+If you dont know what that means, just leave it at 5.
+
+#### Additional smoothing:
+
+While the sliding mean does some smoothing, it is usualy not enough to eliminate shaking. Aditional smoothing is done using a leaky integrator, with the formula: current_position = previous_position * value + tracked_position * (1-value).
+
+What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also
 
 ### Calibrating the camera
 
