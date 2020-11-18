@@ -1,10 +1,13 @@
 # April-Tag-VR-FullBody-Tracker
 Full-body tracking in VR using AprilTag markers.
 
-This is my second attemt at creating a full-body tracking system using fiducial markers. This version uses the much more accurate AprilTag system, and includes
-many improvements to make the system easier to use.
+This is my second attemt at creating a full-body tracking system using fiducial markers. This should enable people to get fullbody tracking for free, using only a phone and some cardboard. It is possible to get pretty good tracking with trackers of sizes as small as 10cm and a PS eye camera of 640x480 resolution. Increasing the marker size or using a higher resolution and faster phone camera further improves tracking.
 
-This program allows you to get working full-body tracking in SteamVR using some printed markers, some cardboard, and either a USB camera or a phone.
+To use, you will have to make three trackers - one for each leg and one for hips. Using only leg trackers will not work in VRChat!
+
+This version uses the much more accurate AprilTag system and includes many improvements to make the system easier to use, such as a GUI interface and a more straight forward calibration.
+
+If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: juice#6370
 
 The program can be downloaded from the releases tab.
 
@@ -12,6 +15,8 @@ The program can be downloaded from the releases tab.
 
 The first step is connecting a camera feed to you computer. This step is probably the most complex, since you will have to find out what works best for you.
 Each of the methods has its pros and cons, so try them out and see what works best. If you know of any other option, feel free to use that!
+
+This tutorial only outlines the methods to connect a camera, and their pros and cons. If you have problems related to these, you should refer to their official tutorials. You should get it working before continuing with the tutorial.
 
 ### Using a USB webcam:
 
@@ -137,9 +142,11 @@ If some of the markers only have a thin green outline, it means the markers are 
 
 #### Connect to SteamVR
 
-When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers. After this step, put on your hmd and do the rest from VR.
+When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers.
 
-If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you have put EnableMultipleDrivers into the steamvr.config file.
+Place your camera somewhere somewhere around hip height. Make sure your camera will be in front of your SteamVR playpace. With Index and Vive, this should be towards your PC. With Oculus, this is the direction you were facing while calibrating your guardian. You can check the direction by going into SteamVR with SteamVR Home disabled - there will be a grey arrow on the ground indicating forward. Thats where your camera should be. (You do not have to be exact, however. It can easily be moved a meter or two to the side).
+
+If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you 
 
 #### Start
 
@@ -149,7 +156,15 @@ When in calibration mode, a tracker should appear in the center of your playspac
 
 If you cant see the trackers: First make sure that you have your SteamVR dashboard open. The trackers dont appear in games or SteamVR home. Second, sometimes, the tracker will not apear at the center of your playspace. Look around. If the tracker is somewhere else, refer to the calibration offset parameters.
 
+If, during calibration, moving the tracker to the correct place means moving it outside of the view of the camera, refer to the calibration offset parameters.
+
+If you can move the tracker to the correct position, but cant rotate it correctly (the tracker will rotate away from the camera and no longer be detected before the positions of leg trackers match), make sure that your camera is in front of your SteamVR playspace. (refer to the Connect to SteamVR part)
+
 ### Parameters
+
+Below are short descriptions of the parameters you can set.
+
+When changing parameters, make sure that you press save or they will not take effect! While some changes will work immediately after saving, you may need to restart tracking for others (press the Start button on the camera tab to stop, then press Start again to start. You do not need to recalibrate playpace after doing this).
 
 #### Ip or ID of camera:
 
@@ -169,10 +184,6 @@ Measure the size of your printed markers in cm, and input the value here. Measur
 
 This will flip the camera view 90°. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera (640x480). If you use a PS eye, you should use this.
 
-#### Quad decimate:
-
-This is the quality setting. The value can either be 1, 1.5, 2, 3 or 4. The higher is this value, the faster will the tracking be, but the range will decrease. It is dependant on the camera you use. In general, you will probably have to use 1 on 480p, 2 on 720p and 3 on 1080p. You can fine tune this parameter later based on the performance you are getting. (If you get high FPS, you can decrease it. If your trackers dont get detected well, increase it.)
-
 #### Number of values for smoothing:
 
 The algorithm uses a sliding window mean smoothing. This is the number of previous position values that will be used for the window. It ensures that tracking outliers are removed, but introduces some delay. 5 seems to be the best balance between delay and performance.
@@ -183,15 +194,50 @@ If you dont know what that means, just leave it at 5.
 
 While the sliding mean does some smoothing, it is usualy not enough to eliminate shaking. Aditional smoothing is done using a leaky integrator, with the formula: current_position = previous_position * value + tracked_position * (1-value).
 
-What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also
+What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also increase shaking.
 
-### Calibrating the camera
+#### Quad decimate:
 
-First, start the camera and disable the preview. Now press the Calibrate camera button. This will open two windows, one with a chessboard pattern, the other with the view from the camera. The camera will take a picture every few seconds. Try to film the chessboard pattern from as many angles as you can by slowly moving the camera around. When enough pictures are taken, you should get an alert that the camera has been calibrated.
+This is the quality setting. The value can either be 1, 1.5, 2, 3 or 4. The higher is this value, the faster will the tracking be, but the range will decrease. It is dependant on the camera you use. In general, you will probably have to use 1 on 480p, 2 on 720p and 3 on 1080p. You can fine tune this parameter later based on the performance you are getting. (If you get high FPS, you can decrease it. If your trackers dont get detected well, increase it.)
 
+#### Search window:
 
-# TODO
+To increase performance, the algorithm only searches for trackers in a window around the position they were last seen in. This parameter sets the size of the window. Lowering this value will make the windows smaller, which makes the program run faster, but increases the chance you move the tracker outside the window which will cause it to not get tracked anymore.
 
+The window is visualized with blue circles/boxes, based on the parameters. The tracker must be inside at least one window or it will not be tracked.
+
+#### Tracker to use for calibration:
+
+The ID of the tracker that will be used for SteamVR playspace calibration. By default this is tracker 0, meaning the hip tracker.
+
+#### Use previous position as guess:
+
+This parameters sets if, when estimating the 3d position of a detected tracker, the algorithm should use the previous position as a guess to help it or not. Should ticked unless you know what you are doing.
+
+#### X/Y/Z calibration offset:
+
+This parameter sets the position, at which you have to calibrate the marker. It is in SteamVR coordinates. By default, this means the center of your playspace, one meter above ground. In some cases, this position will not be seen on the camera, and you will have to change it. (Usualy, lowering the Y axis (up/down) should be enough.)
+
+Sometimes, however, the center of the playspace is nowhere near the actual center of your room. In that case, you will have to find where the tracker was put and try to move it to the center using this values. It might take some time to guess it correctly, but it will only have to be done once.
+
+#### Use circular search window:
+
+Search for trackers in a circular window around the previous known position or use vertical boxes. Since using circular windows is much faster, there is usualy no reason not to use them.
+
+#### Camera FPS:
+
+The FPS of your camera. If you want to use a 60fps camera, set this to 60.
+
+#### Camera width/height:
+
+You can usualy leave this on 0 and the program will automaticaly determine the correct width and height.
+
+On some cameras, and usualy with OBS, the camera will be opened with the wrong resolution and aspect ratio. In that case, replace these values with the correct ones.
+
+### TODO: 
+
+* Tutorial for reducing camera exposure on IP-Webcam
+* Virtual hip to enable use of leg trackers only
 
 
 
