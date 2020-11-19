@@ -144,7 +144,7 @@ This is the main tab of the program that you will use most of the time.
 
 Start the camera or stop it if its already running. This button will open the camera that you have written in the parameters tab. To ensure its working correctly, enable the Show preview checkbox.
 
-If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id.
+If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id. You may also have to set the correct camera width/height in the parameters.
 
 If the camera is of incorrect resolution/shrunk, refer to the camera width and height parameters.
 
@@ -289,6 +289,7 @@ On some cameras, and usualy with OBS, the camera will be opened with the wrong r
 
 * Tutorial for reducing camera exposure on IP-Webcam
 * Virtual hip to enable use of leg trackers only
+* Change the view model to vive pucks
 
 
 
