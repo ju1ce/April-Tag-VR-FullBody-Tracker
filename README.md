@@ -11,6 +11,10 @@ If you have any issues or encounter any bugs, feel free to open an issue on gith
 
 The program can be downloaded from the releases tab.
 
+![demo](images/demo.gif)
+
+Beatsaber demo: https://youtu.be/Akps-dH0EeA
+
 ## Connecting a camera
 
 The first step is connecting a camera feed to you computer. This step is probably the most complex, since you will have to find out what works best for you.
@@ -90,13 +94,33 @@ The phone will now act as a regular webcam.
 
 ### How the trackers work
 
+![apriltag_marker](images/apriltag_marker.png)
+
 This is a single Apriltag marker. Each marker has a white square in the middle that is used for detection and an unique pattern of black and white for identification. This means that a single marker must always be completely visible and completely flat in order to be detected.
 
 A tracker is composed of multiple markers facing diffrent directions, which ensures that at least one marker is visible when rotating it. They must all be fixed together and none of the markers that are included in a tracker should move or bend seperately. Tracker 0 is composed of marker id 0 and any number of extra markers of ids 1-44, tracker 1 is marker id 45 and any number of markers 46-89 etc.
 
 The simplest version of three trackers is the following: Tracker 0 made of marker 0 and 1, tracker 1 of marker 45 and 46 and tracker 3 of marker 90 and 91. To prevent bending, they are glued to cardboard. Each of them are glued together at an 90° angle. To make them yourselves, print the Apriltag.pdf file. Refer to the below photos to cut them out and glue them properly.
 
-Tracker 0 will be used on our hips, and should use some additional supports. I used some wire, but you can rather just use more cardboard.
+![where_to_cut](images/wheretocut.png)
+
+Cut along the red lines, bend along the blue lines. Print the image without the lines.
+
+![trackers1](images/trackers1.png)
+
+How the trackers should look like from the front
+
+![trackers2](images/trackers2.png)
+
+How the trackers should look like from the top
+
+![trackers3](images/trackers3.png)
+
+Close up of whats behind the leg trackers. Notice the small piece of cardboard for support against bending and the hooks for rubber bands.
+
+![trackers4](images/trackers4.png)
+
+Tracker 0 will be used on our hips, and, since the rubber bands will stretch it more, should use some additional supports. I used some wire, but you can rather just use more cardboard.
 
 Add some way of fixing the trackers to your body. I use some hooks, through which i can then fix the trackers using rubber bands.
 
@@ -128,9 +152,13 @@ If the camera is of incorrect resolution/shrunk, refer to the camera width and h
 
 This will start the camera calibration sequence. Turn off camera preview before starting. This must only be done the first time you use this program and if you change the camera you are using.
 
-Two windows will open: one with a chessboard pattern, and one showing your camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the chessboard pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate.
+Two windows will open: one with a chessboard pattern, and one showing your camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the chessboard pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate. If you can, try to use an actual or printed chessboard instead of the one on the screen.
 
-Sometimes, if the picture is too blurry or the lightning is bad, the chessboard pattern wont be detected. In that case, change the angle slightly for the next picture until it works. If the pattern is detected very rarely, you can always print the pattern out and calibrate on that, or even use an actual chessboard.
+Sometimes, if the picture is too blurry or the lightning is bad, the chessboard pattern wont be detected. This will happen more often on an on-screen chessboard and shouldnt be a problem if you print it.
+
+![camera_calibration](images/camera_calib.gif)
+
+Using an wooden chessboard for calibration. If you use a screen, the chessboard may not be detected on every picture.
 
 #### Calibrate trackers
 
@@ -138,21 +166,37 @@ This will start tracker calibration. Camera should be running and calibrated. Be
 
 Capture the trackers with the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Repeat this process until all markers on the trackers are green.
 
-If some of the markers only have a thin green outline, it means the markers are detected, but do not belong to any of the used trackers. You have probably set a too low number of trackers in the parameters.
+If some of the markers only have a thin blue outline, it means the markers are detected, but do not belong to any of the used trackers. You have probably set a too low number of trackers in the parameters.
+
+![tracker_calibration](images/tracker_calib.gif)
+
+Example of tracker calibration. Rotate the trackers around a bit. The axis should follow nicely no matter the number of markers that are detected for the tracker.
 
 #### Connect to SteamVR
 
 When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers.
 
+![steamvr_connection](images/steamvr_connect.gif)
+
 Place your camera somewhere somewhere around hip height. Make sure your camera will be in front of your SteamVR playpace. With Index and Vive, this should be towards your PC. With Oculus, this is the direction you were facing while calibrating your guardian. You can check the direction by going into SteamVR with SteamVR Home disabled - there will be a grey arrow on the ground indicating forward. Thats where your camera should be. (You do not have to be exact, however. It can easily be moved a meter or two to the side).
 
-If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you 
+![camera_position](images/camera_position.png)
+
+This is the arrow representing the forward of steamvr. When you face this direction, the camera should see your front.
+
+If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you added ActivateMultipleDrivers into the steamvr config.
 
 #### Start
 
-This button should be pressed from the virtual desktop in the SteamVR dashboard (dont use oculus/WMR dashboard or you wont see the trackers!). It will start the program, and it will automatically be in calibration mode.
+This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, and it will automatically be in calibration mode.
 
-When in calibration mode, a tracker should appear in the center of your playspace, one meter from the ground. Align your calibration tracker (tracker 0 by default) with the seen controller. Then rotate it until your leg trackers will align correctly as well. Once the trackers are aligned, turn of the calibration mode with the check mark. The trackers should now be calibrated! If there is still an offset between the trackers in VR and real life, you can always check the calibration mode again and retry.
+In the window, you can see the following things: The detected markers will have a green outline with their id written in blue. Around the markers, there will be blue circles: these represent the area that is searched during detection. If not all trackers are found, the entire vertical area is searched every second. You will see blue squares instead of circles when that happens. If you are in calibration mode, the calibration tracker will have a red-green-blue axis drawn to help calibration.
+
+When in calibration mode, a tracker should appear in the center of your playspace, one meter from the ground. Align your calibration tracker (tracker 0 by default) with the seen controller. Rotate it so blue axis will face the camera, red will point right and green will point up. Then rotate it until your leg trackers will align correctly as well. Once the trackers are aligned, turn of the calibration mode with the check mark. The trackers should now be calibrated! If there is still an offset between the trackers in VR and real life, you can always check the calibration mode again and retry.
+
+![playspace_calibration](images/playspace_calib.gif)
+
+Short calibration demo. Use your controller to help position the tracker correctly.
 
 If you cant see the trackers: First make sure that you have your SteamVR dashboard open. The trackers dont appear in games or SteamVR home. Second, sometimes, the tracker will not apear at the center of your playspace. Look around. If the tracker is somewhere else, refer to the calibration offset parameters.
 
@@ -174,11 +218,13 @@ If you use IP Webcam, you should enter your IP address, the same one as you used
 
 #### Number of trackers:
 
-The number of trackers you wish to use. For full body, you have to use 3.
+The number of trackers you wish to use. For full body, you have to use 3. You cannot use fullbody in VRchat with just 2!
 
 #### Size of markers in cm:
 
 Measure the size of your printed markers in cm, and input the value here. Measure the white square, like this:
+
+![marker_measure](images/marker_measure.png)
 
 #### Rotate camera 90°:
 
@@ -233,6 +279,11 @@ The FPS of your camera. If you want to use a 60fps camera, set this to 60.
 You can usualy leave this on 0 and the program will automaticaly determine the correct width and height.
 
 On some cameras, and usualy with OBS, the camera will be opened with the wrong resolution and aspect ratio. In that case, replace these values with the correct ones.
+
+### Known issues:
+
+* Sometimes an extra blue circle will appear, which may slow down detection as it causes a larger area to be searched than necessary. You can restart detection to fix this issue. (just press Start twice to stop and start again). This can be seen in the VRChat demo.
+* A tracker may face the wrong direction if only one marker is seen. This can be seen in the Beatsaber demo video.
 
 ### TODO: 
 
