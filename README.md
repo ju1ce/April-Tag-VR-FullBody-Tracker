@@ -128,7 +128,16 @@ NOTE: Make sure the pattern on the trackers is clearly visible and is not obstru
 
 ## Installing the SteamVR driver
 
-Inside the driver_files folder, there is a apriltagtrackers folder. Copy this folder to "Steam/steamapps/common/SteamVR/drivers". Now, open "Steam/config/steamvr.vrsettings" and, under "steamvr", add the field ```"activateMultipleDrivers" : true,``` .
+Inside the driver_files folder, there is a apriltagtrackers folder. Copy this folder to "Steam/steamapps/common/SteamVR/drivers". Now, open "Steam/config/steamvr.vrsettings" and, under "steamvr", add the field ```"activateMultipleDrivers" : true,``` . The section will now look something like:
+```
+"steamvr" : {
+      "activateMultipleDrivers" : true,
+      "installID" : "17046041383408253036",
+      "lastVersionNotice" : "1.15.10",
+      "lastVersionNoticeDate" : "1605567489",
+      "showAdvancedSettings" : true
+   },
+```
 
 This will ensure that every time we launch steamvr, it will attempt to connect to the ApriltagTrackers program through our driver.
 
@@ -176,6 +185,8 @@ Example of tracker calibration. Rotate the trackers around a bit. The axis shoul
 
 When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers.
 
+If you quit SteamVR but not the program, you have to press this button again before starting SteamVR again. Press yes when it asks to restart the connection.
+
 ![steamvr_connection](images/steamvr_connect.gif)
 
 Place your camera somewhere somewhere around hip height. Make sure your camera will be in front of your SteamVR playpace. With Index and Vive, this should be towards your PC. With Oculus, this is the direction you were facing while calibrating your guardian. You can check the direction by going into SteamVR with SteamVR Home disabled - there will be a grey arrow on the ground indicating forward. Thats where your camera should be. (You do not have to be exact, however. It can easily be moved a meter or two to the side).
@@ -184,7 +195,13 @@ Place your camera somewhere somewhere around hip height. Make sure your camera w
 
 This is the arrow representing the forward of steamvr. When you face this direction, the camera should see your front.
 
-If the trackers do not show up on the status window, check if you installed the driver correctly. Make sure you copied the folder into the correct place and that you added ActivateMultipleDrivers into the steamvr config.
+If the trackers do not show up on the status window, the driver is not loading correctly. First press the Connect to SteamVR button again and check the message you get:
+
+If you get Already waiting for connection, the driver failed to load at all. Check whether you put the driver into the correct place the path should look something like `Steam\steamapps\common\SteamVR\drivers\apriltagtrackers`. If that is correct, try to reinstall c++ redistributable [here](https://aka.ms/vs/16/release/vc_redist.x64.exe).
+
+If you get Already connected. Restart connection?, the driver loaded, but SteamVR isnt activating it. Make sure you added the activateMultipleDrivers line into the steamvr.vrsettings. If the line gets removed every time you start SteamVR, you probably messed up the formatting: the lines end in commas!
+
+If you get no message, you probably just forgot to press the button. Restart SteamVR.
 
 #### Start
 
