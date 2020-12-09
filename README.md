@@ -15,6 +15,9 @@ The program can be downloaded from the releases tab.
 
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
 
+## We now have a discord server!
+https://discord.gg/A45NWwkj
+
 ## Connecting a camera
 
 The first step is connecting a camera feed to you computer. This step is probably the most complex, since you will have to find out what works best for you.
@@ -176,6 +179,8 @@ This will start tracker calibration. Camera should be running and calibrated. Be
 Capture the trackers with the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Repeat this process until all markers on the trackers are green.
 
 If some of the markers only have a thin blue outline, it means the markers are detected, but do not belong to any of the used trackers. You have probably set a too low number of trackers in the parameters.
+
+If markers are not detected at all, make sure your camera is not mirrored.
 
 ![tracker_calibration](images/tracker_calib.gif)
 
