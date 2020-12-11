@@ -16,7 +16,7 @@ The program can be downloaded from the releases tab.
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
 
 ## We now have a discord server!
-https://discord.gg/A45NWwkj
+https://discord.gg/g2ctkXB4bb
 
 ## Connecting a camera
 
