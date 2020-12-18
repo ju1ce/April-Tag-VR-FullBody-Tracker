@@ -3,6 +3,25 @@
 #include <wx/notebook.h>
 #include "Parameters.h"
 
+class ValueInput : public wxPanel
+{
+public:
+    ValueInput(wxPanel* parent, std::string nm, double val);
+    double value;
+    void SetValue(double val);
+
+private:
+    wxButton* dwn1;
+    wxButton* dwn2;
+    wxTextCtrl* input = 0;
+    wxButton* up1;
+    wxButton* up2;
+
+    void ButtonPressed(wxCommandEvent&);
+    
+
+};
+
 class GUI : public wxFrame
 {
 public:
@@ -14,12 +33,28 @@ public:
     static const int TRACKER_CALIB_BUTTON = 6;
     static const int START_BUTTON = 7;
     static const int SPACE_CALIB_CHECKBOX = 8;
+    static const int MANUAL_CALIB_CHECKBOX = 9;
+
+    ValueInput *manualCalibX;
+    ValueInput *manualCalibY;
+    ValueInput *manualCalibZ;
+    ValueInput *manualCalibA;
+    ValueInput *manualCalibB;
+    ValueInput *manualCalibC;
+
+    wxBoxSizer* posHbox;
+    wxBoxSizer* rotHbox;
+
+    wxCheckBox* cb2;
+    wxCheckBox* cb3;
+
 };
 
 class CameraPage : public wxPanel
 {
 public:
-    CameraPage(wxNotebook* parent);
+    CameraPage(wxNotebook* parent, GUI* parentGUI);
+
 };
 
 class ParamsPage : public wxPanel
@@ -40,6 +75,7 @@ private:
     wxTextCtrl* quadDecimateField;
     wxTextCtrl* searchWindowField;
     wxCheckBox* usePredictiveField;
+    wxCheckBox* ignoreTracker0Field;
     wxTextCtrl* calibrationTrackerField;
     wxCheckBox* rotateField;
     wxTextCtrl* offsetxField;
@@ -47,5 +83,8 @@ private:
     wxTextCtrl* offsetzField;
     wxCheckBox* circularField;
     wxTextCtrl* smoothingField;
+    wxCheckBox* cameraSettingsField;
     void SaveParams(wxCommandEvent& );
 };
+
+

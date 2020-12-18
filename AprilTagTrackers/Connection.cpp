@@ -41,45 +41,55 @@ void Connection::Connect()
 	//function to create pipes for SteamVR connection
 	pipeNum = parameters->trackerNum;
 
+	double trackerNum = parameters->trackerNum;
+	if (parameters->ignoreTracker0)
+	{
+		trackerNum--;
+	}
+
 	status = WAITING;
 
 	for (int i = 0; i < pipeNum; i++)
 	{
 		//create a pipe with given name and index
-		std::string pipeName = "\\\\.\\pipe\\TrackPipe" + std::to_string(i);
+		int index = parameters->ignoreTracker0 ? i - 1 : i;
+		std::string pipeName = "\\\\.\\pipe\\TrackPipe" + std::to_string(index);
 		HANDLE pipe;
-		pipe = CreateNamedPipeA(pipeName.c_str(),
-			PIPE_ACCESS_DUPLEX,
-			PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,   // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
-			1,
-			1024 * 16,
-			1024 * 16,
-			NMPWAIT_USE_DEFAULT_WAIT,
-			NULL);
-		if (pipe != INVALID_HANDLE_VALUE)
+		if(i != 0 || !parameters->ignoreTracker0)
 		{
-			//if pipe was successfully created wait for a connection
-			if (ConnectNamedPipe(pipe, NULL) != FALSE)   // wait for someone to connect to the pipe
+			pipe = CreateNamedPipeA(pipeName.c_str(),
+				PIPE_ACCESS_DUPLEX,
+				PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,   // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
+				1,
+				1024 * 16,
+				1024 * 16,
+				NMPWAIT_USE_DEFAULT_WAIT,
+				NULL);
+			if (pipe != INVALID_HANDLE_VALUE)
 			{
-				//when pipe is connected, send number of pipes and driversmoothfactor to our connected driver
-				std::string s = std::to_string(pipeNum) + " 0";
+				//if pipe was successfully created wait for a connection
+				if (ConnectNamedPipe(pipe, NULL) != FALSE)   // wait for someone to connect to the pipe
+				{
+					//when pipe is connected, send number of pipes and driversmoothfactor to our connected driver
+					std::string s = std::to_string(trackerNum) + " 0";
 
-				//write our data to pipe
-				WriteFile(pipe,
-					s.c_str(),
-					(s.length() + 1),   // = length of string + terminating '\0' !!!
-					&dwWritten,
-					NULL);
+					//write our data to pipe
+					WriteFile(pipe,
+						s.c_str(),
+						(s.length() + 1),   // = length of string + terminating '\0' !!!
+						&dwWritten,
+						NULL);
 
+				}
 			}
-		}
-		else
-		{
-			wxMessageDialog* dial = new wxMessageDialog(NULL,
-				wxT("Could not start connection"), wxT("Error"), wxOK | wxICON_ERROR);
-			dial->ShowModal();
-			status = DISCONNECTED;
-			return;
+			else
+			{
+				wxMessageDialog* dial = new wxMessageDialog(NULL,
+					wxT("Could not start connection"), wxT("Error"), wxOK | wxICON_ERROR);
+				dial->ShowModal();
+				status = DISCONNECTED;
+				return;
+			}
 		}
 		//add our pipe to our global list of pipes
 		hpipe.push_back(pipe);

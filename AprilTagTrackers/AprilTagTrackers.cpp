@@ -16,8 +16,13 @@ bool MyApp::OnInit()
     conn = new Connection(params);
     tracker = new Tracker(params, conn);
 
-    GUI* simple = new GUI(wxT("AprilTag Trackers"),params);
-    simple->Show(true);
+    gui = new GUI(wxT("AprilTag Trackers"),params);
+    gui->Show(true);
+
+    gui->posHbox->Show(false);
+    gui->rotHbox->Show(false);
+
+    tracker->gui = gui;
 
     Connect(GUI::CAMERA_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCamera));
     Connect(GUI::CAMERA_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraCalib));
@@ -26,6 +31,7 @@ bool MyApp::OnInit()
     Connect(GUI::TRACKER_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTrackerCalib));
     Connect(GUI::START_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedStart));
     Connect(GUI::SPACE_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
+    Connect(GUI::MANUAL_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
 
     return true;
 }
@@ -65,10 +71,77 @@ void MyApp::ButtonPressedStart(wxCommandEvent& event)
 
 void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
 {
-    if (event.IsChecked())
-        tracker->recalibrate = true;
-    else
-        tracker->recalibrate = false;
+    if (event.GetId() == GUI::SPACE_CALIB_CHECKBOX)
+    {
+        if (event.IsChecked())
+        {
+            tracker->recalibrate = true;
+            gui->posHbox->Show(true);
+            gui->rotHbox->Show(false);
+            gui->cb3->SetValue(false);
+            tracker->manualRecalibrate = false;
+
+            gui->manualCalibX->SetValue(params->calibOffsetX);
+            gui->manualCalibY->SetValue(params->calibOffsetY);
+            gui->manualCalibZ->SetValue(params->calibOffsetZ);
+
+        }
+        else
+        {
+            params->wrotation = tracker->wrotation;
+            params->wtranslation = tracker->wtranslation;
+            params->calibOffsetX = gui->manualCalibX->value;
+            params->calibOffsetY = gui->manualCalibY->value;
+            params->calibOffsetZ = gui->manualCalibZ->value;
+            params->Save();
+            tracker->recalibrate = false;
+            gui->posHbox->Show(false);
+            gui->rotHbox->Show(false);
+        }
+    }
+    if (event.GetId() == GUI::MANUAL_CALIB_CHECKBOX)
+    {
+        if (event.IsChecked())
+        {
+            tracker->manualRecalibrate = true;
+            gui->posHbox->Show(true);
+            gui->rotHbox->Show(true);
+            gui->cb2->SetValue(false);
+            tracker->recalibrate = false;
+
+            cv::Mat mrot = cv::Mat_<double>(3, 3);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    mrot.at<double>(i, j) = tracker->wtranslation.at<double>(i, j);
+                }
+            }
+            mrot = mrot.inv();
+
+            cv::Vec3d eulers = rotationMatrixToEulerAngles(mrot);
+
+            gui->manualCalibX->SetValue(params->calibOffsetX);
+            gui->manualCalibY->SetValue(params->calibOffsetY);
+            gui->manualCalibZ->SetValue(params->calibOffsetZ);
+            gui->manualCalibA->SetValue(eulers(0) / 0.01745);
+            gui->manualCalibB->SetValue(eulers(1) / 0.01745);
+            gui->manualCalibC->SetValue(eulers(2) / 0.01745);
+
+        }
+        else
+        {
+            params->wrotation = tracker->wrotation;
+            params->wtranslation = tracker->wtranslation;
+            params->calibOffsetX = gui->manualCalibX->value;
+            params->calibOffsetY = gui->manualCalibY->value;
+            params->calibOffsetZ = gui->manualCalibZ->value;
+            params->Save();
+            tracker->manualRecalibrate = false;
+            gui->posHbox->Show(false);
+            gui->rotHbox->Show(false);
+        }
+    }
 }
 
 Tracker::Tracker(Parameters* params, Connection* conn)
@@ -79,6 +152,11 @@ Tracker::Tracker(Parameters* params, Connection* conn)
     {
         trackers = parameters->trackers;
         trackersCalibrated = true;
+    }
+    if (!parameters->wtranslation.empty())
+    {
+        wtranslation = parameters->wtranslation;
+        wrotation = parameters->wrotation;
     }
 }
 
@@ -108,11 +186,14 @@ void Tracker::StartCamera(std::string id)
         dial->ShowModal();
         return;
     }
-    cap.set(cv::CAP_PROP_FPS, parameters->camFps);
+    
     if(parameters->camWidth != 0)
         cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
     if (parameters->camHeight != 0)
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, parameters->camHeight);
+    cap.set(cv::CAP_PROP_FPS, parameters->camFps);
+    if(parameters->cameraSettings)
+        cap.set(cv::CAP_PROP_SETTINGS, 1);
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -586,9 +667,11 @@ void Tracker::MainLoop()
     std::vector<std::vector<std::vector<double>>> prevLocValuesRaw;
     std::vector<double> prevLocValuesX;
 
+    int trackerNum = parameters->trackerNum;
+
     int numOfPrevValues = parameters->numOfPrevValues;
 
-    for (int k = 0; k < trackers.size(); k++)
+    for (int k = 0; k < trackerNum; k++)
     {
         std::vector<std::vector<double>> vv;
         
@@ -617,7 +700,7 @@ void Tracker::MainLoop()
         prevLocValuesX.push_back(j);
     }
 
-    for (int i = 0; i < trackers.size(); i++)
+    for (int i = 0; i < trackerNum; i++)
     {
         boardRvec.push_back(cv::Vec3d(0, 0, 0));
         boardTvec.push_back(cv::Vec3d(0, 0, 0));
@@ -698,15 +781,31 @@ void Tracker::MainLoop()
         {
             int tracker = ids[i] / 45;
 
-            while (tracker >= maskCenters.size())
+            int limit = trackerNum;
+
+            if (parameters->ignoreTracker0)
             {
-                maskCenters.push_back(centers[i]);
+                if (tracker == 0)
+                    continue;
+                tracker--;
+                limit--;
             }
-            maskCenters[tracker] = centers[i];
+
+            if (tracker < limit)
+            {
+                while (tracker >= maskCenters.size())
+                {
+                    maskCenters.push_back(centers[i]);
+                }
+                maskCenters[tracker] = centers[i];
+            }
         }
-        for (int i = 0; i < trackers.size(); ++i) {
+        for (int i = 0; i < trackerNum; ++i) {
 
             //estimate the pose of current board
+
+            if (parameters->ignoreTracker0 && i == 0)
+                continue;
 
             if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
             {
@@ -815,9 +914,20 @@ void Tracker::MainLoop()
             if (recalibrate && i == parameters->calibrationTracker)
             {
                 cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.10);
-                wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
+                cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
+                wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], calibPos(0), calibPos(1), calibPos(2));
                 wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
-            } 
+            }
+            else if (manualRecalibrate && i == parameters->calibrationTracker)
+            {
+                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.10);
+                //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
+                cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
+                cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
+                wtranslation = getSpaceCalibEuler(calibRot, boardTvec[i], calibPos(0), calibPos(1), calibPos(2));
+                // wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
+                wrotation = mRot2Quat(eulerAnglesToRotationMatrix(cv::Vec3f(calibRot))).conjugate();
+            }
         }
 
         if (ids.size() > 0)

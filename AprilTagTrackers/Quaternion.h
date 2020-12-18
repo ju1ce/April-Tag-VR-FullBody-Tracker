@@ -6,6 +6,7 @@
 //* Written 1.25.00 by Angela Bennett                *
 //****************************************************
 
+#pragma once
 
 #ifndef _QUATERNION_H_
 #define _QUATERNION_H_

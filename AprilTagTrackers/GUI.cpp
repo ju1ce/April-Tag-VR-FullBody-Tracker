@@ -6,7 +6,7 @@ GUI::GUI(const wxString& title, Parameters * params)
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
 
-    CameraPage* panel = new CameraPage(nb);
+    CameraPage* panel = new CameraPage(nb,this);
     ParamsPage* panel2 = new ParamsPage(nb, params);
 
     nb->AddPage(panel, "Camera");
@@ -15,12 +15,12 @@ GUI::GUI(const wxString& title, Parameters * params)
     Centre();
 }
 
-CameraPage::CameraPage(wxNotebook* parent)
+CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     :wxPanel(parent)
 {
-    wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(6, 2, 20, 20);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(7, 2, 20, 20);
 
     wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
     wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
@@ -30,9 +30,11 @@ CameraPage::CameraPage(wxNotebook* parent)
 
     wxCheckBox* cb = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
         wxPoint(20, 20));
-    wxCheckBox* cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
+    parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
         wxPoint(20, 20));
-    cb2->SetValue(true);
+    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Manual Calibration"),
+        wxPoint(20, 20));
+    //parentGUI->cb2->SetValue(false);
 
     fgs->Add(btn1);
     fgs->Add(cb);
@@ -45,19 +47,48 @@ CameraPage::CameraPage(wxNotebook* parent)
     fgs->Add(new wxStaticText(this, -1, wxT("5. Start up SteamVR!")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn5);
-    fgs->Add(cb2);
+    fgs->Add(parentGUI->cb2);
+    fgs->Add(parentGUI->cb3);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
+
+    //hbox->Add(cb3, 1, wxALL | wxEXPAND, 15);
+
+    parentGUI->posHbox = new wxBoxSizer(wxVERTICAL);
+    parentGUI->rotHbox = new wxBoxSizer(wxVERTICAL);
+
+    parentGUI->manualCalibX = new ValueInput(this, "X(cm):", 0);
+    parentGUI->manualCalibY = new ValueInput(this, "Y(cm):", 0);
+    parentGUI->manualCalibZ = new ValueInput(this, "Z(cm):", 0);
+    parentGUI->manualCalibA = new ValueInput(this, "A(°):", 0);
+    parentGUI->manualCalibB = new ValueInput(this, "B(°):", 0);
+    parentGUI->manualCalibC = new ValueInput(this, "C(°):", 0);
+
+    parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
+    parentGUI->rotHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
+    parentGUI->rotHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
+    parentGUI->rotHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
+
+    hbox->Add(parentGUI->posHbox, 1, wxALL | wxEXPAND, 15);
+    hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
+
+    //hbox2->Show(false);
+
     this->SetSizer(hbox);
+
+    //parentGUI->posHbox->Show(false);
+    //parentGUI->rotHbox->Show(false);
 }
 
 ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     :wxPanel(parent)
 {
     parameters = params;
-    wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(16, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
@@ -68,14 +99,16 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
     wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
     wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
+    wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
     wxStaticText* rotateText = new wxStaticText(this, -1, wxT("Rotate camera 90°"));
-    wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
-    wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
-    wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
+    //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
+    //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
+    //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
     wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
     wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
     wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
     wxStaticText* camWitdthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
+    wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
 
 
     cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
@@ -88,16 +121,20 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     usePredictiveField = new wxCheckBox(this, -1, wxT(""));
     usePredictiveField->SetValue(parameters->usePredictive);
     calibrationTrackerField = new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker));
+    ignoreTracker0Field = new wxCheckBox(this, -1, wxT(""));
+    ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
     rotateField = new wxCheckBox(this, -1, wxT(""));
     rotateField->SetValue(parameters->rotate);
-    offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
-    offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
-    offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
+    //offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
+    //offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
+    //offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
     circularField = new wxCheckBox(this, -1, wxT(""));
     circularField->SetValue(parameters->circularWindow);
     camFpsField = new wxTextCtrl(this, -1, std::to_string(parameters->camFps));
     camWidthField = new wxTextCtrl(this, -1, std::to_string(parameters->camWidth));
     camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
+    cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
+    cameraSettingsField->SetValue(parameters->cameraSettings);
 
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
@@ -120,14 +157,16 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(searchWindowField);
     fgs->Add(calibrationTrackerText);
     fgs->Add(calibrationTrackerField);
+    fgs->Add(ignoreTracker0Text);
+    fgs->Add(ignoreTracker0Field);
     fgs->Add(usePredictiveText);
     fgs->Add(usePredictiveField);
-    fgs->Add(offsetxText);
-    fgs->Add(offsetxField);
-    fgs->Add(offsetyText);
-    fgs->Add(offsetyField);
-    fgs->Add(offsetzText);
-    fgs->Add(offsetzField);
+    //fgs->Add(offsetxText);
+    //fgs->Add(offsetxField);
+    //fgs->Add(offsetyText);
+    //fgs->Add(offsetyField);
+    //fgs->Add(offsetzText);
+    //fgs->Add(offsetzField);
     fgs->Add(circularText);
     fgs->Add(circularField);
     fgs->Add(camFpsText);
@@ -136,16 +175,29 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(camWidthField);
     fgs->Add(camHeightText);
     fgs->Add(camHeightField);
+    fgs->Add(cameraSettingsText);
+    fgs->Add(cameraSettingsField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn1);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
+
+
+
     this->SetSizer(hbox);
 }
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {
     try {
+        if (ignoreTracker0Field->GetValue() && std::stoi(calibrationTrackerField->GetValue().ToStdString()) == 0)
+        {
+            wxMessageDialog* dial = new wxMessageDialog(NULL,
+                wxT("Cannot use Tracker 0 for calibration if you use the ignore tracker 0 option! Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
+            dial->ShowModal();
+            return;
+        }
+
         parameters->cameraAddr = cameraAddrField->GetValue().ToStdString();
         parameters->trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());
         parameters->markerSize = std::stod(markerSizeField->GetValue().ToStdString()) / 100;
@@ -154,23 +206,89 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->searchWindow = std::stod(searchWindowField->GetValue().ToStdString());
         parameters->usePredictive = usePredictiveField->GetValue();
         parameters->calibrationTracker = std::stoi(calibrationTrackerField->GetValue().ToStdString());
+        parameters->ignoreTracker0 = ignoreTracker0Field->GetValue();
         parameters->rotate = rotateField->GetValue();
-        parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
-        parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
-        parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
+        //parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
+        //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
+        //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
         parameters->circularWindow = circularField->GetValue();
         parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
         parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
+        parameters->cameraSettings = cameraSettingsField->GetValue();
         parameters->Save();
     }
     catch (std::exception & e)
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-            wxT("Please enter appropriate values."), wxT("Error"), wxOK | wxICON_ERROR);
+            wxT("Please enter appropriate values. Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
         dial->ShowModal();
     }
+}
+ValueInput::ValueInput(wxPanel* parent, std::string nm, double val)
+    :wxPanel(parent)
+{
+    value = val;
+    wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
+    dwn1 = new wxButton(this, 1, "<", wxDefaultPosition, wxSize(25,25));
+    dwn2 = new wxButton(this, 2, "<<", wxDefaultPosition, wxSize(25, 25));
+    up1 = new wxButton(this, 3, ">", wxDefaultPosition, wxSize(25, 25));
+    up2 = new wxButton(this, 4, ">>", wxDefaultPosition, wxSize(25, 25));
+    input = new wxTextCtrl(this, 5, std::to_string(0));
+
+    Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ValueInput::ButtonPressed));
+    Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(ValueInput::ButtonPressed));
+
+    wxStaticText* name = new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20));
+
+    hbox->Add(name);
+    hbox->Add(dwn2);
+    hbox->Add(dwn1);
+    hbox->Add(input);
+    hbox->Add(up1);
+    hbox->Add(up2);
+
+    this->SetSizer(hbox);
+
+}
+
+void ValueInput::SetValue(double val)
+{
+    input->ChangeValue(std::to_string(val));
+    value = val;
+}
+
+void ValueInput::ButtonPressed(wxCommandEvent &evt)
+{
+    int id = evt.GetId();
+    if (id == 1)
+    {
+        value -= 1;
+    }
+    if (id == 2)
+    {
+        value -= 10;
+    }
+    if (id == 3)
+    {
+        value += 1;
+    }
+    if (id == 4)
+    {
+        value += 10;
+    }
+    if (id == 5)
+    {
+        try {
+            value = std::stod(input->GetValue().ToStdString());
+        }
+        catch (std::exception& e)
+        {
+        }
+        return;
+    }
+    input->ChangeValue(std::to_string(value));
 }
 
 

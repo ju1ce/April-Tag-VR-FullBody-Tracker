@@ -33,7 +33,13 @@ public:
     bool mainThreadRunning = false;
     bool cameraRunning = false;
     bool previewCamera = false;
-    bool recalibrate = true;
+    bool recalibrate = false;
+    bool manualRecalibrate = false;
+
+    GUI* gui;
+
+    cv::Mat wtranslation = (cv::Mat_<double>(4, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    Quaternion<double> wrotation = Quaternion<double>(1, 0, 0, 0);
 
 private:
     void CameraLoop();
@@ -62,10 +68,7 @@ private:
     //Quaternion<double> q;
 
     image_u8_t* im;
-    void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);
-
-    cv::Mat wtranslation = (cv::Mat_<double>(4, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-    Quaternion<double> wrotation = Quaternion<double>(1, 0, 0, 0);
+    void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);  
 };
 
 class MyApp : public wxApp
@@ -73,6 +76,7 @@ class MyApp : public wxApp
     Tracker* tracker;
     Parameters* params;
     Connection* conn;
+    GUI* gui;
 
 public:
     virtual int OnExit();

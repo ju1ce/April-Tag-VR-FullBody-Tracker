@@ -30,6 +30,13 @@ void Parameters::Load()
 		fs["calibOffsetZ"] >> calibOffsetZ;
 		fs["circularWindow"] >> circularWindow;
 		fs["smoothingFactor"] >> smoothingFactor;
+		fs["ignoreTracker0"] >> ignoreTracker0;
+		fs["wtranslation"] >> wtranslation;
+		cv::Mat wrotmat;
+		fs["wrotation"] >> wrotmat;
+		fs["cameraSettings"] >> cameraSettings;
+		if(!wrotmat.empty())
+			wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
 		cv::FileNode fn = fs["trackers"];
 		if (!fn.empty())		//load all saved markers
 		{
@@ -84,6 +91,10 @@ void Parameters::Save()
 	fs << "calibOffsetZ" << calibOffsetZ;
 	fs << "circularWindow" << circularWindow;
 	fs << "smoothingFactor" << smoothingFactor;
+	fs << "ignoreTracker0" << ignoreTracker0;
+	fs << "wtranslation" << wtranslation;
+	fs <<"wrotation" << (cv::Mat_<double>(4,1) << wrotation.w,wrotation.x,wrotation.y,wrotation.z);
+	fs << "cameraSettings" << cameraSettings;
 	fs << "trackers";
 	fs << "{";
 	for (int i = 0; i < trackers.size(); i++)

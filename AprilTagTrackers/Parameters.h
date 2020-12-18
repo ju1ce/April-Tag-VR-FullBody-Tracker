@@ -2,6 +2,7 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/aruco.hpp>
+#include "Quaternion.h"
 
 class Parameters
 {
@@ -20,6 +21,7 @@ public:
 	double searchWindow = 0.25;
 	bool usePredictive = true;
 	int calibrationTracker = 0;
+	bool ignoreTracker0 = false;
 	bool rotate = false;
 	double calibOffsetX = 0;
 	double calibOffsetY = 1;
@@ -29,4 +31,7 @@ public:
 	int camFps = 30;
 	int camHeight = 0;
 	int camWidth = 0;
+	cv::Mat wtranslation;
+	Quaternion<double> wrotation;
+	bool cameraSettings = false;
 };
