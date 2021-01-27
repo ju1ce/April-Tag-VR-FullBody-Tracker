@@ -210,7 +210,9 @@ If you get no message, you probably just forgot to press the button. Restart Ste
 
 #### Start
 
-This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, and it will automatically be in calibration mode.
+This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, then check the calibration mode checkbox to set calibration.
+
+**NOTE: The new manual calibration mode has proven to be much simpler and more accurate. Use that instead!** 
 
 In the window, you can see the following things: The detected markers will have a green outline with their id written in blue. Around the markers, there will be blue circles: these represent the area that is searched during detection. If not all trackers are found, the entire vertical area is searched every second. You will see blue squares instead of circles when that happens. If you are in calibration mode, the calibration tracker will have a red-green-blue axis drawn to help calibration.
 
