@@ -194,6 +194,7 @@ void Tracker::StartCamera(std::string id)
     cap.set(cv::CAP_PROP_FPS, parameters->camFps);
     if(parameters->cameraSettings)
         cap.set(cv::CAP_PROP_SETTINGS, 1);
+    cap.set(cv::CAP_PROP_EXPOSURE, 1);
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
