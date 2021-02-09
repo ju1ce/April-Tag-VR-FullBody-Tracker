@@ -12,15 +12,19 @@ public:
     Connection(Parameters*);
     Parameters* parameters;
     void StartConnection();
-    void Send(int,double, double, double, double, double, double, double);
+    std::istringstream Send(std::string lpszWrite);
+    std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time);
+    std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
     int status = DISCONNECTED;
 private:
     void Connect();
-    std::vector<HANDLE> hpipe;
+    HANDLE hpipe;
     int pipeNum = 1;
-    char buffer[1024];
-    DWORD dwRead;
-    DWORD dwWritten;
+    const int BUFSIZE = 1024;
+    CHAR chReadBuf[1024];
+    BOOL fSuccess;
+    DWORD cbRead;
+    LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
 
 };
 
