@@ -868,19 +868,30 @@ void Tracker::MainLoop()
 
             if (parameters->ignoreTracker0 && i == 0)
                 continue;
-
-            if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
+            try
             {
-                for (int j = 0; j < 6; j++)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
                 {
-                    //push new values into previous values list end and remove the one on beggining
-                    if(prevLocValuesRaw[i][j].size() > 0)
-                        prevLocValuesRaw[i][j].erase(prevLocValuesRaw[i][j].begin());
-                }
-                boardFound[i] = false;
-                continue;
+                    for (int j = 0; j < 6; j++)
+                    {
+                        //push new values into previous values list end and remove the one on beggining
+                        if (prevLocValuesRaw[i][j].size() > 0)
+                            prevLocValuesRaw[i][j].erase(prevLocValuesRaw[i][j].begin());
+                    }
+                    boardFound[i] = false;
+                    continue;
+                }    
             }
-
+            catch (std::exception& e)
+            {
+                wxMessageDialog* dial = new wxMessageDialog(NULL,
+                    wxT("Something went wrong when estimating tracker pose. Try again! \nIf the problem persists, try to recalibrate camera and trackers."), wxT("Error"), wxOK | wxICON_ERROR);
+                dial->ShowModal();
+                cv::destroyWindow("out");
+                apriltag_detector_destroy(td);
+                mainThreadRunning = false;
+                return;
+            }
             boardFound[i] = true;
 
             double posValues[6] = { boardTvec[i][0],boardTvec[i][1],boardTvec[i][2],boardRvec[i][0],boardRvec[i][1],boardRvec[i][2] };
