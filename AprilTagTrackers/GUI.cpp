@@ -88,7 +88,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(16, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
@@ -100,7 +100,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
     wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
-    wxStaticText* rotateText = new wxStaticText(this, -1, wxT("Rotate camera 90°"));
+    wxStaticText* rotateClText = new wxStaticText(this, -1, wxT("Rotate camera clockwise"));
+    wxStaticText* rotateCounterClText = new wxStaticText(this, -1, wxT("Rotate camera counterclockwise"));
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
@@ -123,8 +124,10 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     calibrationTrackerField = new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker));
     ignoreTracker0Field = new wxCheckBox(this, -1, wxT(""));
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
-    rotateField = new wxCheckBox(this, -1, wxT(""));
-    rotateField->SetValue(parameters->rotate);
+    rotateClField = new wxCheckBox(this, -1, wxT(""));
+    rotateClField->SetValue(parameters->rotateCl);
+    rotateCounterClField = new wxCheckBox(this, -1, wxT(""));
+    rotateCounterClField->SetValue(parameters->rotateCounterCl);
     //offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
     //offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
     //offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
@@ -145,8 +148,10 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(trackerNumField);
     fgs->Add(markerSizeText);
     fgs->Add(markerSizeField);
-    fgs->Add(rotateText);
-    fgs->Add(rotateField);
+    fgs->Add(rotateClText);
+    fgs->Add(rotateClField);
+    fgs->Add(rotateCounterClText);
+    fgs->Add(rotateCounterClField);
     fgs->Add(prevValuesText);
     fgs->Add(prevValuesField);
     fgs->Add(smoothingText);
@@ -207,7 +212,8 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->usePredictive = usePredictiveField->GetValue();
         parameters->calibrationTracker = std::stoi(calibrationTrackerField->GetValue().ToStdString());
         parameters->ignoreTracker0 = ignoreTracker0Field->GetValue();
-        parameters->rotate = rotateField->GetValue();
+        parameters->rotateCl = rotateClField->GetValue();
+        parameters->rotateCounterCl = rotateCounterClField->GetValue();
         //parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());

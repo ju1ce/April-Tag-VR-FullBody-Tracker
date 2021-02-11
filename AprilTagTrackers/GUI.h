@@ -78,7 +78,8 @@ private:
     wxCheckBox* usePredictiveField;
     wxCheckBox* ignoreTracker0Field;
     wxTextCtrl* calibrationTrackerField;
-    wxCheckBox* rotateField;
+    wxCheckBox* rotateClField;
+    wxCheckBox* rotateCounterClField;
     wxTextCtrl* offsetxField;
     wxTextCtrl* offsetyField;
     wxTextCtrl* offsetzField;

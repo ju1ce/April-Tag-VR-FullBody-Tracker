@@ -204,8 +204,7 @@ void Tracker::CameraLoop()
 {
     cv::Mat img;
     bool rotate = false;
-    if (parameters->rotate)
-        rotate = true;
+    int rotateFlag = -1;
     if (!cap.read(img))
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
@@ -215,8 +214,24 @@ void Tracker::CameraLoop()
         cap.release();
         return;
     }
-    if (rotate)
+    if (parameters->rotateCl && parameters->rotateCounterCl)
+    {
+        cv::rotate(img, img, cv::ROTATE_180);
+        rotate = true;
+        rotateFlag = cv::ROTATE_180;
+    }
+    else if (parameters->rotateCl)
+    {
         cv::rotate(img, img, cv::ROTATE_90_CLOCKWISE);
+        rotate = true;
+        rotateFlag = cv::ROTATE_90_CLOCKWISE;
+    }
+    else if (parameters->rotateCounterCl)
+    {
+        cv::rotate(img, img, cv::ROTATE_90_COUNTERCLOCKWISE);
+        rotate = true;
+        rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
+    }
     im = image_u8_create_stride(img.cols, img.rows, img.cols);
     while (cameraRunning)
     {     
@@ -229,7 +244,7 @@ void Tracker::CameraLoop()
             break;
         }
         if (rotate)
-            cv::rotate(img, img, cv::ROTATE_90_CLOCKWISE);
+            cv::rotate(img, img, rotateFlag);
         img.copyTo(retImage);
         imageReady = true;
         if (previewCamera)

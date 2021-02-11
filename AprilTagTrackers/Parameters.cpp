@@ -24,7 +24,8 @@ void Parameters::Load()
 		fs["searchWindow"] >> searchWindow;
 		fs["usePredictive"] >> usePredictive;
 		fs["calibrationTracker"] >> calibrationTracker;
-		fs["rotate"] >> rotate;
+		fs["rotateCl"] >> rotateCl;
+		fs["rotateCounterCl"] >> rotateCounterCl;
 		fs["calibOffsetX"] >> calibOffsetX;
 		fs["calibOffsetY"] >> calibOffsetY;
 		fs["calibOffsetZ"] >> calibOffsetZ;
@@ -85,7 +86,8 @@ void Parameters::Save()
 	fs << "searchWindow" << searchWindow;
 	fs << "usePredictive" << usePredictive;
 	fs << "calibrationTracker" << calibrationTracker;
-	fs << "rotate" << rotate;
+	fs << "rotateCl" << rotateCl;
+	fs << "rotateCounterCl" << rotateCounterCl;
 	fs << "calibOffsetX" << calibOffsetX;
 	fs << "calibOffsetY" << calibOffsetY;
 	fs << "calibOffsetZ" << calibOffsetZ;

@@ -22,7 +22,8 @@ public:
 	bool usePredictive = true;
 	int calibrationTracker = 0;
 	bool ignoreTracker0 = false;
-	bool rotate = false;
+	bool rotateCl = false;
+	bool rotateCounterCl = false;
 	double calibOffsetX = 0;
 	double calibOffsetY = 100;
 	double calibOffsetZ = 100;
