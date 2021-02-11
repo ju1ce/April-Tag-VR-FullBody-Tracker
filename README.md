@@ -210,7 +210,9 @@ If you get no message, you probably just forgot to press the button. Restart Ste
 
 #### Start
 
-This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, and it will automatically be in calibration mode.
+This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, then check the calibration mode checkbox to set calibration.
+
+**NOTE: The new manual calibration mode has proven to be much simpler and more accurate. Use that instead!** 
 
 In the window, you can see the following things: The detected markers will have a green outline with their id written in blue. Around the markers, there will be blue circles: these represent the area that is searched during detection. If not all trackers are found, the entire vertical area is searched every second. You will see blue squares instead of circles when that happens. If you are in calibration mode, the calibration tracker will have a red-green-blue axis drawn to help calibration.
 
@@ -225,6 +227,10 @@ If you cant see the trackers: First make sure that you have your SteamVR dashboa
 If, during calibration, moving the tracker to the correct place means moving it outside of the view of the camera, refer to the calibration offset parameters.
 
 If you can move the tracker to the correct position, but cant rotate it correctly (the tracker will rotate away from the camera and no longer be detected before the positions of leg trackers match), make sure that your camera is in front of your SteamVR playspace. (refer to the Connect to SteamVR part)
+
+##### Manual calibration
+
+Alternatively, you can use the manual calibration mode. For this, check the Manual calibration checkbox. Now move the X,Y,Z values untill the hip tracker irl alligns with the SteamVR one, then manualy change the rotation (A,B,C) values untill the leg trackers align. Then uncheck it, and the trackers should be calibrated.
 
 ### Parameters
 
@@ -282,7 +288,7 @@ The ID of the tracker that will be used for SteamVR playspace calibration. By de
 
 This parameters sets if, when estimating the 3d position of a detected tracker, the algorithm should use the previous position as a guess to help it or not. Should ticked unless you know what you are doing.
 
-#### X/Y/Z calibration offset:
+#### X/Y/Z calibration offset (MOVED TO CAMERA SCREEN):
 
 This parameter sets the position, at which you have to calibrate the marker. It is in SteamVR coordinates. By default, this means the center of your playspace, one meter above ground. In some cases, this position will not be seen on the camera, and you will have to change it. (Usualy, lowering the Y axis (up/down) should be enough.)
 
@@ -304,7 +310,6 @@ On some cameras, and usualy with OBS, the camera will be opened with the wrong r
 
 ### Known issues:
 
-* Sometimes an extra blue circle will appear, which may slow down detection as it causes a larger area to be searched than necessary. You can restart detection to fix this issue. (just press Start twice to stop and start again). This can be seen in the VRChat demo.
 * A tracker may face the wrong direction if only one marker is seen. This can be seen in the Beatsaber demo video.
 
 ### TODO: 
