@@ -527,6 +527,9 @@ void Tracker::CalibrateTracker()
             cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, rvec, tvec, parameters->markerSize);
         }
         */
+
+        float maxDist = 0.3;
+
         for (int i = 0; i < boardIds.size(); i++)
         {
             cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], dictionary, boardIds[i]);
@@ -534,7 +537,7 @@ void Tracker::CalibrateTracker()
             //bool boardFound = false;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i]) > 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], false) > 0)
                 {
                     cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.1);
                     boardFound[i] = true;
@@ -554,6 +557,8 @@ void Tracker::CalibrateTracker()
                 mainThreadRunning = false;
                 return;
             }
+
+            std::string testStr = std::to_string(boardTvec[i][0]) + " " + std::to_string(boardTvec[i][1]) + " " + std::to_string(boardTvec[i][2]);
 
             for (int j = 0; j < ids.size(); j++)
             {
@@ -575,6 +580,12 @@ void Tracker::CalibrateTracker()
                     }
                     if (boardFound[i])
                     {
+                        if (tvecs[j][2] > maxDist)
+                        {
+                            drawMarker(image, corners[j], cv::Scalar(255, 0, 255));
+                            continue;
+                        }
+
                         drawMarker(image, corners[j], cv::Scalar(0, 255, 255));
                         std::vector<cv::Point3f> marker;
                         transformMarkerSpace(modelMarker, boardRvec[i], boardTvec[i], rvecs[j], tvecs[j], &marker);
@@ -719,7 +730,7 @@ void Tracker::MainLoop()
     cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
     stationPos = wtranslation * stationPos;
 
-    Quaternion<double> stationQ = wrotation * Quaternion<double>(1, 0, 0, 0);
+    Quaternion<double> stationQ = Quaternion<double>(0, 0, 1, 0) * (wrotation * Quaternion<double>(1, 0, 0, 0));
 
     double a = -stationPos.at<double>(0, 0);
     double b = stationPos.at<double>(1, 0);
@@ -785,6 +796,45 @@ void Tracker::MainLoop()
             image.copyTo(dstImage, mask);
             image = dstImage;
             //cv::imshow("test", image);
+        }
+
+        if (manualRecalibrate)
+        {
+            //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
+            cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
+            cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
+            cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) *3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
+            /*
+            std::string teststr = std::to_string(calibRodr[0]) + " " + std::to_string(calibRodr[1]) + " " + std::to_string(calibRodr[2]);
+
+            wxMessageDialog* dial = new wxMessageDialog(NULL,
+                teststr, wxT("Error"), wxOK | wxICON_ERROR);
+            dial->ShowModal();
+            */
+            wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0, 0, 0), calibPos(0), calibPos(1), calibPos(2));
+            //wrotation = rodr2quat(calibRodr[0], calibRodr[1], calibRodr[2]);
+            //wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
+            wrotation = mRot2Quat(eulerAnglesToRotationMatrix(cv::Vec3f(calibRot)));
+            /*
+            teststr = std::to_string(wrotation.w) + " " + std::to_string(wrotation.x) + " " + std::to_string(wrotation.y) + " " + std::to_string(wrotation.z);
+
+            dial = new wxMessageDialog(NULL,
+                teststr, wxT("Error"), wxOK | wxICON_ERROR);
+            dial->ShowModal();
+
+            Sleep(2000);
+            */
+            cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
+            stationPos = wtranslation * stationPos;
+
+            Quaternion<double> stationQ = Quaternion<double>(0, 0, 1, 0) * (wrotation * Quaternion<double>(1, 0, 0, 0));
+
+            double a = -stationPos.at<double>(0, 0);
+            double b = stationPos.at<double>(1, 0);
+            double c = -stationPos.at<double>(2, 0);
+
+            connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
+
         }
 
         detectMarkersApriltag(image, &corners, &ids, &centers, td);
@@ -923,35 +973,6 @@ void Tracker::MainLoop()
             //cv::putText(drawImg, std::to_string(boardRvec[i][0]) + ", " + std::to_string(boardRvec[i][1]) + ", " + std::to_string(boardRvec[i][2]), cv::Point(10, 80), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
             connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-0.05);
-            if (recalibrate && i == parameters->calibrationTracker)
-            {
-                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.10);
-                cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
-                wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], calibPos(0), calibPos(1), calibPos(2));
-                wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
-            }
-            else if (manualRecalibrate && i == parameters->calibrationTracker)
-            {
-                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.10);
-                //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
-                cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
-                cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
-                wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0,0,0), calibPos(0), calibPos(1), calibPos(2));
-                // wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
-                wrotation = mRot2Quat(eulerAnglesToRotationMatrix(cv::Vec3f(calibRot))).conjugate();
-
-                cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0,0,0,1);
-                stationPos = wtranslation * stationPos;
-
-                Quaternion<double> stationQ = Quaternion<double>(0, 0, 1, 0) * (wrotation * Quaternion<double>(1, 0, 0, 0)) * Quaternion<double>(0, 0, 1, 0);
-
-                double a = -stationPos.at<double>(0, 0);
-                double b = stationPos.at<double>(1, 0);
-                double c = -stationPos.at<double>(2, 0);
-
-                connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
-
-            }
         }
 
         if (ids.size() > 0)

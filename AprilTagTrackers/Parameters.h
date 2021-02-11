@@ -24,8 +24,8 @@ public:
 	bool ignoreTracker0 = false;
 	bool rotate = false;
 	double calibOffsetX = 0;
-	double calibOffsetY = 1;
-	double calibOffsetZ = 0;
+	double calibOffsetY = 100;
+	double calibOffsetZ = 100;
 	bool circularWindow = true;
 	double smoothingFactor = 0.7;
 	int camFps = 30;

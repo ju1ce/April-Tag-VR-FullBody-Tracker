@@ -168,7 +168,7 @@ cv::Mat getSpaceCalibEuler(cv::Vec3d rvec, cv::Vec3d tvec, double xOffset, doubl
 		wtranslation.at<double>(3, x) = 0;
 	}
 	wtranslation.at<double>(3, 3) = 1;
-	wtranslation = wtranslation.inv();
+	//wtranslation = wtranslation.inv();
 	//we add the values we sent to our driver to our matrix
 	wtranslation.at<double>(0, 3) += xOffset;
 	wtranslation.at<double>(1, 3) += yOffset;
@@ -202,7 +202,7 @@ cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f& theta)
 
 
 	// Combined rotation matrix
-	cv::Mat R = R_z * R_y * R_x;
+	cv::Mat R = R_y * R_x * R_z;
 
 	return R;
 

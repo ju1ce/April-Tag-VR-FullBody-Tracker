@@ -50,7 +50,7 @@ void Connection::Connect()
 	if (word != "numtrackers")
 	{
 		wxMessageDialog* dial = new wxMessageDialog(NULL,
-			word, wxT("Error"), wxOK | wxICON_ERROR);
+			wxT("SteamVr is not running or the driver is not installed."), wxT("Error"), wxOK | wxICON_ERROR);
 		dial->ShowModal();
 		status = DISCONNECTED;
 		return;
