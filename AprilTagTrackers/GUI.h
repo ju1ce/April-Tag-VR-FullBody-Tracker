@@ -18,6 +18,7 @@ private:
     wxButton* up2;
 
     void ButtonPressed(wxCommandEvent&);
+    void MouseScroll(wxMouseEvent&);
     
 
 };

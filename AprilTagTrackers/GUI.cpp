@@ -239,6 +239,7 @@ ValueInput::ValueInput(wxPanel* parent, std::string nm, double val)
 
     Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ValueInput::ButtonPressed));
     Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(ValueInput::ButtonPressed));
+    Connect(wxEVT_MOUSEWHEEL, wxMouseEventHandler(ValueInput::MouseScroll));
 
     wxStaticText* name = new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20));
 
@@ -257,6 +258,19 @@ void ValueInput::SetValue(double val)
 {
     input->ChangeValue(std::to_string(val));
     value = val;
+}
+
+void ValueInput::MouseScroll(wxMouseEvent& evt)
+{
+    if (evt.GetWheelRotation() > 0)
+    {
+        value += 1;
+    }
+    else
+    {
+        value -= 1;
+    }
+    input->ChangeValue(std::to_string(value));
 }
 
 void ValueInput::ButtonPressed(wxCommandEvent &evt)
