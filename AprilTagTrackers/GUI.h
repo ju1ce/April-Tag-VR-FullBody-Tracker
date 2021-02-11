@@ -86,6 +86,7 @@ private:
     wxCheckBox* circularField;
     wxTextCtrl* smoothingField;
     wxCheckBox* cameraSettingsField;
+    wxCheckBox* chessboardCalibField;
     void SaveParams(wxCommandEvent& );
 };
 

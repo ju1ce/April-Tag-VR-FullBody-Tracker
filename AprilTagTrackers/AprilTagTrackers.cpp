@@ -278,8 +278,117 @@ void Tracker::StartCameraCalib()
     }
 
     mainThreadRunning = true;
-    mainThread = std::thread(&Tracker::CalibrateCamera, this);
+    if(!parameters->chessboardCalib)
+        mainThread = std::thread(&Tracker::CalibrateCameraCharuco, this);
+    else
+        mainThread = std::thread(&Tracker::CalibrateCamera, this);
     mainThread.detach();
+}
+
+void Tracker::CalibrateCameraCharuco()
+{
+    //function to calibrate our camera
+
+    bool success;
+
+    cv::Mat image;
+
+    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+    cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
+
+    //generate and show our charuco board that will be used for calibration
+    cv::Ptr<cv::aruco::CharucoBoard> board = cv::aruco::CharucoBoard::create(8, 7, 0.04f, 0.02f, dictionary);
+    cv::Mat boardImage;
+    //board->draw(cv::Size(1500, 1000), boardImage, 10, 1);
+    //imshow("calibration", boardImage);
+    //cv::imwrite("charuco_board.jpg", boardImage);
+    //cv::waitKey(1);
+
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds;
+
+    //set our detectors marker border bits to 1 since thats what charuco uses
+    params->markerBorderBits = 1;
+
+    int framesSinceLast = -2 * parameters->camFps;
+
+    int i = 0;
+    //get calibration data from 20 images
+    while (i < 15)
+    {
+        if (!mainThreadRunning || !cameraRunning)
+        {
+            cv::destroyAllWindows();
+            return;
+        }
+        while (!imageReady)
+            Sleep(1);
+        imageReady = false;
+        retImage.copyTo(image);
+        cv::putText(image, std::to_string(i) + "/15", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        cv::Mat drawImg;
+        int cols, rows;
+        if (image.cols > image.rows)
+        {
+            cols = image.cols * drawImgSize / image.rows;
+            rows = drawImgSize;
+        }
+        else
+        {
+            cols = drawImgSize;
+            rows = image.rows * drawImgSize / image.cols;
+        }
+        cv::resize(image, drawImg, cv::Size(cols, rows));
+        cv::imshow("out", drawImg);
+        char key = (char)cv::waitKey(1);
+        framesSinceLast++;
+        if (key != -1 || framesSinceLast > parameters->camFps)
+        {
+            framesSinceLast = 0;
+            //if any button was pressed
+            cvtColor(image, image, cv::COLOR_BGR2GRAY);
+
+            std::vector<int> markerIds;
+            std::vector<std::vector<cv::Point2f>> markerCorners;
+
+            //detect our markers
+            cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params);
+
+            if (markerIds.size() > 0)
+            {
+                //if markers were found, try to add calibration data
+                std::vector<cv::Point2f> charucoCorners;
+                std::vector<int> charucoIds;
+                //using data from aruco detection we refine the search of chessboard corners for higher accuracy
+                cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds);
+                if (charucoIds.size() > 5)
+                {
+                    //if corners were found, we draw them
+                    cv::aruco::drawDetectedCornersCharuco(image, charucoCorners, charucoIds);
+                    //we then add our corners to the array
+                    allCharucoCorners.push_back(charucoCorners);
+                    allCharucoIds.push_back(charucoIds);
+                    i++;
+                }
+            }
+            imshow("out", image);
+            cv::waitKey(1000);
+        }
+    }
+    cv::Mat cameraMatrix, distCoeffs, R, T;
+
+    //calibrate camera using our data and save to our global params cameraMatrix and distCoeffs
+    cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T, 0);
+
+    parameters->camMat = cameraMatrix;
+    parameters->distCoefs = distCoeffs;
+    parameters->Save();
+    mainThreadRunning = false;
+    cv::destroyAllWindows();
+    wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxT("Calibration complete."), wxT("Info"), wxOK);
+    dial->ShowModal();
+
 }
 
 void Tracker::CalibrateCamera()
@@ -303,7 +412,8 @@ void Tracker::CalibrateCamera()
         }
     }
     //cv::namedWindow("Chessboard", cv::WINDOW_KEEPRATIO);
-    imshow("Chessboard", chessBoard);
+    //imshow("Chessboard", chessBoard);
+    //cv::imwrite("chessboard.png", chessBoard);
 
     std::vector<std::vector<cv::Point3f>> objpoints;
     std::vector<std::vector<cv::Point2f>> imgpoints;

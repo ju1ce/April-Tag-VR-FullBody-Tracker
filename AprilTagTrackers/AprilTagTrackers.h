@@ -44,6 +44,7 @@ public:
 private:
     void CameraLoop();
     void CalibrateCamera();
+    void CalibrateCameraCharuco();
     void CalibrateTracker();
     void MainLoop();
 

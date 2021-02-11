@@ -36,6 +36,7 @@ void Parameters::Load()
 		cv::Mat wrotmat;
 		fs["wrotation"] >> wrotmat;
 		fs["cameraSettings"] >> cameraSettings;
+		fs["chessboardCalib"] >> chessboardCalib;
 		if(!wrotmat.empty())
 			wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
 		cv::FileNode fn = fs["trackers"];
@@ -97,6 +98,7 @@ void Parameters::Save()
 	fs << "wtranslation" << wtranslation;
 	fs <<"wrotation" << (cv::Mat_<double>(4,1) << wrotation.w,wrotation.x,wrotation.y,wrotation.z);
 	fs << "cameraSettings" << cameraSettings;
+	fs << "chessboardCalib" << chessboardCalib;
 	fs << "trackers";
 	fs << "{";
 	for (int i = 0; i < trackers.size(); i++)

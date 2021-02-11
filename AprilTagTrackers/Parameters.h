@@ -35,4 +35,5 @@ public:
 	cv::Mat wtranslation;
 	Quaternion<double> wrotation;
 	bool cameraSettings = false;
+	bool chessboardCalib = false;
 };

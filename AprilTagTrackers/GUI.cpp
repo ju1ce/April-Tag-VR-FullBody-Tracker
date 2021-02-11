@@ -24,7 +24,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
 
     wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
     wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
-    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, "4. Connect to SteamVR");
+    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, "5. Connect to SteamVR");
     wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
     wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "6. Start/Stop");
 
@@ -42,9 +42,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(btn4);
+    fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(new wxStaticText(this, -1, wxT("5. Start up SteamVR!")), 0, wxEXPAND);
+    fgs->Add(btn4);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn5);
     fgs->Add(parentGUI->cb2);
@@ -88,7 +88,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(16, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(17, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
@@ -110,6 +110,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
     wxStaticText* camWitdthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
     wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
+    wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
 
 
     cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
@@ -138,6 +139,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
     cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
     cameraSettingsField->SetValue(parameters->cameraSettings);
+    chessboardCalibField = new wxCheckBox(this, -1, wxT(""));
+    chessboardCalibField->SetValue(parameters->chessboardCalib);
 
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
@@ -182,6 +185,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(camHeightField);
     fgs->Add(cameraSettingsText);
     fgs->Add(cameraSettingsField);
+    fgs->Add(chessboardCalibText);
+    fgs->Add(chessboardCalibField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn1);
@@ -223,6 +228,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
         parameters->cameraSettings = cameraSettingsField->GetValue();
+        parameters->chessboardCalib = chessboardCalibField->GetValue();
         parameters->Save();
     }
     catch (std::exception & e)
