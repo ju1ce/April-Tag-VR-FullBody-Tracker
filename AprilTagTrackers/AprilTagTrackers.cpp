@@ -73,6 +73,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
 {
     if (event.GetId() == GUI::SPACE_CALIB_CHECKBOX)
     {
+        //deprecated
         if (event.IsChecked())
         {
             tracker->recalibrate = true;
@@ -106,27 +107,15 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             tracker->manualRecalibrate = true;
             gui->posHbox->Show(true);
             gui->rotHbox->Show(true);
-            gui->cb2->SetValue(false);
+            //gui->cb2->SetValue(false);
             tracker->recalibrate = false;
-
-            cv::Mat mrot = cv::Mat_<double>(3, 3);
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    mrot.at<double>(i, j) = tracker->wtranslation.at<double>(i, j);
-                }
-            }
-            mrot = mrot.inv();
-
-            cv::Vec3d eulers = rotationMatrixToEulerAngles(mrot);
 
             gui->manualCalibX->SetValue(params->calibOffsetX);
             gui->manualCalibY->SetValue(params->calibOffsetY);
             gui->manualCalibZ->SetValue(params->calibOffsetZ);
-            gui->manualCalibA->SetValue(eulers(0) / 0.01745);
-            gui->manualCalibB->SetValue(eulers(1) / 0.01745);
-            gui->manualCalibC->SetValue(eulers(2) / 0.01745);
+            gui->manualCalibA->SetValue(params->calibOffsetA);
+            gui->manualCalibB->SetValue(params->calibOffsetB);
+            gui->manualCalibC->SetValue(params->calibOffsetC);
 
         }
         else
@@ -136,6 +125,9 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             params->calibOffsetX = gui->manualCalibX->value;
             params->calibOffsetY = gui->manualCalibY->value;
             params->calibOffsetZ = gui->manualCalibZ->value;
+            params->calibOffsetA = gui->manualCalibA->value;
+            params->calibOffsetB = gui->manualCalibB->value;
+            params->calibOffsetC = gui->manualCalibC->value;
             params->Save();
             tracker->manualRecalibrate = false;
             gui->posHbox->Show(false);
@@ -247,6 +239,7 @@ void Tracker::CameraLoop()
             cv::rotate(img, img, rotateFlag);
         img.copyTo(retImage);
         imageReady = true;
+        last_frame_time = clock();
         if (previewCamera)
         {
             cv::imshow("Preview", img);
@@ -371,7 +364,8 @@ void Tracker::CalibrateCameraCharuco()
                     i++;
                 }
             }
-            imshow("out", image);
+            cv::resize(image, drawImg, cv::Size(cols, rows));
+            cv::imshow("out", drawImg);
             cv::waitKey(1000);
         }
     }
@@ -1108,7 +1102,14 @@ void Tracker::MainLoop()
             //cv::putText(drawImg, std::to_string(q.w) + ", " + std::to_string(q.x) + ", " + std::to_string(q.y) + ", " + std::to_string(q.z), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             //cv::putText(drawImg, std::to_string(boardRvec[i][0]) + ", " + std::to_string(boardRvec[i][1]) + ", " + std::to_string(boardRvec[i][2]), cv::Point(10, 80), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
-            connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-0.05);
+            end = clock();
+            double frameTime = double(end - last_frame_time) / double(CLOCKS_PER_SEC);
+
+
+            //send all the values
+            //frame time is how much time passed since frame was acquired. It doesnt work as expected...
+            connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency);
+
         }
 
         if (ids.size() > 0)

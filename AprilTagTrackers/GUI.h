@@ -70,6 +70,7 @@ private:
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;
     wxTextCtrl* camHeightField;
+    wxTextCtrl* camLatencyField;
     wxTextCtrl* trackerNumField;
     wxTextCtrl* markerSizeField;
     wxTextCtrl* prevValuesField;

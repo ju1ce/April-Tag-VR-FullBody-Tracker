@@ -27,6 +27,9 @@ public:
 	double calibOffsetX = 0;
 	double calibOffsetY = 100;
 	double calibOffsetZ = 100;
+	double calibOffsetA = 180;
+	double calibOffsetB = 0;
+	double calibOffsetC = 0;
 	bool circularWindow = true;
 	double smoothingFactor = 0.7;
 	int camFps = 30;
@@ -36,4 +39,5 @@ public:
 	Quaternion<double> wrotation;
 	bool cameraSettings = false;
 	bool chessboardCalib = false;
+	double camLatency = 0;
 };

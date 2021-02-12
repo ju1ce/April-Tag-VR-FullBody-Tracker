@@ -29,6 +29,9 @@ void Parameters::Load()
 		fs["calibOffsetX"] >> calibOffsetX;
 		fs["calibOffsetY"] >> calibOffsetY;
 		fs["calibOffsetZ"] >> calibOffsetZ;
+		fs["calibOffsetA"] >> calibOffsetA;
+		fs["calibOffsetB"] >> calibOffsetB;
+		fs["calibOffsetC"] >> calibOffsetC;
 		fs["circularWindow"] >> circularWindow;
 		fs["smoothingFactor"] >> smoothingFactor;
 		fs["ignoreTracker0"] >> ignoreTracker0;
@@ -37,6 +40,7 @@ void Parameters::Load()
 		fs["wrotation"] >> wrotmat;
 		fs["cameraSettings"] >> cameraSettings;
 		fs["chessboardCalib"] >> chessboardCalib;
+		fs["camLatency"] >> camLatency;
 		if(!wrotmat.empty())
 			wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
 		cv::FileNode fn = fs["trackers"];
@@ -92,6 +96,9 @@ void Parameters::Save()
 	fs << "calibOffsetX" << calibOffsetX;
 	fs << "calibOffsetY" << calibOffsetY;
 	fs << "calibOffsetZ" << calibOffsetZ;
+	fs << "calibOffsetA" << calibOffsetA;
+	fs << "calibOffsetB" << calibOffsetB;
+	fs << "calibOffsetC" << calibOffsetC;
 	fs << "circularWindow" << circularWindow;
 	fs << "smoothingFactor" << smoothingFactor;
 	fs << "ignoreTracker0" << ignoreTracker0;
@@ -99,6 +106,7 @@ void Parameters::Save()
 	fs <<"wrotation" << (cv::Mat_<double>(4,1) << wrotation.w,wrotation.x,wrotation.y,wrotation.z);
 	fs << "cameraSettings" << cameraSettings;
 	fs << "chessboardCalib" << chessboardCalib;
+	fs << "camLatency" << camLatency;
 	fs << "trackers";
 	fs << "{";
 	for (int i = 0; i < trackers.size(); i++)
