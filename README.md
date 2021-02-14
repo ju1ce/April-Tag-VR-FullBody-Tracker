@@ -9,7 +9,7 @@ This version uses the much more accurate AprilTag system and includes many impro
 
 If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: juice#6370
 
-The program can be downloaded from the releases tab.
+The program can be downloaded from the [releases](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases) tab.
 
 ![demo](images/demo.gif)
 
