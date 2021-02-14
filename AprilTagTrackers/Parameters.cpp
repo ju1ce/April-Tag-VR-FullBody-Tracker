@@ -41,6 +41,7 @@ void Parameters::Load()
 		fs["cameraSettings"] >> cameraSettings;
 		fs["chessboardCalib"] >> chessboardCalib;
 		fs["camLatency"] >> camLatency;
+		fs["circularMarkers"] >> circularMarkers;
 		if(!wrotmat.empty())
 			wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
 		cv::FileNode fn = fs["trackers"];
@@ -107,6 +108,7 @@ void Parameters::Save()
 	fs << "cameraSettings" << cameraSettings;
 	fs << "chessboardCalib" << chessboardCalib;
 	fs << "camLatency" << camLatency;
+	fs << "circularMarkers" << circularMarkers;
 	fs << "trackers";
 	fs << "{";
 	for (int i = 0; i < trackers.size(); i++)

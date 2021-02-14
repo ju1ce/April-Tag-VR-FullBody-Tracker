@@ -20,6 +20,7 @@
 
 #include <apriltag.h>
 #include <tagStandard41h12.h>
+#include <tagCircle21h7.h>
 
 class Tracker
 {

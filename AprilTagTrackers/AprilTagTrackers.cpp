@@ -542,7 +542,8 @@ void Tracker::StartTrackerCalib()
     //make a new thread with message box, and stop main thread when we press OK
     std::thread th{ [=]() {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n\
+        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,\
+ neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n\
 Green: This marker is calibrated and can be used to calibrate other markers.\n\
 Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n\
 Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n\
@@ -618,7 +619,11 @@ void Tracker::CalibrateTracker()
 
     apriltag_detector_t* td = apriltag_detector_create();
     td->quad_decimate = parameters->quadDecimate;
-    apriltag_family_t* tf = tagStandard41h12_create();
+    apriltag_family_t* tf;
+    if(!parameters->circularMarkers)
+        tf = tagStandard41h12_create();
+    else
+        tf = tagCircle21h7_create();
     apriltag_detector_add_family(td, tf);
 
     int markersPerTracker = 45;
@@ -873,7 +878,12 @@ void Tracker::MainLoop()
 
     apriltag_detector_t* td = apriltag_detector_create();
     td->quad_decimate = parameters->quadDecimate;
-    apriltag_family_t* tf = tagStandard41h12_create();
+    apriltag_family_t* tf;
+    if (!parameters->circularMarkers)
+        tf = tagStandard41h12_create();
+    else
+        tf = tagCircle21h7_create();
+    apriltag_detector_add_family(td, tf);
     apriltag_detector_add_family(td, tf);
 
     int framesSinceLastSeen = 0;

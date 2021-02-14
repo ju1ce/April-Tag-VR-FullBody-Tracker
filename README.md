@@ -1,7 +1,7 @@
 # April-Tag-VR-FullBody-Tracker
 Full-body tracking in VR using AprilTag markers.
 
-This is my second attemt at creating a full-body tracking system using fiducial markers. This should enable people to get fullbody tracking for free, using only a phone and some cardboard. It is possible to get pretty good tracking with trackers of sizes as small as 10cm and a PS eye camera of 640x480 resolution. Increasing the marker size or using a higher resolution and faster phone camera further improves tracking.
+This is my second attempt at creating a full-body tracking system using fiducial markers. This should enable people to get fullbody tracking for free, using only a phone and some cardboard. It is possible to get pretty good tracking with trackers of sizes as small as 10cm and a PS eye camera of 640x480 resolution. Increasing the marker size or using a higher resolution and faster phone camera further improves tracking.
 
 To use, you will have to make three trackers - one for each leg and one for hips. Using only leg trackers will not work in VRChat!
 
@@ -14,6 +14,24 @@ The program can be downloaded from the releases tab.
 ![demo](images/demo.gif)
 
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
+
+
+## Table of contents
+
+- [Discord server](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#we-now-have-a-discord-server)
+- [Connecting a camera](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#connecting-a-camera)
+- [The trackers](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#the-trackers)
+- [Installing the SteamVR driver](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#installing-the-steamvr-driver)
+- [Running Apriltag Trackers](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#running-apriltag-trackers)
+    - [Camera tab](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#camera-tab)
+        - [Start/Stop camera](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#startstop-camera)
+        - [Calibrate camera](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#calibrate-camera)
+        - [Calibrate trackers](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#calibrate-trackers)
+        - [Connect to SteamVR](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#connect-to-steamvr)
+        - [Start](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#start)
+    - [Parameters](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#parameters)
+    - [Known issues](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#known-issues)
+    - [TODO](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#todo)
 
 ## We now have a discord server!
 https://discord.gg/g2ctkXB4bb
@@ -146,7 +164,7 @@ This will ensure that every time we launch steamvr, it will attempt to connect t
 
 ## Running Apriltag Trackers
 
-You can now run Start_ApriltagTrackers.bat! The first time you launch it, you may see a black console window for a few seconds. Below is a quick guide on what the buttons and parameters do.
+You can now run Start_ApriltagTrackers.bat! If you cant find it, make sure you downloaded the correct files from the releases tab. The first time you launch it, you may see a black console window for a few seconds. Below is a quick guide on what the buttons and parameters do.
 
 ### Camera tab
 
@@ -156,27 +174,29 @@ This is the main tab of the program that you will use most of the time.
 
 Start the camera or stop it if its already running. This button will open the camera that you have written in the parameters tab. To ensure its working correctly, enable the Show preview checkbox.
 
-If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id. You may also have to set the correct camera width/height in the parameters.
+If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id - it will be in the range of 0-10. You may also have to set the correct camera width/height in the parameters.
 
 If the camera is of incorrect resolution/shrunk, refer to the camera width and height parameters.
 
 #### Calibrate camera
 
-This will start the camera calibration sequence. Turn off camera preview before starting. This must only be done the first time you use this program and if you change the camera you are using.
+This will start the camera calibration sequence. Print the charuco_board.jpg from print files and place it onto a flat surface. Turn off camera preview before starting. This must only be done the first time you use this program and if you change the camera you are using.
 
-Two windows will open: one with a chessboard pattern, and one showing your camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the chessboard pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate. If you can, try to use an actual or printed chessboard instead of the one on the screen.
+A window will open with the camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the charuco pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate.
 
-Sometimes, if the picture is too blurry or the lightning is bad, the chessboard pattern wont be detected. This will happen more often on an on-screen chessboard and shouldnt be a problem if you print it.
+Sometimes, if the picture is too blurry or the lightning is bad, the pattern wont be detected. Make sure you have uniform lighting.
+
+Alternatively, you can display the image on the screen and calibrate with that, but the calibration may be worse or not work at all. You can also switch to the old calibration using a chessboard in the params, in case you cant get the new board printed but you have a chessboard around.
 
 ![camera_calibration](images/camera_calib.gif)
 
-Using an wooden chessboard for calibration. If you use a screen, the chessboard may not be detected on every picture.
+Using an wooden chessboard for calibration. While the board is diffrent from the charuco board you will use, the process is the same.
 
 #### Calibrate trackers
 
 This will start tracker calibration. Camera should be running and calibrated. Before starting, put on your trackers in the same way you will use them in game. You must only do this step on first launch and whenever you change the trackers.
 
-Capture the trackers with the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Repeat this process until all markers on the trackers are green.
+Capture the trackers with the camera by moving a tracker closer than 30cm to the camera. To add a marker to the tracker, film it while another, already added marker is seen. A green marker means its already added, yellow means it is being added, and red means it cannot add it because no already added marker is seen. Purple means the tracker is too far away from the camera. Repeat this process until all markers on the trackers are green, then click ok.
 
 If some of the markers only have a thin blue outline, it means the markers are detected, but do not belong to any of the used trackers. You have probably set a too low number of trackers in the parameters.
 
@@ -188,49 +208,33 @@ Example of tracker calibration. Rotate the trackers around a bit. The axis shoul
 
 #### Connect to SteamVR
 
-When you press this button, the program will start waiting for steamVR to start. Start it from steam. If the connection will succeed, you will se the trackers on the status window, next to the hmd and controllers.
+Make sure SteamVR is started. When you press this button, the program will connect. If the connection will succeed, you will se the trackers and a base station on the status window, next to the hmd and controllers.
 
-If you quit SteamVR but not the program, you have to press this button again before starting SteamVR again. Press yes when it asks to restart the connection.
+If you quit SteamVR but not the program, you have to press this button again after starting it again. Press yes when it asks to restart the connection.
 
 ![steamvr_connection](images/steamvr_connect.gif)
 
-Place your camera somewhere somewhere around hip height. Make sure your camera will be in front of your SteamVR playpace. With Index and Vive, this should be towards your PC. With Oculus, this is the direction you were facing while calibrating your guardian. You can check the direction by going into SteamVR with SteamVR Home disabled - there will be a grey arrow on the ground indicating forward. Thats where your camera should be. (You do not have to be exact, however. It can easily be moved a meter or two to the side).
+Place your camera somewhere somewhere around hip height. Since v0.3, the direction of the camera does not matter.
 
-![camera_position](images/camera_position.png)
-
-This is the arrow representing the forward of steamvr. When you face this direction, the camera should see your front.
-
-If the trackers do not show up on the status window, the driver is not loading correctly. First press the Connect to SteamVR button again and check the message you get:
-
-If you get Already waiting for connection, the driver failed to load at all. Check whether you put the driver into the correct place the path should look something like `Steam\steamapps\common\SteamVR\drivers\apriltagtrackers`. If that is correct, try to reinstall c++ redistributable [here](https://aka.ms/vs/16/release/vc_redist.x64.exe).
-
-If you get Already connected. Restart connection?, the driver loaded, but SteamVR isnt activating it. Make sure you added the activateMultipleDrivers line into the steamvr.vrsettings. If the line gets removed every time you start SteamVR, you probably messed up the formatting: the lines end in commas!
-
-If you get no message, you probably just forgot to press the button. Restart SteamVR.
+If the trackers do not show up on the status window, the driver is not loading correctly, but pressing Connect to SteamVR throws no error, you have not added the activateMultipleDrivers option to the config - try doing that again, but be careful where you put it and that comma is in the correct place.
 
 #### Start
 
-This button should be pressed from the virtual desktop in the SteamVR dashboard (don't use Oculus/WMR dashboard or you wont see the trackers!). It will start the program, then check the calibration mode checkbox to set calibration.
+Before starting, disable SteamVR home or the camera will not show up. This button should be pressed from the virtual desktop in the SteamVR dashboard. It will start the program and open the detection window.
 
-**NOTE: The new manual calibration mode has proven to be much simpler and more accurate. Use that instead!** 
+In the window, you can see the following things: The detected markers will have a green outline with their id written in blue. Around the markers, there will be blue circles: these represent the area that is searched during detection. If not all trackers are found, the entire vertical area is searched every second. You will see blue squares instead of circles when that happens.
 
-In the window, you can see the following things: The detected markers will have a green outline with their id written in blue. Around the markers, there will be blue circles: these represent the area that is searched during detection. If not all trackers are found, the entire vertical area is searched every second. You will see blue squares instead of circles when that happens. If you are in calibration mode, the calibration tracker will have a red-green-blue axis drawn to help calibration.
+Note that while trackers are rendered above everything else, so they can always be seen, the camera is rendered behind: this means that it will not be seen if its behind the dashboard or bellow the playspace square thing on the floor.
 
-When in calibration mode, a tracker should appear in the center of your playspace, one meter from the ground. Align your calibration tracker (tracker 0 by default) with the seen controller. Rotate it so blue axis will face the camera, red will point right and green will point up. Then rotate it until your leg trackers will align correctly as well. Once the trackers are aligned, turn of the calibration mode with the check mark. The trackers should now be calibrated! If there is still an offset between the trackers in VR and real life, you can always check the calibration mode again and retry.
+#### Playspace calibration
 
-![playspace_calibration](images/playspace_calib.gif)
+At first, the trackers will be in the floor. You need to calibrate playspace in order to use them in games. Do this by checking the Calibration mode checkbox.
 
-Short calibration demo. Use your controller to help position the tracker correctly.
+A camera should now appear in SteamVR, and six fields should appear in the program. Use the first three field to align the SteamVR cameras position with your camera position IRL. You can move the values using your thumbstick. To get the position accurately, its best to place one of your controllers next to the camera and use it as reference.
 
-If you cant see the trackers: First make sure that you have your SteamVR dashboard open. The trackers dont appear in games or SteamVR home. Second, sometimes, the tracker will not apear at the center of your playspace. Look around. If the tracker is somewhere else, refer to the calibration offset parameters.
+When you allign position, use the next three values to align rotation. When camera is coarsly alligned, step in front of the camera so the trackers can be seen. You can now do some finer adjustmets to the camera rotation, untill the SteamVR pucks will allign nicely with your tracker IRL - the puck should lay flat on one side of the tracker. You can, again, help yourself with a controller.
 
-If, during calibration, moving the tracker to the correct place means moving it outside of the view of the camera, refer to the calibration offset parameters.
-
-If you can move the tracker to the correct position, but cant rotate it correctly (the tracker will rotate away from the camera and no longer be detected before the positions of leg trackers match), make sure that your camera is in front of your SteamVR playspace. (refer to the Connect to SteamVR part)
-
-##### Manual calibration
-
-Alternatively, you can use the manual calibration mode. For this, check the Manual calibration checkbox. Now move the X,Y,Z values untill the hip tracker irl alligns with the SteamVR one, then manualy change the rotation (A,B,C) values untill the leg trackers align. Then uncheck it, and the trackers should be calibrated.
+When you are done, uncheck Calibration mode to save!
 
 ### Parameters
 
@@ -254,21 +258,19 @@ Measure the size of your printed markers in cm, and input the value here. Measur
 
 ![marker_measure](images/marker_measure.png)
 
-#### Rotate camera 90°:
+#### Rotate camera clockwise/counterclockwise:
 
-This will flip the camera view 90°. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera (640x480). If you use a PS eye, you should use this.
+This will flip the camera view 90° in wanted direction. This will enable you to stand closer to the camera, which is usefull if you dont have much space or you have a low resolution camera (640x480). If you use a PS eye, you should use this. You can also check both to rotate camera 180°.
 
 #### Number of values for smoothing:
 
-The algorithm uses a sliding window mean smoothing. This is the number of previous position values that will be used for the window. It ensures that tracking outliers are removed, but introduces some delay. 5 seems to be the best balance between delay and performance.
-
-If you dont know what that means, just leave it at 5.
+The algorithm uses a sliding window mean smoothing. This is the number of previous position values that will be used for the window. It ensures that tracking outliers are removed, but introduces some delay. 5 seems to be the best balance between delay and performance. In most cases, the value can be dropped to 3 to reduce latency.
 
 #### Additional smoothing:
 
 While the sliding mean does some smoothing, it is usualy not enough to eliminate shaking. Aditional smoothing is done using a leaky integrator, with the formula: current_position = previous_position * value + tracked_position * (1-value).
 
-What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also increase shaking.
+What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also increase shaking. Experiment with diffrent values to find the sweet spot.
 
 #### Quad decimate:
 
@@ -280,19 +282,13 @@ To increase performance, the algorithm only searches for trackers in a window ar
 
 The window is visualized with blue circles/boxes, based on the parameters. The tracker must be inside at least one window or it will not be tracked.
 
-#### Tracker to use for calibration:
+#### Ignore tracker 0:
 
-The ID of the tracker that will be used for SteamVR playspace calibration. By default this is tracker 0, meaning the hip tracker.
+This will cause tracker 0 to not be tracked. Use this if you want to replace the hip tracker with a vive puck/owotrack. Keep 
 
 #### Use previous position as guess:
 
-This parameters sets if, when estimating the 3d position of a detected tracker, the algorithm should use the previous position as a guess to help it or not. Should ticked unless you know what you are doing.
-
-#### X/Y/Z calibration offset (MOVED TO CAMERA SCREEN):
-
-This parameter sets the position, at which you have to calibrate the marker. It is in SteamVR coordinates. By default, this means the center of your playspace, one meter above ground. In some cases, this position will not be seen on the camera, and you will have to change it. (Usualy, lowering the Y axis (up/down) should be enough.)
-
-Sometimes, however, the center of the playspace is nowhere near the actual center of your room. In that case, you will have to find where the tracker was put and try to move it to the center using this values. It might take some time to guess it correctly, but it will only have to be done once.
+This parameters sets if, when estimating the 3d position of a detected tracker, the algorithm should use the previous position as a guess to help it or not. Should stay ticked unless you know what you are doing.
 
 #### Use circular search window:
 
@@ -308,6 +304,20 @@ You can usualy leave this on 0 and the program will automaticaly determine the c
 
 On some cameras, and usualy with OBS, the camera will be opened with the wrong resolution and aspect ratio. In that case, replace these values with the correct ones.
 
+#### Camera latency:
+
+An experimental feature. In theory, this should tell SteamVR how old the positions we are sending are. It doesnt seem to do exactly that, however, but still improves latency.
+
+You can usualy set this to 1, which seems to improve latency and reduce delay.
+
+#### Open camera settings:
+
+Experimental. Should open camera settings, but doesnt seem to work. You can try it, it may work for you.
+
+#### Use chessboard calibration:
+
+Use the old chessboard calibration. Switching to new calibration is strongly recommended, but if you already have a chessboard and cant print a new pattern yet, you can check this to use the old system.
+
 ### Known issues:
 
 * A tracker may face the wrong direction if only one marker is seen. This can be seen in the Beatsaber demo video.
@@ -316,7 +326,6 @@ On some cameras, and usualy with OBS, the camera will be opened with the wrong r
 
 * Tutorial for reducing camera exposure on IP-Webcam
 * Virtual hip to enable use of leg trackers only
-* Change the view model to vive pucks
 
 
 

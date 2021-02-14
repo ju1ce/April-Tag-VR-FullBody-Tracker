@@ -40,4 +40,5 @@ public:
 	bool cameraSettings = false;
 	bool chessboardCalib = false;
 	double camLatency = 0;
+	bool circularMarkers = false;
 };
