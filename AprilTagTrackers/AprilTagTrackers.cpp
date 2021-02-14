@@ -174,7 +174,7 @@ void Tracker::StartCamera(std::string id)
     if (!cap.isOpened())
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-            wxT("Camera error"), wxT("Error"), wxOK | wxICON_ERROR);
+            wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\nFor USB cameras, it will be a number, usualy 0,1,2... try a few untill it works.\nFor IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
         dial->ShowModal();
         return;
     }
@@ -306,7 +306,21 @@ void Tracker::CalibrateCameraCharuco()
     int framesSinceLast = -2 * parameters->camFps;
 
     int i = 0;
+
+    std::thread th{ [=]() {
+        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        "Camera calibration started! \n\nPlace the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n\
+Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\nPress OK to close this window.", wxT("Message"), wxOK);
+    dial->ShowModal();
+
+    mainThreadRunning = false;
+
+    } };
+
+    th.detach();
+
     //get calibration data from 20 images
+
     while (i < 15)
     {
         if (!mainThreadRunning || !cameraRunning)
@@ -354,7 +368,7 @@ void Tracker::CalibrateCameraCharuco()
                 std::vector<int> charucoIds;
                 //using data from aruco detection we refine the search of chessboard corners for higher accuracy
                 cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds);
-                if (charucoIds.size() > 5)
+                if (charucoIds.size() > 15)
                 {
                     //if corners were found, we draw them
                     cv::aruco::drawDetectedCornersCharuco(image, charucoCorners, charucoIds);
@@ -523,6 +537,25 @@ void Tracker::StartTrackerCalib()
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::CalibrateTracker, this);
     mainThread.detach();
+
+
+    //make a new thread with message box, and stop main thread when we press OK
+    std::thread th{ [=]() {
+        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n\
+Green: This marker is calibrated and can be used to calibrate other markers.\n\
+Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n\
+Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n\
+Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n\
+Yellow: The marker is being calibrated. Hold it still for a second.\n\n\
+When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
+    dial->ShowModal();
+
+    mainThreadRunning = false;
+
+    } };
+
+    th.detach();
 }
 
 void Tracker::Start()
@@ -1063,11 +1096,14 @@ void Tracker::MainLoop()
             double c =  -rpos.at<double>(2, 0);
 
             double factor;
-            factor = 1-parameters->smoothingFactor;
+            factor = parameters->smoothingFactor;
 
-            if (factor < 0 || factor > 1)
+            if (factor < 0)
                 factor = 0;
-
+            else if (factor >= 1)
+                factor = 0.99;
+     
+            /*
             a = (1 - factor) * prevLoc[i][0] + (factor)*a;
             b = (1 - factor) * prevLoc[i][1] + (factor)*b;
             c = (1 - factor) * prevLoc[i][2] + (factor)*c;
@@ -1093,7 +1129,7 @@ void Tracker::MainLoop()
             }
 
             q = q.UnitQuaternion();
-
+            */
 
             //save values for next frame
             prevRot[i] = q;
@@ -1108,7 +1144,7 @@ void Tracker::MainLoop()
 
             //send all the values
             //frame time is how much time passed since frame was acquired. It doesnt work as expected...
-            connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency);
+            connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
 
         }
 

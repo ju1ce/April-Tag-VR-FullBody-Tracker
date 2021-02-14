@@ -65,13 +65,13 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibB = new ValueInput(this, "B(°):", 0);
     parentGUI->manualCalibC = new ValueInput(this, "C(°):", 0);
 
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Use the values bellow to align the virtual camera with \nyour IRL one. Use your controllers as references.\nUncheck Calibration mode when done!")), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
     parentGUI->rotHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
     parentGUI->rotHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
     parentGUI->rotHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(new wxStaticText(this, -1, wxT("Uncheck Calibration mode when done!")), 0, wxEXPAND);
 
     hbox->Add(parentGUI->posHbox, 1, wxALL | wxEXPAND, 15);
     hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
@@ -90,30 +90,49 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(17, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(18, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
+    cameraAddrText->SetToolTip("Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
     wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
+    trackerNumText->SetToolTip("Set to 3 for full body. 2 will not work in vrchat!");
     wxStaticText* markerSizeText = new wxStaticText(this, -1, wxT("Size of markers in cm"));
+    markerSizeText->SetToolTip("Measure the white square on markers and input it here");
     wxStaticText* prevValuesText = new wxStaticText(this, -1, wxT("Number of values for smoothing"));
+    prevValuesText->SetToolTip("Used to remove pose outliers. Can usualy be lowered to 3 to reduce latency.");
     wxStaticText* smoothingText = new wxStaticText(this, -1, wxT("Additional smoothing"));
+    smoothingText->SetToolTip("0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
     wxStaticText* quadDecimateText = new wxStaticText(this, -1, wxT("Quad decimate"));
+    quadDecimateText->SetToolTip("Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
+    searchWindowText->SetToolTip("Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
     wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
+    usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldnt be any reason to disable this.");
     //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
+    ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
     wxStaticText* rotateClText = new wxStaticText(this, -1, wxT("Rotate camera clockwise"));
+    rotateClText->SetToolTip("Rotate the camera. Use both to rotate image 180°");
     wxStaticText* rotateCounterClText = new wxStaticText(this, -1, wxT("Rotate camera counterclockwise"));
+    rotateCounterClText->SetToolTip("Rotate the camera. Use both to rotate image 180°");
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
     wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
+    circularText->SetToolTip("Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
+    camFpsText->SetToolTip("Set the fps of the camera");
     wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
+    camHeightText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesnt work correctly.");
     wxStaticText* camWitdthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
+    camWitdthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesnt work correctly.");
     wxStaticText* camLatencyText = new wxStaticText(this, -1, wxT("Camera latency"));
+    camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work diffrently. Usualy setting this to 1 shows good results.");
     wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
+    cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usualy doesnt work. It might work for you");
     wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
+    chessboardCalibText->SetToolTip("Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
+Keep other parameters as default unless you know what you are doing.");
 
 
     cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
@@ -147,7 +166,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     chessboardCalibField->SetValue(parameters->chessboardCalib);
 
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
+    //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
+    //Connect(HELP_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::ShowHelp));
 
     fgs->Add(cameraAddrText);
     fgs->Add(cameraAddrField);
@@ -194,7 +215,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(chessboardCalibText);
     fgs->Add(chessboardCalibField);
 
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("Hover over text for help!")));
     fgs->Add(btn1);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
@@ -202,6 +225,29 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
 
 
     this->SetSizer(hbox);
+}
+void ParamsPage::ShowHelp(wxCommandEvent& event)
+{
+    wxMessageDialog* dial = new wxMessageDialog(NULL,
+        "Short descriptions of main parameters \n\n\
+Check the github for full tutorial and parameter descriptions!\n\n\
+Parameters you have to set before starting:\n\
+- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n\
+- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n\
+- Size of markers: Measure the white square on markers.\n\
+- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n\
+- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesnt work correctly.\n\n\
+Other usefull parameters:\n\
+- Rotate camera: Self explanatory. Use both for a 180° flip\n\
+- Number of values for smoothing: Used to remove pose outliers. Can usualy be lowered to 3 to reduce latency.\n\
+- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n\
+- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n\
+Experimental:\n\
+- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n\
+- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
+Keep other parameters as default unless you know what you are doing.\n\n\
+Press OK to close this window.", wxT("Message"), wxOK);
+    dial->ShowModal();
 }
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {

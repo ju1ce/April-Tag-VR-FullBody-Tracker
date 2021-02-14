@@ -50,7 +50,7 @@ void Connection::Connect()
 	if (word != "numtrackers")
 	{
 		wxMessageDialog* dial = new wxMessageDialog(NULL,
-			wxT("SteamVr is not running or the driver is not installed."), wxT("Error"), wxOK | wxICON_ERROR);
+			wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed."), wxT("Error"), wxOK | wxICON_ERROR);
 		dial->ShowModal();
 		status = DISCONNECTED;
 		return;
@@ -114,7 +114,7 @@ std::istringstream Connection::Send(std::string lpszWrite)
 
 
 }
-std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time)
+std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)
 {
 	if (parameters->ignoreTracker0) {
 		id--;
@@ -129,7 +129,8 @@ std::istringstream Connection::SendTracker(int id, double a, double b, double c,
 		" " + std::to_string(qx) +
 		" " + std::to_string(qy) +
 		" " + std::to_string(qz) +
-		" " + std::to_string(time) + "\n";
+		" " + std::to_string(time) +
+		" " + std::to_string(smoothing) + "\n";
 
 	//send the string to our driver
 

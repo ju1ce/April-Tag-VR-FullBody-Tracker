@@ -5,6 +5,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <wx/wx.h>
+#include <thread>
 
 #include "Quaternion.h"
 
@@ -18,3 +20,4 @@ bool isRotationMatrix(cv::Mat& R);
 cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
 Quaternion<double> mRot2Quat(const cv::Mat& m);
 cv::Mat getSpaceCalibEuler(cv::Vec3d rvec, cv::Vec3d tvec, double xOffset, double yOffset, double zOffset);
+void ShowMessage(std::string text, bool stopOnOk);

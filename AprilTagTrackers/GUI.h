@@ -65,6 +65,7 @@ public:
 
 private:
     const int SAVE_BUTTON = 2;
+    const int HELP_BUTTON = 10;
     Parameters* parameters;
     wxTextCtrl* cameraAddrField;
     wxTextCtrl* camFpsField;
@@ -88,7 +89,8 @@ private:
     wxTextCtrl* smoothingField;
     wxCheckBox* cameraSettingsField;
     wxCheckBox* chessboardCalibField;
-    void SaveParams(wxCommandEvent& );
+    void SaveParams(wxCommandEvent&);
+    void ShowHelp(wxCommandEvent&);
 };
 
 

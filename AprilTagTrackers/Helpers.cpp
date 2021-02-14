@@ -328,3 +328,13 @@ Quaternion<double> mRot2Quat(const cv::Mat& m) {
 
 	return q;
 }
+void ShowMessage(std::string text, bool stopOnOk)
+{
+	std::thread th{ [=]() {
+		wxMessageDialog* dial = new wxMessageDialog(NULL,
+		text, wxT("Message"), wxOK);
+	dial->ShowModal();
+	} };
+	
+	th.detach();
+}
