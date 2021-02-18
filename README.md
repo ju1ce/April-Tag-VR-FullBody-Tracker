@@ -9,7 +9,7 @@ This version uses the much more accurate AprilTag system and includes many impro
 
 If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: juice#6370
 
-The program can be downloaded from the releases tab.
+The program can be downloaded from the [releases](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases) tab.
 
 ![demo](images/demo.gif)
 
@@ -29,6 +29,7 @@ Beatsaber demo: https://youtu.be/Akps-dH0EeA
         - [Calibrate trackers](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#calibrate-trackers)
         - [Connect to SteamVR](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#connect-to-steamvr)
         - [Start](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#start)
+        - [Playspace calibration](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#playspace-calibration)
     - [Parameters](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#parameters)
     - [Known issues](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#known-issues)
     - [TODO](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#todo)
@@ -284,7 +285,7 @@ The window is visualized with blue circles/boxes, based on the parameters. The t
 
 #### Ignore tracker 0:
 
-This will cause tracker 0 to not be tracked. Use this if you want to replace the hip tracker with a vive puck/owotrack. Keep 
+This will cause tracker 0 to not be tracked. Use this if you want to replace the hip tracker with a vive puck/owotrack. Keep number of trackers at 3.
 
 #### Use previous position as guess:
 
