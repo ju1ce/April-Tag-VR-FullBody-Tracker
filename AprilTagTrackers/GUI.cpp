@@ -90,7 +90,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(18, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     cameraAddrText->SetToolTip("Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
@@ -106,8 +106,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     quadDecimateText->SetToolTip("Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
     searchWindowText->SetToolTip("Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
-    wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
-    usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldnt be any reason to disable this.");
+    //wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
+    //usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldnt be any reason to disable this.");
     //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
     ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
@@ -118,8 +118,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
-    wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
-    circularText->SetToolTip("Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
+    //wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
+    //circularText->SetToolTip("Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
     camFpsText->SetToolTip("Set the fps of the camera");
     wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
@@ -128,8 +128,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     camWitdthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesnt work correctly.");
     wxStaticText* camLatencyText = new wxStaticText(this, -1, wxT("Camera latency"));
     camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work diffrently. Usualy setting this to 1 shows good results.");
-    wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
-    cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usualy doesnt work. It might work for you");
+    //wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
+    //cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usualy doesnt work. It might work for you");
     wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
     chessboardCalibText->SetToolTip("Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
 Keep other parameters as default unless you know what you are doing.");
@@ -142,8 +142,8 @@ Keep other parameters as default unless you know what you are doing.");
     smoothingField = new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor));
     quadDecimateField = new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate));
     searchWindowField = new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow));
-    usePredictiveField = new wxCheckBox(this, -1, wxT(""));
-    usePredictiveField->SetValue(parameters->usePredictive);
+    //usePredictiveField = new wxCheckBox(this, -1, wxT(""));
+    //usePredictiveField->SetValue(parameters->usePredictive);
     //calibrationTrackerField = new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker));
     ignoreTracker0Field = new wxCheckBox(this, -1, wxT(""));
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
@@ -154,14 +154,14 @@ Keep other parameters as default unless you know what you are doing.");
     //offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
     //offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
     //offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
-    circularField = new wxCheckBox(this, -1, wxT(""));
-    circularField->SetValue(parameters->circularWindow);
+    //circularField = new wxCheckBox(this, -1, wxT(""));
+    //circularField->SetValue(parameters->circularWindow);
     camFpsField = new wxTextCtrl(this, -1, std::to_string(parameters->camFps));
     camWidthField = new wxTextCtrl(this, -1, std::to_string(parameters->camWidth));
     camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
     camLatencyField = new wxTextCtrl(this, -1, std::to_string(parameters->camLatency));
-    cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
-    cameraSettingsField->SetValue(parameters->cameraSettings);
+    //cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
+    //cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField = new wxCheckBox(this, -1, wxT(""));
     chessboardCalibField->SetValue(parameters->chessboardCalib);
 
@@ -192,16 +192,16 @@ Keep other parameters as default unless you know what you are doing.");
     //fgs->Add(calibrationTrackerField);
     fgs->Add(ignoreTracker0Text);
     fgs->Add(ignoreTracker0Field);
-    fgs->Add(usePredictiveText);
-    fgs->Add(usePredictiveField);
+    //fgs->Add(usePredictiveText);
+    //fgs->Add(usePredictiveField);
     //fgs->Add(offsetxText);
     //fgs->Add(offsetxField);
     //fgs->Add(offsetyText);
     //fgs->Add(offsetyField);
     //fgs->Add(offsetzText);
     //fgs->Add(offsetzField);
-    fgs->Add(circularText);
-    fgs->Add(circularField);
+    //fgs->Add(circularText);
+    //fgs->Add(circularField);
     fgs->Add(camFpsText);
     fgs->Add(camFpsField);
     fgs->Add(camWitdthText);
@@ -210,8 +210,8 @@ Keep other parameters as default unless you know what you are doing.");
     fgs->Add(camHeightField);
     fgs->Add(camLatencyText);
     fgs->Add(camLatencyField);
-    fgs->Add(cameraSettingsText);
-    fgs->Add(cameraSettingsField);
+    //fgs->Add(cameraSettingsText);
+    //fgs->Add(cameraSettingsField);
     fgs->Add(chessboardCalibText);
     fgs->Add(chessboardCalibField);
 
@@ -258,7 +258,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->numOfPrevValues = std::stoi(prevValuesField->GetValue().ToStdString());
         parameters->quadDecimate = std::stod(quadDecimateField->GetValue().ToStdString());
         parameters->searchWindow = std::stod(searchWindowField->GetValue().ToStdString());
-        parameters->usePredictive = usePredictiveField->GetValue();
+        //parameters->usePredictive = usePredictiveField->GetValue();
         //parameters->calibrationTracker = std::stoi(calibrationTrackerField->GetValue().ToStdString());
         parameters->ignoreTracker0 = ignoreTracker0Field->GetValue();
         parameters->rotateCl = rotateClField->GetValue();
@@ -266,13 +266,13 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         //parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
-        parameters->circularWindow = circularField->GetValue();
+       // parameters->circularWindow = circularField->GetValue();
         parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
         parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
         parameters->camLatency = std::stoi(camLatencyField->GetValue().ToStdString());
-        parameters->cameraSettings = cameraSettingsField->GetValue();
+        //parameters->cameraSettings = cameraSettingsField->GetValue();
         parameters->chessboardCalib = chessboardCalibField->GetValue();
         parameters->Save();
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)

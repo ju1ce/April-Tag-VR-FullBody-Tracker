@@ -186,7 +186,6 @@ void Tracker::StartCamera(std::string id)
     cap.set(cv::CAP_PROP_FPS, parameters->camFps);
     if(parameters->cameraSettings)
         cap.set(cv::CAP_PROP_SETTINGS, 1);
-    cap.set(cv::CAP_PROP_EXPOSURE, 1);
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -321,7 +320,9 @@ Alternatively, you can use the board shown on a monitor or switch to old chessbo
 
     //get calibration data from 20 images
 
-    while (i < 15)
+    int picNum = parameters->cameraCalibSamples;
+
+    while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
@@ -332,7 +333,7 @@ Alternatively, you can use the board shown on a monitor or switch to old chessbo
             Sleep(1);
         imageReady = false;
         retImage.copyTo(image);
-        cv::putText(image, std::to_string(i) + "/15", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::Mat drawImg;
         int cols, rows;
         if (image.cols > image.rows)
@@ -345,9 +346,20 @@ Alternatively, you can use the board shown on a monitor or switch to old chessbo
             cols = drawImgSize;
             rows = image.rows * drawImgSize / image.cols;
         }
+
+        //std::vector<int> markerIds;
+        //std::vector<std::vector<cv::Point2f>> markerCorners;
+
+        //cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params);
+        //cv::aruco::drawDetectedMarkers(image, markerCorners, markerIds);
+
         cv::resize(image, drawImg, cv::Size(cols, rows));
+
         cv::imshow("out", drawImg);
         char key = (char)cv::waitKey(1);
+
+        //continue;
+
         framesSinceLast++;
         if (key != -1 || framesSinceLast > parameters->camFps)
         {
@@ -442,7 +454,10 @@ void Tracker::CalibrateCamera()
 
     int i = 0;
     int framesSinceLast = -100;
-    while (i < 15)
+
+    int picNum = parameters->cameraCalibSamples;
+
+    while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
@@ -453,7 +468,7 @@ void Tracker::CalibrateCamera()
             Sleep(1);
         imageReady = false;
         retImage.copyTo(image);
-        cv::putText(image, std::to_string(i) + "/15", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::Mat drawImg;
         int cols, rows;
         if (image.cols > image.rows)
@@ -685,7 +700,7 @@ void Tracker::CalibrateTracker()
         }
         */
 
-        float maxDist = 0.3;
+        float maxDist = parameters->trackerCalibDistance;
 
         for (int i = 0; i < boardIds.size(); i++)
         {
@@ -737,7 +752,7 @@ void Tracker::CalibrateTracker()
                     }
                     if (boardFound[i])
                     {
-                        if (tvecs[j][2] > maxDist)
+                        if (sqrt(tvecs[j][0] * tvecs[j][0] + tvecs[j][1] * tvecs[j][1] + tvecs[j][2] * tvecs[j][2]) > maxDist)
                         {
                             drawMarker(image, corners[j], cv::Scalar(255, 0, 255));
                             continue;

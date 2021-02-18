@@ -41,4 +41,6 @@ public:
 	bool chessboardCalib = false;
 	double camLatency = 0;
 	bool circularMarkers = false;
+	double trackerCalibDistance = 0.3;
+	int cameraCalibSamples = 15;
 };
