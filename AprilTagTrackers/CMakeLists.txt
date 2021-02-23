@@ -16,7 +16,8 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${APRILTAG_INCLUDE_DIR} )
 
 # Add source to this project's executable.
-add_executable (AprilTagTrackers "AprilTagTrackers.cpp" "AprilTagTrackers.h")
+file(GLOB source "*.cpp" "*.h")
+add_executable (AprilTagTrackers ${source})
 
 # TODO: Add tests and install targets if needed.
 
