@@ -99,7 +99,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* markerSizeText = new wxStaticText(this, -1, wxT("Size of markers in cm"));
     markerSizeText->SetToolTip("Measure the white square on markers and input it here");
     wxStaticText* prevValuesText = new wxStaticText(this, -1, wxT("Number of values for smoothing"));
-    prevValuesText->SetToolTip("Used to remove pose outliers. Can usualy be lowered to 3 to reduce latency.");
+    prevValuesText->SetToolTip("Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     wxStaticText* smoothingText = new wxStaticText(this, -1, wxT("Additional smoothing"));
     smoothingText->SetToolTip("0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
     wxStaticText* quadDecimateText = new wxStaticText(this, -1, wxT("Quad decimate"));
@@ -107,7 +107,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
     searchWindowText->SetToolTip("Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
     //wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
-    //usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldnt be any reason to disable this.");
+    //usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
     //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
     ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
@@ -123,13 +123,13 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
     camFpsText->SetToolTip("Set the fps of the camera");
     wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
-    camHeightText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesnt work correctly.");
-    wxStaticText* camWitdthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
-    camWitdthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesnt work correctly.");
+    camHeightText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    wxStaticText* camWidthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
+    camWidthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
     wxStaticText* camLatencyText = new wxStaticText(this, -1, wxT("Camera latency"));
-    camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work diffrently. Usualy setting this to 1 shows good results.");
+    camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
     //wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
-    //cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usualy doesnt work. It might work for you");
+    //cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
     wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
     chessboardCalibText->SetToolTip("Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
 Keep other parameters as default unless you know what you are doing.");
@@ -204,7 +204,7 @@ Keep other parameters as default unless you know what you are doing.");
     //fgs->Add(circularField);
     fgs->Add(camFpsText);
     fgs->Add(camFpsField);
-    fgs->Add(camWitdthText);
+    fgs->Add(camWidthText);
     fgs->Add(camWidthField);
     fgs->Add(camHeightText);
     fgs->Add(camHeightField);
@@ -236,10 +236,10 @@ Parameters you have to set before starting:\n\
 - Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n\
 - Size of markers: Measure the white square on markers.\n\
 - Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n\
-- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesnt work correctly.\n\n\
+- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n\
 Other usefull parameters:\n\
 - Rotate camera: Self explanatory. Use both for a 180° flip\n\
-- Number of values for smoothing: Used to remove pose outliers. Can usualy be lowered to 3 to reduce latency.\n\
+- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n\
 - Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n\
 - Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n\
 Experimental:\n\

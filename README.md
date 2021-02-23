@@ -74,7 +74,7 @@ If you have your PC and android phone connected to the same router and you have 
 
 #### Tutorial:
 
-Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ratio with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon 
+Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ratio with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon
 if you dont know how
 
 ### Using IP-Webcam wired:
@@ -90,7 +90,7 @@ If you dont have a good wifi connection, but have a half recent android phone, y
 
 #### Tutorial:
 
-For this we will use our phones network over USB feature. This is usualy used to share the phones network or wifi with a computer, but if we disable wifi and mobile network on our phone, we can also use it as a direct connection between our phone and PC. First disable wifi and mobile network. Then connect your phone to your PC with a USB cable. Now enable the internet over USB option on your phone. Now, you can follow the same instructions as for the wireless one!
+For this we will use our phones network over USB feature. This is usually used to share the phones network or wifi with a computer, but if we disable wifi and mobile network on our phone, we can also use it as a direct connection between our phone and PC. First disable wifi and mobile network. Then connect your phone to your PC with a USB cable. Now enable the internet over USB option on your phone. Now, you can follow the same instructions as for the wireless one!
 
 NOTE: Make sure that your networks are disabled or this won't work!
 
@@ -245,7 +245,7 @@ When changing parameters, make sure that you press save or they will not take ef
 
 #### Ip or ID of camera:
 
-If you have a webcam or OBS, this value will be a number, usualy 0, 1, or more if you have more cameras connected. Best way to figure out the correct index of the camera is to try them: Type in 0, press save, go back to Camera tab, check preview camera and press Start/Stop camera. If the correct camera shows up, great, you can go to the next step! If not, repeat the process with 1, then 2 etc until you find it.
+If you have a webcam or OBS, this value will be a number, usually 0, 1, or more if you have more cameras connected. Best way to figure out the correct index of the camera is to try them: Type in 0, press save, go back to Camera tab, check preview camera and press Start/Stop camera. If the correct camera shows up, great, you can go to the next step! If not, repeat the process with 1, then 2 etc until you find it.
 
 If you use IP Webcam, you should enter your IP address, the same one as you used in your browser but ending with /video. The field should look something like this: ```http://192.168.1.100:8080/video``` but with some diffrent numbers.
 
@@ -269,7 +269,7 @@ The algorithm uses a sliding window mean smoothing. This is the number of previo
 
 #### Additional smoothing:
 
-While the sliding mean does some smoothing, it is usualy not enough to eliminate shaking. Aditional smoothing is done using a leaky integrator, with the formula: current_position = previous_position * value + tracked_position * (1-value).
+While the sliding mean does some smoothing, it is usually not enough to eliminate shaking. Aditional smoothing is done using a leaky integrator, with the formula: current_position = previous_position * value + tracked_position * (1-value).
 
 What this means is that the parameter is between 0 and 1, 0 meaning only using tracking data without smoothing and 1 meaning using only previous data. Decreasing this parameter will increase the speed, but also increase shaking. Experiment with diffrent values to find the sweet spot.
 
@@ -293,7 +293,7 @@ This parameters sets if, when estimating the 3d position of a detected tracker, 
 
 #### Use circular search window:
 
-Search for trackers in a circular window around the previous known position or use vertical boxes. Since using circular windows is much faster, there is usualy no reason not to use them.
+Search for trackers in a circular window around the previous known position or use vertical boxes. Since using circular windows is much faster, there is usually no reason not to use them.
 
 #### Camera FPS:
 
@@ -301,19 +301,19 @@ The FPS of your camera. If you want to use a 60fps camera, set this to 60.
 
 #### Camera width/height:
 
-You can usualy leave this on 0 and the program will automaticaly determine the correct width and height.
+You can usually leave this on 0 and the program will automaticaly determine the correct width and height.
 
-On some cameras, and usualy with OBS, the camera will be opened with the wrong resolution and aspect ratio. In that case, replace these values with the correct ones.
+On some cameras, and usually with OBS, the camera will be opened with the wrong resolution and aspect ratio. In that case, replace these values with the correct ones.
 
 #### Camera latency:
 
-An experimental feature. In theory, this should tell SteamVR how old the positions we are sending are. It doesnt seem to do exactly that, however, but still improves latency.
+An experimental feature. In theory, this should tell SteamVR how old the positions we are sending are. It doesn't seem to do exactly that, however, but still improves latency.
 
-You can usualy set this to 1, which seems to improve latency and reduce delay.
+You can usually set this to 1, which seems to improve latency and reduce delay.
 
 #### Open camera settings:
 
-Experimental. Should open camera settings, but doesnt seem to work. You can try it, it may work for you.
+Experimental. Should open camera settings, but doesn't seem to work. You can try it, it may work for you.
 
 #### Use chessboard calibration:
 
@@ -323,10 +323,7 @@ Use the old chessboard calibration. Switching to new calibration is strongly rec
 
 * A tracker may face the wrong direction if only one marker is seen. This can be seen in the Beatsaber demo video.
 
-### TODO: 
+### TODO:
 
 * Tutorial for reducing camera exposure on IP-Webcam
 * Virtual hip to enable use of leg trackers only
-
-
-

@@ -68,7 +68,7 @@ void transformMarkerSpace(std::vector<cv::Point3f> modelMarker, cv::Vec3d boardR
         rpos.at<double>(2, 0) = modelMarker[y].z;
         rpos.at<double>(3, 0) = 1;
 
-        //multipy model marker corner with markers translation matrix to get its position in camera(global) space
+        //multiply model marker corner with markers translation matrix to get its position in camera(global) space
         rpos = mtranslationin * rpos;
         //multiply marker corner in camera space with the inverse of the translation matrix of our board to put it into local space of our board
         rpos = mtranslation.inv() * rpos;

@@ -78,7 +78,7 @@ void Connection::Connect()
 
 std::istringstream Connection::Send(std::string lpszWrite)
 {
-    //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so ill leave the dumb conversions and casts in. If it doesnt for you, have fun.
+    //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so I'll leave the dumb conversions and casts in. If it doesn't for you, have fun.
 
     fSuccess = CallNamedPipe(
         lpszPipename,        // pipe name

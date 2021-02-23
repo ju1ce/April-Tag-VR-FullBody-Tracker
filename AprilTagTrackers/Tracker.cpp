@@ -46,7 +46,7 @@ void Tracker::StartCamera(std::string id)
         Sleep(1000);
         return;
     }
-    if (id.length() <= 2)		//if camera adress is a single character, try to open webcam
+    if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
         cap = cv::VideoCapture(i);
@@ -60,7 +60,7 @@ void Tracker::StartCamera(std::string id)
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
             wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\n"
-            "For USB cameras, it will be a number, usualy 0,1,2... try a few untill it works.\n"
+            "For USB cameras, it will be a number, usually 0,1,2... try a few until it works.\n"
             "For IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
         dial->ShowModal();
         return;
@@ -1055,7 +1055,7 @@ void Tracker::MainLoop()
 
 
             //send all the values
-            //frame time is how much time passed since frame was acquired. It doesnt work as expected...
+            //frame time is how much time passed since frame was acquired. It doesn't work as expected...
             connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
 
         }
