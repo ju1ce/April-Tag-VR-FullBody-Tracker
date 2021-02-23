@@ -1,7 +1,7 @@
 //****************************************************
 //* quaternion.h                                     *
 //*                                                  *
-//* Implementaion for a generalized quaternion class *   
+//* Implementaion for a generalized quaternion class *
 //*                                                  *
 //* Written 1.25.00 by Angela Bennett                *
 //****************************************************
@@ -54,7 +54,7 @@ public:
     // -creates a new quaternion based on the Euler elements passed in
     // -used with Shoemakes code
     Quaternion(_Tp e[3], int order);
-#endif  
+#endif
 
     //~Quaternion
     // -default destructor
@@ -63,48 +63,48 @@ public:
     //operator=
     // -parameters : q1- Quaternion object
     // -return values : Quaternion
-    // -when called on quaternion q2 sets q2 to be an object of  q3 
+    // -when called on quaternion q2 sets q2 to be an object of  q3
     Quaternion<_Tp> operator = (const Quaternion<_Tp>& q);
 
     //operator+
     // -parameters : q1 - Quaternion object
-    // -return value : Quaternion 
+    // -return value : Quaternion
     // -when called on quaternion q2 adds q1 + q2 and returns the sum in a new quaternion
     Quaternion<_Tp> operator + (const Quaternion<_Tp>& q);
 
     //operator-
     // -parameters : q1- Quaternion object
-    // -return values : Quaternion 
+    // -return values : Quaternion
     // -when called on q1 subtracts q1 - q2 and returns the difference as a new quaternion
     Quaternion<_Tp> operator - (const Quaternion<_Tp>& q);
 
     //operator*
     // -parameters : q1 - Quaternion object
-    // -return values : Quaternion 
-    // -when called on a quaternion q2, multiplies q2 *q1  and returns the product in a new quaternion 
+    // -return values : Quaternion
+    // -when called on a quaternion q2, multiplies q2 *q1  and returns the product in a new quaternion
     Quaternion<_Tp> operator * (const Quaternion<_Tp>& q);
 
     //operator/
     // -parameters : q1 and q2- Quaternion objects
-    // -return values : Quaternion 
-    // -divide q1 by q2 and returns the quotient as q1 
+    // -return values : Quaternion
+    // -divide q1 by q2 and returns the quotient as q1
     Quaternion<_Tp> operator / (Quaternion<_Tp>& q);
 
     //operator+=
     // -parameters : q1- Quaternion object
-    // -return values : Quaternion 
-    // -when called on quaternion q3 adds q1 and q3 and returns the sum as q3 
+    // -return values : Quaternion
+    // -when called on quaternion q3 adds q1 and q3 and returns the sum as q3
     Quaternion<_Tp>& operator += (const Quaternion<_Tp>& q);
 
     //operator-=
     // -parameters : q1- Quaternion object
-    // -return values : Quaternion 
+    // -return values : Quaternion
     // -when called on quaternion q3, subtracts q1 from q3 and returns the difference as q3
     Quaternion<_Tp>& operator -= (const Quaternion<_Tp>& q);
 
     //operator*=
     // -parameters : q1- Quaternion object
-    // -return values : Quaternion 
+    // -return values : Quaternion
     // -when called on quaternion q3, multiplies q3 by q1 and returns the product as q3
     Quaternion<_Tp>& operator *= (const Quaternion<_Tp>& q);
 
@@ -191,7 +191,7 @@ public:
 //****************************************************
 //* quaternion.c++                                   *
 //*                                                  *
-//* Implementaion for a generalized quaternion class *   
+//* Implementaion for a generalized quaternion class *
 //*                                                  *
 //* Written 1.25.00 by Angela Bennett                *
 //****************************************************
@@ -286,7 +286,7 @@ Quaternion<_Tp>::~Quaternion()
 //operator=
 // -parameters : q1 - Quaternion object
 // -return value : Quaternion
-// -when called on quaternion q2 sets q2 to be an object of  q3 
+// -when called on quaternion q2 sets q2 to be an object of  q3
 template<class _Tp>
 Quaternion<_Tp> Quaternion<_Tp>::operator = (const Quaternion<_Tp>& q)
 {
@@ -300,7 +300,7 @@ Quaternion<_Tp> Quaternion<_Tp>::operator = (const Quaternion<_Tp>& q)
 
 //operator+
 // -parameters : q1 - Quaternion object
-// -return value : Quaternion 
+// -return value : Quaternion
 // -when called on quaternion q2 adds q1 + q2 and returns the sum in a new quaternion
 template<class _Tp>
 Quaternion<_Tp> Quaternion<_Tp>::operator + (const Quaternion<_Tp>& q)
@@ -310,7 +310,7 @@ Quaternion<_Tp> Quaternion<_Tp>::operator + (const Quaternion<_Tp>& q)
 
 //operator-
 // -parameters : q1- Quaternion object
-// -return values : Quaternion 
+// -return values : Quaternion
 // -when called on q1 subtracts q1 - q2 and returns the difference as a new quaternion
 template<class _Tp>
 Quaternion<_Tp> Quaternion<_Tp>::operator - (const Quaternion<_Tp>& q)
@@ -321,8 +321,8 @@ Quaternion<_Tp> Quaternion<_Tp>::operator - (const Quaternion<_Tp>& q)
 
 //operator*
 // -parameters : q1 - Quaternion object
-// -return values : Quaternion 
-// -when called on a quaternion q2, multiplies q2 *q1  and returns the product in a new quaternion 
+// -return values : Quaternion
+// -when called on a quaternion q2, multiplies q2 *q1  and returns the product in a new quaternion
 template<class _Tp>
 Quaternion<_Tp> Quaternion<_Tp>::operator * (const Quaternion<_Tp>& q)
 {
@@ -335,7 +335,7 @@ Quaternion<_Tp> Quaternion<_Tp>::operator * (const Quaternion<_Tp>& q)
 
 //operator/
 // -parameters : q1 and q2- Quaternion objects
-// -return values : Quaternion 
+// -return values : Quaternion
 // -divide q1 by q2 and returns the quotient q1
 template<class _Tp>
 Quaternion<_Tp> Quaternion<_Tp>::operator / (Quaternion<_Tp>& q)
@@ -346,7 +346,7 @@ Quaternion<_Tp> Quaternion<_Tp>::operator / (Quaternion<_Tp>& q)
 
 //operator+=
 // -parameters : q1- Quaternion object
-// -return values : Quaternion 
+// -return values : Quaternion
 // -when called on quaternion q3, adds q1 and q3 and returns the sum as q3
 template<class _Tp>
 Quaternion<_Tp>& Quaternion<_Tp>::operator += (const Quaternion<_Tp>& q)
@@ -362,7 +362,7 @@ Quaternion<_Tp>& Quaternion<_Tp>::operator += (const Quaternion<_Tp>& q)
 
 //operator-=
 // -parameters : q1- Quaternion object
-// -return values : Quaternion 
+// -return values : Quaternion
 // -when called on quaternion q3, subtracts q1 from q3 and returns the difference as q3
 template<class _Tp>
 Quaternion<_Tp>& Quaternion<_Tp>::operator -= (const Quaternion<_Tp>& q)
@@ -378,7 +378,7 @@ Quaternion<_Tp>& Quaternion<_Tp>::operator -= (const Quaternion<_Tp>& q)
 
 //operator*=
 // -parameters : q1- Quaternion object
-// -return values : Quaternion 
+// -return values : Quaternion
 // -when called on quaternion q3, multiplies q3 by q1 and returns the product as q3
 template<class _Tp>
 Quaternion<_Tp>& Quaternion<_Tp>::operator *= (const Quaternion<_Tp>& q)
@@ -523,5 +523,4 @@ void Quaternion<_Tp>::toEuler(_Tp e[3], int order)
     y = ea.y;
     z = ea.z;
 }
-#endif 
-
+#endif

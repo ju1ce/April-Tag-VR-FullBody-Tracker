@@ -19,8 +19,6 @@ private:
 
     void ButtonPressed(wxCommandEvent&);
     void MouseScroll(wxMouseEvent&);
-    
-
 };
 
 class GUI : public wxFrame
@@ -48,14 +46,12 @@ public:
 
     wxCheckBox* cb2;
     wxCheckBox* cb3;
-
 };
 
 class CameraPage : public wxPanel
 {
 public:
     CameraPage(wxNotebook* parent, GUI* parentGUI);
-
 };
 
 class ParamsPage : public wxPanel
@@ -92,5 +88,3 @@ private:
     void SaveParams(wxCommandEvent&);
     void ShowHelp(wxCommandEvent&);
 };
-
-

@@ -3,15 +3,15 @@
 wxIMPLEMENT_APP(MyApp);
 
 int MyApp::OnExit()
-{      
+{
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
     Sleep(2000);
     return 0;
 }
+
 bool MyApp::OnInit()
 {
-    
     params = new Parameters();
     conn = new Connection(params);
     tracker = new Tracker(params, conn);
@@ -170,15 +170,17 @@ void Tracker::StartCamera(std::string id)
     {			//if address is longer, we try to open it as an ip address
         cap = cv::VideoCapture(id);
     }
- 
+
     if (!cap.isOpened())
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-            wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\nFor USB cameras, it will be a number, usualy 0,1,2... try a few untill it works.\nFor IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
+            wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\n"
+            "For USB cameras, it will be a number, usualy 0,1,2... try a few untill it works.\n"
+            "For IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
         dial->ShowModal();
         return;
     }
-    
+
     if(parameters->camWidth != 0)
         cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
     if (parameters->camHeight != 0)
@@ -225,7 +227,7 @@ void Tracker::CameraLoop()
     }
     im = image_u8_create_stride(img.cols, img.rows, img.cols);
     while (cameraRunning)
-    {     
+    {
         if (!cap.read(img))
         {
             wxMessageDialog* dial = new wxMessageDialog(NULL,
@@ -308,8 +310,10 @@ void Tracker::CalibrateCameraCharuco()
 
     std::thread th{ [=]() {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-        "Camera calibration started! \n\nPlace the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n\
-Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\nPress OK to close this window.", wxT("Message"), wxOK);
+        "Camera calibration started! \n\n"
+        "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
+        "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
+        "Press OK to close this window.", wxT("Message"), wxOK);
     dial->ShowModal();
 
     mainThreadRunning = false;
@@ -408,7 +412,6 @@ Alternatively, you can use the board shown on a monitor or switch to old chessbo
     wxMessageDialog* dial = new wxMessageDialog(NULL,
         wxT("Calibration complete."), wxT("Info"), wxOK);
     dial->ShowModal();
-
 }
 
 void Tracker::CalibrateCamera()
@@ -557,14 +560,14 @@ void Tracker::StartTrackerCalib()
     //make a new thread with message box, and stop main thread when we press OK
     std::thread th{ [=]() {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
-        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,\
- neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n\
-Green: This marker is calibrated and can be used to calibrate other markers.\n\
-Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n\
-Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n\
-Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n\
-Yellow: The marker is being calibrated. Hold it still for a second.\n\n\
-When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
+        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,"
+        "neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n"
+        "Green: This marker is calibrated and can be used to calibrate other markers.\n"
+        "Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n"
+        "Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n"
+        "Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n"
+        "Yellow: The marker is being calibrated. Hold it still for a second.\n\n"
+        "When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
     dial->ShowModal();
 
     mainThreadRunning = false;
@@ -786,7 +789,7 @@ void Tracker::CalibrateTracker()
 
                             boardIds[i].push_back(ids[j]);
                             boardCorners[i].push_back(medianMarker);
-                        }               
+                        }
 
                     }
                     else
@@ -858,10 +861,10 @@ void Tracker::MainLoop()
     for (int k = 0; k < trackerNum; k++)
     {
         std::vector<std::vector<double>> vv;
-        
+
         for (int i = 0; i < 6; i++)
         {
-            
+
             std::vector<double> v;
             /*
             for (int j = 0; j < numOfPrevValues; j++)
@@ -871,9 +874,9 @@ void Tracker::MainLoop()
             */
             vv.push_back(v);
         }
-        
+
         prevLocValuesRaw.push_back(vv);
-        
+
         prevLoc.push_back(cv::Vec3d(0, 0, 0));
         prevRot.push_back(Quaternion<double>());
     }
@@ -1011,7 +1014,6 @@ void Tracker::MainLoop()
             double c = -stationPos.at<double>(2, 0);
 
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
-
         }
 
         detectMarkersApriltag(image, &corners, &ids, &centers, td);
@@ -1057,7 +1059,7 @@ void Tracker::MainLoop()
                     }
                     boardFound[i] = false;
                     continue;
-                }    
+                }
             }
             catch (std::exception& e)
             {
@@ -1109,7 +1111,7 @@ void Tracker::MainLoop()
 
             //convert rodriguez rotation to quaternion
             Quaternion<double> q = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]);
-  
+
             //mirror our rotation
             //q.z = -q.z;
             //q.x = -q.x;
@@ -1127,7 +1129,7 @@ void Tracker::MainLoop()
                 factor = 0;
             else if (factor >= 1)
                 factor = 0.99;
-     
+
             /*
             a = (1 - factor) * prevLoc[i][0] + (factor)*a;
             b = (1 - factor) * prevLoc[i][1] + (factor)*b;

@@ -27,8 +27,8 @@ class Tracker
 public:
     Tracker(Parameters*, Connection*);
     void StartCamera(std::string);
-    void StartCameraCalib(); 
-    void StartTrackerCalib(); 
+    void StartCameraCalib();
+    void StartTrackerCalib();
     void Start();
 
     bool mainThreadRunning = false;
@@ -54,7 +54,7 @@ private:
     cv::VideoCapture cap;
 
     cv::Mat retImage;
-    bool imageReady = false;   
+    bool imageReady = false;
 
     Parameters* parameters;
     Connection* connection;
@@ -70,7 +70,7 @@ private:
     //Quaternion<double> q;
 
     image_u8_t* im;
-    void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);  
+    void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);
 
     clock_t last_frame_time;
 };

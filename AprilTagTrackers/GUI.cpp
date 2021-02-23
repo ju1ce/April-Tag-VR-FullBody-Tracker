@@ -223,9 +223,9 @@ Keep other parameters as default unless you know what you are doing.");
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 
 
-
     this->SetSizer(hbox);
 }
+
 void ParamsPage::ShowHelp(wxCommandEvent& event)
 {
     wxMessageDialog* dial = new wxMessageDialog(NULL,
@@ -249,9 +249,10 @@ Keep other parameters as default unless you know what you are doing.\n\n\
 Press OK to close this window.", wxT("Message"), wxOK);
     dial->ShowModal();
 }
+
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {
-    try {           
+    try {
         parameters->cameraAddr = cameraAddrField->GetValue().ToStdString();
         parameters->trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());
         parameters->markerSize = std::stod(markerSizeField->GetValue().ToStdString()) / 100;
@@ -295,6 +296,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         dial->ShowModal();
     }
 }
+
 ValueInput::ValueInput(wxPanel* parent, std::string nm, double val)
     :wxPanel(parent)
 {
@@ -373,5 +375,3 @@ void ValueInput::ButtonPressed(wxCommandEvent &evt)
     }
     input->ChangeValue(std::to_string(value));
 }
-
-
