@@ -65,7 +65,6 @@ private:
 
     //Quaternion<double> q;
 
-    image_u8_t* im;
     void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);
 
     clock_t last_frame_time;

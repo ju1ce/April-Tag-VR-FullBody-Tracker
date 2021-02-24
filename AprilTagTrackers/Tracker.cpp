@@ -110,7 +110,6 @@ void Tracker::CameraLoop()
         rotate = true;
         rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
     }
-    im = image_u8_create_stride(img.cols, img.rows, img.cols);
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -1102,11 +1101,14 @@ void Tracker::detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::P
     ids->clear();
     centers->clear();
 
+    image_u8_t im = {
+        gray.cols,
+        gray.rows,
+        static_cast<int32_t>(gray.step1()),
+        gray.data,
+    };
 
-    //im = image_u8_create_stride(gray.cols, gray.rows, gray.cols);
-    im->buf = gray.data;
-
-    zarray_t* detections = apriltag_detector_detect(td, im);
+    zarray_t* detections = apriltag_detector_detect(td, &im);
 
     for (int i = 0; i < zarray_size(detections); i++) {
         apriltag_detection_t* det;
