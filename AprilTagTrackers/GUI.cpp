@@ -228,7 +228,7 @@ Keep other parameters as default unless you know what you are doing.");
 
 void ParamsPage::ShowHelp(wxCommandEvent& event)
 {
-    wxMessageDialog* dial = new wxMessageDialog(NULL,
+    wxMessageDialog dial(NULL,
         "Short descriptions of main parameters \n\n\
 Check the github for full tutorial and parameter descriptions!\n\n\
 Parameters you have to set before starting:\n\
@@ -247,7 +247,7 @@ Experimental:\n\
 - Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
 Keep other parameters as default unless you know what you are doing.\n\n\
 Press OK to close this window.", wxT("Message"), wxOK);
-    dial->ShowModal();
+    dial.ShowModal();
 }
 
 void ParamsPage::SaveParams(wxCommandEvent& event)
@@ -278,22 +278,22 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->Save();
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3. \n\nParameters saved!"), wxT("Warning"), wxOK | wxICON_WARNING);
-            dial->ShowModal();
+            dial.ShowModal();
         }
         else
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Parameters saved!"), wxT("Info"), wxOK | wxICON_INFORMATION);
-            dial->ShowModal();
+            dial.ShowModal();
         }
     }
     catch (std::exception&)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Please enter appropriate values. Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
     }
 }
 

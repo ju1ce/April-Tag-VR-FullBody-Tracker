@@ -10,17 +10,17 @@ void Connection::StartConnection()
 {
     if (status == WAITING)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         return;
     }
     if (status == CONNECTED)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Already connected. Restart connection?"), wxT("Question"),
             wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-        if (dial->ShowModal() != wxID_YES)
+        if (dial.ShowModal() != wxID_YES)
         {
             return;
         }
@@ -49,9 +49,9 @@ void Connection::Connect()
     ret >> word;
     if (word != "numtrackers")
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed."), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         status = DISCONNECTED;
         return;
     }
@@ -63,9 +63,9 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
-            dial->ShowModal();
+            dial.ShowModal();
             status = DISCONNECTED;
             return;
         }
