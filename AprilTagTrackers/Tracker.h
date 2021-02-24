@@ -7,7 +7,6 @@
 #include <vector>
 #include <thread>
 
-#include <apriltag.h>
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -64,8 +63,6 @@ private:
     //Quaternion
 
     //Quaternion<double> q;
-
-    void detectMarkersApriltag(cv::Mat, std::vector<std::vector<cv::Point2f> >*, std::vector<int>*, std::vector<cv::Point2f>*, apriltag_detector_t*);
 
     clock_t last_frame_time;
 };

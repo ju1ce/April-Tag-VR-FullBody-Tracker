@@ -21,6 +21,54 @@
 #include "Parameters.h"
 #include "Tracker.h"
 
+namespace {
+
+void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >* corners, std::vector<int>* ids, std::vector<cv::Point2f>* centers, apriltag_detector_t* td)
+{
+    cv::Mat gray;
+    if (frame.type() != CV_8U)
+    {
+        cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+    }
+    else
+    {
+        gray = frame;
+    }
+
+    corners->clear();
+    ids->clear();
+    centers->clear();
+
+    image_u8_t im = {
+        gray.cols,
+        gray.rows,
+        static_cast<int32_t>(gray.step1()),
+        gray.data,
+    };
+
+    zarray_t* detections = apriltag_detector_detect(td, &im);
+
+    for (int i = 0; i < zarray_size(detections); i++) {
+        apriltag_detection_t* det;
+        zarray_get(detections, i, &det);
+
+        ids->push_back(det->id);
+        centers->push_back(cv::Point2f(det->c[0], det->c[1]));
+
+        std::vector<cv::Point2f> temp;
+
+        for (int j = 3; j >= 0; j--)
+        {
+            temp.push_back(cv::Point2f(det->p[j][0], det->p[j][1]));
+        }
+
+        corners->push_back(temp);
+    }
+    apriltag_detections_destroy(detections);
+}
+
+} // namespace
+
 Tracker::Tracker(Parameters* params, Connection* conn)
 {
     parameters = params;
@@ -1083,48 +1131,4 @@ void Tracker::MainLoop()
         //time of marker detection
     }
     cv::destroyWindow("out");
-}
-
-void Tracker::detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >* corners, std::vector<int>* ids, std::vector<cv::Point2f>* centers, apriltag_detector_t* td)
-{
-    cv::Mat gray;
-    if (frame.type() != CV_8U)
-    {
-        cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    }
-    else
-    {
-        gray = frame;
-    }
-
-    corners->clear();
-    ids->clear();
-    centers->clear();
-
-    image_u8_t im = {
-        gray.cols,
-        gray.rows,
-        static_cast<int32_t>(gray.step1()),
-        gray.data,
-    };
-
-    zarray_t* detections = apriltag_detector_detect(td, &im);
-
-    for (int i = 0; i < zarray_size(detections); i++) {
-        apriltag_detection_t* det;
-        zarray_get(detections, i, &det);
-
-        ids->push_back(det->id);
-        centers->push_back(cv::Point2f(det->c[0], det->c[1]));
-
-        std::vector<cv::Point2f> temp;
-
-        for (int j = 3; j >= 0; j--)
-        {
-            temp.push_back(cv::Point2f(det->p[j][0], det->p[j][1]));
-        }
-
-        corners->push_back(temp);
-    }
-    apriltag_detections_destroy(detections);
 }
