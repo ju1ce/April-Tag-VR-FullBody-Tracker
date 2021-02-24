@@ -303,9 +303,11 @@ void Tracker::CalibrateCameraCharuco()
 
             std::vector<int> markerIds;
             std::vector<std::vector<cv::Point2f>> markerCorners;
+            std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
             //detect our markers
             cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params);
+            cv::aruco::refineDetectedMarkers(image, board, markerCorners, markerIds, rejectedCorners);
 
             if (markerIds.size() > 0)
             {
