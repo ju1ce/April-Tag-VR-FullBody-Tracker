@@ -644,7 +644,7 @@ void Tracker::CalibrateTracker()
             {
                 if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], false) > 0)
                 {
-                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.1);
+                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.1f);
                     boardFound[i] = true;
                 }
                 else
