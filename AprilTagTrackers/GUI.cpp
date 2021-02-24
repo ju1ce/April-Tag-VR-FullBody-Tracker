@@ -289,7 +289,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
             dial->ShowModal();
         }
     }
-    catch (std::exception & e)
+    catch (std::exception&)
     {
         wxMessageDialog* dial = new wxMessageDialog(NULL,
             wxT("Please enter appropriate values. Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
@@ -368,7 +368,7 @@ void ValueInput::ButtonPressed(wxCommandEvent &evt)
         try {
             value = std::stod(input->GetValue().ToStdString());
         }
-        catch (std::exception& e)
+        catch (std::exception&)
         {
         }
         return;

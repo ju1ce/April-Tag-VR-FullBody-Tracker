@@ -215,8 +215,6 @@ void Tracker::CalibrateCameraCharuco()
 {
     //function to calibrate our camera
 
-    bool success;
-
     cv::Mat image;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
@@ -606,7 +604,7 @@ void Tracker::CalibrateTracker()
         retImage.copyTo(image);
         imageReady = false;
 
-        clock_t start, end;
+        clock_t start;
         //clock for timing of detection
         start = clock();
 
@@ -654,7 +652,7 @@ void Tracker::CalibrateTracker()
                     boardFound[i] = false;
                 }
             }
-            catch (std::exception& e)
+            catch (std::exception&)
             {
                 wxMessageDialog* dial = new wxMessageDialog(NULL,
                     wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
@@ -993,7 +991,7 @@ void Tracker::MainLoop()
                     continue;
                 }
             }
-            catch (std::exception& e)
+            catch (std::exception&)
             {
                 wxMessageDialog* dial = new wxMessageDialog(NULL,
                     wxT("Something went wrong when estimating tracker pose. Try again! \nIf the problem persists, try to recalibrate camera and trackers."), wxT("Error"), wxOK | wxICON_ERROR);
