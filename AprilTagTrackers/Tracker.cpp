@@ -1,7 +1,11 @@
 ﻿#include <iostream>
 #include <vector>
 
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
+#pragma warning(pop)
+
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>

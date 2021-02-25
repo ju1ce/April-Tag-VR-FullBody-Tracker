@@ -1,9 +1,9 @@
-﻿// AprilTagTrackers.h : Include file for standard system include files,
-// or project specific include files.
+﻿#pragma once
 
-#pragma once
-
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
+#pragma warning(pop)
 
 class Connection;
 class GUI;

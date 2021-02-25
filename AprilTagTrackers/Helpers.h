@@ -5,7 +5,11 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
+#pragma warning(pop)
 
 #include "Quaternion.h"
 
