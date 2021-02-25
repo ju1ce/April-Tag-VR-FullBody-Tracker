@@ -11,17 +11,21 @@ int MyApp::OnExit()
 {
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
+    tracker.reset();
+    params.reset();
+    conn.reset();
+    gui.reset();
     Sleep(2000);
     return 0;
 }
 
 bool MyApp::OnInit()
 {
-    params = new Parameters();
-    conn = new Connection(params);
-    tracker = new Tracker(params, conn);
+    params = std::make_shared<Parameters>();
+    conn = std::make_shared<Connection>(params);
+    tracker = std::make_shared<Tracker>(params, conn);
 
-    gui = new GUI(wxT("AprilTag Trackers"),params);
+    gui = std::make_shared<GUI>(wxT("AprilTag Trackers"), params);
     gui->Show(true);
 
     gui->posHbox->Show(false);

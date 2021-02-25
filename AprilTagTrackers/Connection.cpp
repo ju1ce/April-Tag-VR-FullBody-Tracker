@@ -1,9 +1,9 @@
 #include "Connection.h"
 
 
-Connection::Connection(Parameters* params)
+Connection::Connection(std::shared_ptr<Parameters> params)
+    : parameters(params)
 {
-    parameters = params;
 }
 
 void Connection::StartConnection()

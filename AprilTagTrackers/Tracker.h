@@ -4,8 +4,9 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
+#include <memory>
 #include <thread>
+#include <vector>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
@@ -20,7 +21,7 @@ class Parameters;
 class Tracker
 {
 public:
-    Tracker(Parameters*, Connection*);
+    Tracker(std::shared_ptr<Parameters>, std::shared_ptr<Connection>);
     void StartCamera(std::string);
     void StartCameraCalib();
     void StartTrackerCalib();
@@ -32,7 +33,7 @@ public:
     bool recalibrate = false;
     bool manualRecalibrate = false;
 
-    GUI* gui;
+    std::shared_ptr<GUI> gui;
 
     cv::Mat wtranslation = (cv::Mat_<double>(4, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     Quaternion<double> wrotation = Quaternion<double>(1, 0, 0, 0);
@@ -51,8 +52,8 @@ private:
     cv::Mat retImage;
     bool imageReady = false;
 
-    Parameters* parameters;
-    Connection* connection;
+    std::shared_ptr<Parameters> parameters;
+    std::shared_ptr<Connection> connection;
 
     std::thread cameraThread;
     std::thread mainThread;

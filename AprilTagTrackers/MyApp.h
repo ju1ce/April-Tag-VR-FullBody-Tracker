@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <wx/wx.h>
 
 class Connection;
@@ -12,10 +14,10 @@ class Tracker;
 
 class MyApp : public wxApp
 {
-    Tracker* tracker;
-    Parameters* params;
-    Connection* conn;
-    GUI* gui;
+    std::shared_ptr<Tracker> tracker;
+    std::shared_ptr<Parameters> params;
+    std::shared_ptr<Connection> conn;
+    std::shared_ptr<GUI> gui;
 
 public:
     virtual int OnExit();

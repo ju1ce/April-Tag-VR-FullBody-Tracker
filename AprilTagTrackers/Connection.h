@@ -9,8 +9,8 @@ public:
     const int DISCONNECTED = 0;
     const int WAITING = 1;
     const int CONNECTED = 2;
-    Connection(Parameters*);
-    Parameters* parameters;
+    Connection(std::shared_ptr<Parameters>);
+    std::shared_ptr<Parameters> parameters;
     void StartConnection();
     std::istringstream Send(std::string lpszWrite);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);

@@ -1,6 +1,6 @@
 #include "GUI.h"
 
-GUI::GUI(const wxString& title, Parameters * params)
+GUI::GUI(const wxString& title, std::shared_ptr<Parameters> params)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 700))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
@@ -84,7 +84,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     //parentGUI->rotHbox->Show(false);
 }
 
-ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
+ParamsPage::ParamsPage(wxNotebook* parent, std::shared_ptr<Parameters> params)
     :wxPanel(parent)
 {
     parameters = params;

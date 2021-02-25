@@ -24,7 +24,7 @@ private:
 class GUI : public wxFrame
 {
 public:
-    GUI(const wxString& title, Parameters* params);
+    GUI(const wxString& title, std::shared_ptr<Parameters> params);
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CALIB_BUTTON = 3;
     static const int CAMERA_CHECKBOX = 4;
@@ -57,12 +57,12 @@ public:
 class ParamsPage : public wxPanel
 {
 public:
-    ParamsPage(wxNotebook* parent, Parameters* params);
+    ParamsPage(wxNotebook* parent, std::shared_ptr<Parameters> params);
 
 private:
     const int SAVE_BUTTON = 2;
     const int HELP_BUTTON = 10;
-    Parameters* parameters;
+    std::shared_ptr<Parameters> parameters;
     wxTextCtrl* cameraAddrField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;

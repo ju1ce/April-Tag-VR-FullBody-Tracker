@@ -69,10 +69,9 @@ void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >
 
 } // namespace
 
-Tracker::Tracker(Parameters* params, Connection* conn)
+Tracker::Tracker(std::shared_ptr<Parameters> params, std::shared_ptr<Connection> conn)
+    : parameters(params), connection(conn)
 {
-    parameters = params;
-    connection = conn;
     if (!parameters->trackers.empty())
     {
         trackers = parameters->trackers;
