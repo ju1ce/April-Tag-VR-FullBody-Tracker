@@ -1,7 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include "Parameters.h"
-#include <windows.h> 
+#include <windows.h>
 
 class Connection
 {
@@ -25,6 +25,4 @@ private:
     BOOL fSuccess;
     DWORD cbRead;
     LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
-
 };
-
