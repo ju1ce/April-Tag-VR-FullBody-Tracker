@@ -20,8 +20,8 @@ class MyApp : public wxApp
     std::shared_ptr<GUI> gui;
 
 public:
-    virtual int OnExit();
-    virtual bool OnInit();
+    virtual int OnExit() wxOVERRIDE;
+    virtual bool OnInit() wxOVERRIDE;
     void ButtonPressedCamera(wxCommandEvent&);
     void ButtonPressedCameraCalib(wxCommandEvent&);
     void ButtonPressedCameraPreview(wxCommandEvent&);
