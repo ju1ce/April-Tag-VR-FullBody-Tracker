@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <mutex>
 #include <vector>
 
 #include <wx/wx.h>
@@ -170,8 +171,11 @@ void Tracker::CameraLoop()
         }
         if (rotate)
             cv::rotate(img, img, rotateFlag);
-        img.copyTo(retImage);
-        imageReady = true;
+        {
+            std::lock_guard<std::mutex> lock(cameraImageMutex);
+            img.copyTo(cameraImage);
+            imageReady = true;
+        }
         last_frame_time = clock();
         if (previewCamera)
         {
@@ -185,6 +189,21 @@ void Tracker::CameraLoop()
     }
     cv::destroyAllWindows();
     cap.release();
+}
+
+void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
+{
+    // Sleep happens between each iteration when the mutex is not locked.
+    for (;;Sleep(1))
+    {
+        std::lock_guard<std::mutex> lock(cameraImageMutex);
+        if (imageReady)
+        {
+            imageReady = false;
+            cameraImage.copyTo(image);
+            return;
+        }
+    }
 }
 
 void Tracker::StartCameraCalib()
@@ -263,10 +282,7 @@ void Tracker::CalibrateCameraCharuco()
             cv::destroyAllWindows();
             return;
         }
-        while (!imageReady)
-            Sleep(1);
-        imageReady = false;
-        retImage.copyTo(image);
+        CopyFreshCameraImageTo(image);
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::Mat drawImg;
         int cols, rows;
@@ -399,10 +415,7 @@ void Tracker::CalibrateCamera()
             cv::destroyAllWindows();
             return;
         }
-        while (!imageReady)
-            Sleep(1);
-        imageReady = false;
-        retImage.copyTo(image);
+        CopyFreshCameraImageTo(image);
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::Mat drawImg;
         int cols, rows;
@@ -601,10 +614,7 @@ void Tracker::CalibrateTracker()
 
     while (cameraRunning && mainThreadRunning)
     {
-        while (!imageReady)
-            Sleep(1);
-        retImage.copyTo(image);
-        imageReady = false;
+        CopyFreshCameraImageTo(image);
 
         clock_t start;
         //clock for timing of detection
@@ -852,11 +862,7 @@ void Tracker::MainLoop()
 
     while(mainThreadRunning && cameraRunning)
     {
-        while (!imageReady)
-            Sleep(1);
-
-        retImage.copyTo(image);
-        imageReady = false;
+        CopyFreshCameraImageTo(image);
 
         image.copyTo(drawImg);
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);

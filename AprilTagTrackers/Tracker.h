@@ -4,8 +4,9 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
@@ -39,6 +40,7 @@ public:
 
 private:
     void CameraLoop();
+    void CopyFreshCameraImageTo(cv::Mat& image);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -48,7 +50,10 @@ private:
 
     cv::VideoCapture cap;
 
-    cv::Mat retImage;
+    // cameraImage and imageReady are protected by cameraImageMutex.
+    // Use CopyFreshCameraImageTo in order to get the latest camera image.
+    std::mutex cameraImageMutex;
+    cv::Mat cameraImage;
     bool imageReady = false;
 
     Parameters* parameters;
