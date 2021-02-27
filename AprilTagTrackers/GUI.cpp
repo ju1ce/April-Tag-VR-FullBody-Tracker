@@ -20,7 +20,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
 {
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(7, 2, 20, 20);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
     wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
     wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
@@ -90,7 +90,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     parameters = params;
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
 
     wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
     cameraAddrText->SetToolTip("Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
