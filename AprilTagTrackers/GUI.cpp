@@ -61,9 +61,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibX = new ValueInput(this, "X(cm):", 0);
     parentGUI->manualCalibY = new ValueInput(this, "Y(cm):", 0);
     parentGUI->manualCalibZ = new ValueInput(this, "Z(cm):", 0);
-    parentGUI->manualCalibA = new ValueInput(this, "A(°):", 0);
-    parentGUI->manualCalibB = new ValueInput(this, "B(°):", 0);
-    parentGUI->manualCalibC = new ValueInput(this, "C(°):", 0);
+    parentGUI->manualCalibA = new ValueInput(this, wxString::FromUTF8("A(Â°):"), 0);
+    parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(Â°):"), 0);
+    parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(Â°):"), 0);
 
     parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse the values bellow to align the virtual camera with \nyour IRL one. Use your controllers as references.\nUncheck Calibration mode when done!")), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
@@ -112,9 +112,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
     ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
     wxStaticText* rotateClText = new wxStaticText(this, -1, wxT("Rotate camera clockwise"));
-    rotateClText->SetToolTip("Rotate the camera. Use both to rotate image 180°");
+    rotateClText->SetToolTip(wxString::FromUTF8("Rotate the camera. Use both to rotate image 180Â°"));
     wxStaticText* rotateCounterClText = new wxStaticText(this, -1, wxT("Rotate camera counterclockwise"));
-    rotateCounterClText->SetToolTip("Rotate the camera. Use both to rotate image 180°");
+    rotateCounterClText->SetToolTip(wxString::FromUTF8("Rotate the camera. Use both to rotate image 180Â°"));
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
@@ -228,25 +228,25 @@ Keep other parameters as default unless you know what you are doing.");
 
 void ParamsPage::ShowHelp(wxCommandEvent& event)
 {
-    wxMessageDialog dial(NULL,
-        "Short descriptions of main parameters \n\n\
-Check the github for full tutorial and parameter descriptions!\n\n\
-Parameters you have to set before starting:\n\
-- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n\
-- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n\
-- Size of markers: Measure the white square on markers.\n\
-- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n\
-- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n\
-Other usefull parameters:\n\
-- Rotate camera: Self explanatory. Use both for a 180° flip\n\
-- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n\
-- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n\
-- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n\
-Experimental:\n\
-- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n\
-- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
-Keep other parameters as default unless you know what you are doing.\n\n\
-Press OK to close this window.", wxT("Message"), wxOK);
+    wxMessageDialog dial(NULL, wxString::FromUTF8(
+        "Short descriptions of main parameters \n\n"
+        "Check the github for full tutorial and parameter descriptions!\n\n"
+        "Parameters you have to set before starting:\n"
+        "- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n"
+        "- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n"
+        "- Size of markers: Measure the white square on markers.\n"
+        "- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n"
+        "- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n"
+        "Other usefull parameters:\n"
+        "- Rotate camera: Self explanatory. Use both for a 180Â° flip\n"
+        "- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n"
+        "- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n"
+        "- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n"
+        "Experimental:\n"
+        "- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n"
+        "- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.\n\n"
+        "Press OK to close this window."), wxT("Message"), wxOK);
     dial.ShowModal();
 }
 
@@ -297,7 +297,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
     }
 }
 
-ValueInput::ValueInput(wxPanel* parent, std::string nm, double val)
+ValueInput::ValueInput(wxPanel* parent, const wxString& nm, double val)
     :wxPanel(parent)
 {
     value = val;

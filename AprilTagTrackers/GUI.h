@@ -10,7 +10,7 @@
 class ValueInput : public wxPanel
 {
 public:
-    ValueInput(wxPanel* parent, std::string nm, double val);
+    ValueInput(wxPanel* parent, const wxString& nm, double val);
     double value;
     void SetValue(double val);
 
