@@ -96,38 +96,37 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
 }
 
 ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
-    :wxPanel(parent)
+    : wxPanel(parent)
+    , parameters(params)
+    , cameraAddrField(new wxTextCtrl(this, -1, parameters->cameraAddr))
+    , trackerNumField(new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum)))
+    , markerSizeField(new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100)))
+    , prevValuesField(new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues)))
+    , smoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor)))
+    , quadDecimateField(new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate)))
+    , searchWindowField(new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow)))
+    // usePredictiveField(new wxCheckBox(this, -1, wxT("")))
+    // calibrationTrackerField(new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker)))
+    , ignoreTracker0Field(new wxCheckBox(this, -1, wxT("")))
+    , rotateClField(new wxCheckBox(this, -1, wxT("")))
+    , rotateCounterClField(new wxCheckBox(this, -1, wxT("")))
+    // offsetxField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX)))
+    // offsetyField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY)))
+    // offsetzField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ)))
+    // circularField(new wxCheckBox(this, -1, wxT("")))
+    , camFpsField(new wxTextCtrl(this, -1, std::to_string(parameters->camFps)))
+    , camWidthField(new wxTextCtrl(this, -1, std::to_string(parameters->camWidth)))
+    , camHeightField(new wxTextCtrl(this, -1, std::to_string(parameters->camHeight)))
+    , camLatencyField(new wxTextCtrl(this, -1, std::to_string(parameters->camLatency)))
+    // cameraSettingsField(new wxCheckBox(this, -1, wxT("")))
+    , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
 {
-    parameters = params;
-
-    cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
-    trackerNumField = new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum));
-    markerSizeField = new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100));
-    prevValuesField = new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues));
-    smoothingField = new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor));
-    quadDecimateField = new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate));
-    searchWindowField = new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow));
-    //usePredictiveField = new wxCheckBox(this, -1, wxT(""));
     //usePredictiveField->SetValue(parameters->usePredictive);
-    //calibrationTrackerField = new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker));
-    ignoreTracker0Field = new wxCheckBox(this, -1, wxT(""));
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
-    rotateClField = new wxCheckBox(this, -1, wxT(""));
     rotateClField->SetValue(parameters->rotateCl);
-    rotateCounterClField = new wxCheckBox(this, -1, wxT(""));
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
-    //offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
-    //offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
-    //offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
-    //circularField = new wxCheckBox(this, -1, wxT(""));
     //circularField->SetValue(parameters->circularWindow);
-    camFpsField = new wxTextCtrl(this, -1, std::to_string(parameters->camFps));
-    camWidthField = new wxTextCtrl(this, -1, std::to_string(parameters->camWidth));
-    camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
-    camLatencyField = new wxTextCtrl(this, -1, std::to_string(parameters->camLatency));
-    //cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
     //cameraSettingsField->SetValue(parameters->cameraSettings);
-    chessboardCalibField = new wxCheckBox(this, -1, wxT(""));
     chessboardCalibField->SetValue(parameters->chessboardCalib);
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
