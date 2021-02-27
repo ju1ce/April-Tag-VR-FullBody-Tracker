@@ -298,31 +298,24 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
 }
 
 ValueInput::ValueInput(wxPanel* parent, const wxString& nm, double val)
-    :wxPanel(parent)
+    : wxPanel(parent)
+    , value(val)
+    , input(new wxTextCtrl(this, 5, std::to_string(0)))
 {
-    value = val;
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
-    dwn1 = new wxButton(this, 1, "<", wxDefaultPosition, wxSize(25,25));
-    dwn2 = new wxButton(this, 2, "<<", wxDefaultPosition, wxSize(25, 25));
-    up1 = new wxButton(this, 3, ">", wxDefaultPosition, wxSize(25, 25));
-    up2 = new wxButton(this, 4, ">>", wxDefaultPosition, wxSize(25, 25));
-    input = new wxTextCtrl(this, 5, std::to_string(0));
 
     Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ValueInput::ButtonPressed));
     Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(ValueInput::ButtonPressed));
     Connect(wxEVT_MOUSEWHEEL, wxMouseEventHandler(ValueInput::MouseScroll));
 
-    wxStaticText* name = new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20));
-
-    hbox->Add(name);
-    hbox->Add(dwn2);
-    hbox->Add(dwn1);
+    hbox->Add(new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20)));
+    hbox->Add(new wxButton(this, 2, "<<", wxDefaultPosition, wxSize(25, 25)));
+    hbox->Add(new wxButton(this, 1, "<", wxDefaultPosition, wxSize(25,25)));
     hbox->Add(input);
-    hbox->Add(up1);
-    hbox->Add(up2);
+    hbox->Add(new wxButton(this, 3, ">", wxDefaultPosition, wxSize(25, 25)));
+    hbox->Add(new wxButton(this, 4, ">>", wxDefaultPosition, wxSize(25, 25)));
 
     this->SetSizer(hbox);
-
 }
 
 void ValueInput::SetValue(double val)

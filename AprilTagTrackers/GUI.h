@@ -15,11 +15,7 @@ public:
     void SetValue(double val);
 
 private:
-    wxButton* dwn1;
-    wxButton* dwn2;
     wxTextCtrl* input = 0;
-    wxButton* up1;
-    wxButton* up2;
 
     void ButtonPressed(wxCommandEvent&);
     void MouseScroll(wxMouseEvent&);
