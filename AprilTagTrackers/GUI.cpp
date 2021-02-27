@@ -1,5 +1,16 @@
 #include "GUI.h"
 
+namespace {
+
+void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label, const wxString& tooltip)
+{
+    wxStaticText* textObject = new wxStaticText(parent, -1, label);
+    textObject->SetToolTip(tooltip);
+    sizer->Add(textObject);
+}
+
+} // namespace
+
 GUI::GUI(const wxString& title, Parameters * params)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 700))
 {
@@ -123,52 +134,30 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
 
-    wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
-    cameraAddrText->SetToolTip("Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
-    fgs->Add(cameraAddrText);
+    addTextWithTooltip(this, fgs, "Ip or ID of camera", "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
     fgs->Add(cameraAddrField);
-    wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
-    trackerNumText->SetToolTip("Set to 3 for full body. 2 will not work in vrchat!");
-    fgs->Add(trackerNumText);
+    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
     fgs->Add(trackerNumField);
-    wxStaticText* markerSizeText = new wxStaticText(this, -1, wxT("Size of markers in cm"));
-    markerSizeText->SetToolTip("Measure the white square on markers and input it here");
-    fgs->Add(markerSizeText);
+    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
     fgs->Add(markerSizeField);
-    wxStaticText* rotateClText = new wxStaticText(this, -1, wxT("Rotate camera clockwise"));
-    rotateClText->SetToolTip(wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
-    fgs->Add(rotateClText);
+    addTextWithTooltip(this, fgs, "Rotate camera clockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateClField);
-    wxStaticText* rotateCounterClText = new wxStaticText(this, -1, wxT("Rotate camera counterclockwise"));
-    rotateCounterClText->SetToolTip(wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
-    fgs->Add(rotateCounterClText);
+    addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
-    wxStaticText* prevValuesText = new wxStaticText(this, -1, wxT("Number of values for smoothing"));
-    prevValuesText->SetToolTip("Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
-    fgs->Add(prevValuesText);
+    addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
-    wxStaticText* smoothingText = new wxStaticText(this, -1, wxT("Additional smoothing"));
-    smoothingText->SetToolTip("0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
-    fgs->Add(smoothingText);
+    addTextWithTooltip(this, fgs, "Additional smoothing", "0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
     fgs->Add(smoothingField);
-    wxStaticText* quadDecimateText = new wxStaticText(this, -1, wxT("Quad decimate"));
-    quadDecimateText->SetToolTip("Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
-    fgs->Add(quadDecimateText);
+    addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
-    wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
-    searchWindowText->SetToolTip("Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
-    fgs->Add(searchWindowText);
+    addTextWithTooltip(this, fgs, "Search window", "Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
     fgs->Add(searchWindowField);
     //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     //fgs->Add(calibrationTrackerText);
     //fgs->Add(calibrationTrackerField);
-    wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
-    ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
-    fgs->Add(ignoreTracker0Text);
+    addTextWithTooltip(this, fgs, "Ignore tracker 0", "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
     fgs->Add(ignoreTracker0Field);
-    //wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
-    //usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
-    //fgs->Add(usePredictiveText);
+    //addTextWithTooltip(this, fgs, "Use previous position as guess", "Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
     //fgs->Add(usePredictiveField);
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //fgs->Add(offsetxText);
@@ -179,34 +168,21 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
     //fgs->Add(offsetzText);
     //fgs->Add(offsetzField);
-    //wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
-    //circularText->SetToolTip("Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
-    //fgs->Add(circularText);
+    //addTextWithTooltip(this, fgs, "Use circular search window", "Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     //fgs->Add(circularField);
-    wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
-    camFpsText->SetToolTip("Set the fps of the camera");
-    fgs->Add(camFpsText);
+    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
     fgs->Add(camFpsField);
-    wxStaticText* camWidthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
-    camWidthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camWidthText);
+    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
     fgs->Add(camWidthField);
-    wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
-    camHeightText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camHeightText);
+    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
     fgs->Add(camHeightField);
-    wxStaticText* camLatencyText = new wxStaticText(this, -1, wxT("Camera latency"));
-    camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
-    fgs->Add(camLatencyText);
+    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
     fgs->Add(camLatencyField);
-    //wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
-    //cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
-    //fgs->Add(cameraSettingsText);
+    //addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
     //fgs->Add(cameraSettingsField);
-    wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
-    chessboardCalibText->SetToolTip("Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
-Keep other parameters as default unless you know what you are doing.");
-    fgs->Add(chessboardCalibText);
+    addTextWithTooltip(this, fgs, "Use chessboard calibration",
+        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.");
     fgs->Add(chessboardCalibField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
