@@ -414,6 +414,7 @@ void Tracker::CalibrateCameraCharuco()
     // Save calibration to our global params cameraMatrix and distCoeffs
     parameters->camMat = cameraMatrix;
     parameters->distCoeffs = distCoeffs;
+    parameters->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
     parameters->Save();
     mainThreadRunning = false;
     cv::destroyAllWindows();
