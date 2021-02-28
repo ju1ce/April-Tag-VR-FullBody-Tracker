@@ -18,6 +18,9 @@ void Parameters::Load()
         fs["cameraMatrix"] >> camMat;
         fs["distortionCoeffs"] >> distCoeffs;
         fs["stdDeviationsIntrinsics"] >> stdDeviationsIntrinsics;
+        fs["perViewErrors"] >> perViewErrors;
+        fs["allCharucoCorners"] >> allCharucoCorners;
+        fs["allCharucoIds"] >> allCharucoIds;
         fs["trackerNum"] >> trackerNum;
         fs["markerSize"] >> markerSize;
         fs["numOfPrevValues"] >> numOfPrevValues;
@@ -93,6 +96,9 @@ void Parameters::Save()
     fs << "cameraMatrix" << camMat;
     fs << "distortionCoeffs" << distCoeffs;
     fs << "stdDeviationsIntrinsics" << stdDeviationsIntrinsics;
+    fs << "perViewErrors" << perViewErrors;
+    fs << "allCharucoCorners" << allCharucoCorners;
+    fs << "allCharucoIds" << allCharucoIds;
     fs << "trackerNum" << trackerNum;
     fs << "markerSize" << markerSize;
     fs << "numOfPrevValues" << numOfPrevValues;

@@ -14,6 +14,9 @@ public:
     cv::Mat camMat;
     cv::Mat distCoeffs;
     cv::Mat stdDeviationsIntrinsics;
+    std::vector<double> perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds;
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     int trackerNum = 1;
     double markerSize = 0.05;

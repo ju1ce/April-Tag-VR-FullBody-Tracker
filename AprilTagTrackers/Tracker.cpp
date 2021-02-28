@@ -254,9 +254,6 @@ void Tracker::CalibrateCameraCharuco()
     //cv::imwrite("charuco_board.jpg", boardImage);
     //cv::waitKey(1);
 
-    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
-    std::vector<std::vector<int>> allCharucoIds;
-
     //set our detectors marker border bits to 1 since thats what charuco uses
     params->markerBorderBits = 1;
 
@@ -276,7 +273,13 @@ void Tracker::CalibrateCameraCharuco()
     th.detach();
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
-    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors;
+    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
+    parameters->camMat.copyTo(cameraMatrix);
+    parameters->distCoeffs.copyTo(distCoeffs);
+    parameters->stdDeviationsIntrinsics.copyTo(stdDeviationsIntrinsics);
+    std::vector<double> perViewErrors = parameters->perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
 
     // Create a grid in front of the camera for visualization purposes.
     const int gridSize = 10; // Number of units from first to  last line.
@@ -337,20 +340,20 @@ void Tracker::CalibrateCameraCharuco()
                 }
             }
         }
-        if (picsTaken > 0)
+        if (allCharucoCorners.size() > 0)
         {
             // Draw all corners that we have so far
             cv::Mat colorsFromErrors;
             if (!perViewErrors.empty())
             {
-                perViewErrors.convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
+                cv::Mat(perViewErrors).convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
                 cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_PLASMA);
             }
-            for (int i = 0; i < picsTaken; ++i)
+            for (int i = 0; i < allCharucoCorners.size(); ++i)
             {
                 const auto& charucoCorners = allCharucoCorners[i];
                 cv::Scalar color(255, 255, 0);
-                if (!colorsFromErrors.empty())
+                if (colorsFromErrors.total() > i)
                 {
                     color = colorsFromErrors.at<cv::Vec3b>(i);
                 }
@@ -415,6 +418,9 @@ void Tracker::CalibrateCameraCharuco()
     parameters->camMat = cameraMatrix;
     parameters->distCoeffs = distCoeffs;
     parameters->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
+    parameters->perViewErrors = perViewErrors;
+    parameters->allCharucoCorners = allCharucoCorners;
+    parameters->allCharucoIds = allCharucoIds;
     parameters->Save();
     mainThreadRunning = false;
     cv::destroyAllWindows();
