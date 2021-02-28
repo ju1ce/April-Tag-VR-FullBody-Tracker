@@ -177,7 +177,13 @@ void Tracker::CameraLoop()
             cv::rotate(img, img, rotateFlag);
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
-            img.copyTo(cameraImage);
+            // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
+            // The pixel buffer from cameraImage can be reused if the size and format matches.
+            cv::swap(img, cameraImage);
+            if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
+            {
+                img.release();
+            }
             imageReady = true;
         }
         last_frame_time = clock();
@@ -204,7 +210,13 @@ void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
         if (imageReady)
         {
             imageReady = false;
-            cameraImage.copyTo(image);
+            // Swap metadata and pointers to pixel buffers.
+            cv::swap(image, cameraImage);
+            // We don't want to overwrite shared data so release the image unless we are the only user of it.
+            if (!(cameraImage.u && cameraImage.u->refcount == 1))
+            {
+                cameraImage.release();
+            }
             return;
         }
     }
