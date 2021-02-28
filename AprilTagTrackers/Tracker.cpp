@@ -239,6 +239,9 @@ void Tracker::CalibrateCameraCharuco()
     //function to calibrate our camera
 
     cv::Mat image;
+    cv::Mat gray;
+    cv::Mat drawImg;
+    cv::Mat outImg;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
@@ -259,8 +262,6 @@ void Tracker::CalibrateCameraCharuco()
 
     int framesSinceLast = -2 * parameters->camFps;
 
-    int i = 0;
-
     std::thread th{ [=]() {
         wxMessageDialog dial(NULL,
             "Camera calibration started! \n\n"
@@ -274,11 +275,33 @@ void Tracker::CalibrateCameraCharuco()
 
     th.detach();
 
+    cv::Mat cameraMatrix, distCoeffs, R, T;
+    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors;
+
+    // Create a grid in front of the camera for visualization purposes.
+    const int gridSize = 10; // Number of units from first to  last line.
+    const int gridSubdivision = 10; // Number of segments per line.
+    const int gridDistance = 5; // Distance from camera to grid.
+    std::vector<std::vector<cv::Point3f>> gridLinesInCamera(2* gridSize + 2);
+    std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
+    for (int i = 0; i <= gridSize; ++i)
+    {
+        auto& horizontalLineInCamera = gridLinesInCamera[2 * i];
+        auto& verticalLineInCamera = gridLinesInCamera[2 * i + 1];
+        horizontalLineInCamera.reserve(gridSize * gridSubdivision + 1);
+        verticalLineInCamera.reserve(gridSize * gridSubdivision + 1);
+        for (int j = 0; j <= gridSize * gridSubdivision; ++j)
+        {
+            const float x = float(j) / float(gridSubdivision) - float(gridSize) * 0.5f;
+            const float y = float(i) - float(gridSize) * 0.5f;
+            horizontalLineInCamera.push_back(cv::Point3f(x, y, gridDistance));
+            verticalLineInCamera.push_back(cv::Point3f(y, x, gridDistance)); // Swap x and y.
+        }
+    }
+
     //get calibration data from 20 images
-
-    int picNum = parameters->cameraCalibSamples;
-
-    while (i < picNum)
+    const int picNum = parameters->cameraCalibSamples;
+    for (int picsTaken = 0; picsTaken < picNum;)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
@@ -286,8 +309,6 @@ void Tracker::CalibrateCameraCharuco()
             return;
         }
         CopyFreshCameraImageTo(image);
-        cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        cv::Mat drawImg;
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -300,33 +321,64 @@ void Tracker::CalibrateCameraCharuco()
             rows = image.rows * drawImgSize / image.cols;
         }
 
-        //std::vector<int> markerIds;
-        //std::vector<std::vector<cv::Point2f>> markerCorners;
+        image.copyTo(drawImg);
+        cv::putText(drawImg, std::to_string(picsTaken) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
-        //cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params);
-        //cv::aruco::drawDetectedMarkers(image, markerCorners, markerIds);
+        if (!cameraMatrix.empty())
+        {
+            for (const auto& gridLineInCamera : gridLinesInCamera)
+            {
+                cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), cameraMatrix, distCoeffs, gridLineInImage);
+                for (size_t j = 1; j < gridLineInImage.size(); ++j)
+                {
+                    const auto p1 = gridLineInImage[j - 1];
+                    const auto p2 = gridLineInImage[j];
+                    cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127));
+                }
+            }
+        }
+        if (picsTaken > 0)
+        {
+            // Draw all corners that we have so far
+            cv::Mat colorsFromErrors;
+            if (!perViewErrors.empty())
+            {
+                perViewErrors.convertTo(colorsFromErrors, CV_8UC1, 255.0 / 10.0, 0.0);
+                cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_PLASMA);
+            }
+            for (int i = 0; i < picsTaken; ++i)
+            {
+                const auto& charucoCorners = allCharucoCorners[i];
+                cv::Scalar color(255, 255, 0);
+                if (!colorsFromErrors.empty())
+                {
+                    color = colorsFromErrors.at<cv::Vec3b>(i);
+                }
+                for (const auto& point : charucoCorners)
+                {
+                    cv::circle(drawImg, point, 2, color, cv::FILLED);
+                }
+            }
+        }
 
-        cv::resize(image, drawImg, cv::Size(cols, rows));
-
-        cv::imshow("out", drawImg);
+        cv::resize(drawImg, outImg, cv::Size(cols, rows));
+        cv::imshow("out", outImg);
         char key = (char)cv::waitKey(1);
-
-        //continue;
 
         framesSinceLast++;
         if (key != -1 || framesSinceLast > parameters->camFps)
         {
             framesSinceLast = 0;
             //if any button was pressed
-            cvtColor(image, image, cv::COLOR_BGR2GRAY);
+            cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
             std::vector<int> markerIds;
             std::vector<std::vector<cv::Point2f>> markerCorners;
             std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
             //detect our markers
-            cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params, rejectedCorners);
-            cv::aruco::refineDetectedMarkers(image, board, markerCorners, markerIds, rejectedCorners);
+            cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
+            cv::aruco::refineDetectedMarkers(gray, board, markerCorners, markerIds, rejectedCorners);
 
             if (markerIds.size() > 0)
             {
@@ -334,27 +386,32 @@ void Tracker::CalibrateCameraCharuco()
                 std::vector<cv::Point2f> charucoCorners;
                 std::vector<int> charucoIds;
                 //using data from aruco detection we refine the search of chessboard corners for higher accuracy
-                cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds);
+                cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, gray, board, charucoCorners, charucoIds);
                 if (charucoIds.size() > 15)
                 {
                     //if corners were found, we draw them
-                    cv::aruco::drawDetectedCornersCharuco(image, charucoCorners, charucoIds);
+                    cv::aruco::drawDetectedCornersCharuco(drawImg, charucoCorners, charucoIds);
                     //we then add our corners to the array
                     allCharucoCorners.push_back(charucoCorners);
                     allCharucoIds.push_back(charucoIds);
-                    i++;
+                    picsTaken++;
                 }
             }
-            cv::resize(image, drawImg, cv::Size(cols, rows));
-            cv::imshow("out", drawImg);
-            cv::waitKey(1000);
+
+            cv::resize(drawImg, outImg, cv::Size(cols, rows));
+            cv::imshow("out", outImg);
+            char key = (char)cv::waitKey(1);
+
+            if (picsTaken >= 3)
+            {
+                // Calibrate camera using our data
+                cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors, 0);
+            }
         }
     }
-    cv::Mat cameraMatrix, distCoeffs, R, T;
 
-    //calibrate camera using our data and save to our global params cameraMatrix and distCoeffs
-    cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T, 0);
-
+    // Save calibration to our global params cameraMatrix and distCoeffs
     parameters->camMat = cameraMatrix;
     parameters->distCoeffs = distCoeffs;
     parameters->Save();
