@@ -343,7 +343,7 @@ void Tracker::CalibrateCameraCharuco()
             cv::Mat colorsFromErrors;
             if (!perViewErrors.empty())
             {
-                perViewErrors.convertTo(colorsFromErrors, CV_8UC1, 255.0 / 10.0, 0.0);
+                perViewErrors.convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
                 cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_PLASMA);
             }
             for (int i = 0; i < picsTaken; ++i)
