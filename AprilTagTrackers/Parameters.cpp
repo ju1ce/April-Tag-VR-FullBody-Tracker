@@ -16,7 +16,7 @@ void Parameters::Load()
         fs["camHeight"] >> camHeight;
         fs["camWidth"] >> camWidth;
         fs["cameraMatrix"] >> camMat;
-        fs["distortionCoeffs"] >> distCoefs;
+        fs["distortionCoeffs"] >> distCoeffs;
         fs["trackerNum"] >> trackerNum;
         fs["markerSize"] >> markerSize;
         fs["numOfPrevValues"] >> numOfPrevValues;
@@ -90,7 +90,7 @@ void Parameters::Save()
     fs << "camHeight" << camHeight;
     fs << "camWidth" << camWidth;
     fs << "cameraMatrix" << camMat;
-    fs << "distortionCoeffs" << distCoefs;
+    fs << "distortionCoeffs" << distCoeffs;
     fs << "trackerNum" << trackerNum;
     fs << "markerSize" << markerSize;
     fs << "numOfPrevValues" << numOfPrevValues;

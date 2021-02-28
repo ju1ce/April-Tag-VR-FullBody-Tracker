@@ -12,7 +12,7 @@ public:
     void Save();
     std::string cameraAddr = "0";
     cv::Mat camMat;
-    cv::Mat distCoefs;
+    cv::Mat distCoeffs;
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     int trackerNum = 1;
     double markerSize = 0.05;

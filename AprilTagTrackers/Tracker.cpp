@@ -356,7 +356,7 @@ void Tracker::CalibrateCameraCharuco()
     cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T, 0);
 
     parameters->camMat = cameraMatrix;
-    parameters->distCoefs = distCoeffs;
+    parameters->distCoeffs = distCoeffs;
     parameters->Save();
     mainThreadRunning = false;
     cv::destroyAllWindows();
@@ -467,7 +467,7 @@ void Tracker::CalibrateCamera()
     calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
 
     parameters->camMat = cameraMatrix;
-    parameters->distCoefs = distCoeffs;
+    parameters->distCoeffs = distCoeffs;
     parameters->Save();
     mainThreadRunning = false;
     cv::destroyAllWindows();
@@ -635,7 +635,7 @@ void Tracker::CalibrateTracker()
 
         //estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, markerSize, parameters->camMat, parameters->distCoefs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, markerSize, parameters->camMat, parameters->distCoeffs, rvecs, tvecs);
         /*
         for (int i = 0; i < rvecs.size(); ++i) {
             //draw axis for each marker
@@ -644,7 +644,7 @@ void Tracker::CalibrateTracker()
 
             //rotation/translation vectors are shown as offset of our camera from the marker
 
-            cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, rvec, tvec, parameters->markerSize);
+            cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, rvec, tvec, parameters->markerSize);
         }
         */
 
@@ -657,9 +657,9 @@ void Tracker::CalibrateTracker()
             //bool boardFound = false;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], false) > 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], false) > 0)
                 {
-                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.1f);
+                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1f);
                     boardFound[i] = true;
                 }
                 else
@@ -990,7 +990,7 @@ void Tracker::MainLoop()
                 continue;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
                     {
