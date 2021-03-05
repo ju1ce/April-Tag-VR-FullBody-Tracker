@@ -72,6 +72,30 @@ void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >
     apriltag_detections_destroy(detections);
 }
 
+// Create a grid in front of the camera for visualization purposes.
+std::vector<std::vector<cv::Point3f>> createXyGridLines(
+    const int gridSize, // Number of units from first to last line.
+    const int gridSubdivision, // Number of segments per line.
+    const int z) // Z-coord of grid.
+{
+    std::vector<std::vector<cv::Point3f>> gridLines(2* gridSize + 2);
+    for (int i = 0; i <= gridSize; ++i)
+    {
+        auto& horizontalLine = gridLines[2 * i];
+        auto& verticalLine = gridLines[2 * i + 1];
+        horizontalLine.reserve(gridSize * gridSubdivision + 1);
+        verticalLine.reserve(gridSize * gridSubdivision + 1);
+        for (int j = 0; j <= gridSize * gridSubdivision; ++j)
+        {
+            const float x = float(j) / float(gridSubdivision) - float(gridSize) * 0.5f;
+            const float y = float(i) - float(gridSize) * 0.5f;
+            horizontalLine.push_back(cv::Point3f(x, y, z));
+            verticalLine.push_back(cv::Point3f(y, x, z)); // Swap x and y.
+        }
+    }
+    return gridLines;
+}
+
 } // namespace
 
 Tracker::Tracker(Parameters* params, Connection* conn)
@@ -293,26 +317,8 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
 
-    // Create a grid in front of the camera for visualization purposes.
-    const int gridSize = 10; // Number of units from first to  last line.
-    const int gridSubdivision = 10; // Number of segments per line.
-    const int gridDistance = 5; // Distance from camera to grid.
-    std::vector<std::vector<cv::Point3f>> gridLinesInCamera(2* gridSize + 2);
+    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 5);
     std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
-    for (int i = 0; i <= gridSize; ++i)
-    {
-        auto& horizontalLineInCamera = gridLinesInCamera[2 * i];
-        auto& verticalLineInCamera = gridLinesInCamera[2 * i + 1];
-        horizontalLineInCamera.reserve(gridSize * gridSubdivision + 1);
-        verticalLineInCamera.reserve(gridSize * gridSubdivision + 1);
-        for (int j = 0; j <= gridSize * gridSubdivision; ++j)
-        {
-            const float x = float(j) / float(gridSubdivision) - float(gridSize) * 0.5f;
-            const float y = float(i) - float(gridSize) * 0.5f;
-            horizontalLineInCamera.push_back(cv::Point3f(x, y, gridDistance));
-            verticalLineInCamera.push_back(cv::Point3f(y, x, gridDistance)); // Swap x and y.
-        }
-    }
 
     //get calibration data from 20 images
     const int picNum = parameters->cameraCalibSamples;
