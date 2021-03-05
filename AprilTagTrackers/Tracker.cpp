@@ -421,7 +421,8 @@ void Tracker::CalibrateCameraCharuco()
             {
                 // Calibrate camera using our data
                 cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
-                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors, 0);
+                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                    cv::CALIB_USE_LU);
             }
         }
     }
