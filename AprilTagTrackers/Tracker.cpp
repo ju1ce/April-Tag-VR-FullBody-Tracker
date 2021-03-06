@@ -320,7 +320,7 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
 
-    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 5);
+    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 10);
     std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
 
     //get calibration data from 20 images
