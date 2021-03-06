@@ -430,19 +430,26 @@ void Tracker::CalibrateCameraCharuco()
                     allCharucoCorners.push_back(charucoCorners);
                     allCharucoIds.push_back(charucoIds);
                     picsTaken++;
+
+                    cv::resize(drawImg, outImg, cv::Size(cols, rows));
+                    cv::imshow("out", outImg);
+                    char key = (char)cv::waitKey(1);
+
+                    if (picsTaken >= 3)
+                    {
+                        try
+                        {
+                            // Calibrate camera using our data
+                            cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                                cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                                cv::CALIB_USE_LU);
+                        }
+                        catch(const cv::Exception& e)
+                        {
+                            std::cerr << "Failed to calibrate: " << e.what();
+                        }
+                    }
                 }
-            }
-
-            cv::resize(drawImg, outImg, cv::Size(cols, rows));
-            cv::imshow("out", outImg);
-            char key = (char)cv::waitKey(1);
-
-            if (picsTaken >= 3)
-            {
-                // Calibrate camera using our data
-                cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
-                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
-                    cv::CALIB_USE_LU);
             }
         }
     }
