@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <mutex>
+#include <random>
 #include <vector>
 
 #pragma warning(push)
@@ -274,6 +275,8 @@ void Tracker::CalibrateCameraCharuco()
 {
     //function to calibrate our camera
 
+    std::default_random_engine generator;
+    std::normal_distribution<double> unitGaussianDistribution(0.0, 1.0);
     cv::Mat image;
     cv::Mat gray;
     cv::Mat drawImg;
@@ -347,9 +350,20 @@ void Tracker::CalibrateCameraCharuco()
 
         if (!cameraMatrix.empty())
         {
+            cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
+            cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
+            assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
+            sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
+            sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
+            sampleCameraMatrix(0, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(2);
+            sampleCameraMatrix(1, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(3);
+            for (int i = 0; i < sampleDistCoeffs.total(); ++i)
+            {
+                sampleDistCoeffs(i) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(i + 4);
+            }
             for (const auto& gridLineInCamera : gridLinesInCamera)
             {
-                cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), cameraMatrix, distCoeffs, gridLineInImage);
+                cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), sampleCameraMatrix, sampleDistCoeffs, gridLineInImage);
                 for (size_t j = 1; j < gridLineInImage.size(); ++j)
                 {
                     const auto p1 = gridLineInImage[j - 1];
