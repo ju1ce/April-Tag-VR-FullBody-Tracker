@@ -77,7 +77,7 @@ void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >
 std::vector<std::vector<cv::Point3f>> createXyGridLines(
     const int gridSize, // Number of units from first to last line.
     const int gridSubdivision, // Number of segments per line.
-    const int z) // Z-coord of grid.
+    const float z) // Z-coord of grid.
 {
     std::vector<std::vector<cv::Point3f>> gridLines(2* gridSize + 2);
     for (int i = 0; i <= gridSize; ++i)
@@ -86,10 +86,10 @@ std::vector<std::vector<cv::Point3f>> createXyGridLines(
         auto& verticalLine = gridLines[2 * i + 1];
         horizontalLine.reserve(gridSize * gridSubdivision + 1);
         verticalLine.reserve(gridSize * gridSubdivision + 1);
+        const float y = float(i) - float(gridSize) * 0.5f;
         for (int j = 0; j <= gridSize * gridSubdivision; ++j)
         {
             const float x = float(j) / float(gridSubdivision) - float(gridSize) * 0.5f;
-            const float y = float(i) - float(gridSize) * 0.5f;
             horizontalLine.push_back(cv::Point3f(x, y, z));
             verticalLine.push_back(cv::Point3f(y, x, z)); // Swap x and y.
         }
