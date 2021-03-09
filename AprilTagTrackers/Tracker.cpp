@@ -158,36 +158,24 @@ void Tracker::StartCamera(std::string id)
 
 void Tracker::CameraLoop()
 {
-    cv::Mat img;
     bool rotate = false;
     int rotateFlag = -1;
-    if (!cap.read(img))
-    {
-        wxMessageDialog dial(NULL,
-            wxT("Camera error"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
-        cameraRunning = false;
-        cap.release();
-        return;
-    }
     if (parameters->rotateCl && parameters->rotateCounterCl)
     {
-        cv::rotate(img, img, cv::ROTATE_180);
         rotate = true;
         rotateFlag = cv::ROTATE_180;
     }
     else if (parameters->rotateCl)
     {
-        cv::rotate(img, img, cv::ROTATE_90_CLOCKWISE);
         rotate = true;
         rotateFlag = cv::ROTATE_90_CLOCKWISE;
     }
     else if (parameters->rotateCounterCl)
     {
-        cv::rotate(img, img, cv::ROTATE_90_COUNTERCLOCKWISE);
         rotate = true;
         rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
     }
+    cv::Mat img;
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -198,8 +186,20 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
+        last_frame_time = clock();
         if (rotate)
+        {
             cv::rotate(img, img, rotateFlag);
+        }
+        if (previewCamera)
+        {
+            cv::imshow("Preview", img);
+            cv::waitKey(1);
+        }
+        else
+        {
+            cv::destroyWindow("Preview");
+        }
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
             // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
@@ -210,16 +210,6 @@ void Tracker::CameraLoop()
                 img.release();
             }
             imageReady = true;
-        }
-        last_frame_time = clock();
-        if (previewCamera)
-        {
-            cv::imshow("Preview", img);
-            cv::waitKey(1);
-        }
-        else
-        {
-            cv::destroyWindow("Preview");
         }
     }
     cv::destroyAllWindows();
