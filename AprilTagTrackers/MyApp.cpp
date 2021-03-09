@@ -43,7 +43,7 @@ bool MyApp::OnInit()
 
 void MyApp::ButtonPressedCamera(wxCommandEvent& event)
 {
-    tracker->StartCamera(params->cameraAddr);
+    tracker->StartCamera(params->cameraAddr, params->cameraApiPreference);
 }
 
 void MyApp::ButtonPressedCameraPreview(wxCommandEvent& event)

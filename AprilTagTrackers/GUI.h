@@ -64,6 +64,7 @@ private:
     const int HELP_BUTTON = 10;
     Parameters* parameters;
     wxTextCtrl* cameraAddrField;
+    wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;
     wxTextCtrl* camHeightField;

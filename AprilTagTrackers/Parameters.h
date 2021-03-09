@@ -11,6 +11,7 @@ public:
     void Load();
     void Save();
     std::string cameraAddr = "0";
+    int cameraApiPreference = 0;
     cv::Mat camMat;
     cv::Mat distCoeffs;
     cv::Mat stdDeviationsIntrinsics;

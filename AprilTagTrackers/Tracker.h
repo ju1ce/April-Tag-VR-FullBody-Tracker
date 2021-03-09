@@ -22,7 +22,7 @@ class Tracker
 {
 public:
     Tracker(Parameters*, Connection*);
-    void StartCamera(std::string);
+    void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
     void Start();

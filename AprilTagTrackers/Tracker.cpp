@@ -115,7 +115,7 @@ Tracker::Tracker(Parameters* params, Connection* conn)
     }
 }
 
-void Tracker::StartCamera(std::string id)
+void Tracker::StartCamera(std::string id, int apiPreference)
 {
     if (cameraRunning)
     {
@@ -127,11 +127,11 @@ void Tracker::StartCamera(std::string id)
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
-        cap = cv::VideoCapture(i);
+        cap = cv::VideoCapture(i, apiPreference);
     }
     else
     {			//if address is longer, we try to open it as an ip address
-        cap = cv::VideoCapture(id);
+        cap = cv::VideoCapture(id, apiPreference);
     }
 
     if (!cap.isOpened())

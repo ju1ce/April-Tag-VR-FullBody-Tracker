@@ -99,6 +99,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     : wxPanel(parent)
     , parameters(params)
     , cameraAddrField(new wxTextCtrl(this, -1, parameters->cameraAddr))
+    , cameraApiField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraApiPreference)))
     , trackerNumField(new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum)))
     , markerSizeField(new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100)))
     , prevValuesField(new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues)))
@@ -135,6 +136,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
 
     addTextWithTooltip(this, fgs, "Ip or ID of camera", "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
     fgs->Add(cameraAddrField);
+    addTextWithTooltip(this, fgs, "Camera API preference", "Leave at 0 for no preference.");
+    fgs->Add(cameraApiField);
     addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
     fgs->Add(trackerNumField);
     addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
@@ -227,6 +230,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
 {
     try {
         parameters->cameraAddr = cameraAddrField->GetValue().ToStdString();
+        parameters->cameraApiPreference = std::stoi(cameraApiField->GetValue().ToStdString());
         parameters->trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());
         parameters->markerSize = std::stod(markerSizeField->GetValue().ToStdString()) / 100;
         parameters->numOfPrevValues = std::stoi(prevValuesField->GetValue().ToStdString());
