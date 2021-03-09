@@ -1099,7 +1099,9 @@ void Tracker::MainLoop()
             catch (std::exception&)
             {
                 wxMessageDialog dial(NULL,
-                    wxT("Something went wrong when estimating tracker pose. Try again! \nIf the problem persists, try to recalibrate camera and trackers."), wxT("Error"), wxOK | wxICON_ERROR);
+                    wxT("Something went wrong when estimating tracker pose. Try again! \n"
+                    "If the problem persists, try to recalibrate camera and trackers."),
+                    wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
                 cv::destroyWindow("out");
                 apriltag_detector_destroy(td);
