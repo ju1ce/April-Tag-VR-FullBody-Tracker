@@ -97,6 +97,59 @@ std::vector<std::vector<cv::Point3f>> createXyGridLines(
     return gridLines;
 }
 
+void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
+{
+    cv::Mat cameraMatrix, distCoeffs, R, T;
+    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
+    parameters->camMat.copyTo(cameraMatrix);
+    parameters->distCoeffs.copyTo(distCoeffs);
+    parameters->stdDeviationsIntrinsics.copyTo(stdDeviationsIntrinsics);
+    std::vector<double> perViewErrors = parameters->perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
+
+    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 10);
+    std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
+
+    if (!cameraMatrix.empty())
+    {
+        for (const auto& gridLineInCamera : gridLinesInCamera)
+        {
+            cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), cameraMatrix, distCoeffs, gridLineInImage);
+            for (size_t j = 1; j < gridLineInImage.size(); ++j)
+            {
+                const auto p1 = gridLineInImage[j - 1];
+                const auto p2 = gridLineInImage[j];
+                cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127));
+            }
+        }
+    }
+
+    if (allCharucoCorners.size() > 0)
+    {
+        // Draw all corners that we have so far
+        cv::Mat colorsFromErrors;
+        if (!perViewErrors.empty())
+        {
+            cv::Mat(perViewErrors).convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
+            cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_PLASMA);
+        }
+        for (int i = 0; i < allCharucoCorners.size(); ++i)
+        {
+            const auto& charucoCorners = allCharucoCorners[i];
+            cv::Scalar color(255, 255, 0);
+            if (colorsFromErrors.total() > i)
+            {
+                color = colorsFromErrors.at<cv::Vec3b>(i);
+            }
+            for (const auto& point : charucoCorners)
+            {
+                cv::circle(drawImg, point, 2, color, cv::FILLED);
+            }
+        }
+    }
+}
+
 } // namespace
 
 Tracker::Tracker(Parameters* params, Connection* conn)
@@ -176,6 +229,7 @@ void Tracker::CameraLoop()
         rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
     }
     cv::Mat img;
+    cv::Mat drawImg;
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -193,8 +247,18 @@ void Tracker::CameraLoop()
         }
         if (previewCamera)
         {
-            cv::imshow("Preview", img);
-            cv::waitKey(1);
+            if (previewCameraCalibration)
+            {
+                img.copyTo(drawImg);
+                previewCalibration(drawImg, parameters);
+                cv::imshow("Preview", drawImg);
+                cv::waitKey(1);
+            }
+            else
+            {
+                cv::imshow("Preview", img);
+                cv::waitKey(1);
+            }
         }
         else
         {

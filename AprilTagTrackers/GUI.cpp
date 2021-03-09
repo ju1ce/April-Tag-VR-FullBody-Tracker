@@ -44,7 +44,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
     wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "6. Start/Stop");
 
-    wxCheckBox* cb = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
+    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
+        wxPoint(20, 20));
+    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, wxT("Preview calibration"),
         wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
@@ -53,9 +55,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     //parentGUI->cb2->SetValue(false);
 
     fgs->Add(btn1);
-    fgs->Add(cb);
+    fgs->Add(cb1);
     fgs->Add(btn2);
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(cb2);
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);

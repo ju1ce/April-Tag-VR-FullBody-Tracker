@@ -21,8 +21,9 @@ public:
     virtual int OnExit() wxOVERRIDE;
     virtual bool OnInit() wxOVERRIDE;
     void ButtonPressedCamera(wxCommandEvent&);
-    void ButtonPressedCameraCalib(wxCommandEvent&);
     void ButtonPressedCameraPreview(wxCommandEvent&);
+    void ButtonPressedCameraCalib(wxCommandEvent&);
+    void ButtonPressedCameraCalibPreview(wxCommandEvent&);
     void ButtonPressedConnect(wxCommandEvent&);
     void ButtonPressedTrackerCalib(wxCommandEvent&);
     void ButtonPressedStart(wxCommandEvent&);

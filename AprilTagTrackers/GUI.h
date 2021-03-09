@@ -26,8 +26,9 @@ class GUI : public wxFrame
 public:
     GUI(const wxString& title, Parameters* params);
     static const int CAMERA_BUTTON = 1;
+    static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
-    static const int CAMERA_CHECKBOX = 4;
+    static const int CAMERA_CALIB_CHECKBOX = 4;
     static const int CONNECT_BUTTON = 5;
     static const int TRACKER_CALIB_BUTTON = 6;
     static const int START_BUTTON = 7;
