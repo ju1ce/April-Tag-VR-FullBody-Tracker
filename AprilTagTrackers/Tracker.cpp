@@ -97,17 +97,14 @@ std::vector<std::vector<cv::Point3f>> createXyGridLines(
     return gridLines;
 }
 
-void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
+void previewCalibration(
+    cv::Mat& drawImg,
+    const cv::Mat& cameraMatrix,
+    const cv::Mat& distCoeffs,
+    const std::vector<double>& perViewErrors,
+    const std::vector<std::vector<cv::Point2f>>& allCharucoCorners,
+    const std::vector<std::vector<int>>& allCharucoIds)
 {
-    cv::Mat cameraMatrix, distCoeffs, R, T;
-    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
-    parameters->camMat.copyTo(cameraMatrix);
-    parameters->distCoeffs.copyTo(distCoeffs);
-    parameters->stdDeviationsIntrinsics.copyTo(stdDeviationsIntrinsics);
-    std::vector<double> perViewErrors = parameters->perViewErrors;
-    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
-    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
-
     const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 10);
     std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
 
@@ -148,6 +145,25 @@ void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
             }
         }
     }
+}
+
+void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
+{
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    parameters->camMat.copyTo(cameraMatrix);
+    parameters->distCoeffs.copyTo(distCoeffs);
+    std::vector<double> perViewErrors = parameters->perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
+
+    previewCalibration(
+        drawImg,
+        cameraMatrix,
+        distCoeffs,
+        perViewErrors,
+        allCharucoCorners,
+        allCharucoIds);
 }
 
 } // namespace
@@ -402,10 +418,10 @@ void Tracker::CalibrateCameraCharuco()
         image.copyTo(drawImg);
         cv::putText(drawImg, std::to_string(picsTaken) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
+        cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
+        cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
         if (!cameraMatrix.empty())
         {
-            cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
-            cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
             assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
             sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
             sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
@@ -415,17 +431,15 @@ void Tracker::CalibrateCameraCharuco()
             {
                 sampleDistCoeffs(i) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(i + 4);
             }
-            for (const auto& gridLineInCamera : gridLinesInCamera)
-            {
-                cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), sampleCameraMatrix, sampleDistCoeffs, gridLineInImage);
-                for (size_t j = 1; j < gridLineInImage.size(); ++j)
-                {
-                    const auto p1 = gridLineInImage[j - 1];
-                    const auto p2 = gridLineInImage[j];
-                    cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127));
-                }
-            }
         }
+        previewCalibration(
+            drawImg,
+            sampleCameraMatrix,
+            sampleDistCoeffs,
+            perViewErrors,
+            allCharucoCorners,
+            allCharucoIds);
+
         if (allCharucoCorners.size() > 0)
         {
             // Draw all corners that we have so far
