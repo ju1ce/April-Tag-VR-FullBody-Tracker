@@ -383,15 +383,9 @@ void Tracker::CalibrateCameraCharuco()
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
     cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
-    parameters->camMat.copyTo(cameraMatrix);
-    parameters->distCoeffs.copyTo(distCoeffs);
-    parameters->stdDeviationsIntrinsics.copyTo(stdDeviationsIntrinsics);
-    std::vector<double> perViewErrors = parameters->perViewErrors;
-    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
-    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
-
-    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 10);
-    std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
+    std::vector<double> perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds;
 
     //get calibration data from 20 images
     const int picNum = parameters->cameraCalibSamples;
