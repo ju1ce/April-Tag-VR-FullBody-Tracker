@@ -1,5 +1,10 @@
 #include "GUI.h"
 
+#include <sstream>
+#include <string>
+
+#include <opencv2/videoio/registry.hpp>
+
 namespace {
 
 void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label, const wxString& tooltip)
@@ -134,36 +139,25 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
 
+    static const std::string cameraApiDescriptions = []()
+    {
+        std::stringstream description;
+        description << "0: No preference\n\nCamera backends:";
+        for (const auto backend : cv::videoio_registry::getCameraBackends())
+        {
+            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
+        }
+        description << "\n\nStream backends:";
+        for (const auto backend : cv::videoio_registry::getStreamBackends())
+        {
+            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
+        }
+        return description.str();
+    }();
+
     addTextWithTooltip(this, fgs, "Ip or ID of camera", "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
     fgs->Add(cameraAddrField);
-    addTextWithTooltip(this, fgs, "Camera API preference",
-        "0: No preference\n"
-        "200: VFW\n"
-        "200: V4L, V4L2\n"
-        "300: FIREWIRE, IEEE1394, DC1394, CMU1394\n"
-        "500: QT\n"
-        "600: UNICAP\n"
-        "700: DSHOW\n"
-        "800: PVAPI\n"
-        "900: OPENNI\n"
-        "910: OPENNI_ASUS\n"
-        "1000: ANDROID\n"
-        "1100: XIAPI\n"
-        "1200: AVFOUNDATION\n"
-        "1300: GIGANETIX\n"
-        "1400: MSMF\n"
-        "1410: WINRT\n"
-        "1500: INTELPERC\n"
-        "1600: OPENNI2\n"
-        "1610: OPENNI2_ASUS\n"
-        "1700: GPHOTO2\n"
-        "1800: GSTREAMER\n"
-        "1900: FFMPEG\n"
-        "2000: IMAGES\n"
-        "2100: ARAVIS\n"
-        "2200: OPENCV_MJPEG\n"
-        "2300: INTEL_MFX\n"
-        "2400: XINE\n");
+    addTextWithTooltip(this, fgs, "Camera API preference", cameraApiDescriptions);
     fgs->Add(cameraApiField);
     addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
     fgs->Add(trackerNumField);
