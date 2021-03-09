@@ -97,7 +97,7 @@ void Tracker::StartCamera(std::string id)
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
-        cap = cv::VideoCapture(i);
+        cap = cv::VideoCapture(i, cv::CAP_DSHOW);
     }
     else
     {			//if address is longer, we try to open it as an ip address
