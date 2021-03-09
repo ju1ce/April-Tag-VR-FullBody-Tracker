@@ -261,7 +261,7 @@ void Tracker::CameraLoop()
         {
             cv::rotate(img, img, rotateFlag);
         }
-        if (previewCamera)
+        if (previewCamera || previewCameraCalibration)
         {
             if (previewCameraCalibration)
             {
