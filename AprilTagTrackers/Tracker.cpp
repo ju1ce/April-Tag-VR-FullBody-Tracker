@@ -389,14 +389,14 @@ void Tracker::CalibrateCameraCharuco()
 
     int framesSinceLast = -2 * parameters->camFps;
 
-    std::thread th{ [=]() {
+    int messageDialogResponse = wxID_CANCEL;
+    std::thread th{ [this, &messageDialogResponse]() {
         wxMessageDialog dial(NULL,
             "Camera calibration started! \n\n"
             "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
             "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
-            "Press OK to close this window.", wxT("Message"), wxOK);
-        dial.ShowModal();
-
+            "Press OK to save calibration when done.", wxT("Message"), wxOK | wxCANCEL);
+        messageDialogResponse = dial.ShowModal();
         mainThreadRunning = false;
     } };
 
@@ -408,15 +408,9 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds;
 
-    //get calibration data from 20 images
-    const int picNum = parameters->cameraCalibSamples;
-    for (int picsTaken = 0; picsTaken < picNum;)
+    int picsTaken = 0;
+    while(mainThreadRunning && cameraRunning)
     {
-        if (!mainThreadRunning || !cameraRunning)
-        {
-            cv::destroyAllWindows();
-            return;
-        }
         CopyFreshCameraImageTo(image);
         int cols, rows;
         if (image.cols > image.rows)
@@ -431,7 +425,7 @@ void Tracker::CalibrateCameraCharuco()
         }
 
         image.copyTo(drawImg);
-        cv::putText(drawImg, std::to_string(picsTaken) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
         previewCalibration(
             drawImg,
@@ -524,19 +518,29 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    // Save calibration to our global params cameraMatrix and distCoeffs
-    parameters->camMat = cameraMatrix;
-    parameters->distCoeffs = distCoeffs;
-    parameters->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
-    parameters->perViewErrors = perViewErrors;
-    parameters->allCharucoCorners = allCharucoCorners;
-    parameters->allCharucoIds = allCharucoIds;
-    parameters->Save();
-    mainThreadRunning = false;
     cv::destroyAllWindows();
-    wxMessageDialog dial(NULL,
-        wxT("Calibration complete."), wxT("Info"), wxOK);
-    dial.ShowModal();
+    mainThreadRunning = false;
+    if (messageDialogResponse == wxID_OK)
+    {
+        if (cameraMatrix.empty())
+        {
+            wxMessageDialog dial(NULL, wxT("Calibration failed."), wxT("Info"), wxOK | wxICON_ERROR);
+            dial.ShowModal();
+        }
+        else
+        {
+            // Save calibration to our global params cameraMatrix and distCoeffs
+            parameters->camMat = cameraMatrix;
+            parameters->distCoeffs = distCoeffs;
+            parameters->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
+            parameters->perViewErrors = perViewErrors;
+            parameters->allCharucoCorners = allCharucoCorners;
+            parameters->allCharucoIds = allCharucoIds;
+            parameters->Save();
+            wxMessageDialog dial(NULL, wxT("Calibration complete."), wxT("Info"), wxOK);
+            dial.ShowModal();
+        }
+    }
 }
 
 void Tracker::CalibrateCamera()
