@@ -75,23 +75,32 @@ void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >
 
 // Create a grid in front of the camera for visualization purposes.
 std::vector<std::vector<cv::Point3f>> createXyGridLines(
-    const int gridSize, // Number of units from first to last line.
+    const int gridSizeX, // Number of units from leftmost to rightmost line.
+    const int gridSizeY, // Number of units from top to bottom line.
     const int gridSubdivision, // Number of segments per line.
     const float z) // Z-coord of grid.
 {
-    std::vector<std::vector<cv::Point3f>> gridLines(2* gridSize + 2);
-    for (int i = 0; i <= gridSize; ++i)
+    std::vector<std::vector<cv::Point3f>> gridLines(gridSizeX + gridSizeY + 2);
+    for (int i = 0; i <= gridSizeX; ++i)
     {
-        auto& horizontalLine = gridLines[2 * i];
-        auto& verticalLine = gridLines[2 * i + 1];
-        horizontalLine.reserve(gridSize * gridSubdivision + 1);
-        verticalLine.reserve(gridSize * gridSubdivision + 1);
-        const float y = float(i) - float(gridSize) * 0.5f;
-        for (int j = 0; j <= gridSize * gridSubdivision; ++j)
+        auto& verticalLine = gridLines[i];
+        verticalLine.reserve(gridSizeY * gridSubdivision + 1);
+        const float x = float(i) - float(gridSizeX) * 0.5f;
+        for (int j = 0; j <= gridSizeY * gridSubdivision; ++j)
         {
-            const float x = float(j) / float(gridSubdivision) - float(gridSize) * 0.5f;
+            const float y = float(j) / float(gridSubdivision) - float(gridSizeY) * 0.5f;
+            verticalLine.push_back(cv::Point3f(x, y, z));
+        }
+    }
+    for (int i = 0; i <= gridSizeY; ++i)
+    {
+        auto& horizontalLine = gridLines[gridSizeX + 1 + i];
+        horizontalLine.reserve(gridSizeX * gridSubdivision + 1);
+        const float y = float(i) - float(gridSizeY) * 0.5f;
+        for (int j = 0; j <= gridSizeX * gridSubdivision; ++j)
+        {
+            const float x = float(j) / float(gridSubdivision) - float(gridSizeX) * 0.5f;
             horizontalLine.push_back(cv::Point3f(x, y, z));
-            verticalLine.push_back(cv::Point3f(y, x, z)); // Swap x and y.
         }
     }
     return gridLines;
@@ -99,37 +108,44 @@ std::vector<std::vector<cv::Point3f>> createXyGridLines(
 
 void previewCalibration(
     cv::Mat& drawImg,
-    const cv::Mat& cameraMatrix,
-    const cv::Mat& distCoeffs,
+    const cv::Mat1d& cameraMatrix,
+    const cv::Mat1d& distCoeffs,
     const cv::Mat1d& stdDeviationsIntrinsics,
     const std::vector<double>& perViewErrors,
     const std::vector<std::vector<cv::Point2f>>& allCharucoCorners,
     const std::vector<std::vector<int>>& allCharucoIds)
 {
-    const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(10, 10, 10);
-    std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
-
-    // The generator is static to avoid starting over with the same seed every time.
-    static std::default_random_engine generator;
-    std::normal_distribution<double> unitGaussianDistribution(0.0, 1.0);
-
-    cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
-    cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
-    if (!cameraMatrix.empty() && !stdDeviationsIntrinsics.empty())
+    if (!cameraMatrix.empty())
     {
-        assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
-        sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
-        sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
-        sampleCameraMatrix(0, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(2);
-        sampleCameraMatrix(1, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(3);
-        for (int i = 0; i < sampleDistCoeffs.total(); ++i)
+        const float gridZ = 10.0f;
+        const float width = drawImg.cols;
+        const float height = drawImg.rows;
+        const float fx = cameraMatrix(0, 0);
+        const float fy = cameraMatrix(1, 1);
+        const int gridSizeX = std::round(gridZ * width / fx);
+        const int gridSizeY = std::round(gridZ * height / fy);
+        const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(gridSizeX, gridSizeY, 10, gridZ);
+        std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
+
+        // The generator is static to avoid starting over with the same seed every time.
+        static std::default_random_engine generator;
+        std::normal_distribution<double> unitGaussianDistribution(0.0, 1.0);
+
+        cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
+        cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
+        if (!stdDeviationsIntrinsics.empty())
         {
-            sampleDistCoeffs(i) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(i + 4);
+            assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
+            sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
+            sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
+            sampleCameraMatrix(0, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(2);
+            sampleCameraMatrix(1, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(3);
+            for (int i = 0; i < sampleDistCoeffs.total(); ++i)
+            {
+                sampleDistCoeffs(i) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(i + 4);
+            }
         }
-    }
 
-    if (!sampleCameraMatrix.empty())
-    {
         for (const auto& gridLineInCamera : gridLinesInCamera)
         {
             cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), sampleCameraMatrix, sampleDistCoeffs, gridLineInImage);
