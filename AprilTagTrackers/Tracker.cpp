@@ -115,7 +115,7 @@ void previewCalibration(
 
     cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
     cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
-    if (!cameraMatrix.empty())
+    if (!cameraMatrix.empty() && !stdDeviationsIntrinsics.empty())
     {
         assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
         sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
