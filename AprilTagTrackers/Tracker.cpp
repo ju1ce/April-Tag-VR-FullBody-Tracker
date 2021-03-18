@@ -508,30 +508,6 @@ void Tracker::CalibrateCameraCharuco()
             allCharucoCorners,
             allCharucoIds);
 
-        if (allCharucoCorners.size() > 0)
-        {
-            // Draw all corners that we have so far
-            cv::Mat colorsFromErrors;
-            if (!perViewErrors.empty())
-            {
-                cv::Mat(perViewErrors).convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
-                cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_PLASMA);
-            }
-            for (int i = 0; i < allCharucoCorners.size(); ++i)
-            {
-                const auto& charucoCorners = allCharucoCorners[i];
-                cv::Scalar color(255, 255, 0);
-                if (colorsFromErrors.total() > i)
-                {
-                    color = colorsFromErrors.at<cv::Vec3b>(i);
-                }
-                for (const auto& point : charucoCorners)
-                {
-                    cv::circle(drawImg, point, 2, color, cv::FILLED);
-                }
-            }
-        }
-
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
         cv::imshow("out", outImg);
         char key = (char)cv::waitKey(1);
