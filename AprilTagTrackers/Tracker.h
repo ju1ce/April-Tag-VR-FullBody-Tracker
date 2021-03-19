@@ -4,8 +4,9 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
@@ -21,7 +22,7 @@ class Tracker
 {
 public:
     Tracker(Parameters*, Connection*);
-    void StartCamera(std::string);
+    void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
     void Start();
@@ -29,6 +30,7 @@ public:
     bool mainThreadRunning = false;
     bool cameraRunning = false;
     bool previewCamera = false;
+    bool previewCameraCalibration = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
 
@@ -39,6 +41,7 @@ public:
 
 private:
     void CameraLoop();
+    void CopyFreshCameraImageTo(cv::Mat& image);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -48,7 +51,10 @@ private:
 
     cv::VideoCapture cap;
 
-    cv::Mat retImage;
+    // cameraImage and imageReady are protected by cameraImageMutex.
+    // Use CopyFreshCameraImageTo in order to get the latest camera image.
+    std::mutex cameraImageMutex;
+    cv::Mat cameraImage;
     bool imageReady = false;
 
     Parameters* parameters;

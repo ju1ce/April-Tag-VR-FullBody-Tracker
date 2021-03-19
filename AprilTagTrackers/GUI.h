@@ -1,21 +1,21 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
 #include <wx/notebook.h>
+#pragma warning(pop)
+
 #include "Parameters.h"
 
 class ValueInput : public wxPanel
 {
 public:
-    ValueInput(wxPanel* parent, std::string nm, double val);
+    ValueInput(wxPanel* parent, const wxString& nm, double val);
     double value;
     void SetValue(double val);
 
 private:
-    wxButton* dwn1;
-    wxButton* dwn2;
     wxTextCtrl* input = 0;
-    wxButton* up1;
-    wxButton* up2;
 
     void ButtonPressed(wxCommandEvent&);
     void MouseScroll(wxMouseEvent&);
@@ -26,8 +26,9 @@ class GUI : public wxFrame
 public:
     GUI(const wxString& title, Parameters* params);
     static const int CAMERA_BUTTON = 1;
+    static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
-    static const int CAMERA_CHECKBOX = 4;
+    static const int CAMERA_CALIB_CHECKBOX = 4;
     static const int CONNECT_BUTTON = 5;
     static const int TRACKER_CALIB_BUTTON = 6;
     static const int START_BUTTON = 7;
@@ -64,6 +65,7 @@ private:
     const int HELP_BUTTON = 10;
     Parameters* parameters;
     wxTextCtrl* cameraAddrField;
+    wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;
     wxTextCtrl* camHeightField;

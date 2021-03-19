@@ -1,5 +1,9 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
+#pragma warning(pop)
+
 #include "Parameters.h"
 #include <windows.h>
 

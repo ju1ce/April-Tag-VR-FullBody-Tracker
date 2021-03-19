@@ -11,8 +11,13 @@ public:
     void Load();
     void Save();
     std::string cameraAddr = "0";
+    int cameraApiPreference = 0;
     cv::Mat camMat;
-    cv::Mat distCoefs;
+    cv::Mat distCoeffs;
+    cv::Mat stdDeviationsIntrinsics;
+    std::vector<double> perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds;
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     int trackerNum = 1;
     double markerSize = 0.05;

@@ -12,11 +12,16 @@ void Parameters::Load()
     if (!fs["cameraAddr"].empty())			//if file exists, load all parameters from file into variables
     {
         fs["cameraAddr"] >> cameraAddr;
+        fs["cameraApiPreference"] >> cameraApiPreference;
         fs["camFps"] >> camFps;
         fs["camHeight"] >> camHeight;
         fs["camWidth"] >> camWidth;
         fs["cameraMatrix"] >> camMat;
-        fs["distortionCoeffs"] >> distCoefs;
+        fs["distortionCoeffs"] >> distCoeffs;
+        fs["stdDeviationsIntrinsics"] >> stdDeviationsIntrinsics;
+        fs["perViewErrors"] >> perViewErrors;
+        fs["allCharucoCorners"] >> allCharucoCorners;
+        fs["allCharucoIds"] >> allCharucoIds;
         fs["trackerNum"] >> trackerNum;
         fs["markerSize"] >> markerSize;
         fs["numOfPrevValues"] >> numOfPrevValues;
@@ -86,11 +91,16 @@ void Parameters::Save()
     cv::FileStorage fs("params.yml", cv::FileStorage::WRITE);
 
     fs << "cameraAddr" << cameraAddr;
+    fs << "cameraApiPreference" << cameraApiPreference;
     fs << "camFps" << camFps;
     fs << "camHeight" << camHeight;
     fs << "camWidth" << camWidth;
     fs << "cameraMatrix" << camMat;
-    fs << "distortionCoeffs" << distCoefs;
+    fs << "distortionCoeffs" << distCoeffs;
+    fs << "stdDeviationsIntrinsics" << stdDeviationsIntrinsics;
+    fs << "perViewErrors" << perViewErrors;
+    fs << "allCharucoCorners" << allCharucoCorners;
+    fs << "allCharucoIds" << allCharucoIds;
     fs << "trackerNum" << trackerNum;
     fs << "markerSize" << markerSize;
     fs << "numOfPrevValues" << numOfPrevValues;

@@ -1,7 +1,13 @@
 ﻿#include <iostream>
+#include <mutex>
+#include <random>
 #include <vector>
 
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <wx/wx.h>
+#pragma warning(pop)
+
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
@@ -67,6 +73,138 @@ void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >
     apriltag_detections_destroy(detections);
 }
 
+// Create a grid in front of the camera for visualization purposes.
+std::vector<std::vector<cv::Point3f>> createXyGridLines(
+    const int gridSizeX, // Number of units from leftmost to rightmost line.
+    const int gridSizeY, // Number of units from top to bottom line.
+    const int gridSubdivision, // Number of segments per line.
+    const float z) // Z-coord of grid.
+{
+    std::vector<std::vector<cv::Point3f>> gridLines(gridSizeX + gridSizeY + 2);
+    for (int i = 0; i <= gridSizeX; ++i)
+    {
+        auto& verticalLine = gridLines[i];
+        verticalLine.reserve(gridSizeY * gridSubdivision + 1);
+        const float x = float(i) - float(gridSizeX) * 0.5f;
+        for (int j = 0; j <= gridSizeY * gridSubdivision; ++j)
+        {
+            const float y = float(j) / float(gridSubdivision) - float(gridSizeY) * 0.5f;
+            verticalLine.push_back(cv::Point3f(x, y, z));
+        }
+    }
+    for (int i = 0; i <= gridSizeY; ++i)
+    {
+        auto& horizontalLine = gridLines[gridSizeX + 1 + i];
+        horizontalLine.reserve(gridSizeX * gridSubdivision + 1);
+        const float y = float(i) - float(gridSizeY) * 0.5f;
+        for (int j = 0; j <= gridSizeX * gridSubdivision; ++j)
+        {
+            const float x = float(j) / float(gridSubdivision) - float(gridSizeX) * 0.5f;
+            horizontalLine.push_back(cv::Point3f(x, y, z));
+        }
+    }
+    return gridLines;
+}
+
+void previewCalibration(
+    cv::Mat& drawImg,
+    const cv::Mat1d& cameraMatrix,
+    const cv::Mat1d& distCoeffs,
+    const cv::Mat1d& stdDeviationsIntrinsics,
+    const std::vector<double>& perViewErrors,
+    const std::vector<std::vector<cv::Point2f>>& allCharucoCorners,
+    const std::vector<std::vector<int>>& allCharucoIds)
+{
+    if (!cameraMatrix.empty())
+    {
+        const float gridZ = 10.0f;
+        const float width = drawImg.cols;
+        const float height = drawImg.rows;
+        const float fx = cameraMatrix(0, 0);
+        const float fy = cameraMatrix(1, 1);
+        const int gridSizeX = std::round(gridZ * width / fx);
+        const int gridSizeY = std::round(gridZ * height / fy);
+        const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(gridSizeX, gridSizeY, 10, gridZ);
+        std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
+
+        // The generator is static to avoid starting over with the same seed every time.
+        static std::default_random_engine generator;
+        std::normal_distribution<double> unitGaussianDistribution(0.0, 1.0);
+
+        cv::Mat1d sampleCameraMatrix = cameraMatrix.clone();
+        cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
+        if (!stdDeviationsIntrinsics.empty())
+        {
+            assert(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
+            sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
+            sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
+            sampleCameraMatrix(0, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(2);
+            sampleCameraMatrix(1, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(3);
+            for (int i = 0; i < sampleDistCoeffs.total(); ++i)
+            {
+                sampleDistCoeffs(i) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(i + 4);
+            }
+        }
+
+        for (const auto& gridLineInCamera : gridLinesInCamera)
+        {
+            cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), sampleCameraMatrix, sampleDistCoeffs, gridLineInImage);
+            for (size_t j = 1; j < gridLineInImage.size(); ++j)
+            {
+                const auto p1 = gridLineInImage[j - 1];
+                const auto p2 = gridLineInImage[j];
+                cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127));
+            }
+        }
+    }
+
+    if (allCharucoCorners.size() > 0)
+    {
+        // Draw all corners that we have so far
+        cv::Mat colorsFromErrors;
+        if (!perViewErrors.empty())
+        {
+            cv::Mat(perViewErrors).convertTo(colorsFromErrors, CV_8UC1, 255.0, 0.0);
+            cv::applyColorMap(colorsFromErrors, colorsFromErrors, cv::COLORMAP_VIRIDIS);
+        }
+        for (int i = 0; i < allCharucoCorners.size(); ++i)
+        {
+            const auto& charucoCorners = allCharucoCorners[i];
+            cv::Scalar color(200, 100, 0);
+            if (colorsFromErrors.total() > i)
+            {
+                color = colorsFromErrors.at<cv::Vec3b>(i);
+            }
+            for (const auto& point : charucoCorners)
+            {
+                cv::circle(drawImg, point, 2, color, cv::FILLED);
+            }
+        }
+    }
+}
+
+void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
+{
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    cv::Mat1d stdDeviationsIntrinsics;
+    parameters->camMat.copyTo(cameraMatrix);
+    parameters->distCoeffs.copyTo(distCoeffs);
+    parameters->stdDeviationsIntrinsics.copyTo(stdDeviationsIntrinsics);
+    std::vector<double> perViewErrors = parameters->perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners = parameters->allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds = parameters->allCharucoIds;
+
+    previewCalibration(
+        drawImg,
+        cameraMatrix,
+        distCoeffs,
+        stdDeviationsIntrinsics,
+        perViewErrors,
+        allCharucoCorners,
+        allCharucoIds);
+}
+
 } // namespace
 
 Tracker::Tracker(Parameters* params, Connection* conn)
@@ -85,7 +223,7 @@ Tracker::Tracker(Parameters* params, Connection* conn)
     }
 }
 
-void Tracker::StartCamera(std::string id)
+void Tracker::StartCamera(std::string id, int apiPreference)
 {
     if (cameraRunning)
     {
@@ -97,20 +235,21 @@ void Tracker::StartCamera(std::string id)
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
-        cap = cv::VideoCapture(i, cv::CAP_DSHOW);
+        cap = cv::VideoCapture(i, apiPreference);
+
     }
     else
     {			//if address is longer, we try to open it as an ip address
-        cap = cv::VideoCapture(id);
+        cap = cv::VideoCapture(id, apiPreference);
     }
 
     if (!cap.isOpened())
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\n"
             "For USB cameras, it will be a number, usually 0,1,2... try a few until it works.\n"
             "For IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         return;
     }
 
@@ -128,63 +267,94 @@ void Tracker::StartCamera(std::string id)
 
 void Tracker::CameraLoop()
 {
-    cv::Mat img;
     bool rotate = false;
     int rotateFlag = -1;
-    if (!cap.read(img))
-    {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
-            wxT("Camera error"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
-        cameraRunning = false;
-        cap.release();
-        return;
-    }
     if (parameters->rotateCl && parameters->rotateCounterCl)
     {
-        cv::rotate(img, img, cv::ROTATE_180);
         rotate = true;
         rotateFlag = cv::ROTATE_180;
     }
     else if (parameters->rotateCl)
     {
-        cv::rotate(img, img, cv::ROTATE_90_CLOCKWISE);
         rotate = true;
         rotateFlag = cv::ROTATE_90_CLOCKWISE;
     }
     else if (parameters->rotateCounterCl)
     {
-        cv::rotate(img, img, cv::ROTATE_90_COUNTERCLOCKWISE);
         rotate = true;
         rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
     }
+    cv::Mat img;
+    cv::Mat drawImg;
     while (cameraRunning)
     {
         if (!cap.read(img))
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Camera error"), wxT("Error"), wxOK | wxICON_ERROR);
-            dial->ShowModal();
+            dial.ShowModal();
             cameraRunning = false;
             break;
         }
-        if (rotate)
-            cv::rotate(img, img, rotateFlag);
-        img.copyTo(retImage);
-        imageReady = true;
         last_frame_time = clock();
-        if (previewCamera)
+        if (rotate)
         {
-            cv::imshow("Preview", img);
-            cv::waitKey(1);
+            cv::rotate(img, img, rotateFlag);
+        }
+        if (previewCamera || previewCameraCalibration)
+        {
+            if (previewCameraCalibration)
+            {
+                img.copyTo(drawImg);
+                previewCalibration(drawImg, parameters);
+                cv::imshow("Preview", drawImg);
+                cv::waitKey(1);
+            }
+            else
+            {
+                cv::imshow("Preview", img);
+                cv::waitKey(1);
+            }
         }
         else
         {
             cv::destroyWindow("Preview");
         }
+        {
+            std::lock_guard<std::mutex> lock(cameraImageMutex);
+            // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
+            // The pixel buffer from cameraImage can be reused if the size and format matches.
+            cv::swap(img, cameraImage);
+            if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
+            {
+                img.release();
+            }
+            imageReady = true;
+        }
     }
     cv::destroyAllWindows();
     cap.release();
+}
+
+void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
+{
+    // Sleep happens between each iteration when the mutex is not locked.
+    for (;;Sleep(1))
+    {
+        std::lock_guard<std::mutex> lock(cameraImageMutex);
+        if (imageReady)
+        {
+            imageReady = false;
+            // Swap metadata and pointers to pixel buffers.
+            cv::swap(image, cameraImage);
+            // We don't want to overwrite shared data so release the image unless we are the only user of it.
+            if (!(cameraImage.u && cameraImage.u->refcount == 1))
+            {
+                cameraImage.release();
+            }
+            return;
+        }
+    }
 }
 
 void Tracker::StartCameraCalib()
@@ -196,9 +366,9 @@ void Tracker::StartCameraCalib()
     }
     if (!cameraRunning)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
@@ -216,6 +386,9 @@ void Tracker::CalibrateCameraCharuco()
     //function to calibrate our camera
 
     cv::Mat image;
+    cv::Mat gray;
+    cv::Mat drawImg;
+    cv::Mat outImg;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
@@ -228,47 +401,34 @@ void Tracker::CalibrateCameraCharuco()
     //cv::imwrite("charuco_board.jpg", boardImage);
     //cv::waitKey(1);
 
-    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
-    std::vector<std::vector<int>> allCharucoIds;
-
     //set our detectors marker border bits to 1 since thats what charuco uses
     params->markerBorderBits = 1;
 
     int framesSinceLast = -2 * parameters->camFps;
 
-    int i = 0;
-
-    std::thread th{ [=]() {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
-        "Camera calibration started! \n\n"
-        "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
-        "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
-        "Press OK to close this window.", wxT("Message"), wxOK);
-    dial->ShowModal();
-
-    mainThreadRunning = false;
-
+    int messageDialogResponse = wxID_CANCEL;
+    std::thread th{ [this, &messageDialogResponse]() {
+        wxMessageDialog dial(NULL,
+            "Camera calibration started! \n\n"
+            "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
+            "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
+            "Press OK to save calibration when done.", wxT("Message"), wxOK | wxCANCEL);
+        messageDialogResponse = dial.ShowModal();
+        mainThreadRunning = false;
     } };
 
     th.detach();
 
-    //get calibration data from 20 images
+    cv::Mat cameraMatrix, distCoeffs, R, T;
+    cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
+    std::vector<double> perViewErrors;
+    std::vector<std::vector<cv::Point2f>> allCharucoCorners;
+    std::vector<std::vector<int>> allCharucoIds;
 
-    int picNum = parameters->cameraCalibSamples;
-
-    while (i < picNum)
+    int picsTaken = 0;
+    while(mainThreadRunning && cameraRunning)
     {
-        if (!mainThreadRunning || !cameraRunning)
-        {
-            cv::destroyAllWindows();
-            return;
-        }
-        while (!imageReady)
-            Sleep(1);
-        imageReady = false;
-        retImage.copyTo(image);
-        cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        cv::Mat drawImg;
+        CopyFreshCameraImageTo(image);
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -281,33 +441,36 @@ void Tracker::CalibrateCameraCharuco()
             rows = image.rows * drawImgSize / image.cols;
         }
 
-        //std::vector<int> markerIds;
-        //std::vector<std::vector<cv::Point2f>> markerCorners;
+        image.copyTo(drawImg);
+        cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
-        //cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params);
-        //cv::aruco::drawDetectedMarkers(image, markerCorners, markerIds);
+        previewCalibration(
+            drawImg,
+            cameraMatrix,
+            distCoeffs,
+            stdDeviationsIntrinsics,
+            perViewErrors,
+            allCharucoCorners,
+            allCharucoIds);
 
-        cv::resize(image, drawImg, cv::Size(cols, rows));
-
-        cv::imshow("out", drawImg);
+        cv::resize(drawImg, outImg, cv::Size(cols, rows));
+        cv::imshow("out", outImg);
         char key = (char)cv::waitKey(1);
-
-        //continue;
 
         framesSinceLast++;
         if (key != -1 || framesSinceLast > parameters->camFps)
         {
             framesSinceLast = 0;
             //if any button was pressed
-            cvtColor(image, image, cv::COLOR_BGR2GRAY);
+            cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
             std::vector<int> markerIds;
             std::vector<std::vector<cv::Point2f>> markerCorners;
             std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
             //detect our markers
-            cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds, params, rejectedCorners);
-            cv::aruco::refineDetectedMarkers(image, board, markerCorners, markerIds, rejectedCorners);
+            cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
+            cv::aruco::refineDetectedMarkers(gray, board, markerCorners, markerIds, rejectedCorners);
 
             if (markerIds.size() > 0)
             {
@@ -315,35 +478,62 @@ void Tracker::CalibrateCameraCharuco()
                 std::vector<cv::Point2f> charucoCorners;
                 std::vector<int> charucoIds;
                 //using data from aruco detection we refine the search of chessboard corners for higher accuracy
-                cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds);
+                cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, gray, board, charucoCorners, charucoIds);
                 if (charucoIds.size() > 15)
                 {
                     //if corners were found, we draw them
-                    cv::aruco::drawDetectedCornersCharuco(image, charucoCorners, charucoIds);
+                    cv::aruco::drawDetectedCornersCharuco(drawImg, charucoCorners, charucoIds);
                     //we then add our corners to the array
                     allCharucoCorners.push_back(charucoCorners);
                     allCharucoIds.push_back(charucoIds);
-                    i++;
+                    picsTaken++;
+
+                    cv::resize(drawImg, outImg, cv::Size(cols, rows));
+                    cv::imshow("out", outImg);
+                    char key = (char)cv::waitKey(1);
+
+                    if (picsTaken >= 3)
+                    {
+                        try
+                        {
+                            // Calibrate camera using our data
+                            cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                                cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                                cv::CALIB_USE_LU);
+                        }
+                        catch(const cv::Exception& e)
+                        {
+                            std::cerr << "Failed to calibrate: " << e.what();
+                        }
+                    }
                 }
             }
-            cv::resize(image, drawImg, cv::Size(cols, rows));
-            cv::imshow("out", drawImg);
-            cv::waitKey(1000);
         }
     }
-    cv::Mat cameraMatrix, distCoeffs, R, T;
 
-    //calibrate camera using our data and save to our global params cameraMatrix and distCoeffs
-    cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T, 0);
-
-    parameters->camMat = cameraMatrix;
-    parameters->distCoefs = distCoeffs;
-    parameters->Save();
-    mainThreadRunning = false;
     cv::destroyAllWindows();
-    wxMessageDialog* dial = new wxMessageDialog(NULL,
-        wxT("Calibration complete."), wxT("Info"), wxOK);
-    dial->ShowModal();
+    mainThreadRunning = false;
+    if (messageDialogResponse == wxID_OK)
+    {
+        if (cameraMatrix.empty())
+        {
+            wxMessageDialog dial(NULL, wxT("Calibration failed."), wxT("Info"), wxOK | wxICON_ERROR);
+            dial.ShowModal();
+        }
+        else
+        {
+            // Save calibration to our global params cameraMatrix and distCoeffs
+            parameters->camMat = cameraMatrix;
+            parameters->distCoeffs = distCoeffs;
+            parameters->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
+            parameters->perViewErrors = perViewErrors;
+            parameters->allCharucoCorners = allCharucoCorners;
+            parameters->allCharucoIds = allCharucoIds;
+            parameters->Save();
+            wxMessageDialog dial(NULL, wxT("Calibration complete."), wxT("Info"), wxOK);
+            dial.ShowModal();
+        }
+    }
 }
 
 void Tracker::CalibrateCamera()
@@ -399,10 +589,7 @@ void Tracker::CalibrateCamera()
             cv::destroyAllWindows();
             return;
         }
-        while (!imageReady)
-            Sleep(1);
-        imageReady = false;
-        retImage.copyTo(image);
+        CopyFreshCameraImageTo(image);
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         cv::Mat drawImg;
         int cols, rows;
@@ -451,13 +638,13 @@ void Tracker::CalibrateCamera()
     calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
 
     parameters->camMat = cameraMatrix;
-    parameters->distCoefs = distCoeffs;
+    parameters->distCoeffs = distCoeffs;
     parameters->Save();
     mainThreadRunning = false;
     cv::destroyAllWindows();
-    wxMessageDialog* dial = new wxMessageDialog(NULL,
+    wxMessageDialog dial(NULL,
         wxT("Calibration complete."), wxT("Info"), wxOK);
-    dial->ShowModal();
+    dial.ShowModal();
 }
 
 void Tracker::StartTrackerCalib()
@@ -469,17 +656,17 @@ void Tracker::StartTrackerCalib()
     }
     if (!cameraRunning)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
     if (parameters->camMat.empty())
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
@@ -491,7 +678,7 @@ void Tracker::StartTrackerCalib()
 
     //make a new thread with message box, and stop main thread when we press OK
     std::thread th{ [=]() {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
         "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,"
         "neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n"
         "Green: This marker is calibrated and can be used to calibrate other markers.\n"
@@ -500,7 +687,7 @@ void Tracker::StartTrackerCalib()
         "Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n"
         "Yellow: The marker is being calibrated. Hold it still for a second.\n\n"
         "When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
-    dial->ShowModal();
+    dial.ShowModal();
 
     mainThreadRunning = false;
 
@@ -518,33 +705,33 @@ void Tracker::Start()
     }
     if (!cameraRunning)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
     if (parameters->camMat.empty())
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
     if (!trackersCalibrated)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Trackers not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         return;
     }
     if (connection->status != connection->CONNECTED)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Not connected to steamVR"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
         mainThreadRunning = false;
         //return;
     }
@@ -601,10 +788,7 @@ void Tracker::CalibrateTracker()
 
     while (cameraRunning && mainThreadRunning)
     {
-        while (!imageReady)
-            Sleep(1);
-        retImage.copyTo(image);
-        imageReady = false;
+        CopyFreshCameraImageTo(image);
 
         clock_t start;
         //clock for timing of detection
@@ -622,7 +806,7 @@ void Tracker::CalibrateTracker()
 
         //estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, markerSize, parameters->camMat, parameters->distCoefs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, markerSize, parameters->camMat, parameters->distCoeffs, rvecs, tvecs);
         /*
         for (int i = 0; i < rvecs.size(); ++i) {
             //draw axis for each marker
@@ -631,7 +815,7 @@ void Tracker::CalibrateTracker()
 
             //rotation/translation vectors are shown as offset of our camera from the marker
 
-            cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, rvec, tvec, parameters->markerSize);
+            cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, rvec, tvec, parameters->markerSize);
         }
         */
 
@@ -644,9 +828,9 @@ void Tracker::CalibrateTracker()
             //bool boardFound = false;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], false) > 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], false) > 0)
                 {
-                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], 0.1f);
+                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1f);
                     boardFound[i] = true;
                 }
                 else
@@ -656,9 +840,9 @@ void Tracker::CalibrateTracker()
             }
             catch (std::exception&)
             {
-                wxMessageDialog* dial = new wxMessageDialog(NULL,
+                wxMessageDialog dial(NULL,
                     wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
-                dial->ShowModal();
+                dial.ShowModal();
                 cv::destroyWindow("out");
                 apriltag_detector_destroy(td);
                 mainThreadRunning = false;
@@ -852,11 +1036,7 @@ void Tracker::MainLoop()
 
     while(mainThreadRunning && cameraRunning)
     {
-        while (!imageReady)
-            Sleep(1);
-
-        retImage.copyTo(image);
-        imageReady = false;
+        CopyFreshCameraImageTo(image);
 
         image.copyTo(drawImg);
         cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
@@ -919,9 +1099,9 @@ void Tracker::MainLoop()
             /*
             std::string teststr = std::to_string(calibRodr[0]) + " " + std::to_string(calibRodr[1]) + " " + std::to_string(calibRodr[2]);
 
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 teststr, wxT("Error"), wxOK | wxICON_ERROR);
-            dial->ShowModal();
+            dial.ShowModal();
             */
             wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0, 0, 0), calibPos(0), calibPos(1), calibPos(2));
             //wrotation = rodr2quat(calibRodr[0], calibRodr[1], calibRodr[2]);
@@ -932,7 +1112,7 @@ void Tracker::MainLoop()
 
             dial = new wxMessageDialog(NULL,
                 teststr, wxT("Error"), wxOK | wxICON_ERROR);
-            dial->ShowModal();
+            dial.ShowModal();
 
             Sleep(2000);
             */
@@ -981,7 +1161,7 @@ void Tracker::MainLoop()
                 continue;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoefs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
                     {
@@ -995,9 +1175,11 @@ void Tracker::MainLoop()
             }
             catch (std::exception&)
             {
-                wxMessageDialog* dial = new wxMessageDialog(NULL,
-                    wxT("Something went wrong when estimating tracker pose. Try again! \nIf the problem persists, try to recalibrate camera and trackers."), wxT("Error"), wxOK | wxICON_ERROR);
-                dial->ShowModal();
+                wxMessageDialog dial(NULL,
+                    wxT("Something went wrong when estimating tracker pose. Try again! \n"
+                    "If the problem persists, try to recalibrate camera and trackers."),
+                    wxT("Error"), wxOK | wxICON_ERROR);
+                dial.ShowModal();
                 cv::destroyWindow("out");
                 apriltag_detector_destroy(td);
                 mainThreadRunning = false;

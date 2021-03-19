@@ -1,5 +1,21 @@
 #include "GUI.h"
 
+#include <sstream>
+#include <string>
+
+#include <opencv2/videoio/registry.hpp>
+
+namespace {
+
+void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label, const wxString& tooltip)
+{
+    wxStaticText* textObject = new wxStaticText(parent, -1, label);
+    textObject->SetToolTip(tooltip);
+    sizer->Add(textObject);
+}
+
+} // namespace
+
 GUI::GUI(const wxString& title, Parameters * params)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 700))
 {
@@ -20,7 +36,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
 {
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(7, 2, 20, 20);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
     wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
     wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
@@ -28,7 +44,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
     wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "6. Start/Stop");
 
-    wxCheckBox* cb = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
+    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
+        wxPoint(20, 20));
+    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, wxT("Preview calibration"),
         wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
@@ -37,9 +55,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     //parentGUI->cb2->SetValue(false);
 
     fgs->Add(btn1);
-    fgs->Add(cb);
+    fgs->Add(cb1);
     fgs->Add(btn2);
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(cb2);
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);
@@ -61,9 +79,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibX = new ValueInput(this, "X(cm):", 0);
     parentGUI->manualCalibY = new ValueInput(this, "Y(cm):", 0);
     parentGUI->manualCalibZ = new ValueInput(this, "Z(cm):", 0);
-    parentGUI->manualCalibA = new ValueInput(this, "A(�):", 0);
-    parentGUI->manualCalibB = new ValueInput(this, "B(�):", 0);
-    parentGUI->manualCalibC = new ValueInput(this, "C(�):", 0);
+    parentGUI->manualCalibA = new ValueInput(this, wxString::FromUTF8("A(째):"), 0);
+    parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(째):"), 0);
+    parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(째):"), 0);
 
     parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse the values bellow to align the virtual camera with \nyour IRL one. Use your controllers as references.\nUncheck Calibration mode when done!")), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
@@ -85,139 +103,120 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
 }
 
 ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
-    :wxPanel(parent)
+    : wxPanel(parent)
+    , parameters(params)
+    , cameraAddrField(new wxTextCtrl(this, -1, parameters->cameraAddr))
+    , cameraApiField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraApiPreference)))
+    , trackerNumField(new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum)))
+    , markerSizeField(new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100)))
+    , prevValuesField(new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues)))
+    , smoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor)))
+    , quadDecimateField(new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate)))
+    , searchWindowField(new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow)))
+    // usePredictiveField(new wxCheckBox(this, -1, wxT("")))
+    // calibrationTrackerField(new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker)))
+    , ignoreTracker0Field(new wxCheckBox(this, -1, wxT("")))
+    , rotateClField(new wxCheckBox(this, -1, wxT("")))
+    , rotateCounterClField(new wxCheckBox(this, -1, wxT("")))
+    // offsetxField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX)))
+    // offsetyField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY)))
+    // offsetzField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ)))
+    // circularField(new wxCheckBox(this, -1, wxT("")))
+    , camFpsField(new wxTextCtrl(this, -1, std::to_string(parameters->camFps)))
+    , camWidthField(new wxTextCtrl(this, -1, std::to_string(parameters->camWidth)))
+    , camHeightField(new wxTextCtrl(this, -1, std::to_string(parameters->camHeight)))
+    , camLatencyField(new wxTextCtrl(this, -1, std::to_string(parameters->camLatency)))
+    // cameraSettingsField(new wxCheckBox(this, -1, wxT("")))
+    , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
 {
-    parameters = params;
-    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
-
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(15, 2, 10, 10);
-
-    wxStaticText* cameraAddrText = new wxStaticText(this, -1, wxT("Ip or ID of camera"));
-    cameraAddrText->SetToolTip("Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
-    wxStaticText* trackerNumText = new wxStaticText(this, -1, wxT("Number of trackers"));
-    trackerNumText->SetToolTip("Set to 3 for full body. 2 will not work in vrchat!");
-    wxStaticText* markerSizeText = new wxStaticText(this, -1, wxT("Size of markers in cm"));
-    markerSizeText->SetToolTip("Measure the white square on markers and input it here");
-    wxStaticText* prevValuesText = new wxStaticText(this, -1, wxT("Number of values for smoothing"));
-    prevValuesText->SetToolTip("Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
-    wxStaticText* smoothingText = new wxStaticText(this, -1, wxT("Additional smoothing"));
-    smoothingText->SetToolTip("0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
-    wxStaticText* quadDecimateText = new wxStaticText(this, -1, wxT("Quad decimate"));
-    quadDecimateText->SetToolTip("Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
-    wxStaticText* searchWindowText = new wxStaticText(this, -1, wxT("Search window"));
-    searchWindowText->SetToolTip("Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
-    //wxStaticText* usePredictiveText = new wxStaticText(this, -1, wxT("Use previous position as guess"));
-    //usePredictiveText->SetToolTip("Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
-    //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
-    wxStaticText* ignoreTracker0Text = new wxStaticText(this, -1, wxT("Ignore tracker 0"));
-    ignoreTracker0Text->SetToolTip("If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
-    wxStaticText* rotateClText = new wxStaticText(this, -1, wxT("Rotate camera clockwise"));
-    rotateClText->SetToolTip("Rotate the camera. Use both to rotate image 180�");
-    wxStaticText* rotateCounterClText = new wxStaticText(this, -1, wxT("Rotate camera counterclockwise"));
-    rotateCounterClText->SetToolTip("Rotate the camera. Use both to rotate image 180�");
-    //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
-    //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
-    //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
-    //wxStaticText* circularText = new wxStaticText(this, -1, wxT("Use circular search window"));
-    //circularText->SetToolTip("Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
-    wxStaticText* camFpsText = new wxStaticText(this, -1, wxT("Camera FPS"));
-    camFpsText->SetToolTip("Set the fps of the camera");
-    wxStaticText* camHeightText = new wxStaticText(this, -1, wxT("Camera height in pixels"));
-    camHeightText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    wxStaticText* camWidthText = new wxStaticText(this, -1, wxT("Camera width in pixels"));
-    camWidthText->SetToolTip("Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    wxStaticText* camLatencyText = new wxStaticText(this, -1, wxT("Camera latency"));
-    camLatencyText->SetToolTip("Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
-    //wxStaticText* cameraSettingsText = new wxStaticText(this, -1, wxT("Open camera settings"));
-    //cameraSettingsText->SetToolTip("Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
-    wxStaticText* chessboardCalibText = new wxStaticText(this, -1, wxT("Use chessboard calibration"));
-    chessboardCalibText->SetToolTip("Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
-Keep other parameters as default unless you know what you are doing.");
-
-
-    cameraAddrField = new wxTextCtrl(this, -1, parameters->cameraAddr);
-    trackerNumField = new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum));
-    markerSizeField = new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100));
-    prevValuesField = new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues));
-    smoothingField = new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor));
-    quadDecimateField = new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate));
-    searchWindowField = new wxTextCtrl(this, -1, std::to_string(parameters->searchWindow));
-    //usePredictiveField = new wxCheckBox(this, -1, wxT(""));
     //usePredictiveField->SetValue(parameters->usePredictive);
-    //calibrationTrackerField = new wxTextCtrl(this, -1, std::to_string(parameters->calibrationTracker));
-    ignoreTracker0Field = new wxCheckBox(this, -1, wxT(""));
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
-    rotateClField = new wxCheckBox(this, -1, wxT(""));
     rotateClField->SetValue(parameters->rotateCl);
-    rotateCounterClField = new wxCheckBox(this, -1, wxT(""));
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
-    //offsetxField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX));
-    //offsetyField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY));
-    //offsetzField = new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ));
-    //circularField = new wxCheckBox(this, -1, wxT(""));
     //circularField->SetValue(parameters->circularWindow);
-    camFpsField = new wxTextCtrl(this, -1, std::to_string(parameters->camFps));
-    camWidthField = new wxTextCtrl(this, -1, std::to_string(parameters->camWidth));
-    camHeightField = new wxTextCtrl(this, -1, std::to_string(parameters->camHeight));
-    camLatencyField = new wxTextCtrl(this, -1, std::to_string(parameters->camLatency));
-    //cameraSettingsField = new wxCheckBox(this, -1, wxT(""));
     //cameraSettingsField->SetValue(parameters->cameraSettings);
-    chessboardCalibField = new wxCheckBox(this, -1, wxT(""));
     chessboardCalibField->SetValue(parameters->chessboardCalib);
 
-    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
-    //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
-    Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
-    //Connect(HELP_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::ShowHelp));
+    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    fgs->Add(cameraAddrText);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
+
+    static const std::string cameraApiDescriptions = []()
+    {
+        std::stringstream description;
+        description << "0: No preference\n\nCamera backends:";
+        for (const auto backend : cv::videoio_registry::getCameraBackends())
+        {
+            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
+        }
+        description << "\n\nStream backends:";
+        for (const auto backend : cv::videoio_registry::getStreamBackends())
+        {
+            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
+        }
+        return description.str();
+    }();
+
+    addTextWithTooltip(this, fgs, "Ip or ID of camera", "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
     fgs->Add(cameraAddrField);
-    fgs->Add(trackerNumText);
+    addTextWithTooltip(this, fgs, "Camera API preference", cameraApiDescriptions);
+    fgs->Add(cameraApiField);
+    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
     fgs->Add(trackerNumField);
-    fgs->Add(markerSizeText);
+    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
     fgs->Add(markerSizeField);
-    fgs->Add(rotateClText);
+    addTextWithTooltip(this, fgs, "Rotate camera clockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180째"));
     fgs->Add(rotateClField);
-    fgs->Add(rotateCounterClText);
+    addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180째"));
     fgs->Add(rotateCounterClField);
-    fgs->Add(prevValuesText);
+    addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
-    fgs->Add(smoothingText);
+    addTextWithTooltip(this, fgs, "Additional smoothing", "0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
     fgs->Add(smoothingField);
-    fgs->Add(quadDecimateText);
+    addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
-    fgs->Add(searchWindowText);
+    addTextWithTooltip(this, fgs, "Search window", "Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
     fgs->Add(searchWindowField);
+    //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     //fgs->Add(calibrationTrackerText);
     //fgs->Add(calibrationTrackerField);
-    fgs->Add(ignoreTracker0Text);
+    addTextWithTooltip(this, fgs, "Ignore tracker 0", "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
     fgs->Add(ignoreTracker0Field);
-    //fgs->Add(usePredictiveText);
+    //addTextWithTooltip(this, fgs, "Use previous position as guess", "Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
     //fgs->Add(usePredictiveField);
+    //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
     //fgs->Add(offsetxText);
     //fgs->Add(offsetxField);
+    //wxStaticText* offsetyText = new wxStaticText(this, -1, wxT("Y axis calibration offset"));
     //fgs->Add(offsetyText);
     //fgs->Add(offsetyField);
+    //wxStaticText* offsetzText = new wxStaticText(this, -1, wxT("Z axis calibration offset"));
     //fgs->Add(offsetzText);
     //fgs->Add(offsetzField);
-    //fgs->Add(circularText);
+    //addTextWithTooltip(this, fgs, "Use circular search window", "Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     //fgs->Add(circularField);
-    fgs->Add(camFpsText);
+    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
     fgs->Add(camFpsField);
-    fgs->Add(camWidthText);
+    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
     fgs->Add(camWidthField);
-    fgs->Add(camHeightText);
+    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
     fgs->Add(camHeightField);
-    fgs->Add(camLatencyText);
+    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
     fgs->Add(camLatencyField);
-    //fgs->Add(cameraSettingsText);
+    //addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
     //fgs->Add(cameraSettingsField);
-    fgs->Add(chessboardCalibText);
+    addTextWithTooltip(this, fgs, "Use chessboard calibration",
+        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.");
     fgs->Add(chessboardCalibField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("Hover over text for help!")));
+    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
+    //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
+    Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
+    //Connect(HELP_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::ShowHelp));
     fgs->Add(btn1);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
@@ -228,32 +227,33 @@ Keep other parameters as default unless you know what you are doing.");
 
 void ParamsPage::ShowHelp(wxCommandEvent& event)
 {
-    wxMessageDialog* dial = new wxMessageDialog(NULL,
-        "Short descriptions of main parameters \n\n\
-Check the github for full tutorial and parameter descriptions!\n\n\
-Parameters you have to set before starting:\n\
-- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n\
-- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n\
-- Size of markers: Measure the white square on markers.\n\
-- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n\
-- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n\
-Other usefull parameters:\n\
-- Rotate camera: Self explanatory. Use both for a 180� flip\n\
-- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n\
-- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n\
-- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n\
-Experimental:\n\
-- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n\
-- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n\
-Keep other parameters as default unless you know what you are doing.\n\n\
-Press OK to close this window.", wxT("Message"), wxOK);
-    dial->ShowModal();
+    wxMessageDialog dial(NULL, wxString::FromUTF8(
+        "Short descriptions of main parameters \n\n"
+        "Check the github for full tutorial and parameter descriptions!\n\n"
+        "Parameters you have to set before starting:\n"
+        "- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n"
+        "- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n"
+        "- Size of markers: Measure the white square on markers.\n"
+        "- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n"
+        "- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n"
+        "Other usefull parameters:\n"
+        "- Rotate camera: Self explanatory. Use both for a 180째 flip\n"
+        "- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n"
+        "- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n"
+        "- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n"
+        "Experimental:\n"
+        "- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n"
+        "- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.\n\n"
+        "Press OK to close this window."), wxT("Message"), wxOK);
+    dial.ShowModal();
 }
 
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {
     try {
         parameters->cameraAddr = cameraAddrField->GetValue().ToStdString();
+        parameters->cameraApiPreference = std::stoi(cameraApiField->GetValue().ToStdString());
         parameters->trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());
         parameters->markerSize = std::stod(markerSizeField->GetValue().ToStdString()) / 100;
         parameters->numOfPrevValues = std::stoi(prevValuesField->GetValue().ToStdString());
@@ -278,51 +278,44 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->Save();
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3. \n\nParameters saved!"), wxT("Warning"), wxOK | wxICON_WARNING);
-            dial->ShowModal();
+            dial.ShowModal();
         }
         else
         {
-            wxMessageDialog* dial = new wxMessageDialog(NULL,
+            wxMessageDialog dial(NULL,
                 wxT("Parameters saved!"), wxT("Info"), wxOK | wxICON_INFORMATION);
-            dial->ShowModal();
+            dial.ShowModal();
         }
     }
     catch (std::exception&)
     {
-        wxMessageDialog* dial = new wxMessageDialog(NULL,
+        wxMessageDialog dial(NULL,
             wxT("Please enter appropriate values. Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
-        dial->ShowModal();
+        dial.ShowModal();
     }
 }
 
-ValueInput::ValueInput(wxPanel* parent, std::string nm, double val)
-    :wxPanel(parent)
+ValueInput::ValueInput(wxPanel* parent, const wxString& nm, double val)
+    : wxPanel(parent)
+    , value(val)
+    , input(new wxTextCtrl(this, 5, std::to_string(0)))
 {
-    value = val;
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
-    dwn1 = new wxButton(this, 1, "<", wxDefaultPosition, wxSize(25,25));
-    dwn2 = new wxButton(this, 2, "<<", wxDefaultPosition, wxSize(25, 25));
-    up1 = new wxButton(this, 3, ">", wxDefaultPosition, wxSize(25, 25));
-    up2 = new wxButton(this, 4, ">>", wxDefaultPosition, wxSize(25, 25));
-    input = new wxTextCtrl(this, 5, std::to_string(0));
 
     Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ValueInput::ButtonPressed));
     Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(ValueInput::ButtonPressed));
     Connect(wxEVT_MOUSEWHEEL, wxMouseEventHandler(ValueInput::MouseScroll));
 
-    wxStaticText* name = new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20));
-
-    hbox->Add(name);
-    hbox->Add(dwn2);
-    hbox->Add(dwn1);
+    hbox->Add(new wxStaticText(this, -1, nm, wxDefaultPosition, wxSize(40, 20)));
+    hbox->Add(new wxButton(this, 2, "<<", wxDefaultPosition, wxSize(25, 25)));
+    hbox->Add(new wxButton(this, 1, "<", wxDefaultPosition, wxSize(25,25)));
     hbox->Add(input);
-    hbox->Add(up1);
-    hbox->Add(up2);
+    hbox->Add(new wxButton(this, 3, ">", wxDefaultPosition, wxSize(25, 25)));
+    hbox->Add(new wxButton(this, 4, ">>", wxDefaultPosition, wxSize(25, 25)));
 
     this->SetSizer(hbox);
-
 }
 
 void ValueInput::SetValue(double val)
