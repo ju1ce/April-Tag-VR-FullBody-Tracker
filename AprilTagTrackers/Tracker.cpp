@@ -236,6 +236,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     {
         int i = std::stoi(id);	//convert to int
         cap = cv::VideoCapture(i, apiPreference);
+
     }
     else
     {			//if address is longer, we try to open it as an ip address
