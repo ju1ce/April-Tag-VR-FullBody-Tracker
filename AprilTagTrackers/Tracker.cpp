@@ -957,9 +957,7 @@ void Tracker::MainLoop()
 
     std::vector<cv::Point2f> maskCenters;
 
-    cv::Mat  prevImg;
-
-    cv::Mat image, drawImg;
+    cv::Mat image, drawImg, ycc, gray, cr;
 
     std::vector<cv::Vec3d> boardRvec, boardTvec;
     std::vector<bool> boardFound;
@@ -1038,8 +1036,20 @@ void Tracker::MainLoop()
     {
         CopyFreshCameraImageTo(image);
 
-        image.copyTo(drawImg);
-        cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+        drawImg = image;
+
+        if (parameters->coloredMarkers)
+        {
+            cvtColor(image, ycc, cv::COLOR_BGR2YCrCb);
+            cr.create(image.size(), CV_8U);
+            int fromTo[] = {1, 0};
+            cv::mixChannels(&ycc, 1, &cr, 1, fromTo, 1);
+            cv::swap(cr, gray);
+        }
+        else
+        {
+            cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+        }
 
         clock_t start, end;
         //for timing our detection
@@ -1063,9 +1073,9 @@ void Tracker::MainLoop()
         if (maskCenters.size() > 0)
         {
             //Then define your mask image
-            cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+            cv::Mat mask = cv::Mat::zeros(image.size(), CV_8U);
 
-            cv::Mat dstImage = cv::Mat::zeros(image.size(), image.type());
+            cv::Mat dstImage = cv::Mat::zeros(image.size(), CV_8U);
 
             int size = image.rows * parameters->searchWindow;
 
@@ -1085,8 +1095,8 @@ void Tracker::MainLoop()
             }
 
             //Now you can copy your source image to destination image with masking
-            image.copyTo(dstImage, mask);
-            image = dstImage;
+            gray.copyTo(dstImage, mask);
+            gray = dstImage;
             //cv::imshow("test", image);
         }
 
@@ -1128,7 +1138,7 @@ void Tracker::MainLoop()
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
         }
 
-        detectMarkersApriltag(image, &corners, &ids, &centers, td);
+        detectMarkersApriltag(gray, &corners, &ids, &centers, td);
 
         for (int i = 0; i < centers.size(); i++)
         {
