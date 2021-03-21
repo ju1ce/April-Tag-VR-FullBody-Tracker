@@ -118,6 +118,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , ignoreTracker0Field(new wxCheckBox(this, -1, wxT("")))
     , rotateClField(new wxCheckBox(this, -1, wxT("")))
     , rotateCounterClField(new wxCheckBox(this, -1, wxT("")))
+    , coloredMarkersField(new wxCheckBox(this, -1, wxT("")))
     // offsetxField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX)))
     // offsetyField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY)))
     // offsetzField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ)))
@@ -133,6 +134,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
     rotateClField->SetValue(parameters->rotateCl);
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
+    coloredMarkersField->SetValue(parameters->coloredMarkers);
     //circularField->SetValue(parameters->circularWindow);
     //cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
@@ -169,6 +171,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateClField);
     addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
+    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers are less sensitive to shadows but might be worse in other ways.");
+    fgs->Add(coloredMarkersField);
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
     addTextWithTooltip(this, fgs, "Additional smoothing", "0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
@@ -264,6 +268,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->ignoreTracker0 = ignoreTracker0Field->GetValue();
         parameters->rotateCl = rotateClField->GetValue();
         parameters->rotateCounterCl = rotateCounterClField->GetValue();
+        parameters->coloredMarkers = coloredMarkersField->GetValue();
         //parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());

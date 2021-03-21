@@ -80,6 +80,7 @@ private:
     wxTextCtrl* calibrationTrackerField;
     wxCheckBox* rotateClField;
     wxCheckBox* rotateCounterClField;
+    wxCheckBox* coloredMarkersField;
     wxTextCtrl* offsetxField;
     wxTextCtrl* offsetyField;
     wxTextCtrl* offsetzField;

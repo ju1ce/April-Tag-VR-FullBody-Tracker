@@ -31,6 +31,7 @@ void Parameters::Load()
         fs["calibrationTracker"] >> calibrationTracker;
         fs["rotateCl"] >> rotateCl;
         fs["rotateCounterCl"] >> rotateCounterCl;
+        fs["coloredMarkers"] >> coloredMarkers;
         fs["calibOffsetX"] >> calibOffsetX;
         fs["calibOffsetY"] >> calibOffsetY;
         fs["calibOffsetZ"] >> calibOffsetZ;
@@ -110,6 +111,7 @@ void Parameters::Save()
     fs << "calibrationTracker" << calibrationTracker;
     fs << "rotateCl" << rotateCl;
     fs << "rotateCounterCl" << rotateCounterCl;
+    fs << "coloredMarkers" << coloredMarkers;
     fs << "calibOffsetX" << calibOffsetX;
     fs << "calibOffsetY" << calibOffsetY;
     fs << "calibOffsetZ" << calibOffsetZ;
