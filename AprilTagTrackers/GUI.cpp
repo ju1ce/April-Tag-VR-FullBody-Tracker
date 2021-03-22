@@ -171,7 +171,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateClField);
     addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
-    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers are less sensitive to shadows but might be worse in other ways.");
+    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers are slightly faster to detect and possibly less sensitive to shadows.");
     fgs->Add(coloredMarkersField);
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
