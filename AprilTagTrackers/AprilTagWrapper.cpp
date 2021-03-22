@@ -29,20 +29,36 @@ AprilTagWrapper::~AprilTagWrapper()
     apriltag_detector_destroy(td);
 }
 
+void AprilTagWrapper::convertToSingleChannel(const cv::Mat& src, cv::Mat& dst)
+{
+    if (parameters->coloredMarkers)
+    {
+        cv::Mat ycc;
+        cv::cvtColor(src, ycc, cv::COLOR_BGR2YCrCb);
+        dst.create(src.size(), CV_8U);
+        int fromTo[] = {1, 0};
+        cv::mixChannels(&ycc, 1, &dst, 1, fromTo, 1);
+    }
+    else
+    {
+        cv::cvtColor(src, dst, cv::COLOR_BGR2GRAY);
+    }
+}
+
 void AprilTagWrapper::detectMarkers(
-    const cv::Mat& frame,
+    const cv::Mat& image,
     std::vector<std::vector<cv::Point2f> >* corners,
     std::vector<int>* ids,
     std::vector<cv::Point2f>* centers)
 {
     cv::Mat gray;
-    if (frame.type() != CV_8U)
+    if (image.type() != CV_8U)
     {
-        cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        convertToSingleChannel(image, gray);
     }
     else
     {
-        gray = frame;
+        gray = image;
     }
 
     corners->clear();

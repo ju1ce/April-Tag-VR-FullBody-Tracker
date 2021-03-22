@@ -14,6 +14,8 @@ public:
 
     ~AprilTagWrapper();
 
+    void convertToSingleChannel(const cv::Mat& src, cv::Mat& dst);
+
     void detectMarkers(
         const cv::Mat& frame,
         std::vector<std::vector<cv::Point2f> >* corners,

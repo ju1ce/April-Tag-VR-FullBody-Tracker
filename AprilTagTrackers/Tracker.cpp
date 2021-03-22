@@ -970,19 +970,7 @@ void Tracker::MainLoop()
         CopyFreshCameraImageTo(image);
 
         drawImg = image;
-
-        if (parameters->coloredMarkers)
-        {
-            cvtColor(image, ycc, cv::COLOR_BGR2YCrCb);
-            cr.create(image.size(), CV_8U);
-            int fromTo[] = {1, 0};
-            cv::mixChannels(&ycc, 1, &cr, 1, fromTo, 1);
-            cv::swap(cr, gray);
-        }
-        else
-        {
-            cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
-        }
+        april.convertToSingleChannel(image, gray);
 
         clock_t start, end;
         //for timing our detection
