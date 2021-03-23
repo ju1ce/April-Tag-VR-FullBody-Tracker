@@ -880,6 +880,10 @@ void Tracker::MainLoop()
         if (!circularWindow)
             framesSinceLastSeen = 0;
 
+        corners.clear();
+        ids.clear();
+        centers.clear();
+
         if (maskCenters.size() > 0)
         {
             //Then define your mask image
@@ -892,8 +896,41 @@ void Tracker::MainLoop()
             //I assume you want to draw the circle at the center of your image, with a radius of 50
             for (int i = 0; i < maskCenters.size(); i++)
             {
+                std::vector<int> partids;
+                std::vector<std::vector<cv::Point2f> > partcorners;
+                std::vector<cv::Point2f> partcenters;
+
                 if (circularWindow)
                 {
+                    cv::Rect bounds(0, 0, image.cols, image.rows);
+                    cv::Rect r((int)maskCenters[i].x - size, (int)maskCenters[i].y - size, 2 * size, 2 *size);
+
+                    cv::Mat roi = image(r & bounds);
+
+                    //cv::imshow("test", roi);
+                    //cv::waitKey(1);
+                    
+                    detectMarkersApriltag(roi, &partcorners, &partids, &partcenters, td);
+                    
+                    for (int j = 0; j < partids.size(); j++)
+                    {
+                        for (int k = 0; k < partcorners[j].size(); k++)
+                        {
+                            if((int)maskCenters[i].x > size)
+                                partcorners[j][k].x += (int)maskCenters[i].x - size;
+                            if ((int)maskCenters[i].y > size)
+                                partcorners[j][k].y += (int)maskCenters[i].y - size;
+                        }
+                        if ((int)maskCenters[i].x > size)
+                            partcenters[j].x += (int)maskCenters[i].x - size;
+                        if ((int)maskCenters[i].y > size)
+                            partcenters[j].y += (int)maskCenters[i].y - size;
+
+                        ids.push_back(partids[j]);
+                        corners.push_back(partcorners[j]);
+                        centers.push_back(partcenters[j]);
+                    }
+                    
                     cv::circle(mask, maskCenters[i], size, cv::Scalar(255, 0, 0), -1, 8, 0);
                     cv::circle(drawImg, maskCenters[i], size, cv::Scalar(255, 0, 0), 2, 8, 0);
                 }
@@ -909,6 +946,12 @@ void Tracker::MainLoop()
             image = dstImage;
             //cv::imshow("test", image);
         }
+        else
+        {
+            detectMarkersApriltag(image, &corners, &ids, &centers, td);
+        }
+
+        //detectMarkersApriltag(image, &corners, &ids, &centers, td);
 
         if (manualRecalibrate)
         {
@@ -948,7 +991,7 @@ void Tracker::MainLoop()
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
         }
 
-        detectMarkersApriltag(image, &corners, &ids, &centers, td);
+        //detectMarkersApriltag(image, &corners, &ids, &centers, td);
 
         for (int i = 0; i < centers.size(); i++)
         {
