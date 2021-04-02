@@ -46,7 +46,7 @@ public:
     bool chessboardCalib = false;
     double camLatency = 0;
     bool circularMarkers = false;
-    double trackerCalibDistance = 0.3;
+    double trackerCalibDistance = 0.5;
     int cameraCalibSamples = 15;
     bool settingsParameters = false;
     double cameraAutoexposure = 0;

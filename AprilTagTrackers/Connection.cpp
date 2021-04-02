@@ -50,7 +50,7 @@ void Connection::Connect()
     if (word != "numtrackers")
     {
         wxMessageDialog dial(NULL,
-            wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed."), wxT("Error"), wxOK | wxICON_ERROR);
+            wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed. \nYou may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2. \nError code: " + std::to_string(GetLastError())), wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         status = DISCONNECTED;
         return;

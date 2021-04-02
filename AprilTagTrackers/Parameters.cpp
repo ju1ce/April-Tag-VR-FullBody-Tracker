@@ -48,8 +48,8 @@ void Parameters::Load()
         fs["camLatency"] >> camLatency;
         fs["circularMarkers"] >> circularMarkers;
         fs["trackerCalibDistance"] >> trackerCalibDistance;
-        if (trackerCalibDistance < 0.3)
-            trackerCalibDistance = 0.3;
+        if (trackerCalibDistance < 0.5)
+            trackerCalibDistance = 0.5;
         fs["cameraCalibSamples"] >> cameraCalibSamples;
         if (cameraCalibSamples < 15)
             cameraCalibSamples = 15;

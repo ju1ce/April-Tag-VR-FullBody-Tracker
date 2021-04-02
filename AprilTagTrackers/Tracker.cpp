@@ -252,7 +252,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         dial.ShowModal();
         return;
     }
-    Sleep(1000);
+    //Sleep(1000);
     cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
     cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
     if(parameters->camWidth != 0)
@@ -264,10 +264,12 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_SETTINGS, 1);
     if (parameters->settingsParameters)
     {
+        cap.set(cv::CAP_PROP_AUTOFOCUS, 0);
         cap.set(cv::CAP_PROP_AUTO_EXPOSURE, parameters->cameraAutoexposure);
         cap.set(cv::CAP_PROP_EXPOSURE, parameters->cameraExposure);
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
+    
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
