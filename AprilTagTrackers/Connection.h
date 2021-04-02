@@ -5,7 +5,9 @@
 #pragma warning(pop)
 
 #include "Parameters.h"
-#include <windows.h>
+// #include <windows.h>
+#include <chrono>
+#include <thread>
 
 class Connection
 {
@@ -22,11 +24,11 @@ public:
     int status = DISCONNECTED;
 private:
     void Connect();
-    HANDLE hpipe;
+    // HANDLE hpipe;
     int pipeNum = 1;
     const int BUFSIZE = 1024;
-    CHAR chReadBuf[1024];
-    BOOL fSuccess;
-    DWORD cbRead;
-    LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
+    char chReadBuf[1024];
+    bool fSuccess;
+    unsigned long cbRead;
+    const char* lpszPipename = "\\\\.\\pipe\\ApriltagPipeIn";
 };

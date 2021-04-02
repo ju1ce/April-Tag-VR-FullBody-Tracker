@@ -11,7 +11,7 @@ int MyApp::OnExit()
 {
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
-    Sleep(2000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     return 0;
 }
 

@@ -13,7 +13,7 @@ void transformMarkerSpace(std::vector<cv::Point3f>, cv::Vec3d, cv::Vec3d, cv::Ve
 void getMedianMarker(std::vector<std::vector<cv::Point3f>>, std::vector<cv::Point3f>*);
 Quaternion<double> rodr2quat(double, double, double);
 cv::Mat getSpaceCalib(cv::Vec3d, cv::Vec3d, double, double, double);
-cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f& theta);
+cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f theta);
 bool isRotationMatrix(cv::Mat& R);
 cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
 Quaternion<double> mRot2Quat(const cv::Mat& m);

@@ -180,7 +180,7 @@ cv::Mat getSpaceCalibEuler(cv::Vec3d rvec, cv::Vec3d tvec, double xOffset, doubl
 }
 
 // Calculates rotation matrix given euler angles.
-cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f& theta)
+cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f theta)
 {
     // Calculate rotation about x axis
     cv::Mat R_x = (cv::Mat_<double>(3, 3) <<

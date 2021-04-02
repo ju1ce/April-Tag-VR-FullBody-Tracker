@@ -1,6 +1,5 @@
 #include "Connection.h"
 
-
 Connection::Connection(Parameters* params)
 {
     parameters = params;
@@ -24,7 +23,8 @@ void Connection::StartConnection()
         {
             return;
         }
-        Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // Sleep(1000);
         status = DISCONNECTED;
     }
     std::thread connectThread(&Connection::Connect, this);
@@ -50,7 +50,7 @@ void Connection::Connect()
     if (word != "numtrackers")
     {
         wxMessageDialog dial(NULL,
-            wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed. \nYou may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2. \nError code: " + std::to_string(GetLastError())), wxT("Error"), wxOK | wxICON_ERROR);
+            wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed. \nYou may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2. \nError code: " ), wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         status = DISCONNECTED;
         return;
@@ -78,14 +78,33 @@ void Connection::Connect()
 
 std::istringstream Connection::Send(std::string lpszWrite)
 {
+    int fd;
+
+    fd = open(lpszPipename, O_WRONLY);
+    write(fd, lpszWrite.c_str(), strlen(lpszWrite.c_str()) + 1);
+    close(fd);
+
+    fd = open(lpszPipename, O_RDONLY);
+    cbRead = read(fd, chReadBuf, BUFSIZE * sizeof(char));
+    close(fd);
+
+    std::cout << chReadBuf << std::endl;
+    chReadBuf[cbRead] = '\0';
+    std::string rec = chReadBuf;
+    std::istringstream iss(rec);
+
+    return iss;
+
+    /*
+
     //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so I'll leave the dumb conversions and casts in. If it doesn't for you, have fun.
 
     fSuccess = CallNamedPipe(
         lpszPipename,        // pipe name
-        (LPVOID)lpszWrite.c_str(),           // message to server
-        (strlen(lpszWrite.c_str()) + 1) * sizeof(TCHAR), // message length
+        (void)lpszWrite.c_str(),           // message to server
+        (strlen(lpszWrite.c_str()) + 1) * sizeof(char), // message length
         chReadBuf,              // buffer to receive reply
-        BUFSIZE * sizeof(TCHAR),  // size of read buffer
+        BUFSIZE * sizeof(char),  // size of read buffer
         &cbRead,                // number of bytes read
         2000);                 // waits for 2 seconds
 
@@ -111,6 +130,8 @@ std::istringstream Connection::Send(std::string lpszWrite)
         std::istringstream iss(rec);
         return iss;
     }
+
+    */
 }
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)

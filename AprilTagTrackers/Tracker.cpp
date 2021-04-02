@@ -229,7 +229,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     {
         cameraRunning = false;
         //cameraThread.join();
-        Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         return;
     }
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
@@ -349,7 +349,7 @@ void Tracker::CameraLoop()
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
     // Sleep happens between each iteration when the mutex is not locked.
-    for (;;Sleep(1))
+    for (;;std::this_thread::sleep_for(std::chrono::milliseconds(1)))
     {
         std::lock_guard<std::mutex> lock(cameraImageMutex);
         if (imageReady)
@@ -1124,7 +1124,7 @@ void Tracker::MainLoop()
                 teststr, wxT("Error"), wxOK | wxICON_ERROR);
             dial.ShowModal();
 
-            Sleep(2000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             */
             cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
             stationPos = wtranslation * stationPos;
