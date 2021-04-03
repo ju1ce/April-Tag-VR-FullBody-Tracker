@@ -24,7 +24,7 @@ public:
     int status = DISCONNECTED;
 private:
     void Connect();
-    // HANDLE hpipe;
+    int hpipe;
     int pipeNum = 1;
     const int BUFSIZE = 1024;
     char chReadBuf[1024];

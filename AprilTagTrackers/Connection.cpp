@@ -78,15 +78,15 @@ void Connection::Connect()
 
 std::istringstream Connection::Send(std::string lpszWrite)
 {
-    int fd;
+    int hpipe;
 
-    fd = open(lpszPipename, O_WRONLY);
-    write(fd, lpszWrite.c_str(), strlen(lpszWrite.c_str()) + 1);
-    close(fd);
+    hpipe = open(lpszPipename, O_WRONLY);
+    write(hpipe, lpszWrite.c_str(), strlen(lpszWrite.c_str()) + 1);
+    close(hpipe);
 
-    fd = open(lpszPipename, O_RDONLY);
-    cbRead = read(fd, chReadBuf, BUFSIZE * sizeof(char));
-    close(fd);
+    hpipe = open(lpszPipename, O_RDONLY);
+    cbRead = read(hpipe, chReadBuf, BUFSIZE * sizeof(char));
+    close(hpipe);
 
     std::cout << chReadBuf << std::endl;
     chReadBuf[cbRead] = '\0';
