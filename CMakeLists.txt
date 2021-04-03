@@ -3,7 +3,7 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-SET (APRILTAG_LIB "${CMAKE_CURRENT_SOURCE_DIR}/apriltag/build/LIBRARY_OUTPUT_DIRECTORY/libapriltags.a" CACHE FILEPATH "Path to apriltags.lib library file." )
+SET (APRILTAG_LIB "${CMAKE_BINARY_DIR}/apriltag/LIBRARY_OUTPUT_DIRECTORY/libapriltags.a" CACHE FILEPATH "Path to apriltags.lib library file." )
 SET (APRILTAG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/apriltag" CACHE PATH "Directory of apriltag header files." )
 SET (wxBUILD_SHARED "0" CACHE BOOL "")
 
@@ -12,6 +12,8 @@ project ("AprilTagTrackers")
 
 # Include sub-projects.
 add_subdirectory("wxWidgets")
-add_subdirectory ("AprilTagTrackers")
+add_subdirectory("AprilTagTrackers")
+add_subdirectory("apriltag" EXCLUDE_FROM_ALL)
+add_dependencies("AprilTagTrackers" "apriltags")
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
 #set_target_properties("AprilTagTrackers" PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS )

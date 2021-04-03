@@ -3,9 +3,9 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-if(NOT EXISTS ${APRILTAG_LIB} )
-  message(FATAL_ERROR "AprilTag lib does not exist at ${APRILTAG_LIB}" )
-endif()
+#if(NOT EXISTS ${APRILTAG_LIB} )
+#  message(FATAL_ERROR "AprilTag lib does not exist at ${APRILTAG_LIB}" )
+#endif()
 
 if(NOT EXISTS "${APRILTAG_INCLUDE_DIR}/apriltag.h" )
   message(FATAL_ERROR "Please set the correct apriltags include directory." )
