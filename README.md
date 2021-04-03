@@ -17,6 +17,10 @@ The program can be downloaded from the [releases](https://github.com/ju1ce/April
 
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
 
+### Short setup video:
+I am too bad at making actual tutorials, but I did record a short video of me setting up everything. Its not a replacement for the tutorial bellow, but it may help you understand some of the steps better.
+
+https://youtu.be/vhTF5ECTpKc
 
 ## Table of contents
 
