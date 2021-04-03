@@ -9,7 +9,7 @@ To use, you will have to make three trackers - one for each leg and one for hips
 
 This version uses the much more accurate AprilTag system and includes many improvements to make the system easier to use, such as a GUI interface and a more straight forward calibration.
 
-If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: juice#6370
+If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: https://discord.gg/g2ctkXB4bb
 
 The program can be downloaded from the [releases](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases) tab.
 
