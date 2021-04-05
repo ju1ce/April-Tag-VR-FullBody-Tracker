@@ -13,6 +13,7 @@
 #include <opencv2/videoio.hpp>
 
 #include "Quaternion.h"
+#include "Util.h"
 
 class Connection;
 class GUI;

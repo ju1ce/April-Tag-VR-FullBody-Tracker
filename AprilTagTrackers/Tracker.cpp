@@ -229,7 +229,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     {
         cameraRunning = false;
         //cameraThread.join();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        sleep_millis(1000);
         return;
     }
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
@@ -349,7 +349,7 @@ void Tracker::CameraLoop()
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
     // Sleep happens between each iteration when the mutex is not locked.
-    for (;;std::this_thread::sleep_for(std::chrono::milliseconds(1)))
+    for (;;sleep_millis(1))
     {
         std::lock_guard<std::mutex> lock(cameraImageMutex);
         if (imageReady)

@@ -23,7 +23,7 @@ void Connection::StartConnection()
         {
             return;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        sleep_millis(1000);
         // Sleep(1000);
         status = DISCONNECTED;
     }
