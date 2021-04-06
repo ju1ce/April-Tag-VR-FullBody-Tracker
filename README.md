@@ -367,3 +367,10 @@ Use the old chessboard calibration. Switching to new calibration is strongly rec
 
 * Tutorial for reducing camera exposure on IP-Webcam
 * Virtual hip to enable use of leg trackers only
+
+## Sources
+Olson, Edwin. "AprilTag: A robust and flexible visual fiducial system." 2011 IEEE International Conference on Robotics and Automation. IEEE, 2011.
+https://github.com/AprilRobotics/apriltag
+
+WxWidgets: A Cross-Platform GUI Library
+https://github.com/wxWidgets/wxWidgets
