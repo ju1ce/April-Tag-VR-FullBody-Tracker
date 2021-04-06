@@ -88,8 +88,8 @@ std::istringstream Connection::Send(std::string lpszWrite)
     cbRead = read(hpipe, chReadBuf, BUFSIZE * sizeof(char));
     close(hpipe);
 
-    std::cout << chReadBuf << std::endl;
     chReadBuf[cbRead] = '\0';
+    std::cout << chReadBuf << std::endl;
     std::string rec = chReadBuf;
     std::istringstream iss(rec);
 
