@@ -370,7 +370,9 @@ Use the old chessboard calibration. Switching to new calibration is strongly rec
 
 ## Sources
 Olson, Edwin. "AprilTag: A robust and flexible visual fiducial system." 2011 IEEE International Conference on Robotics and Automation. IEEE, 2011.
+
 https://github.com/AprilRobotics/apriltag
 
 WxWidgets: A Cross-Platform GUI Library
+
 https://github.com/wxWidgets/wxWidgets
