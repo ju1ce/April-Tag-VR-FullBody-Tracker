@@ -5,6 +5,8 @@
 #include <wx/wx.h>
 #pragma warning(pop)
 
+#include "Util.h"
+
 class Connection;
 class GUI;
 class Parameters;
