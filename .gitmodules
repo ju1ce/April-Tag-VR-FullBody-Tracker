@@ -1,6 +1,6 @@
 [submodule "apriltag"]
 	path = apriltag
-	url = https://github.com/tgRobotics/apriltag.git
+	url = https://github.com/rasmusgo/apriltag.git
 	branch = fixPullRequestLibraryName
 [submodule "wxWidgets"]
 	path = wxWidgets
