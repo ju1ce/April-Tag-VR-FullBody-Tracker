@@ -192,7 +192,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(ignoreTracker0Field);
     addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
     fgs->Add(markerSizeField);
-    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers are slightly faster to detect and possibly less sensitive to shadows.");
+    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers can be slightly faster to detect and possibly less sensitive to shadows.");
     fgs->Add(coloredMarkersField);
     addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
