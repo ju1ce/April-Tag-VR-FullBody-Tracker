@@ -163,14 +163,33 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(cameraAddrField);
     addTextWithTooltip(this, fgs, "Camera API preference", cameraApiDescriptions);
     fgs->Add(cameraApiField);
-    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
-    fgs->Add(trackerNumField);
-    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
-    fgs->Add(markerSizeField);
+    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    fgs->Add(camWidthField);
+    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    fgs->Add(camHeightField);
+    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
+    fgs->Add(camFpsField);
     addTextWithTooltip(this, fgs, "Rotate camera clockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateClField);
     addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
+    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
+    fgs->Add(camLatencyField);
+    //addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
+    //fgs->Add(cameraSettingsField);
+    addTextWithTooltip(this, fgs, "Use chessboard calibration",
+        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.");
+    fgs->Add(chessboardCalibField);
+
+    // These are used as a divider
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+
+    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
+    fgs->Add(trackerNumField);
+    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
+    fgs->Add(markerSizeField);
     addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers are slightly faster to detect and possibly less sensitive to shadows.");
     fgs->Add(coloredMarkersField);
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
@@ -199,20 +218,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //fgs->Add(offsetzField);
     //addTextWithTooltip(this, fgs, "Use circular search window", "Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     //fgs->Add(circularField);
-    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
-    fgs->Add(camFpsField);
-    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camWidthField);
-    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camHeightField);
-    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
-    fgs->Add(camLatencyField);
-    //addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
-    //fgs->Add(cameraSettingsField);
-    addTextWithTooltip(this, fgs, "Use chessboard calibration",
-        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
-        "Keep other parameters as default unless you know what you are doing.");
-    fgs->Add(chessboardCalibField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
