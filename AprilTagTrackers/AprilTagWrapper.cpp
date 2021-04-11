@@ -92,3 +92,42 @@ void AprilTagWrapper::detectMarkers(
     }
     apriltag_detections_destroy(detections);
 }
+
+std::vector<std::string> AprilTagWrapper::getTimeProfile()
+{
+    const auto tp = td->tp;
+    if (tp == nullptr)
+    {
+        return {};
+    }
+
+    std::vector<std::string> rows;
+    int64_t lastutime = tp->utime;
+
+    for (int i = 0; i < zarray_size(tp->stamps); i++)
+    {
+        timeprofile_entry *stamp;
+        zarray_get_volatile(tp->stamps, i, &stamp);
+        double cumtime = (stamp->utime - tp->utime)/1000000.0;
+        double parttime = (stamp->utime - lastutime)/1000000.0;
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer), "%2d %32s %15f ms %15f ms", i, stamp->name, parttime*1000, cumtime*1000);
+        rows.push_back(buffer);
+        lastutime = stamp->utime;
+    }
+    return rows;
+}
+
+void AprilTagWrapper::drawTimeProfile(cv::Mat& image, const cv::Point& textOrigin)
+{
+    const auto font = cv::FONT_HERSHEY_SIMPLEX;
+    const auto color = cv::Scalar(255, 255, 255);
+    const auto fontScale = 0.5;
+    const int dy = cv::getTextSize(" ", font, fontScale, 1, nullptr).height * 1.5;
+    cv::Point cursor = textOrigin;
+    for (const auto& row : getTimeProfile())
+    {
+        cv::putText(image, row, cursor, font, fontScale, color);
+        cursor.y += dy;
+    }
+}

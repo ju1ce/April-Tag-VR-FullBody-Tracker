@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <opencv2/core.hpp>
@@ -21,6 +22,9 @@ public:
         std::vector<std::vector<cv::Point2f> >* corners,
         std::vector<int>* ids,
         std::vector<cv::Point2f>* centers);
+
+    std::vector<std::string> getTimeProfile();
+    void drawTimeProfile(cv::Mat& image, const cv::Point& textOrigin);
 
 private:
     apriltag_detector_t*const td;
