@@ -33,6 +33,7 @@ bool MyApp::OnInit()
     Connect(GUI::CAMERA_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraPreview));
     Connect(GUI::CAMERA_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraCalib));
     Connect(GUI::CAMERA_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraCalibPreview));
+    Connect(GUI::TIME_PROFILE_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTimeProfile));
     Connect(GUI::CONNECT_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedConnect));
     Connect(GUI::TRACKER_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTrackerCalib));
     Connect(GUI::START_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedStart));
@@ -60,6 +61,11 @@ void MyApp::ButtonPressedCameraCalib(wxCommandEvent& event)
 void MyApp::ButtonPressedCameraCalibPreview(wxCommandEvent& event)
 {
     tracker->previewCameraCalibration = event.IsChecked();
+}
+
+void MyApp::ButtonPressedTimeProfile(wxCommandEvent& event)
+{
+    tracker->showTimeProfile = event.IsChecked();
 }
 
 void MyApp::ButtonPressedConnect(wxCommandEvent& event)

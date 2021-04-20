@@ -222,7 +222,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_EXPOSURE, parameters->cameraExposure);
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
-    
+
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -757,7 +757,10 @@ void Tracker::CalibrateTracker()
 
         //cv::aruco::detectMarkers(image, dictionary, corners, ids, params);
         april.detectMarkers(image, &corners, &ids, &centers);
-        april.drawTimeProfile(image, cv::Point(10, 60));
+        if (showTimeProfile)
+        {
+            april.drawTimeProfile(image, cv::Point(10, 60));
+        }
 
         cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0));
 
@@ -1249,7 +1252,10 @@ void Tracker::MainLoop()
         }
         cv::resize(drawImg, drawImg, cv::Size(cols, rows));
         cv::putText(drawImg, std::to_string(frameTime).substr(0,5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        april.drawTimeProfile(drawImg, cv::Point(10, 60));
+        if (showTimeProfile)
+        {
+            april.drawTimeProfile(drawImg, cv::Point(10, 60));
+        }
         cv::imshow("out", drawImg);
         cv::waitKey(1);
         //time of marker detection

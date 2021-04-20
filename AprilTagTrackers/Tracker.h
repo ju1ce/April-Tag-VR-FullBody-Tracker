@@ -28,6 +28,7 @@ public:
     bool cameraRunning = false;
     bool previewCamera = false;
     bool previewCameraCalibration = false;
+    bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
 

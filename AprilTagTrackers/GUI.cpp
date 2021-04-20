@@ -48,6 +48,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
         wxPoint(20, 20));
     wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, wxT("Preview calibration"),
         wxPoint(20, 20));
+    wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
+       wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
     parentGUI->calibrationModeCheckbox = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
@@ -59,7 +61,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     fgs->Add(btn2);
     fgs->Add(cb2);
     fgs->Add(btn3);
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(cb3);
     fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn4);

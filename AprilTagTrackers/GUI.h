@@ -29,11 +29,12 @@ public:
     static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
     static const int CAMERA_CALIB_CHECKBOX = 4;
-    static const int CONNECT_BUTTON = 5;
-    static const int TRACKER_CALIB_BUTTON = 6;
-    static const int START_BUTTON = 7;
-    static const int SPACE_CALIB_CHECKBOX = 8;
-    static const int MANUAL_CALIB_CHECKBOX = 9;
+    static const int TIME_PROFILE_CHECKBOX = 5;
+    static const int CONNECT_BUTTON = 6;
+    static const int TRACKER_CALIB_BUTTON = 7;
+    static const int START_BUTTON = 8;
+    static const int SPACE_CALIB_CHECKBOX = 9;
+    static const int MANUAL_CALIB_CHECKBOX = 10;
 
     ValueInput *manualCalibX;
     ValueInput *manualCalibY;
