@@ -50,7 +50,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
         wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
-    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
+    parentGUI->calibrationModeCheckbox = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
         wxPoint(20, 20));
     //parentGUI->cb2->SetValue(false);
 
@@ -67,7 +67,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     fgs->Add(btn5);
     //fgs->Add(parentGUI->cb2);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(parentGUI->cb3);
+    fgs->Add(parentGUI->calibrationModeCheckbox);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 

@@ -45,8 +45,7 @@ public:
     wxBoxSizer* posHbox;
     wxBoxSizer* rotHbox;
 
-    wxCheckBox* cb2;
-    wxCheckBox* cb3;
+    wxCheckBox* calibrationModeCheckbox;
 };
 
 class CameraPage : public wxPanel

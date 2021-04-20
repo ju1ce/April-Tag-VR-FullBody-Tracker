@@ -87,7 +87,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             tracker->recalibrate = true;
             gui->posHbox->Show(true);
             gui->rotHbox->Show(false);
-            gui->cb3->SetValue(false);
+            gui->calibrationModeCheckbox->SetValue(false);
             tracker->manualRecalibrate = false;
 
             gui->manualCalibX->SetValue(params->calibOffsetX);
