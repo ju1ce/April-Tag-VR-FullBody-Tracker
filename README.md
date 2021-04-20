@@ -3,11 +3,13 @@ Full-body tracking in VR using AprilTag markers.
 
 This is my second attempt at creating a full-body tracking system using fiducial markers. This should enable people to get fullbody tracking for free, using only a phone and some cardboard. It is possible to get pretty good tracking with trackers of sizes as small as 10cm and a PS eye camera of 640x480 resolution. Increasing the marker size or using a higher resolution and faster phone camera further improves tracking.
 
+**NOTE: THIS IS A FREE AND OPEN SOURCE PROJECT. YOU DO NOT NEED DRIVER4VR FOR THIS!**
+
 To use, you will have to make three trackers - one for each leg and one for hips. Using only leg trackers will not work in VRChat!
 
 This version uses the much more accurate AprilTag system and includes many improvements to make the system easier to use, such as a GUI interface and a more straight forward calibration.
 
-If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: juice#6370
+If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: https://discord.gg/g2ctkXB4bb
 
 The program can be downloaded from the [releases](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases) tab.
 
@@ -15,6 +17,10 @@ The program can be downloaded from the [releases](https://github.com/ju1ce/April
 
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
 
+### Short setup video:
+I am too bad at making actual tutorials, but I did record a short video of me setting up everything. Its not a replacement for the tutorial bellow, but it may help you understand some of the steps better.
+
+https://youtu.be/vhTF5ECTpKc
 
 ## Table of contents
 
@@ -55,9 +61,11 @@ This tutorial only outlines the methods to connect a camera, and their pros and 
 
 If you have a USB camera, you should try that first. If tracking is too bad, you can always switch to a phone later. A ps3 eye camera will work, but just barely due to its low resolution.
 
+To ensure the camera is working as well as it can, refer to the [Start/Stop camera](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#startstop-camera) part.
+
 #### Tutorial:
 
-Connect the camera to your PC and you are done! If you use a PS3 eye camera, also install the PS3 eye universal driver.
+Connect the camera to your PC and you are done! If you use a PS3 eye camera, also install the PS3 eye universal driver, not the CL eye one!
 
 ### Using IP-Webcam wireless:
 
@@ -75,7 +83,9 @@ If you have your PC and android phone connected to the same router and you have 
 #### Tutorial:
 
 Download the app IP Webcam from the play store. Start the app. Under video preferences->video resolution, select the resolution you wish to use. You should try to use a 4:3 aspect ratio with a resolution of around 800x600. Then, go back and click start server. Try to connect to your phone through your browser: click the help icon
-if you dont know how
+if you dont know how.
+
+To ensure the camera is working as well as it can, refer to the [Start/Stop camera](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker#startstop-camera) part.
 
 ### Using IP-Webcam wired:
 
@@ -150,6 +160,8 @@ NOTE: Make sure the pattern on the trackers is clearly visible and is not obstru
 
 ## Installing the SteamVR driver
 
+**Since version 0.4, we have an installer! Simply run install_driver.exe from driver_files and it will do these steps for you!**
+
 Inside the driver_files folder, there is a apriltagtrackers folder. Copy this folder to "Steam/steamapps/common/SteamVR/drivers". Now, open "Steam/config/steamvr.vrsettings" and, under "steamvr", add the field ```"activateMultipleDrivers" : true,``` . The section will now look something like:
 ```
 "steamvr" : {
@@ -177,13 +189,41 @@ Start the camera or stop it if its already running. This button will open the ca
 
 If the camera fails to start, ensure that your camera is conencted and running, that you have written the correct id/address, and that you have saved the parameters after changing them. If you are using an USB webcam or OBS, try a diffrent id - it will be in the range of 0-10. You may also have to set the correct camera width/height in the parameters.
 
-If the camera is of incorrect resolution/shrunk, refer to the camera width and height parameters.
+##### USB webcam specific parameters
+
+We must ensure the camera is opened correctly. The preview window is not scaled - if you use a 1080p camera, the window will be over the whole screen. If its too small or has black bars around it, we have to fix it. First, enter the correct width and height parameters.
+
+If that doesnt work, or the window still has black bars despite being larger, we have to look at the camera api. Changing it to DirectShow, so 700, should fix the resolution problem. But the camera may now have a low fps - in that case, drop the resolution down to 720p.
+
+If the camera does not work no matter the parameters, you may open it through OBS, then stream it through the virtualcam plugin.
+
+This is not enough to ensure good tracking however - we still have to remove as much motion blur from the camera as we can, or tracking will fail when we move. To do this, we have to lower the exposure of the camera. First step, if the camera supports 60fps, set it here. Ps eye supports 70.
+
+Then, there are a couple of options to set exposure based on your camera. First is on your camera software - some cameras, like logitech, have their own software where you can set exposure and gain. Second, if you use the directshow api, you can set open camera settings, save, open camera - settings should show up. Third, you can check the enable bottom 3 options, and write the values there.
+
+For the actual settings, we first have to disable autoexposure. On the settings window this will be a checkbox, in the params tab its usualy 0. For exposure, this value is usualy in exponents of 2. We want at least 8ms, which is -7, but idealy 4ms, or -8. For gain, just set it high enough that the image looks normaly bright.
+
+Once that is set, there is one more parameter to look at - you can check the Rotate camera parameters to rotate the camera sideways. This will give you more vertical space, meaning you can be closer to the camera.
+
+##### IP Webcam specific parameters
+
+For IP Webcam, you can set resolution in the app -  try to have a 4:3 aspect ratio, around 800x600 works best. Use portrait mode if you use all three trackers, and landscape 
+
+In the downloaded folder, in /utilities, there is a set_exposure.bat script. Edit it, writing in your cameras IP adress, and the desired exposure - test a few to find the one with the best brightness, but it should be under 10 ms, or 10000 ns.
+
+Running this script will now set the exposure of your phones camera, if your phone supports it.
 
 #### Calibrate camera
 
 This will start the camera calibration sequence. Print the charuco_board.jpg from print files and place it onto a flat surface. Turn off camera preview before starting. This must only be done the first time you use this program and if you change the camera you are using.
 
-A window will open with the camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the charuco pattern from as many diffrent angles as possible. Once 15 pictures are taken (progress is written on top left) the camera will calibrate.
+Make sure autofocus is disabled on your camera!
+
+A window will open with the camera feed. Every few seconds, the camera will take a picture. Move the camera around slowly, taking pictures of the charuco pattern from as many diffrent angles as possible. Move the camera up close to the pattern: you want it to take up as much image space as possible for the first 10 images!
+
+Since v0.4, the calibration will also give feedback on how good is the current calibration. The corners will stay on the image as dots, with the color representing their reprojection error: yellow is bad calibration, purple is good calibration. Make sure most of the dots are purple before proceeding to the next step!
+
+Another indicator of how well calibrated is the camera is the grid: it has to be nicely spread over the whole image, shaking as little as possible. Once that is done, press OK to finish calibration.
 
 Sometimes, if the picture is too blurry or the lightning is bad, the pattern wont be detected. Make sure you have uniform lighting.
 
@@ -217,7 +257,7 @@ If you quit SteamVR but not the program, you have to press this button again aft
 
 Place your camera somewhere somewhere around hip height. Since v0.3, the direction of the camera does not matter.
 
-If the trackers do not show up on the status window, the driver is not loading correctly, but pressing Connect to SteamVR throws no error, you have not added the activateMultipleDrivers option to the config - try doing that again, but be careful where you put it and that comma is in the correct place.
+If the trackers do not show up on the status window, but pressing Connect to SteamVR throws no error, you have not added the activateMultipleDrivers option to the config - try doing that again, but be careful where you put it and that comma is in the correct place.
 
 #### Start
 
@@ -327,3 +367,12 @@ Use the old chessboard calibration. Switching to new calibration is strongly rec
 
 * Tutorial for reducing camera exposure on IP-Webcam
 * Virtual hip to enable use of leg trackers only
+
+## Sources
+Olson, Edwin. "AprilTag: A robust and flexible visual fiducial system." 2011 IEEE International Conference on Robotics and Automation. IEEE, 2011.
+
+https://github.com/AprilRobotics/apriltag
+
+WxWidgets: A Cross-Platform GUI Library
+
+https://github.com/wxWidgets/wxWidgets

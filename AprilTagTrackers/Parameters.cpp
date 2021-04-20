@@ -49,11 +49,15 @@ void Parameters::Load()
         fs["camLatency"] >> camLatency;
         fs["circularMarkers"] >> circularMarkers;
         fs["trackerCalibDistance"] >> trackerCalibDistance;
-        if (trackerCalibDistance < 0.3)
-            trackerCalibDistance = 0.3;
+        if (trackerCalibDistance < 0.5)
+            trackerCalibDistance = 0.5;
         fs["cameraCalibSamples"] >> cameraCalibSamples;
         if (cameraCalibSamples < 15)
             cameraCalibSamples = 15;
+        fs["settingsParameters"] >> settingsParameters;
+        fs["cameraAutoexposure"] >> cameraAutoexposure;
+        fs["cameraExposure"] >> cameraExposure;
+        fs["cameraGain"] >> cameraGain;
         if(!wrotmat.empty())
             wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
         cv::FileNode fn = fs["trackers"];
@@ -129,6 +133,10 @@ void Parameters::Save()
     fs << "circularMarkers" << circularMarkers;
     fs << "trackerCalibDistance" << trackerCalibDistance;
     fs << "cameraCalibSamples" << cameraCalibSamples;
+    fs << "settingsParameters" << settingsParameters;
+    fs << "cameraAutoexposure" << cameraAutoexposure;
+    fs << "cameraExposure" << cameraExposure;
+    fs << "cameraGain" << cameraGain;
     fs << "trackers";
     fs << "{";
     for (int i = 0; i < trackers.size(); i++)

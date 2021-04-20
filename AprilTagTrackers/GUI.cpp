@@ -17,7 +17,7 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 } // namespace
 
 GUI::GUI(const wxString& title, Parameters * params)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 700))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 800))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -127,7 +127,11 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , camWidthField(new wxTextCtrl(this, -1, std::to_string(parameters->camWidth)))
     , camHeightField(new wxTextCtrl(this, -1, std::to_string(parameters->camHeight)))
     , camLatencyField(new wxTextCtrl(this, -1, std::to_string(parameters->camLatency)))
-    // cameraSettingsField(new wxCheckBox(this, -1, wxT("")))
+    , cameraSettingsField(new wxCheckBox(this, -1, wxT("")))
+    , settingsParametersField(new wxCheckBox(this, -1, wxT("")))
+    , cameraAutoexposureField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraAutoexposure)))
+    , cameraExposureField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraExposure)))
+    , cameraGainField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraGain)))
     , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
 {
     //usePredictiveField->SetValue(parameters->usePredictive);
@@ -175,8 +179,16 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateCounterClField);
     addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
     fgs->Add(camLatencyField);
-    //addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but usually doesn't work. It might work for you");
-    //fgs->Add(cameraSettingsField);
+    addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but doesnt work with all cameras. Usualy works best with DSHOW api preference");
+    fgs->Add(cameraSettingsField);
+    addTextWithTooltip(this, fgs, "Enable 3 options below", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
+    fgs->Add(settingsParametersField);
+    addTextWithTooltip(this, fgs, "Camera autoexposure", "Experimental. Will try to set camera autoexposure. Usualy 1 for enable and 0 for disable, but can be something dumb as 0.75 and 0.25,");
+    fgs->Add(cameraAutoexposureField);
+    addTextWithTooltip(this, fgs, "Camera exposure", "Experimental. Will try to set camera expousre. Can be on a scale of 0-255, or in exponentials of 2 ( -8 for 4ms exposure)");
+    fgs->Add(cameraExposureField);
+    addTextWithTooltip(this, fgs, "Camera gain", "Experimental. Will try to set gain. Probably on a scale of 0-255, but could be diffrent based on the camera.");
+    fgs->Add(cameraGainField);
     addTextWithTooltip(this, fgs, "Use chessboard calibration",
         "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
         "Keep other parameters as default unless you know what you are doing.");
@@ -283,7 +295,11 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
         parameters->camLatency = std::stoi(camLatencyField->GetValue().ToStdString());
-        //parameters->cameraSettings = cameraSettingsField->GetValue();
+        parameters->cameraSettings = cameraSettingsField->GetValue();
+        parameters->settingsParameters = settingsParametersField->GetValue();
+        parameters->cameraAutoexposure = std::stoi(cameraAutoexposureField->GetValue().ToStdString());
+        parameters->cameraExposure = std::stoi(cameraExposureField->GetValue().ToStdString());
+        parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = chessboardCalibField->GetValue();
         parameters->Save();
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
