@@ -270,7 +270,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
     double codec = 0x47504A4D; //code by FPaul
-	cap.set(cv::CAP_PROP_FOURCC, codec);
+    cap.set(cv::CAP_PROP_FOURCC, codec);
     
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
