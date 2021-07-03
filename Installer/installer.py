@@ -1,9 +1,8 @@
-import os
-import json
-import shutil
-import tkinter as tk
+from os import path,environ
+from json import load,dump
+from shutil import copytree
 from sys import stdout as std
-from tkinter import filedialog
+from tkinter import filedialog,Tk
 from cprint import cprint,cconvert
 
 def error(msg):
@@ -12,21 +11,21 @@ def error(msg):
     exit()
 
 def ask_folder():
-    root = tk.Tk()
+    root = Tk()
     root.withdraw()
 
     folder = filedialog.askdirectory()
 
     return folder if folder != '' else False
 
-def check_dir(dir):
-    return os.path.isdir(dir)
+def check_dir(directory):
+    return path.isdir(directory)
 
 ###############
 #    SETUP    #
 ###############
 
-steam_root = (os.environ["ProgramFiles(x86)"] + "/Steam").replace("\\","/")
+steam_root = (environ["ProgramFiles(x86)"] + "/Steam").replace("\\","/")
 
 #Check root dir
 if not check_dir(steam_root): 
@@ -38,7 +37,7 @@ cprint(f"[GR]Steam directory found. [G]({steam_root})")
 
 #Check steamVR directory
 steam_vr = steam_root+'/steamapps/common/SteamVR'
-if check_dir(steam_vr):
+if not check_dir(steam_vr):
     cprint(f"[R]SteamVR not found at [G]{steam_vr}[R].\n\n[Y]Is SteamVR installed?")
     
     #Ask user if installed
@@ -55,11 +54,18 @@ if check_dir(steam_vr):
 cprint(f"[GR]SteamVR directory located. [G]({steam_vr})")
 
 config = steam_root + "/config/steamvr.vrsettings"
-if not os.path.isfile(config): error(f'Could not find config file. [G]({config})')
+if not path.isfile(config): error(f'Could not find config file. [G]({config})')
 
 with open(config) as f:
-    config_data = json.load(f)
+    config_data = load(f)
 
+#Check if correct version is installed.
+if not path.isdir("apriltagtrackers"):
+    cprint(f"\n[R]Unable to install driver: 'apriltagtrackers' folder not found.")
+    cprint(f"[G]Make sure you install the latest version [G]([L][U]https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases[R][G])")
+    print('-'*100)
+    input('Press enter to continue')
+    exit()
 print('-'*100)
 
 ################
@@ -71,11 +77,11 @@ def write(msg):
     std.flush()
 
 #Check if driver already installed
-if not os.path.isdir(steam_vr+'/drivers/apriltagtrackers'):
+if not path.isdir(steam_vr+'/drivers/apriltagtrackers'):
     write(f"[Y]Moving driver files to [G]{steam_vr}/drivers...")
 
     #Move folder to drivers folder
-    shutil.move('apriltagtrackers',steam_vr+'/drivers')
+    copytree('apriltagtrackers',steam_vr+'/drivers/apriltagtrackers')
     cprint(f"[GR]Done!\n")
 else:
     cprint(f"[GR]Driver files already installed, skipping\n")
@@ -90,7 +96,7 @@ if not 'activateMultipleDrivers' in config_data['steamvr'] or config_data['steam
 
     #save data
     with open(config,'w') as f:
-        json.dump(config_data,f,sort_keys=True, indent=4)
+        dump(config_data,f,sort_keys=True, indent=4)
 
     cprint(f"[GR]Done!\n")
 else:
