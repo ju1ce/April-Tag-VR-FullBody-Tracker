@@ -24,6 +24,7 @@ public:
     void ButtonPressedCameraPreview(wxCommandEvent&);
     void ButtonPressedCameraCalib(wxCommandEvent&);
     void ButtonPressedCameraCalibPreview(wxCommandEvent&);
+    void ButtonPressedTimeProfile(wxCommandEvent&);
     void ButtonPressedConnect(wxCommandEvent&);
     void ButtonPressedTrackerCalib(wxCommandEvent&);
     void ButtonPressedStart(wxCommandEvent&);

@@ -17,10 +17,7 @@
 #include <opencv2/aruco/charuco.hpp>
 #include <thread>
 
-#include <apriltag.h>
-#include <tagStandard41h12.h>
-#include <tagCircle21h7.h>
-
+#include "AprilTagWrapper.h"
 #include "Connection.h"
 #include "GUI.h"
 #include "Helpers.h"
@@ -28,50 +25,6 @@
 #include "Tracker.h"
 
 namespace {
-
-void detectMarkersApriltag(cv::Mat frame, std::vector<std::vector<cv::Point2f> >* corners, std::vector<int>* ids, std::vector<cv::Point2f>* centers, apriltag_detector_t* td)
-{
-    cv::Mat gray;
-    if (frame.type() != CV_8U)
-    {
-        cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    }
-    else
-    {
-        gray = frame;
-    }
-
-    corners->clear();
-    ids->clear();
-    centers->clear();
-
-    image_u8_t im = {
-        gray.cols,
-        gray.rows,
-        static_cast<int32_t>(gray.step1()),
-        gray.data,
-    };
-
-    zarray_t* detections = apriltag_detector_detect(td, &im);
-
-    for (int i = 0; i < zarray_size(detections); i++) {
-        apriltag_detection_t* det;
-        zarray_get(detections, i, &det);
-
-        ids->push_back(det->id);
-        centers->push_back(cv::Point2f(det->c[0], det->c[1]));
-
-        std::vector<cv::Point2f> temp;
-
-        for (int j = 3; j >= 0; j--)
-        {
-            temp.push_back(cv::Point2f(det->p[j][0], det->p[j][1]));
-        }
-
-        corners->push_back(temp);
-    }
-    apriltag_detections_destroy(detections);
-}
 
 // Create a grid in front of the camera for visualization purposes.
 std::vector<std::vector<cv::Point3f>> createXyGridLines(
@@ -269,7 +222,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_EXPOSURE, parameters->cameraExposure);
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
-    
+
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -764,14 +717,7 @@ void Tracker::CalibrateTracker()
     modelMarker.push_back(cv::Point3f(markerSize / 2, -markerSize / 2, 0));
     modelMarker.push_back(cv::Point3f(-markerSize / 2, -markerSize / 2, 0));
 
-    apriltag_detector_t* td = apriltag_detector_create();
-    td->quad_decimate = parameters->quadDecimate;
-    apriltag_family_t* tf;
-    if(!parameters->circularMarkers)
-        tf = tagStandard41h12_create();
-    else
-        tf = tagCircle21h7_create();
-    apriltag_detector_add_family(td, tf);
+    AprilTagWrapper april{parameters};
 
     int markersPerTracker = 45;
     int trackerNum = parameters->trackerNum;
@@ -810,7 +756,11 @@ void Tracker::CalibrateTracker()
         std::vector<cv::Point2f> centers;
 
         //cv::aruco::detectMarkers(image, dictionary, corners, ids, params);
-        detectMarkersApriltag(image, &corners, &ids, &centers, td);
+        april.detectMarkers(image, &corners, &ids, &centers);
+        if (showTimeProfile)
+        {
+            april.drawTimeProfile(image, cv::Point(10, 60));
+        }
 
         cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0));
 
@@ -854,7 +804,6 @@ void Tracker::CalibrateTracker()
                     wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
                 cv::destroyWindow("out");
-                apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
             }
@@ -952,24 +901,18 @@ void Tracker::CalibrateTracker()
     trackersCalibrated = true;
 
     cv::destroyWindow("out");
-    apriltag_detector_destroy(td);
     mainThreadRunning = false;
 }
 
 void Tracker::MainLoop()
 {
-    std::vector<int> prevIds;
-    std::vector<std::vector<cv::Point2f> > prevCorners;
-    std::vector<cv::Point2f> prevCenters;
     std::vector<int> ids;
     std::vector<std::vector<cv::Point2f> > corners;
     std::vector<cv::Point2f> centers;
 
     std::vector<cv::Point2f> maskCenters;
 
-    cv::Mat  prevImg;
-
-    cv::Mat image, drawImg;
+    cv::Mat image, drawImg, ycc, gray, cr;
 
     std::vector<cv::Vec3d> boardRvec, boardTvec;
     std::vector<bool> boardFound;
@@ -1020,15 +963,7 @@ void Tracker::MainLoop()
         boardFound.push_back(false);
     }
 
-    apriltag_detector_t* td = apriltag_detector_create();
-    td->quad_decimate = parameters->quadDecimate;
-    apriltag_family_t* tf;
-    if (!parameters->circularMarkers)
-        tf = tagStandard41h12_create();
-    else
-        tf = tagCircle21h7_create();
-    apriltag_detector_add_family(td, tf);
-    apriltag_detector_add_family(td, tf);
+    AprilTagWrapper april{parameters};
 
     int framesSinceLastSeen = 0;
     int framesToCheckAll = 20;
@@ -1048,8 +983,8 @@ void Tracker::MainLoop()
     {
         CopyFreshCameraImageTo(image);
 
-        image.copyTo(drawImg);
-        cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+        drawImg = image;
+        april.convertToSingleChannel(image, gray);
 
         clock_t start, end;
         //for timing our detection
@@ -1073,9 +1008,9 @@ void Tracker::MainLoop()
         if (maskCenters.size() > 0)
         {
             //Then define your mask image
-            cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+            cv::Mat mask = cv::Mat::zeros(image.size(), CV_8U);
 
-            cv::Mat dstImage = cv::Mat::zeros(image.size(), image.type());
+            cv::Mat dstImage = cv::Mat::zeros(image.size(), CV_8U);
 
             int size = image.rows * parameters->searchWindow;
 
@@ -1095,8 +1030,8 @@ void Tracker::MainLoop()
             }
 
             //Now you can copy your source image to destination image with masking
-            image.copyTo(dstImage, mask);
-            image = dstImage;
+            gray.copyTo(dstImage, mask);
+            gray = dstImage;
             //cv::imshow("test", image);
         }
 
@@ -1138,7 +1073,7 @@ void Tracker::MainLoop()
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
         }
 
-        detectMarkersApriltag(image, &corners, &ids, &centers, td);
+        april.detectMarkers(gray, &corners, &ids, &centers);
 
         for (int i = 0; i < centers.size(); i++)
         {
@@ -1191,7 +1126,6 @@ void Tracker::MainLoop()
                     wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
                 cv::destroyWindow("out");
-                apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
             }
@@ -1318,6 +1252,10 @@ void Tracker::MainLoop()
         }
         cv::resize(drawImg, drawImg, cv::Size(cols, rows));
         cv::putText(drawImg, std::to_string(frameTime).substr(0,5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        if (showTimeProfile)
+        {
+            april.drawTimeProfile(drawImg, cv::Point(10, 60));
+        }
         cv::imshow("out", drawImg);
         cv::waitKey(1);
         //time of marker detection

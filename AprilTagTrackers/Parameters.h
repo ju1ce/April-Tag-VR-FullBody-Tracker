@@ -29,6 +29,7 @@ public:
     bool ignoreTracker0 = false;
     bool rotateCl = false;
     bool rotateCounterCl = false;
+    bool coloredMarkers = true;
     double calibOffsetX = 0;
     double calibOffsetY = 100;
     double calibOffsetZ = 100;

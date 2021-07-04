@@ -1,7 +1,4 @@
-﻿// AprilTagTrackers.h : Include file for standard system include files,
-// or project specific include files.
-
-#pragma once
+﻿#pragma once
 
 #include <iostream>
 #include <mutex>
@@ -31,6 +28,7 @@ public:
     bool cameraRunning = false;
     bool previewCamera = false;
     bool previewCameraCalibration = false;
+    bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
 
