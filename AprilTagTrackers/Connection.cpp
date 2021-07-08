@@ -72,6 +72,8 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
+    ret = Send("settings " + std::to_string(parameters->smoothingFactor) + " 2");
+
     //set that connection is established
     status = CONNECTED;
 }

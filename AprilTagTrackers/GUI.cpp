@@ -175,7 +175,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateCounterClField);
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
-    addTextWithTooltip(this, fgs, "Additional smoothing", "0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
+    addTextWithTooltip(this, fgs, "Additional smoothing", "Number of values to use for linear interpolation. The higher it is, the less shaking there will be, but it may cause the trackers to overshoot motion.");
     fgs->Add(smoothingField);
     addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
@@ -282,11 +282,11 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
        // parameters->circularWindow = circularField->GetValue();
-        parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
+        parameters->smoothingFactor = std::stoi(smoothingField->GetValue().ToStdString());
         parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
-        parameters->camLatency = std::stoi(camLatencyField->GetValue().ToStdString());
+        parameters->camLatency = std::stod(camLatencyField->GetValue().ToStdString());
         parameters->cameraSettings = cameraSettingsField->GetValue();
         parameters->settingsParameters = settingsParametersField->GetValue();
         parameters->cameraAutoexposure = std::stoi(cameraAutoexposureField->GetValue().ToStdString());

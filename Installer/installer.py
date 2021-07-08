@@ -3,7 +3,7 @@ from json import load,dump
 from shutil import copytree
 from sys import stdout as std
 from tkinter import filedialog,Tk
-from cprint import cprint,cconvert
+from cprint import cprint,cconvertz
 
 def error(msg):
     cprint(f"[R]Quit: "+msg)
