@@ -422,6 +422,7 @@ void Tracker::CalibrateCameraCharuco()
             "Camera calibration started! \n\n"
             "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
             "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
+            "Purple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\n\n"
             "Press OK to save calibration when done.", wxT("Message"), wxOK | wxCANCEL);
         messageDialogResponse = dial.ShowModal();
         mainThreadRunning = false;
@@ -532,6 +533,36 @@ void Tracker::CalibrateCameraCharuco()
         }
         else
         {
+
+            //some checks of the camera calibration values. The thresholds should be adjusted to prevent any false  negatives
+            double avgPerViewError = 0;
+            double maxPerViewError = 0;
+
+            for (int i = 0; i < perViewErrors.size(); i++)
+            {
+                avgPerViewError += perViewErrors[i];
+                if (perViewErrors[i] > maxPerViewError)
+                    maxPerViewError = perViewErrors[i];
+            }
+
+            avgPerViewError /= perViewErrors.size();
+
+            if (avgPerViewError > 0.5)          //a big reprojection error indicates that calibration wasnt done properly
+            {
+                wxMessageDialog dial(NULL, wxT("WARNING:\nThe avarage reprojection error is over 0.5 pixel. This usualy indicates a bad calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
+                dial.ShowModal();
+            }
+            if (maxPerViewError > 10)           //having one reprojection error very high indicates that one frame had missdetections
+            {
+                wxMessageDialog dial(NULL, wxT("WARNING:\nOne or more reprojection errors are over 10 pixels. This usualy indicates something went wrong during calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
+                dial.ShowModal();
+            }
+            if (stdDeviationsIntrinsics.at<double>(0) > 5 || stdDeviationsIntrinsics.at<double>(1) > 5)         //high uncertiancy is bad
+            {
+                wxMessageDialog dial(NULL, wxT("WARNING:\nThe calibration grid doesnt seem very stable. This usualy indicates a bad calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
+                dial.ShowModal();
+            }
+
             // Save calibration to our global params cameraMatrix and distCoeffs
             parameters->camMat = cameraMatrix;
             parameters->distCoeffs = distCoeffs;
