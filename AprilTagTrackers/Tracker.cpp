@@ -1133,6 +1133,16 @@ void Tracker::MainLoop()
 
         if (manualRecalibrate)
         {
+            int inputButton = 0;
+            inputButton = connection->GetButtonStates();
+            
+            if (inputButton != 0)
+            {
+                wxMessageDialog dial(NULL,
+                    wxT("Input detected! ") + std::to_string(inputButton), wxT("Error"), wxOK | wxICON_ERROR);
+                dial.ShowModal();
+            }
+            
             //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
             cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
             cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);

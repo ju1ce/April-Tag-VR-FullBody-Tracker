@@ -6,6 +6,7 @@
 
 #include "Parameters.h"
 #include <windows.h>
+#include <openvr.h>
 
 class Connection
 {
@@ -19,6 +20,7 @@ public:
     std::istringstream Send(std::string lpszWrite);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
+    int GetButtonStates();
     int status = DISCONNECTED;
 private:
     void Connect();
@@ -29,4 +31,8 @@ private:
     BOOL fSuccess;
     DWORD cbRead;
     LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
+
+    vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
 };

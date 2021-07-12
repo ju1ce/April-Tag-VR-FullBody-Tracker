@@ -33,6 +33,31 @@ void Connection::StartConnection()
 
 void Connection::Connect()
 {
+    //connect to steamvr as a client in order to get buttons.
+    vr::EVRInitError error;
+    VR_Init(&error, vr::VRApplication_Overlay);
+
+    DWORD  retval = 0;
+    BOOL   success;
+    char  buffer[1024] = "";
+    char** lppPart = { NULL };
+
+    retval = GetFullPathNameA("att_actions.json",
+        BUFSIZE,
+        buffer,
+        lppPart);
+
+    wxMessageDialog dial(NULL,
+        buffer, wxT("Error"), wxOK | wxICON_ERROR);
+    dial.ShowModal();
+
+    vr::VRInput()->SetActionManifestPath(buffer);
+
+    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
+    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
+
+    vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+
     //function to create pipes for SteamVR connection
     pipeNum = parameters->trackerNum;
 
@@ -154,4 +179,27 @@ std::istringstream Connection::SendStation(int id, double a, double b, double c,
     //send the string to our driver
 
     return Send(s);
+}
+
+bool GetDigitalActionState(vr::VRActionHandle_t action)
+{
+    vr::InputDigitalActionData_t actionData;
+    if (vr::VRInput()->GetDigitalActionData(action, &actionData, sizeof(actionData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None)
+        return false;
+    
+    return actionData.bActive && actionData.bState;
+}
+
+int Connection::GetButtonStates()
+{
+    vr::VRActiveActionSet_t actionSet = { 0 };
+    actionSet.ulActionSet = m_actionsetDemo;
+    vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
+
+    if (GetDigitalActionState(m_actionCamera))
+        return 1;
+    if (GetDigitalActionState(m_actionTrackers))
+        return 2;
+
+    return 0;
 }
