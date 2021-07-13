@@ -7,6 +7,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <math.h>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>

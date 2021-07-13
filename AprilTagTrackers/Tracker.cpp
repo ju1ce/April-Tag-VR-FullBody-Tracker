@@ -1079,7 +1079,7 @@ void Tracker::MainLoop()
     bool calibControllerAngleActive = false;
     clock_t calibControllerLastPress = clock();
     double calibControllerPosOffset[] = { 0,0,0 };
-    double calibControllerAngleOffset[] = { 0,0,0 };
+    double calibControllerAngleOffset[] = { 0,0 };
 
     while(mainThreadRunning && cameraRunning)
     {
@@ -1145,7 +1145,7 @@ void Tracker::MainLoop()
             if (inputButton == 1)       //logic for position button first
             {
                 double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
-                if (timeSincePress >= 0.5)
+                if (timeSincePress >= 0.2)
                 {
                     if (!calibControllerPosActive)          //if position calibration is inactive, set it to active and calculate offsets 
                     {
@@ -1177,8 +1177,47 @@ void Tracker::MainLoop()
                         calibControllerPosActive = false;
                     }
                 }
+                calibControllerLastPress = clock();            
+            }
+            if (inputButton == 2)       //logic for position button first
+            {
+                double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
+                if (timeSincePress >= 0.2)
+                {
+                    if (!calibControllerAngleActive)          //if position calibration is inactive, set it to active and calculate offsets 
+                    {
+                        calibControllerAngleActive = true;
+                        std::istringstream ret = connection->Send("getdevicepose 1");
+                        std::string word;
+
+                        //first three variables are a position vector
+                        int idx; double a; double b; double c;
+
+                        //second four are rotation quaternion
+                        double qw; double qx; double qy; double qz;
+
+                        //read to our variables
+                        ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+
+                        a = -a;
+                        c = -c;
+
+                        double xzLen = sqrt(pow(100 * a - gui->manualCalibX->value, 2)+ pow(100 * c - gui->manualCalibZ->value, 2));
+                        double angleA = atan2(xzLen, 100 * b - gui->manualCalibY->value) * 57.3;
+                        double angleB = atan2(100 * a - gui->manualCalibX->value, 100 * c - gui->manualCalibZ->value) * 57.3;
+
+                        calibControllerAngleOffset[0] = angleA - gui->manualCalibA->value;
+                        calibControllerAngleOffset[1] = angleB - gui->manualCalibB->value;
+
+                        calibControllerLastPress = clock();
+
+                    }
+                    else       //else, check if button was unpressed for half a second, then set it to inactive
+                    {
+                        calibControllerAngleActive = false;
+                    }
+                }
                 calibControllerLastPress = clock();
-                
             }
 
             if (calibControllerPosActive)
@@ -1201,6 +1240,31 @@ void Tracker::MainLoop()
                 gui->manualCalibX->SetValue(100 * a - calibControllerPosOffset[0]);
                 gui->manualCalibY->SetValue(100 * b - calibControllerPosOffset[1]);
                 gui->manualCalibZ->SetValue(100 * c - calibControllerPosOffset[2]);
+            }
+
+            if (calibControllerAngleActive)
+            {
+                std::istringstream ret = connection->Send("getdevicepose 1");
+                std::string word;
+
+                //first three variables are a position vector
+                int idx; double a; double b; double c;
+
+                //second four are rotation quaternion
+                double qw; double qx; double qy; double qz;
+
+                //read to our variables
+                ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+
+                a = -a;
+                c = -c;
+
+                double xzLen = sqrt(pow(100 * a - gui->manualCalibX->value, 2) + pow(100 * c - gui->manualCalibZ->value, 2));
+                double angleA = atan2(xzLen, 100 * b - gui->manualCalibY->value) * 57.3;
+                double angleB = atan2(100 * a - gui->manualCalibX->value, 100 * c - gui->manualCalibZ->value) * 57.3;
+
+                gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
+                gui->manualCalibB->SetValue(angleB - calibControllerAngleOffset[1]);
             }
             
             //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
