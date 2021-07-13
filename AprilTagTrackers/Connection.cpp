@@ -47,10 +47,6 @@ void Connection::Connect()
         buffer,
         lppPart);
 
-    wxMessageDialog dial(NULL,
-        buffer, wxT("Error"), wxOK | wxICON_ERROR);
-    dial.ShowModal();
-
     vr::VRInput()->SetActionManifestPath(buffer);
 
     vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
