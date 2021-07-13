@@ -1157,6 +1157,12 @@ void Tracker::MainLoop()
                         calibControllerPosOffset[1] = 100 * pose[1] - gui->manualCalibY->value;
                         calibControllerPosOffset[2] = 100 * pose[2] - gui->manualCalibZ->value;
 
+                        Quaternion<double> quat(pose[3], pose[4], pose[5], pose[6]);
+                        quat.x = -quat.x;
+                        quat.z = -quat.z;
+
+                        quat.inverse().QuatRotation(calibControllerPosOffset);
+
                         calibControllerLastPress = clock();
 
                     }
@@ -1201,9 +1207,16 @@ void Tracker::MainLoop()
                 double pose[7];
                 connection->GetControllerPose(pose);
 
+                Quaternion<double> quat(pose[3], pose[4], pose[5], pose[6]);
+                quat.x = -quat.x;
+                quat.z = -quat.z;
+                quat.QuatRotation(calibControllerPosOffset);
+
                 gui->manualCalibX->SetValue(100 * pose[0] - calibControllerPosOffset[0]);
                 gui->manualCalibY->SetValue(100 * pose[1] - calibControllerPosOffset[1]);
                 gui->manualCalibZ->SetValue(100 * pose[2] - calibControllerPosOffset[2]);
+
+                quat.inverse().QuatRotation(calibControllerPosOffset);
             }
 
             if (calibControllerAngleActive)
