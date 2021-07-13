@@ -20,6 +20,7 @@ public:
     std::istringstream Send(std::string lpszWrite);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
+    void GetControllerPose(double outpose[]);
     int GetButtonStates();
     int status = DISCONNECTED;
 private:
