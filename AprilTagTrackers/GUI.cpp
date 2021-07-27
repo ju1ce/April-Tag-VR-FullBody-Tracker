@@ -140,6 +140,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //circularField->SetValue(parameters->circularWindow);
     //cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
+    settingsParametersField->SetValue(parameters->settingsParameters);
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
@@ -210,7 +211,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but doesnt work with all cameras. Usualy works best with DSHOW api preference");
     fgs->Add(cameraSettingsField);
 
-    addTextWithTooltip(this, fgs, "Enable 3 options bellow", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
+    addTextWithTooltip(this, fgs, "Enable 3 options below", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
     fgs->Add(settingsParametersField);
     addTextWithTooltip(this, fgs, "Camera autoexposure", "Experimental. Will try to set camera autoexposure. Usualy 1 for enable and 0 for disable, but can be something dumb as 0.75 and 0.25,");
     fgs->Add(cameraAutoexposureField);

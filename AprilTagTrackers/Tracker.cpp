@@ -228,6 +228,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (cameraRunning)
     {
         cameraRunning = false;
+        mainThreadRunning = false;
         //cameraThread.join();
         Sleep(1000);
         return;
@@ -270,7 +271,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
     
-    double codec = 0x47504A4D; //code by FPaul
+    double codec = 0x47504A4D; //code by FPaul. Should use MJPEG codec to enable fast framerates.
     cap.set(cv::CAP_PROP_FOURCC, codec);
 
     cameraRunning = true;
