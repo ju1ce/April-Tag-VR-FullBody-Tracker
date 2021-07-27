@@ -253,8 +253,8 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         return;
     }
     //Sleep(1000);
-    cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
-    cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+    //cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
+    //cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
     if(parameters->camWidth != 0)
         cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
     if (parameters->camHeight != 0)
@@ -270,6 +270,9 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
     
+    double codec = 0x47504A4D; //code by FPaul
+    cap.set(cv::CAP_PROP_FOURCC, codec);
+
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -564,6 +567,12 @@ void Tracker::CalibrateCameraCharuco()
                 wxMessageDialog dial(NULL, wxT("WARNING:\nOne or more reprojection errors are over 10 pixels. This usualy indicates something went wrong during calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
             }
+            /*
+            volatile double test = stdDeviationsIntrinsics.at<double>(0);
+            test = stdDeviationsIntrinsics.at<double>(1); 
+            test = stdDeviationsIntrinsics.at<double>(2); 
+            test = stdDeviationsIntrinsics.at<double>(3);
+            */
             if (stdDeviationsIntrinsics.at<double>(0) > 5 || stdDeviationsIntrinsics.at<double>(1) > 5)         //high uncertiancy is bad
             {
                 wxMessageDialog dial(NULL, wxT("WARNING:\nThe calibration grid doesnt seem very stable. This usualy indicates a bad calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
@@ -1192,7 +1201,7 @@ void Tracker::MainLoop()
                         connection->GetControllerPose(pose);
 
                         double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
-                        double angleA = atan2(xzLen, 100 * pose[1] - gui->manualCalibY->value) * 57.3;
+                        double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
                         double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
 
                         calibControllerAngleOffset[0] = angleA - gui->manualCalibA->value;
@@ -1232,7 +1241,7 @@ void Tracker::MainLoop()
                 connection->GetControllerPose(pose);
 
                 double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
-                double angleA = atan2(xzLen, 100 * pose[1] - gui->manualCalibY->value) * 57.3;
+                double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
                 double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
 
                 gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
