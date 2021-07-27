@@ -425,7 +425,8 @@ void Tracker::CalibrateCameraCharuco()
     //set our detectors marker border bits to 1 since thats what charuco uses
     params->markerBorderBits = 1;
 
-    int framesSinceLast = -2 * parameters->camFps;
+    //int framesSinceLast = -2 * parameters->camFps;
+    clock_t timeOfLast = clock();
 
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
@@ -475,14 +476,46 @@ void Tracker::CalibrateCameraCharuco()
             allCharucoCorners,
             allCharucoIds);
 
+        //check the highest per view error and remove it if its higher than 1px.
+
+        if (perViewErrors.size() > 10)
+        {
+            double maxPerViewError = 0;
+            int maxPerViewErrorIdx = 0;
+
+            for (int i = 0; i < perViewErrors.size(); i++)
+            {
+                if (perViewErrors[i] > maxPerViewError)
+                {
+                    maxPerViewError = perViewErrors[i];
+                    maxPerViewErrorIdx = i;
+                }
+            }
+
+            if (maxPerViewError > 1)
+            {
+                perViewErrors.erase(perViewErrors.begin() + maxPerViewErrorIdx);
+                allCharucoCorners.erase(allCharucoCorners.begin() + maxPerViewErrorIdx);
+                allCharucoIds.erase(allCharucoIds.begin() + maxPerViewErrorIdx);
+
+                // recalibrate camera without the problematic frame
+                cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                    cv::CALIB_USE_LU);
+
+                picsTaken--;
+            }
+        }
+
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
         cv::imshow("out", outImg);
         char key = (char)cv::waitKey(1);
 
-        framesSinceLast++;
-        if (key != -1 || framesSinceLast > parameters->camFps)
+        //framesSinceLast++;
+        if (key != -1 || double(clock() - timeOfLast) / double(CLOCKS_PER_SEC) > 1)
         {
-            framesSinceLast = 0;
+            //framesSinceLast = 0;
+            timeOfLast = clock();
             //if any button was pressed
             cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
@@ -527,6 +560,9 @@ void Tracker::CalibrateCameraCharuco()
                         {
                             std::cerr << "Failed to calibrate: " << e.what();
                         }
+
+                        int curI = perViewErrors.size();
+
                     }
                 }
             }
