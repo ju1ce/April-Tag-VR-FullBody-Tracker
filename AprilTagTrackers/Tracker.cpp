@@ -1198,8 +1198,11 @@ void Tracker::MainLoop()
             //second four are rotation quaternion
             double qw; double qx; double qy; double qz;
 
+            //last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
+            int tracker_status;
+
             //read to our variables
-            ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+            ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz; ret >> tracker_status;
 
             cv::Mat rpos = (cv::Mat_<double>(4, 1) << -a, b, -c, 1);
 
@@ -1218,14 +1221,14 @@ void Tracker::MainLoop()
 
             cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
-            if (abs(tempPreviousPosFromServer[i] - rpos.at<double>(1, 0)) > 0)
+            if (tracker_status == 0)
             {
 
                 Quaternion<double> q = Quaternion<double>(qw, qx, qy, qz);
                 q = q.UnitQuaternion();
 
                 //q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
-                q = Quaternion<double>(0, 0, 1, 0).inverse() * (wrotation.inverse() * q) * Quaternion<double>(0, 0, 1, 0).inverse();
+                q = Quaternion<double>(0, 0, 1, 0) * wrotation.inverse() * q ;
 
                 cv::Vec3d rvec = quat2rodr(q.w, q.x, q.y, q.z);
                 cv::Vec3d tvec;
@@ -1235,9 +1238,9 @@ void Tracker::MainLoop()
 
                 cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.1);
 
-                boardFound[i + 1] = true;
-                boardTvec[i+1] = tvec;
-                boardRvec[i+1] = rvec;
+                //boardFound[i + 1] = true;
+                //boardTvec[i+1] = tvec;
+                //boardRvec[i+1] = rvec;
 
                 tempPreviousPosFromServer[i] = rpos.at<double>(1, 0);
 
@@ -1452,6 +1455,7 @@ void Tracker::MainLoop()
                             prevLocValuesRaw[i][j].erase(prevLocValuesRaw[i][j].begin());
                     }
                     boardFound[i] = false;
+
                     continue;
                 }
             }
@@ -1468,6 +1472,7 @@ void Tracker::MainLoop()
                 return;
             }
             boardFound[i] = true;
+            cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1);
 
             double posValues[6] = { boardTvec[i][0],boardTvec[i][1],boardTvec[i][2],boardRvec[i][0],boardRvec[i][1],boardRvec[i][2] };
 
