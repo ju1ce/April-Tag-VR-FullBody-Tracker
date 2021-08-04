@@ -23,6 +23,7 @@ public:
     void GetControllerPose(double outpose[]);
     int GetButtonStates();
     int status = DISCONNECTED;
+    vr::IVRSystem* openvr_handle;
 private:
     void Connect();
     HANDLE hpipe;

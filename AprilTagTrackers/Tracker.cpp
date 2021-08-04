@@ -352,6 +352,23 @@ void Tracker::CameraLoop()
             }
             imageReady = true;
         }
+
+        //process events. BETA TEST ONLY, MOVE TO CONNECTION LATER
+        if (connection->status == connection->CONNECTED)
+        {
+            vr::VREvent_t event;
+            while (connection->openvr_handle->PollNextEvent(&event, sizeof(event)))
+            {
+                if (event.eventType == vr::VREvent_Quit)
+                {
+                    connection->openvr_handle->AcknowledgeQuit_Exiting();       //close connection to steamvr without closing att
+                    connection->status = connection->DISCONNECTED;
+                    vr::VR_Shutdown();
+                    mainThreadRunning = false;
+                    break;
+                }
+            }
+        }
     }
     cv::destroyAllWindows();
     cap.release();
@@ -1134,8 +1151,11 @@ void Tracker::MainLoop()
     double calibControllerPosOffset[] = { 0,0,0 };
     double calibControllerAngleOffset[] = { 0,0 };
 
+    std::vector<double> tempPreviousPosFromServer = std::vector<double>(trackerNum, 0);  //remove this after driver rework pls.
+
     while(mainThreadRunning && cameraRunning)
-    {
+    {      
+
         CopyFreshCameraImageTo(image);
 
         image.copyTo(drawImg);
@@ -1159,6 +1179,75 @@ void Tracker::MainLoop()
         }
         if (!circularWindow)
             framesSinceLastSeen = 0;
+
+        for (int i = 0; i < trackerNum-1; i++) //we assume ignore tracker 0 is checked
+        {
+            double frameTime = double(clock() - last_frame_time) / double(CLOCKS_PER_SEC);
+
+            std::string word;
+            std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + std::to_string(-frameTime - parameters->camLatency));
+            ret >> word;
+            if (word != "trackerpose")
+            {
+                continue;
+            }
+
+            //first three variables are a position vector
+            int idx; double a; double b; double c;
+
+            //second four are rotation quaternion
+            double qw; double qx; double qy; double qz;
+
+            //read to our variables
+            ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+
+            cv::Mat rpos = (cv::Mat_<double>(4, 1) << -a, b, -c, 1);
+
+            //transform boards position based on our calibration data
+
+            rpos.at<double>(3, 0) = 1;
+            rpos = wtranslation.inv() * rpos; 
+
+            std::vector<cv::Point3d> point;
+            point.push_back(cv::Point3d(rpos.at<double>(0, 0), rpos.at<double>(1, 0), rpos.at<double>(2, 0)));
+
+            std::vector<cv::Point2d> projected;
+            cv::Vec3d rvec, tvec;
+
+            cv::projectPoints(point, rvec, tvec, parameters->camMat, parameters->distCoeffs, projected);
+
+            cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+
+            if (abs(tempPreviousPosFromServer[i] - rpos.at<double>(1, 0)) > 0)
+            {
+
+                Quaternion<double> q = Quaternion<double>(qw, qx, qy, qz);
+                q = q.UnitQuaternion();
+
+                //q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
+                q = Quaternion<double>(0, 0, 1, 0).inverse() * (wrotation.inverse() * q) * Quaternion<double>(0, 0, 1, 0).inverse();
+
+                cv::Vec3d rvec = quat2rodr(q.w, q.x, q.y, q.z);
+                cv::Vec3d tvec;
+                tvec[0] = rpos.at<double>(0, 0);
+                tvec[1] = rpos.at<double>(1, 0);
+                tvec[2] = rpos.at<double>(2, 0);
+
+                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.1);
+
+                boardFound[i + 1] = true;
+                boardTvec[i+1] = tvec;
+                boardRvec[i+1] = rvec;
+
+                tempPreviousPosFromServer[i] = rpos.at<double>(1, 0);
+
+            }
+            else
+            {
+                boardFound[i + 1] = false;
+            }
+
+        }
 
         if (maskCenters.size() > 0)
         {

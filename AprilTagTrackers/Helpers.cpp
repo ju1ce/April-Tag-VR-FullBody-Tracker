@@ -123,6 +123,23 @@ Quaternion<double> rodr2quat(double x, double y, double z)
     return q;
 }
 
+cv::Vec3d quat2rodr(double qw, double qx, double qy, double qz)
+{
+    double theta;
+    theta = 2 * acos(qw);
+
+    double len = sqrt(qx * qx + qy * qy + qz * qz);
+
+    cv::Vec3d rvec;
+    rvec[0] = qx / len;
+    rvec[1] = qy / len;
+    rvec[2] = qz / len;
+
+    rvec *= theta;
+
+    return rvec;
+}
+
 cv::Mat getSpaceCalib(cv::Vec3d rvec, cv::Vec3d tvec, double xOffset, double yOffset, double zOffset)
 {
     cv::Mat rmat;

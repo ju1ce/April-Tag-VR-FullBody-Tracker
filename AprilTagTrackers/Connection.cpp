@@ -35,7 +35,7 @@ void Connection::Connect()
 {
     //connect to steamvr as a client in order to get buttons.
     vr::EVRInitError error;
-    VR_Init(&error, vr::VRApplication_Overlay);
+    openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
 
     DWORD  retval = 0;
     BOOL   success;
@@ -188,6 +188,11 @@ bool GetDigitalActionState(vr::VRActionHandle_t action)
 
 int Connection::GetButtonStates()
 {
+    if (status == DISCONNECTED)
+    {
+        return 0;
+    }
+
     vr::VRActiveActionSet_t actionSet = { 0 };
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
