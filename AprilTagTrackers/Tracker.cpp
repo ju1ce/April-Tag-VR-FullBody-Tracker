@@ -1151,8 +1151,6 @@ void Tracker::MainLoop()
     double calibControllerPosOffset[] = { 0,0,0 };
     double calibControllerAngleOffset[] = { 0,0 };
 
-    std::vector<double> tempPreviousPosFromServer = std::vector<double>(trackerNum, 0);  //remove this after driver rework pls.
-
     while(mainThreadRunning && cameraRunning)
     {      
 
@@ -1228,7 +1226,7 @@ void Tracker::MainLoop()
                 q = q.UnitQuaternion();
 
                 //q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
-                q = Quaternion<double>(0, 0, 1, 0) * wrotation.inverse() * q ;
+                q = wrotation.inverse() * Quaternion<double>(0, 0, 1, 0).inverse() * q * Quaternion<double>(0, 0, 1, 0).inverse();
 
                 cv::Vec3d rvec = quat2rodr(q.w, q.x, q.y, q.z);
                 cv::Vec3d tvec;
@@ -1236,13 +1234,16 @@ void Tracker::MainLoop()
                 tvec[1] = rpos.at<double>(1, 0);
                 tvec[2] = rpos.at<double>(2, 0);
 
-                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.1);
+                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.10);
 
-                //boardFound[i + 1] = true;
-                //boardTvec[i+1] = tvec;
-                //boardRvec[i+1] = rvec;
+                if (!boardFound[i + 1])
+                {
+                    maskCenters[i] = projected[0];
+                }
 
-                tempPreviousPosFromServer[i] = rpos.at<double>(1, 0);
+                boardFound[i + 1] = true;
+                boardTvec[i+1] = tvec;
+                boardRvec[i+1] = rvec;
 
             }
             else
@@ -1472,7 +1473,6 @@ void Tracker::MainLoop()
                 return;
             }
             boardFound[i] = true;
-            cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1);
 
             double posValues[6] = { boardTvec[i][0],boardTvec[i][1],boardTvec[i][2],boardRvec[i][0],boardRvec[i][1],boardRvec[i][2] };
 
@@ -1513,6 +1513,8 @@ void Tracker::MainLoop()
             //convert rodriguez rotation to quaternion
             Quaternion<double> q = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]);
 
+            //cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.05);
+
             //mirror our rotation
             //q.z = -q.z;
             //q.x = -q.x;
@@ -1531,37 +1533,12 @@ void Tracker::MainLoop()
             else if (factor >= 1)
                 factor = 0.99;
 
-            /*
-            a = (1 - factor) * prevLoc[i][0] + (factor)*a;
-            b = (1 - factor) * prevLoc[i][1] + (factor)*b;
-            c = (1 - factor) * prevLoc[i][2] + (factor)*c;
-
-            q = q.UnitQuaternion();
-
-            //to ensure we rotate quaternion into correct direction
-            double dot = q.x * prevRot[i].x + q.y * prevRot[i].y + q.z * prevRot[i].z + q.w * prevRot[i].w;
-
-            if (dot < 0)
-            {
-                q.x = (factor)*q.x - (1 - factor) * prevRot[i].x;
-                q.y = (factor)*q.y - (1 - factor) * prevRot[i].y;
-                q.z = (factor)*q.z - (1 - factor) * prevRot[i].z;
-                q.w = (factor)*q.w - (1 - factor) * prevRot[i].w;
-            }
-            else
-            {
-                q.x = (factor)*q.x + (1 - factor) * prevRot[i].x;
-                q.y = (factor)*q.y + (1 - factor) * prevRot[i].y;
-                q.z = (factor)*q.z + (1 - factor) * prevRot[i].z;
-                q.w = (factor)*q.w + (1 - factor) * prevRot[i].w;
-            }
-
-            q = q.UnitQuaternion();
-            */
+           
 
             //save values for next frame
             prevRot[i] = q;
             prevLoc[i] = cv::Vec3d(a, b, c);
+
 
             //cv::putText(drawImg, std::to_string(q.w) + ", " + std::to_string(q.x) + ", " + std::to_string(q.y) + ", " + std::to_string(q.z), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             //cv::putText(drawImg, std::to_string(boardRvec[i][0]) + ", " + std::to_string(boardRvec[i][1]) + ", " + std::to_string(boardRvec[i][2]), cv::Point(10, 80), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
@@ -1573,6 +1550,7 @@ void Tracker::MainLoop()
             //send all the values
             //frame time is how much time passed since frame was acquired. It doesn't work as expected...
             connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
+
 
         }
 
