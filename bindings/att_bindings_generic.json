@@ -23,10 +23,16 @@
           },
           "path": "/user/hand/left/input/trigger"
         }
+      ],
+      "poses": [
+        {
+          "output": "/actions/demo/in/hand_left",
+          "path": "/user/hand/left/pose/raw"
+        }
       ]
     }
   },
-  "controller_type": "vive_controller",
-  "description": "Bindings for Apriltag Trackers for the Vive controller",
-  "name": "Apriltag Trackers bindings for Vive Controller"
+  "controller_type": "generic",
+  "description": "Bindings for ATT for a generic controller",
+  "name": "ATT bindings for a generic controller"
 }

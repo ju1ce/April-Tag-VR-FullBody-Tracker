@@ -45,4 +45,5 @@ private:
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionHand = vr::k_ulInvalidActionHandle;
 };

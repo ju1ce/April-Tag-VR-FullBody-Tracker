@@ -1247,7 +1247,7 @@ void Tracker::MainLoop()
         //I assume you want to draw the circle at the center of your image, with a radius of 50
         for (int i = 0; i < trackerNum; i++)
         {
-            if (trackerStatus[i].maskCenter == cv::Point2d(0, 0))
+            if (trackerStatus[i].maskCenter.x <= 0 || trackerStatus[i].maskCenter.y <= 0 || trackerStatus[i].maskCenter.x >= image.cols || trackerStatus[i].maskCenter.y >= image.rows)
             {
                 continue;
             }

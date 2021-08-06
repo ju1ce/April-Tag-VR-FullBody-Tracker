@@ -2,11 +2,11 @@
   "default_bindings": [
     {
       "controller_type": "knuckles",
-      "binding_url": "att_bindings_knuckles.json"
+      "binding_url": "att_bindings_generic.json"
     },
     {
       "controller_type": "vive_controller",
-      "binding_url": "att_bindings_vive_controller.json"
+      "binding_url": "att_bindings_generic.json"
     },
     {
       "controller_type": "generic",
@@ -68,7 +68,7 @@
       "controller_type": "vive_tracker_keyboard",
       "binding_url": "att_bindings_empty.json"
     }
-  ], 
+  ],
   "actions": [
     {
       "name": "/actions/demo/in/grab_camera",
@@ -77,6 +77,10 @@
     {
       "name": "/actions/demo/in/grab_trackers",
       "type": "button"
+    },
+    {
+      "name": "/actions/demo/in/Hand_Left",
+      "type": "pose"
     }
   ],
 "action_sets": [
@@ -89,7 +93,8 @@
       {
         "language_tag": "en_US",
         "/actions/demo/in/grab_camera": "Grab and move camera. Same effect as changing X Y Z calibration values.",
-        "/actions/demo/in/grab_trackers": "Grab and move trackers - rotating the camera. Same effect as changing A B caibration values"
+        "/actions/demo/in/grab_trackers": "Grab and move trackers - rotating the camera. Same effect as changing A B caibration values",
+        "/actions/demo/in/Hand_Left":  "Pose of left controller"
       }
     ]
 }

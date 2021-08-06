@@ -26,7 +26,7 @@
       ]
     }
   },
-  "controller_type": "vive_controller",
-  "description": "Bindings for Apriltag Trackers for the Vive controller",
-  "name": "Apriltag Trackers bindings for Vive Controller"
+  "controller_type": "knuckles",
+  "description": "Bindings for ATT for a knuckles controller",
+  "name": "ATT bindings for a knuckles controller"
 }
