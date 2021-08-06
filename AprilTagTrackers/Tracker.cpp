@@ -1119,7 +1119,9 @@ void Tracker::MainLoop()
     bool calibControllerAngleActive = false;
     clock_t calibControllerLastPress = clock();
     double calibControllerPosOffset[] = { 0,0,0 };
-    double calibControllerAngleOffset[] = { 0,0 };
+    double calibControllerAngleOffset[] = { 0,0,0 };
+
+    double tempScale = 1;
 
     while(mainThreadRunning && cameraRunning)
     {      
@@ -1321,9 +1323,11 @@ void Tracker::MainLoop()
                         double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
                         double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
                         double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
+                        double xyzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[1] - gui->manualCalibY->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
 
                         calibControllerAngleOffset[0] = angleA - gui->manualCalibA->value;
                         calibControllerAngleOffset[1] = angleB - gui->manualCalibB->value;
+                        calibControllerAngleOffset[2] = xyzLen;
 
                         calibControllerLastPress = clock();
 
@@ -1361,9 +1365,15 @@ void Tracker::MainLoop()
                 double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
                 double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
                 double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
+                double xyzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[1] - gui->manualCalibY->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
 
                 gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
                 gui->manualCalibB->SetValue(angleB - calibControllerAngleOffset[1]);
+                tempScale = xyzLen/calibControllerAngleOffset[2];
+                if (tempScale > 1.2)
+                    tempScale = 1.2;
+                else if (tempScale < 0.8)
+                    tempScale = 0.8;
             }
             
             cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
@@ -1420,6 +1430,8 @@ void Tracker::MainLoop()
                 return;
             }
             trackerStatus[i].boardFound = true;
+
+            trackerStatus[i].boardTvec *= tempScale;
 
             double posValues[6] = { 
                 trackerStatus[i].boardTvec[0],
