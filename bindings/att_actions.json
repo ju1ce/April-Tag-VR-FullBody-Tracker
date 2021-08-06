@@ -72,29 +72,29 @@
   "actions": [
     {
       "name": "/actions/demo/in/grab_camera",
-      "type": "button"
+      "type": "boolean"
     },
     {
       "name": "/actions/demo/in/grab_trackers",
-      "type": "button"
+      "type": "boolean"
     },
     {
       "name": "/actions/demo/in/Hand_Left",
       "type": "pose"
     }
   ],
-"action_sets": [
+  "action_sets": [
     {
       "name": "/actions/demo",
       "usage": "leftright"
     }
   ],
-    "localization" : [
-      {
-        "language_tag": "en_US",
-        "/actions/demo/in/grab_camera": "Grab and move camera. Same effect as changing X Y Z calibration values.",
-        "/actions/demo/in/grab_trackers": "Grab and move trackers - rotating the camera. Same effect as changing A B caibration values",
-        "/actions/demo/in/Hand_Left":  "Pose of left controller"
-      }
-    ]
+  "localization": [
+    {
+      "language_tag": "en_US",
+      "/actions/demo/in/grab_camera": "Grab and move camera. Same effect as changing X Y Z calibration values.",
+      "/actions/demo/in/grab_trackers": "Grab and move trackers - rotating the camera. Same effect as changing A B caibration values",
+      "/actions/demo/in/Hand_Left": "Pose of left controller"
+    }
+  ]
 }

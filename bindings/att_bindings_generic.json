@@ -26,7 +26,7 @@
       ],
       "poses": [
         {
-          "output": "/actions/demo/in/hand_left",
+          "output": "/actions/demo/in/Hand_Left",
           "path": "/user/hand/left/pose/raw"
         }
       ]
