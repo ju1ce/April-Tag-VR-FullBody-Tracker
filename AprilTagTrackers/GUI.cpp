@@ -17,7 +17,7 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 } // namespace
 
 GUI::GUI(const wxString& title, Parameters * params)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 800))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 500))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -34,7 +34,7 @@ GUI::GUI(const wxString& title, Parameters * params)
 CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     :wxPanel(parent)
 {
-    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
@@ -83,16 +83,16 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(°):"), 0);
     parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(°):"), 0);
 
-    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse the values bellow to align the virtual camera with \nyour IRL one. Use your controllers as references.\nUncheck Calibration mode when done!")), 0, wxEXPAND);
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.\nUncheck Calibration mode when done!\n\n\n")), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
 
     hbox->Add(parentGUI->posHbox, 1, wxALL | wxEXPAND, 15);
-    hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
+    //hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
 
     //hbox2->Show(false);
 
@@ -144,7 +144,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
 
     static const std::string cameraApiDescriptions = []()
     {
@@ -176,7 +176,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateCounterClField);
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
-    addTextWithTooltip(this, fgs, "Additional smoothing", "Number of values to use for linear interpolation. The higher it is, the less shaking there will be, but it may cause the trackers to overshoot motion.");
+    addTextWithTooltip(this, fgs, "Additional smoothing", "Values in this time window will be used for interpolation. The higher it is, the less shaking there will be, but it will increase delay. 0.2-0.5 are usualy good values");
     fgs->Add(smoothingField);
     addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
@@ -283,7 +283,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
        // parameters->circularWindow = circularField->GetValue();
-        parameters->smoothingFactor = std::stoi(smoothingField->GetValue().ToStdString());
+        parameters->smoothingFactor = std::stod(smoothingField->GetValue().ToStdString());
         parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
@@ -295,6 +295,14 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = chessboardCalibField->GetValue();
         parameters->Save();
+
+        if (parameters->smoothingFactor > 1)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Additional smoothing is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
             wxMessageDialog dial(NULL,

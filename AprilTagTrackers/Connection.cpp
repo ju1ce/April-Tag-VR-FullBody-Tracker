@@ -115,7 +115,7 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
-    ret = Send("settings 50 0.5");           //TODO: set the parameters correctly. I is lazy
+    ret = Send("settings 50 " + std::to_string(parameters->smoothingFactor));           //TODO: set the parameters correctly. I is lazy
 
     //set that connection is established
     status = CONNECTED;

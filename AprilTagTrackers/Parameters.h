@@ -36,7 +36,7 @@ public:
     double calibOffsetB = 0;
     double calibOffsetC = 0;
     bool circularWindow = true;
-    int smoothingFactor = 10;
+    double smoothingFactor = 0.5;
     int camFps = 30;
     int camHeight = 0;
     int camWidth = 0;
