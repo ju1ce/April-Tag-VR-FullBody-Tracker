@@ -844,7 +844,7 @@ void Tracker::Start()
             wxT("Not connected to steamVR"), wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
-        //return;
+        return;
     }
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::MainLoop, this);
@@ -1059,54 +1059,30 @@ void Tracker::CalibrateTracker()
 
 void Tracker::MainLoop()
 {
-    std::vector<int> prevIds;
-    std::vector<std::vector<cv::Point2f> > prevCorners;
-    std::vector<cv::Point2f> prevCenters;
+    int trackerNum = connection->connectedTrackers.size();
+    int numOfPrevValues = parameters->numOfPrevValues;
+
+    //these variables are used to save detections of apriltags, so we dont define them every frame
     std::vector<int> ids;
     std::vector<std::vector<cv::Point2f> > corners;
     std::vector<cv::Point2f> centers;
-
-    std::vector<cv::Point2f> maskCenters;
 
     cv::Mat  prevImg;
 
     cv::Mat image, drawImg;
 
-    std::vector<cv::Vec3d> boardRvec, boardTvec;
-    std::vector<bool> boardFound;
-
-    std::vector<cv::Vec3d> prevLoc;
-    std::vector<Quaternion<double>> prevRot;
-    std::vector<std::vector<std::vector<double>>> prevLocValues;
-    std::vector<std::vector<std::vector<double>>> prevLocValuesRaw;
-    std::vector<double> prevLocValuesX;
-
-    int trackerNum = parameters->trackerNum;
-
-    int numOfPrevValues = parameters->numOfPrevValues;
-
-    for (int k = 0; k < trackerNum; k++)
+    //setup all variables that need to be stored for each tracker and initialize them
+    std::vector<TrackerStatus> trackerStatus = std::vector<TrackerStatus>(trackerNum, TrackerStatus());
+    for (int i = 0; i < trackerStatus.size(); i++)
     {
-        std::vector<std::vector<double>> vv;
-
-        for (int i = 0; i < 6; i++)
-        {
-
-            std::vector<double> v;
-            /*
-            for (int j = 0; j < numOfPrevValues; j++)
-            {
-                v.push_back(0.0);
-            }
-            */
-            vv.push_back(v);
-        }
-
-        prevLocValuesRaw.push_back(vv);
-
-        prevLoc.push_back(cv::Vec3d(0, 0, 0));
-        prevRot.push_back(Quaternion<double>());
+        trackerStatus[i].boardFound = false;
+        trackerStatus[i].boardRvec = cv::Vec3d(0, 0, 0);
+        trackerStatus[i].boardTvec = cv::Vec3d(0, 0, 0);
+        trackerStatus[i].prevLocValues = std::vector<std::vector<double>>(7, std::vector<double>());
     }
+
+    //previous values, used for moving median to remove any outliers.
+    std::vector<double> prevLocValuesX;
 
     //the X axis, it is simply numbers 0-10 (or the amount of previous values we have)
     for (int j = 0; j < numOfPrevValues; j++)
@@ -1114,12 +1090,6 @@ void Tracker::MainLoop()
         prevLocValuesX.push_back(j);
     }
 
-    for (int i = 0; i < trackerNum; i++)
-    {
-        boardRvec.push_back(cv::Vec3d(0, 0, 0));
-        boardTvec.push_back(cv::Vec3d(0, 0, 0));
-        boardFound.push_back(false);
-    }
 
     apriltag_detector_t* td = apriltag_detector_create();
     td->quad_decimate = parameters->quadDecimate;
@@ -1165,9 +1135,9 @@ void Tracker::MainLoop()
 
         bool circularWindow = parameters->circularWindow;
 
-        for (int i = 0; i < boardFound.size(); i++)
+        for (int i = 0; i < trackerNum; i++)
         {
-            if (!boardFound[i])
+            if (!trackerStatus[i].boardFound)
             {
                 framesSinceLastSeen++;
                 if (framesSinceLastSeen > framesToCheckAll)
@@ -1178,7 +1148,7 @@ void Tracker::MainLoop()
         if (!circularWindow)
             framesSinceLastSeen = 0;
 
-        for (int i = 0; i < trackerNum-1; i++) //we assume ignore tracker 0 is checked
+        for (int i = 0; i < trackerNum; i++) 
         {
             double frameTime = double(clock() - last_frame_time) / double(CLOCKS_PER_SEC);
 
@@ -1197,10 +1167,10 @@ void Tracker::MainLoop()
             double qw; double qx; double qy; double qz;
 
             //last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
-            int tracker_status;
+            int tracker_pose_valid;
 
             //read to our variables
-            ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz; ret >> tracker_status;
+            ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz; ret >> tracker_pose_valid;
 
             cv::Mat rpos = (cv::Mat_<double>(4, 1) << -a, b, -c, 1);
 
@@ -1211,6 +1181,7 @@ void Tracker::MainLoop()
 
             std::vector<cv::Point3d> point;
             point.push_back(cv::Point3d(rpos.at<double>(0, 0), rpos.at<double>(1, 0), rpos.at<double>(2, 0)));
+            point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
 
             std::vector<cv::Point2d> projected;
             cv::Vec3d rvec, tvec;
@@ -1219,7 +1190,7 @@ void Tracker::MainLoop()
 
             cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
-            if (tracker_status == 0)
+            if (tracker_pose_valid == 0)
             {
 
                 Quaternion<double> q = Quaternion<double>(qw, qx, qy, qz);
@@ -1236,52 +1207,69 @@ void Tracker::MainLoop()
 
                 cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.10);
 
-                if (!boardFound[i + 1])
+                if (!trackerStatus[i].boardFound)
                 {
-                    maskCenters[i] = projected[0];
+                    trackerStatus[i].maskCenter = projected[0];
+                }
+                else
+                {
+                    trackerStatus[i].maskCenter = projected[1];
                 }
 
-                boardFound[i + 1] = true;
-                boardTvec[i+1] = tvec;
-                boardRvec[i+1] = rvec;
+                trackerStatus[i].boardFound = true;
+                trackerStatus[i].boardTvec = tvec;
+                trackerStatus[i].boardRvec = rvec;
 
             }
             else
             {
-                boardFound[i + 1] = false;
+                if (trackerStatus[i].boardFound)
+                {
+                    trackerStatus[i].maskCenter = projected[1];
+                }
+                
+                trackerStatus[i].boardFound = false;        //do we really need to do this? test later
             }
 
         }
 
-        if (maskCenters.size() > 0)
+        //Then define your mask image
+        cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+
+        cv::Mat dstImage = cv::Mat::zeros(image.size(), image.type());
+
+        int size = image.rows * parameters->searchWindow;
+
+        bool doMasking = false;
+
+        //I assume you want to draw the circle at the center of your image, with a radius of 50
+        for (int i = 0; i < trackerNum; i++)
         {
-            //Then define your mask image
-            cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
-
-            cv::Mat dstImage = cv::Mat::zeros(image.size(), image.type());
-
-            int size = image.rows * parameters->searchWindow;
-
-            //I assume you want to draw the circle at the center of your image, with a radius of 50
-            for (int i = 0; i < maskCenters.size(); i++)
+            if (trackerStatus[i].maskCenter == cv::Point2d(0, 0))
             {
-                if (circularWindow)
-                {
-                    cv::circle(mask, maskCenters[i], size, cv::Scalar(255, 0, 0), -1, 8, 0);
-                    cv::circle(drawImg, maskCenters[i], size, cv::Scalar(255, 0, 0), 2, 8, 0);
-                }
-                else
-                {
-                    rectangle(mask, cv::Point(maskCenters[i].x - size, 0), cv::Point(maskCenters[i].x + size, image.rows), cv::Scalar(255, 0, 0), -1);
-                    rectangle(drawImg, cv::Point(maskCenters[i].x - size, 0), cv::Point(maskCenters[i].x + size, image.rows), cv::Scalar(255, 0, 0), 3);
-                }
+                continue;
             }
+            doMasking = true;
+            if (circularWindow)
+            {
+                cv::circle(mask, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), -1, 8, 0);
+                cv::circle(drawImg, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
+            }
+            else
+            {
+                rectangle(mask, cv::Point(trackerStatus[i].maskCenter.x - size, 0), cv::Point(trackerStatus[i].maskCenter.x + size, image.rows), cv::Scalar(255, 0, 0), -1);
+                rectangle(drawImg, cv::Point(trackerStatus[i].maskCenter.x - size, 0), cv::Point(trackerStatus[i].maskCenter.x + size, image.rows), cv::Scalar(255, 0, 0), 3);
+            }
+        }
 
-            //Now you can copy your source image to destination image with masking
+        //Now you can copy your source image to destination image with masking
+        if (doMasking)
+        {
             image.copyTo(dstImage, mask);
             image = dstImage;
-            //cv::imshow("test", image);
         }
+
+        //cv::imshow("test", image);
 
         if (manualRecalibrate)
         {
@@ -1378,30 +1366,14 @@ void Tracker::MainLoop()
                 gui->manualCalibB->SetValue(angleB - calibControllerAngleOffset[1]);
             }
             
-            //wtranslation = getSpaceCalib(boardRvec[i], boardTvec[i], parameters->calibOffsetX, parameters->calibOffsetY, parameters->calibOffsetZ);
             cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
             cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
             cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) *3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
-            /*
-            std::string teststr = std::to_string(calibRodr[0]) + " " + std::to_string(calibRodr[1]) + " " + std::to_string(calibRodr[2]);
 
-            wxMessageDialog dial(NULL,
-                teststr, wxT("Error"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
-            */
             wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0, 0, 0), calibPos(0), calibPos(1), calibPos(2));
-            //wrotation = rodr2quat(calibRodr[0], calibRodr[1], calibRodr[2]);
-            //wrotation = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]).conjugate();
+
             wrotation = mRot2Quat(eulerAnglesToRotationMatrix(cv::Vec3f(calibRot)));
-            /*
-            teststr = std::to_string(wrotation.w) + " " + std::to_string(wrotation.x) + " " + std::to_string(wrotation.y) + " " + std::to_string(wrotation.z);
 
-            dial = new wxMessageDialog(NULL,
-                teststr, wxT("Error"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
-
-            Sleep(2000);
-            */
             cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
             stationPos = wtranslation * stationPos;
 
@@ -1416,46 +1388,21 @@ void Tracker::MainLoop()
 
         detectMarkersApriltag(image, &corners, &ids, &centers, td);
 
-        for (int i = 0; i < centers.size(); i++)
-        {
-            int tracker = ids[i] / 45;
-
-            int limit = trackerNum;
-
-            if (parameters->ignoreTracker0)
-            {
-                if (tracker == 0)
-                    continue;
-                tracker--;
-                limit--;
-            }
-
-            if (tracker < limit)
-            {
-                while (tracker >= maskCenters.size())
-                {
-                    maskCenters.push_back(centers[i]);
-                }
-                maskCenters[tracker] = centers[i];
-            }
-        }
         for (int i = 0; i < trackerNum; ++i) {
 
             //estimate the pose of current board
 
-            if (parameters->ignoreTracker0 && i == 0)
-                continue;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], boardFound[i] && parameters->usePredictive) <= 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], parameters->camMat, parameters->distCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && parameters->usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
                     {
                         //push new values into previous values list end and remove the one on beggining
-                        if (prevLocValuesRaw[i][j].size() > 0)
-                            prevLocValuesRaw[i][j].erase(prevLocValuesRaw[i][j].begin());
+                        if (trackerStatus[i].prevLocValues[j].size() > 0)
+                            trackerStatus[i].prevLocValues[j].erase(trackerStatus[i].prevLocValues[j].begin());
                     }
-                    boardFound[i] = false;
+                    trackerStatus[i].boardFound = false;
 
                     continue;
                 }
@@ -1472,32 +1419,38 @@ void Tracker::MainLoop()
                 mainThreadRunning = false;
                 return;
             }
-            boardFound[i] = true;
+            trackerStatus[i].boardFound = true;
 
-            double posValues[6] = { boardTvec[i][0],boardTvec[i][1],boardTvec[i][2],boardRvec[i][0],boardRvec[i][1],boardRvec[i][2] };
+            double posValues[6] = { 
+                trackerStatus[i].boardTvec[0],
+                trackerStatus[i].boardTvec[1],
+                trackerStatus[i].boardTvec[2],
+                trackerStatus[i].boardRvec[0],
+                trackerStatus[i].boardRvec[1],
+                trackerStatus[i].boardRvec[2] };
 
             for (int j = 0; j < 6; j++)
             {
                 //push new values into previous values list end and remove the one on beggining
-                prevLocValuesRaw[i][j].push_back(posValues[j]);
-                if (prevLocValuesRaw[i][j].size() > numOfPrevValues)
+                trackerStatus[i].prevLocValues[j].push_back(posValues[j]);
+                if (trackerStatus[i].prevLocValues[j].size() > numOfPrevValues)
                 {
-                    prevLocValuesRaw[i][j].erase(prevLocValuesRaw[i][j].begin());
+                    trackerStatus[i].prevLocValues[j].erase(trackerStatus[i].prevLocValues[j].begin());
                 }
 
-                std::vector<double> valArray(prevLocValuesRaw[i][j]);
+                std::vector<double> valArray(trackerStatus[i].prevLocValues[j]);
                 sort(valArray.begin(), valArray.end());
 
                 posValues[j] = valArray[valArray.size() / 2];
 
             }
             //save fitted values back to our variables
-            boardTvec[i][0] = posValues[0];
-            boardTvec[i][1] = posValues[1];
-            boardTvec[i][2] = posValues[2];
-            boardRvec[i][0] = posValues[3];
-            boardRvec[i][1] = posValues[4];
-            boardRvec[i][2] = posValues[5];
+            trackerStatus[i].boardTvec[0] = posValues[0];
+            trackerStatus[i].boardTvec[1] = posValues[1];
+            trackerStatus[i].boardTvec[2] = posValues[2];
+            trackerStatus[i].boardRvec[0] = posValues[3];
+            trackerStatus[i].boardRvec[1] = posValues[4];
+            trackerStatus[i].boardRvec[2] = posValues[5];
 
             cv::Mat rpos = cv::Mat_<double>(4, 1);
 
@@ -1505,19 +1458,15 @@ void Tracker::MainLoop()
 
             for (int x = 0; x < 3; x++)
             {
-                rpos.at<double>(x, 0) = boardTvec[i][x];
+                rpos.at<double>(x, 0) = trackerStatus[i].boardTvec[x];
             }
             rpos.at<double>(3, 0) = 1;
             rpos = wtranslation * rpos;
 
             //convert rodriguez rotation to quaternion
-            Quaternion<double> q = rodr2quat(boardRvec[i][0], boardRvec[i][1], boardRvec[i][2]);
+            Quaternion<double> q = rodr2quat(trackerStatus[i].boardRvec[0], trackerStatus[i].boardRvec[1], trackerStatus[i].boardRvec[2]);
 
             //cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.05);
-
-            //mirror our rotation
-            //q.z = -q.z;
-            //q.x = -q.x;
 
             q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
 
@@ -1533,23 +1482,13 @@ void Tracker::MainLoop()
             else if (factor >= 1)
                 factor = 0.99;
 
-           
-
-            //save values for next frame
-            prevRot[i] = q;
-            prevLoc[i] = cv::Vec3d(a, b, c);
-
-
-            //cv::putText(drawImg, std::to_string(q.w) + ", " + std::to_string(q.x) + ", " + std::to_string(q.y) + ", " + std::to_string(q.z), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-            //cv::putText(drawImg, std::to_string(boardRvec[i][0]) + ", " + std::to_string(boardRvec[i][1]) + ", " + std::to_string(boardRvec[i][2]), cv::Point(10, 80), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-
             end = clock();
             double frameTime = double(end - last_frame_time) / double(CLOCKS_PER_SEC);
 
 
             //send all the values
             //frame time is how much time passed since frame was acquired. It doesn't work as expected...
-            connection->SendTracker(i, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
+            connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
 
 
         }

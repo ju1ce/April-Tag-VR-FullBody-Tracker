@@ -15,6 +15,14 @@
 
 #include "Quaternion.h"
 
+
+struct TrackerStatus {
+    cv::Vec3d boardRvec, boardTvec;
+    bool boardFound;
+    std::vector<std::vector<double>> prevLocValues;
+    cv::Point2d maskCenter;
+};
+
 class Connection;
 class GUI;
 class Parameters;

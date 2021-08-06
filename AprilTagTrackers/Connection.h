@@ -8,6 +8,13 @@
 #include <windows.h>
 #include <openvr.h>
 
+struct TrackerConnection {
+    int TrackerId;
+    int DriverId;
+    std::string Name;
+    std::string Role;
+};
+
 class Connection
 {
 public:
@@ -24,6 +31,7 @@ public:
     int GetButtonStates();
     int status = DISCONNECTED;
     vr::IVRSystem* openvr_handle;
+    std::vector<TrackerConnection> connectedTrackers;
 private:
     void Connect();
     HANDLE hpipe;

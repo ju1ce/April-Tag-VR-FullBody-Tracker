@@ -33,6 +33,37 @@ void Connection::StartConnection()
 
 void Connection::Connect()
 {
+    //generate vector of tracker connection struct, connecting board ids to apropriate driver ids. In future, this should be done manualy in the gui
+    connectedTrackers.clear();
+
+    if (parameters->ignoreTracker0)
+    {
+        for (int i = 0; i < parameters->trackerNum - 1; i++)
+        {
+            TrackerConnection temp;
+            temp.TrackerId = i + 1;
+            temp.DriverId = i;
+            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            connectedTrackers.push_back(temp);
+        }
+        connectedTrackers[0].Role = "TrackerRole_LeftFoot";
+        connectedTrackers[1].Role = "TrackerRole_RightFoot";
+    }
+    else
+    {
+        for (int i = 0; i < parameters->trackerNum; i++)
+        {
+            TrackerConnection temp;
+            temp.TrackerId = i;
+            temp.DriverId = i;
+            temp.Name = "ApriltagTracker" + std::to_string(i);
+            connectedTrackers.push_back(temp);
+        }
+        connectedTrackers[0].Role = "TrackerRole_Waist";
+        connectedTrackers[1].Role = "TrackerRole_LeftFoot";
+        connectedTrackers[2].Role = "TrackerRole_RightFoot";
+    }
+
     //connect to steamvr as a client in order to get buttons.
     vr::EVRInitError error;
     openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
@@ -54,15 +85,6 @@ void Connection::Connect()
 
     vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
 
-    //function to create pipes for SteamVR connection
-    pipeNum = parameters->trackerNum;
-
-    double trackerNum = parameters->trackerNum;
-    if (parameters->ignoreTracker0)
-    {
-        trackerNum--;
-    }
-
     std::istringstream ret;
     std::string word;
 
@@ -78,9 +100,9 @@ void Connection::Connect()
     }
     int connected_trackers;
     ret >> connected_trackers;
-    for (int i = connected_trackers; i < trackerNum; i++)
+    for (int i = connected_trackers; i < connectedTrackers.size(); i++)
     {
-        ret = Send("addtracker");
+        ret = Send("addtracker " + connectedTrackers[i].Name + " " + connectedTrackers[i].Role);
         ret >> word;
         if (word != "added")
         {
@@ -93,7 +115,7 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
-    ret = Send("settings " + std::to_string(parameters->smoothingFactor) + " 2");
+    ret = Send("settings 50 0.5");           //TODO: set the parameters correctly. I is lazy
 
     //set that connection is established
     status = CONNECTED;
@@ -138,9 +160,6 @@ std::istringstream Connection::Send(std::string lpszWrite)
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)
 {
-    if (parameters->ignoreTracker0) {
-        id--;
-    }
 
     std::string s;
     s = " updatepose " + std::to_string(id) +
