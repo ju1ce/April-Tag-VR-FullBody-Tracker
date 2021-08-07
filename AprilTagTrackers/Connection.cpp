@@ -36,7 +36,7 @@ void Connection::Connect()
     //generate vector of tracker connection struct, connecting board ids to apropriate driver ids. In future, this should be done manualy in the gui
     connectedTrackers.clear();
 
-    if (parameters->ignoreTracker0)
+    if (parameters->ignoreTracker0 && parameters->trackerNum == 3)
     {
         for (int i = 0; i < parameters->trackerNum - 1; i++)
         {
@@ -49,7 +49,19 @@ void Connection::Connect()
         connectedTrackers[0].Role = "TrackerRole_LeftFoot";
         connectedTrackers[1].Role = "TrackerRole_RightFoot";
     }
-    else
+    else if (parameters->ignoreTracker0)
+    {
+        for (int i = 0; i < parameters->trackerNum - 1; i++)
+        {
+            TrackerConnection temp;
+            temp.TrackerId = i + 1;
+            temp.DriverId = i;
+            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            temp.Role = "TrackerRole_Waist";
+            connectedTrackers.push_back(temp);
+        }
+    }
+    else if(parameters->trackerNum == 3)
     {
         for (int i = 0; i < parameters->trackerNum; i++)
         {
@@ -63,10 +75,46 @@ void Connection::Connect()
         connectedTrackers[1].Role = "TrackerRole_LeftFoot";
         connectedTrackers[2].Role = "TrackerRole_RightFoot";
     }
+    else if (parameters->trackerNum == 2)
+    {
+        for (int i = 0; i < parameters->trackerNum; i++)
+        {
+            TrackerConnection temp;
+            temp.TrackerId = i;
+            temp.DriverId = i;
+            temp.Name = "ApriltagTracker" + std::to_string(i);
+            connectedTrackers.push_back(temp);
+        }
+        connectedTrackers[0].Role = "TrackerRole_LeftFoot";
+        connectedTrackers[1].Role = "TrackerRole_RightFoot";
+    }
+    else
+    {
+        for (int i = 0; i < parameters->trackerNum; i++)
+        {
+            TrackerConnection temp;
+            temp.TrackerId = i + 1;
+            temp.DriverId = i;
+            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            temp.Role = "TrackerRole_Waist";
+            connectedTrackers.push_back(temp);
+        }
+    }
 
     //connect to steamvr as a client in order to get buttons.
     vr::EVRInitError error;
     openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+
+    if (error != vr::VRInitError_None)
+    {
+        std::string e = "Error when connecting to SteamVR as a client! Make sure your HMD is connected. \nError code: ";
+        e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
+        wxMessageDialog dial(NULL,
+            e, wxT("Error"), wxOK | wxICON_ERROR);
+        dial.ShowModal();
+        status = DISCONNECTED;
+        return;
+    }
 
     DWORD  retval = 0;
     BOOL   success;
@@ -116,7 +164,7 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
-    ret = Send("settings 50 " + std::to_string(parameters->smoothingFactor));           //TODO: set the parameters correctly. I is lazy
+    ret = Send("settings 50 " + std::to_string(parameters->smoothingFactor));         
 
     //set that connection is established
     status = CONNECTED;
