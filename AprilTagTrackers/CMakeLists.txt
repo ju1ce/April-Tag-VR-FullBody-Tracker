@@ -3,6 +3,10 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
+if (UNIX)
+    add_definitions (-D__LINUX__)
+endif (UNIX)
+
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 

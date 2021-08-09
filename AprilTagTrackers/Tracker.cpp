@@ -253,8 +253,27 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         return;
     }
     //Sleep(1000);
+
+    // On Linux setting camera to MJPG output doesn't seem to work.
+    // If you still want to get MJPG output from camera (ie. because it offers better FPS)
+    // then you can try using a GStreamer pipeline on the "Ip or ID of camera" parameter:
+    //
+    //      v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=960,pixel-aspect-ratio=1/1,framerate=30/1 ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink
+    //
+    // (yes, you can copy that entire thing into the text field)
+    //
+    // You probably will need to adjust the pipeline to your own setup. You can use
+    // gst-launch-1.0 program to test GStreamer pipelines more easily:
+    //
+    //      gst-launch-1.0 v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=960,pixel-aspect-ratio=1/1,framerate=30/1 ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! xvimagesink
+    //
+    //  (Note that the end of the pipeline is 'xvimagesink' instead of 'appsink'
+    //  when using it in gst-launch-1.0)
+#if !defined(__LINUX__)
     cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
     cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+#endif
+
     if(parameters->camWidth != 0)
         cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
     if (parameters->camHeight != 0)
