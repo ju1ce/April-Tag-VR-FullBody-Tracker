@@ -297,6 +297,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
 
 void Tracker::CameraLoop()
 {
+    bool previewShown = false;
     bool rotate = false;
     int rotateFlag = -1;
     if (parameters->rotateCl && parameters->rotateCounterCl)
@@ -315,7 +316,6 @@ void Tracker::CameraLoop()
         rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
     }
     cv::Mat img;
-    cv::Mat drawImg;
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -335,20 +335,39 @@ void Tracker::CameraLoop()
         {
             if (previewCameraCalibration)
             {
-                img.copyTo(drawImg);
-                previewCalibration(drawImg, parameters);
-                cv::imshow("Preview", drawImg);
-                cv::waitKey(1);
+                cv::Mat *outImg = new cv::Mat();
+                img.copyTo(*outImg);
+                previewCalibration(*outImg, parameters);
+                gui->CallAfter([outImg] ()
+                               {
+                               cv::imshow("Preview", *outImg);
+                               cv::waitKey(1);
+                               delete(outImg);
+                               });
+                previewShown = true;
             }
             else
             {
-                cv::imshow("Preview", img);
-                cv::waitKey(1);
+                cv::Mat *outImg = new cv::Mat();
+                img.copyTo(*outImg);
+                gui->CallAfter([outImg] ()
+                               {
+                               cv::imshow("Preview", *outImg);
+                               cv::waitKey(1);
+                               delete(outImg);
+                               });
+                previewShown = true;
             }
         }
         else
         {
-            cv::destroyWindow("Preview");
+            if (previewShown) {
+                gui->CallAfter([] ()
+                               {
+                               cv::destroyWindow("Preview");
+                               });
+                previewShown = false;
+            }
         }
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
@@ -362,7 +381,10 @@ void Tracker::CameraLoop()
             imageReady = true;
         }
     }
-    cv::destroyAllWindows();
+    gui->CallAfter([] ()
+                   {
+                   cv::destroyAllWindows();
+                   });
     cap.release();
 }
 
@@ -444,7 +466,6 @@ void Tracker::CalibrateCameraCharuco()
     cv::Mat image;
     cv::Mat gray;
     cv::Mat drawImg;
-    cv::Mat outImg;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
@@ -496,12 +517,19 @@ void Tracker::CalibrateCameraCharuco()
             allCharucoCorners,
             allCharucoIds);
 
-        cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        cv::imshow("out", outImg);
-        char key = (char)cv::waitKey(1);
+        {
+            cv::Mat *outImg = new cv::Mat();
+            cv::resize(drawImg, *outImg, cv::Size(cols, rows));
+            gui->CallAfter([outImg] ()
+                           {
+                           cv::imshow("out", *outImg);
+                           cv::waitKey(1);
+                           delete(outImg);
+                           });
+        }
 
         framesSinceLast++;
-        if (key != -1 || framesSinceLast > parameters->camFps)
+        if (framesSinceLast > parameters->camFps)
         {
             framesSinceLast = 0;
             //if any button was pressed
@@ -531,9 +559,16 @@ void Tracker::CalibrateCameraCharuco()
                     allCharucoIds.push_back(charucoIds);
                     picsTaken++;
 
-                    cv::resize(drawImg, outImg, cv::Size(cols, rows));
-                    cv::imshow("out", outImg);
-                    char key = (char)cv::waitKey(1);
+                    {
+                        cv::Mat *outImg = new cv::Mat();
+                        cv::resize(drawImg, *outImg, cv::Size(cols, rows));
+                        gui->CallAfter([outImg] ()
+                                       {
+                                       cv::imshow("out", *outImg);
+                                       cv::waitKey(1);
+                                       delete(outImg);
+                                       });
+                    }
 
                     if (picsTaken >= 3)
                     {
@@ -554,14 +589,21 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    cv::destroyAllWindows();
+    gui->CallAfter([] ()
+                   {
+                   cv::destroyAllWindows();
+                   });
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
         if (cameraMatrix.empty())
         {
-            wxMessageDialog dial(NULL, wxT("Calibration failed."), wxT("Info"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
+            gui->CallAfter([] ()
+                           {
+                           wxMessageDialog dial(NULL, wxT("Calibration failed."), wxT("Info"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
+
         }
         else
         {
@@ -573,8 +615,11 @@ void Tracker::CalibrateCameraCharuco()
             parameters->allCharucoCorners = allCharucoCorners;
             parameters->allCharucoIds = allCharucoIds;
             parameters->Save();
-            wxMessageDialog dial(NULL, wxT("Calibration complete."), wxT("Info"), wxOK);
-            dial.ShowModal();
+            gui->CallAfter([] ()
+                           {
+                           wxMessageDialog dial(NULL, wxT("Calibration complete."), wxT("Info"), wxOK);
+                           dial.ShowModal();
+                           });
         }
     }
 }
@@ -629,12 +674,14 @@ void Tracker::CalibrateCamera()
     {
         if (!mainThreadRunning || !cameraRunning)
         {
-            cv::destroyAllWindows();
+            gui->CallAfter([] ()
+                           {
+                           cv::destroyAllWindows();
+                           });
             return;
         }
         CopyFreshCameraImageTo(image);
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        cv::Mat drawImg;
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -646,11 +693,18 @@ void Tracker::CalibrateCamera()
             cols = drawImgSize;
             rows = image.rows * drawImgSize / image.cols;
         }
-        cv::resize(image, drawImg, cv::Size(cols,rows));
-        cv::imshow("out", drawImg);
-        char key = (char)cv::waitKey(1);
+        {
+            cv::Mat *outImg = new cv::Mat();
+            cv::resize(image, *outImg, cv::Size(cols,rows));
+            gui->CallAfter([outImg] ()
+                           {
+                           cv::imshow("out", *outImg);
+                           cv::waitKey(1);
+                           delete(outImg);
+                           });
+        }
         framesSinceLast++;
-        if (key != -1 || framesSinceLast > 50)
+        if (framesSinceLast > 50)
         {
             framesSinceLast = 0;
             cv::cvtColor(image, image,cv:: COLOR_BGR2GRAY);
@@ -670,9 +724,17 @@ void Tracker::CalibrateCamera()
                 imgpoints.push_back(corner_pts);
             }
 
-            cv::resize(image, drawImg, cv::Size(cols, rows));
-            cv::imshow("out", drawImg);
-            cv::waitKey(1000);
+            {
+                cv::Mat *outImg = new cv::Mat();
+                cv::resize(image, *outImg, cv::Size(cols,rows));
+                gui->CallAfter([outImg] ()
+                               {
+                               cv::imshow("out", *outImg);
+                               cv::waitKey(1);
+                               delete(outImg);
+                               });
+            }
+            sleep_millis(1000);
         }
     }
 
@@ -684,10 +746,13 @@ void Tracker::CalibrateCamera()
     parameters->distCoeffs = distCoeffs;
     parameters->Save();
     mainThreadRunning = false;
-    cv::destroyAllWindows();
-    wxMessageDialog dial(NULL,
-        wxT("Calibration complete."), wxT("Info"), wxOK);
-    dial.ShowModal();
+    gui->CallAfter([] ()
+                   {
+                   cv::destroyAllWindows();
+                   wxMessageDialog dial(NULL,
+                       wxT("Calibration complete."), wxT("Info"), wxOK);
+                   dial.ShowModal();
+                   });
 }
 
 void Tracker::StartTrackerCalib()
@@ -699,17 +764,23 @@ void Tracker::StartTrackerCalib()
     }
     if (!cameraRunning)
     {
-        wxMessageDialog dial(NULL,
-            wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         mainThreadRunning = false;
         return;
     }
     if (parameters->camMat.empty())
     {
-        wxMessageDialog dial(NULL,
-            wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         mainThreadRunning = false;
         return;
     }
@@ -876,10 +947,13 @@ void Tracker::CalibrateTracker()
             }
             catch (std::exception&)
             {
-                wxMessageDialog dial(NULL,
-                    wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
-                dial.ShowModal();
-                cv::destroyWindow("out");
+                gui->CallAfter([] ()
+                               {
+                               wxMessageDialog dial(NULL,
+                                   wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
+                               dial.ShowModal();
+                               cv::destroyWindow("out");
+                               });
                 apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
@@ -963,9 +1037,16 @@ void Tracker::CalibrateTracker()
             cols = drawImgSize;
             rows = image.rows * drawImgSize / image.cols;
         }
-        cv::resize(image, drawImg, cv::Size(cols, rows));
-        cv::imshow("out", drawImg);
-        cv::waitKey(1);
+        {
+            cv::Mat *outImg = new cv::Mat();
+            cv::resize(image, *outImg, cv::Size(cols,rows));
+            gui->CallAfter([outImg] ()
+                           {
+                           cv::imshow("out", *outImg);
+                           cv::waitKey(1);
+                           delete(outImg);
+                           });
+        }
     }
     trackers.clear();
     for (int i = 0; i < boardIds.size(); i++)
@@ -977,7 +1058,10 @@ void Tracker::CalibrateTracker()
     parameters->Save();
     trackersCalibrated = true;
 
-    cv::destroyWindow("out");
+    gui->CallAfter([] ()
+                   {
+                   cv::destroyWindow("out");
+                   });
     apriltag_detector_destroy(td);
     mainThreadRunning = false;
 }
@@ -1211,12 +1295,15 @@ void Tracker::MainLoop()
             }
             catch (std::exception&)
             {
-                wxMessageDialog dial(NULL,
-                    wxT("Something went wrong when estimating tracker pose. Try again! \n"
-                    "If the problem persists, try to recalibrate camera and trackers."),
-                    wxT("Error"), wxOK | wxICON_ERROR);
-                dial.ShowModal();
-                cv::destroyWindow("out");
+                gui->CallAfter([] ()
+                               {
+                               wxMessageDialog dial(NULL,
+                                   wxT("Something went wrong when estimating tracker pose. Try again! \n"
+                                   "If the problem persists, try to recalibrate camera and trackers."),
+                                   wxT("Error"), wxOK | wxICON_ERROR);
+                                dial.ShowModal();
+                               cv::destroyWindow("out");
+                               });
                 apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
@@ -1344,9 +1431,20 @@ void Tracker::MainLoop()
         }
         cv::resize(drawImg, drawImg, cv::Size(cols, rows));
         cv::putText(drawImg, std::to_string(frameTime).substr(0,5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        cv::imshow("out", drawImg);
-        cv::waitKey(1);
+        {
+            cv::Mat *outImg = new cv::Mat();
+            cv::resize(drawImg, *outImg, cv::Size(cols,rows));
+            gui->CallAfter([outImg] ()
+                           {
+                           cv::imshow("out", *outImg);
+                           cv::waitKey(1);
+                           delete(outImg);
+                           });
+        }
         //time of marker detection
     }
-    cv::destroyWindow("out");
+    gui->CallAfter([] ()
+                   {
+                   cv::destroyWindow("out");
+                   });
 }
