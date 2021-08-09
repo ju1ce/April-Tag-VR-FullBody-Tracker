@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <mutex>
 #include <random>
+#include <sstream>
 #include <vector>
 
 #pragma warning(push)
@@ -236,7 +237,28 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
-        cap = cv::VideoCapture(i, apiPreference);
+#if defined(__LINUX__)
+        // On Linux cv::VideoCapture does not work when GStreamer backend is used and
+        // camera is set to MJPG pixel format. As a work around we manually setup the
+        // GStreamer pipeline with suitable decoding before feeding the stream into
+        // application.
+        if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
+        {
+            std::stringstream ss;
+            ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
+            if(parameters->camWidth != 0)
+                ss << ",width=" << parameters->camWidth;
+            if (parameters->camHeight != 0)
+                ss << ",height=" << parameters->camHeight;
+            ss << ",framerate=" << parameters->camFps << "/1";
+            ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
+            cap = cv::VideoCapture(ss.str(), apiPreference);
+        }
+        else
+#endif
+        {
+            cap = cv::VideoCapture(i, apiPreference);
+        }
 
     }
     else
@@ -255,31 +277,21 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     }
     //Sleep(1000);
 
-    // On Linux setting camera to MJPG output doesn't seem to work.
-    // If you still want to get MJPG output from camera (ie. because it offers better FPS)
-    // then you can try using a GStreamer pipeline on the "Ip or ID of camera" parameter:
-    //
-    //      v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=960,pixel-aspect-ratio=1/1,framerate=30/1 ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink
-    //
-    // (yes, you can copy that entire thing into the text field)
-    //
-    // You probably will need to adjust the pipeline to your own setup. You can use
-    // gst-launch-1.0 program to test GStreamer pipelines more easily:
-    //
-    //      gst-launch-1.0 v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=960,pixel-aspect-ratio=1/1,framerate=30/1 ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! xvimagesink
-    //
-    //  (Note that the end of the pipeline is 'xvimagesink' instead of 'appsink'
-    //  when using it in gst-launch-1.0)
-#if !defined(__LINUX__)
-    cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
-    cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+    // On Linux and when GStreamer backend is used we already setup the camera pixel format,
+    // width, height and FPS above when the GStreamer pipeline was created.
+#if defined(__LINUX__)
+    if ((apiPreference != cv::CAP_ANY) && (apiPreference != cv::CAP_GSTREAMER))
 #endif
+    {
+        cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
+        cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
-    if(parameters->camWidth != 0)
-        cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
-    if (parameters->camHeight != 0)
-        cap.set(cv::CAP_PROP_FRAME_HEIGHT, parameters->camHeight);
-    cap.set(cv::CAP_PROP_FPS, parameters->camFps);
+        if(parameters->camWidth != 0)
+            cap.set(cv::CAP_PROP_FRAME_WIDTH, parameters->camWidth);
+        if (parameters->camHeight != 0)
+            cap.set(cv::CAP_PROP_FRAME_HEIGHT, parameters->camHeight);
+        cap.set(cv::CAP_PROP_FPS, parameters->camFps);
+    }
     if(parameters->cameraSettings)
         cap.set(cv::CAP_PROP_SETTINGS, 1);
     if (parameters->settingsParameters)
