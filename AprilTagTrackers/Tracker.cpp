@@ -24,6 +24,7 @@
 #include "Connection.h"
 #include "GUI.h"
 #include "Helpers.h"
+#include "MessageDialog.h"
 #include "Parameters.h"
 #include "Tracker.h"
 
@@ -386,6 +387,20 @@ void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
     }
 }
 
+void DialogOk(void *data)
+{
+    Tracker *tracker = static_cast<Tracker *>(data);
+    tracker->messageDialogResponse = wxID_OK;
+    tracker->mainThreadRunning = false;
+}
+
+void DialogCancel(void *data)
+{
+    Tracker *tracker = static_cast<Tracker *>(data);
+    tracker->messageDialogResponse = wxID_CANCEL;
+    tracker->mainThreadRunning = false;
+}
+
 void Tracker::StartCameraCalib()
 {
     if (mainThreadRunning)
@@ -404,9 +419,21 @@ void Tracker::StartCameraCalib()
 
     mainThreadRunning = true;
     if(!parameters->chessboardCalib)
+    {
         mainThread = std::thread(&Tracker::CalibrateCameraCharuco, this);
+
+        auto dialog =
+            new MessageDialog(wxT("Message"),
+                wxT("Camera calibration started! \n\n"
+                    "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
+                    "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
+                    "Press OK to save calibration when done."), &DialogOk, &DialogCancel, this);
+        dialog->Show();
+    }
     else
+    {
         mainThread = std::thread(&Tracker::CalibrateCamera, this);
+    }
     mainThread.detach();
 }
 
@@ -434,19 +461,6 @@ void Tracker::CalibrateCameraCharuco()
     params->markerBorderBits = 1;
 
     int framesSinceLast = -2 * parameters->camFps;
-
-    int messageDialogResponse = wxID_CANCEL;
-    std::thread th{ [this, &messageDialogResponse]() {
-        wxMessageDialog dial(NULL,
-            "Camera calibration started! \n\n"
-            "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
-            "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
-            "Press OK to save calibration when done.", wxT("Message"), wxOK | wxCANCEL);
-        messageDialogResponse = dial.ShowModal();
-        mainThreadRunning = false;
-    } };
-
-    th.detach();
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
     cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
@@ -704,25 +718,18 @@ void Tracker::StartTrackerCalib()
     mainThread = std::thread(&Tracker::CalibrateTracker, this);
     mainThread.detach();
 
-
-    //make a new thread with message box, and stop main thread when we press OK
-    std::thread th{ [=]() {
-        wxMessageDialog dial(NULL,
-        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,"
-        "neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n"
-        "Green: This marker is calibrated and can be used to calibrate other markers.\n"
-        "Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n"
-        "Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n"
-        "Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n"
-        "Yellow: The marker is being calibrated. Hold it still for a second.\n\n"
-        "When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
-    dial.ShowModal();
-
-    mainThreadRunning = false;
-
-    } };
-
-    th.detach();
+    // Show message box, and stop main thread when we press OK
+    auto dialog =
+        new MessageDialog(wxT("Message"),
+            wxT("Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,"
+                "neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n"
+                "Green: This marker is calibrated and can be used to calibrate other markers.\n"
+                "Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n"
+                "Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n"
+                "Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n"
+                "Yellow: The marker is being calibrated. Hold it still for a second.\n\n"
+                "When all the markers on all trackers are shown as green, press OK to finish calibration."), &DialogOk, &DialogCancel, this);
+    dialog->Show();
 }
 
 void Tracker::Start()

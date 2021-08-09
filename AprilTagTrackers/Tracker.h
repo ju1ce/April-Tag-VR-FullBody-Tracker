@@ -34,6 +34,7 @@ public:
     bool previewCameraCalibration = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
+    int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
 
