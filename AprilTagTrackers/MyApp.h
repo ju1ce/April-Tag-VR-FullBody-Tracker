@@ -28,4 +28,5 @@ public:
     void ButtonPressedTrackerCalib(wxCommandEvent&);
     void ButtonPressedStart(wxCommandEvent&);
     void ButtonPressedSpaceCalib(wxCommandEvent&);
+    void ButtonPressedMulticamAutocalib(wxCommandEvent&);
 };

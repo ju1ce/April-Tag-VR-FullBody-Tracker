@@ -17,8 +17,8 @@
 
 
 struct TrackerStatus {
-    cv::Vec3d boardRvec, boardTvec;
-    bool boardFound;
+    cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
+    bool boardFound, boardFoundDriver;
     std::vector<std::vector<double>> prevLocValues;
     cv::Point2d maskCenter;
 };
@@ -42,6 +42,7 @@ public:
     bool previewCameraCalibration = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
+    bool multicamAutocalib = false;
 
     GUI* gui;
 

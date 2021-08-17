@@ -54,6 +54,9 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
         wxPoint(20, 20));
     //parentGUI->cb2->SetValue(false);
 
+    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxT("Refine calibration using second camera"),
+        wxPoint(20, 20));
+
     fgs->Add(btn1);
     fgs->Add(cb1);
     fgs->Add(btn2);
@@ -90,6 +93,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->posHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->cb4);
 
     hbox->Add(parentGUI->posHbox, 1, wxALL | wxEXPAND, 15);
     //hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);

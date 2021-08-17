@@ -1219,7 +1219,9 @@ void Tracker::MainLoop()
                 }
 
                 trackerStatus[i].boardFound = true;
+                trackerStatus[i].boardFoundDriver = true;
                 trackerStatus[i].boardTvec = tvec;
+                trackerStatus[i].boardTvecDriver= tvec;
                 trackerStatus[i].boardRvec = rvec;
 
             }
@@ -1230,7 +1232,7 @@ void Tracker::MainLoop()
                     trackerStatus[i].maskCenter = projected[1];
                 }
                 
-                trackerStatus[i].boardFound = false;        //do we really need to do this? test later
+                trackerStatus[i].boardFoundDriver = false;        //do we really need to do this? test later
             }
 
         }
@@ -1499,8 +1501,55 @@ void Tracker::MainLoop()
 
 
             //send all the values
-            //frame time is how much time passed since frame was acquired. It doesn't work as expected...
-            connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
+            //frame time is how much time passed since frame was acquired.
+            if(!multicamAutocalib)
+                connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
+            else
+            {
+                //get rotations of tracker from camera
+
+                cv::Vec3d pose;
+                pose = trackerStatus[i].boardTvec;
+                double xzLen = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[2], 2));
+                double angleA = atan2(100 * pose[1], xzLen) * 57.3;
+                double angleB = atan2(100 * pose[0], 100 * pose[2]) * 57.3;
+                double xyzLen = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[1], 2) + pow(100 * pose[2], 2));
+
+                pose = trackerStatus[i].boardTvecDriver;
+                double xzLenDriver = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[2], 2));
+                double angleADriver = atan2(100 * pose[1], xzLenDriver) * 57.3;
+                double angleBDriver = atan2(100 * pose[0], 100 * pose[2]) * 57.3;
+                double xyzLenDriver = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[1], 2) + pow(100 * pose[2], 2));
+
+                cv::Mat rpos1 = cv::Mat_<double>(4, 1);
+                cv::Mat rpos2 = cv::Mat_<double>(4, 1);
+
+                for (int x = 0; x < 3; x++)
+                {
+                    rpos1.at<double>(x, 0) = trackerStatus[i].boardTvec[x];
+                }
+                rpos1.at<double>(3, 0) = 1;
+                rpos1 = wtranslation * rpos1;
+                rpos1.at<double>(0, 0) = -rpos1.at<double>(0, 0);
+                rpos1.at<double>(2, 0) = -rpos1.at<double>(2, 0);
+
+                for (int x = 0; x < 3; x++)
+                {
+                    rpos2.at<double>(x, 0) = trackerStatus[i].boardTvecDriver[x];
+                }
+                rpos2.at<double>(3, 0) = 1;
+                rpos2 = wtranslation * rpos2;
+                rpos2.at<double>(0, 0) = -rpos2.at<double>(0, 0);
+                rpos2.at<double>(2, 0) = -rpos2.at<double>(2, 0);
+
+                gui->manualCalibX->SetValue(gui->manualCalibX->value + (rpos1.at<double>(0) - rpos2.at<double>(0)));
+                gui->manualCalibY->SetValue(gui->manualCalibY->value - (rpos1.at<double>(1) - rpos2.at<double>(1)));
+                gui->manualCalibZ->SetValue(gui->manualCalibZ->value + (rpos1.at<double>(2) - rpos2.at<double>(2)));
+
+                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
+                gui->manualCalibB->SetValue(gui->manualCalibB->value - 0.1 * (angleB - angleBDriver));
+                tempScale = tempScale - 0.1*(1-(xyzLenDriver / xyzLen));
+            }
 
 
         }
