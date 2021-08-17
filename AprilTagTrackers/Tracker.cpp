@@ -1353,7 +1353,12 @@ void Tracker::MainLoop()
                 quat.QuatRotation(calibControllerPosOffset);
 
                 gui->manualCalibX->SetValue(100 * pose[0] - calibControllerPosOffset[0]);
-                gui->manualCalibY->SetValue(100 * pose[1] - calibControllerPosOffset[1]);
+
+                if (!lockHeightCalib)
+                {
+                    gui->manualCalibY->SetValue(100 * pose[1] - calibControllerPosOffset[1]);
+                }
+
                 gui->manualCalibZ->SetValue(100 * pose[2] - calibControllerPosOffset[2]);
 
                 quat.inverse().QuatRotation(calibControllerPosOffset);
@@ -1369,15 +1374,19 @@ void Tracker::MainLoop()
                 double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
                 double xyzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[1] - gui->manualCalibY->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
 
-                gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
                 gui->manualCalibB->SetValue(angleB - calibControllerAngleOffset[1]);
-                tempScale = xyzLen/calibControllerAngleOffset[2];
-                if (tempScale > 1.2)
-                    tempScale = 1.2;
-                else if (tempScale < 0.8)
-                    tempScale = 0.8;
+                if (!lockHeightCalib)
+                {
+                    gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
+                    tempScale = xyzLen / calibControllerAngleOffset[2];
+                    if (tempScale > 1.2)
+                        tempScale = 1.2;
+                    else if (tempScale < 0.8)
+                        tempScale = 0.8;
+                }
             }
             
+            //check that camera is facing correct direction
             if (gui->manualCalibA->value < 90)
                 gui->manualCalibA->SetValue(90);
             else if (gui->manualCalibA->value > 270)

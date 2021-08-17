@@ -29,4 +29,5 @@ public:
     void ButtonPressedStart(wxCommandEvent&);
     void ButtonPressedSpaceCalib(wxCommandEvent&);
     void ButtonPressedMulticamAutocalib(wxCommandEvent&);
+    void ButtonPressedLockHeight(wxCommandEvent&);
 };

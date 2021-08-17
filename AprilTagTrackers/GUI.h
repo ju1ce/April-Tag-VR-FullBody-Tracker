@@ -35,6 +35,7 @@ public:
     static const int SPACE_CALIB_CHECKBOX = 8;
     static const int MANUAL_CALIB_CHECKBOX = 9;
     static const int MULTICAM_AUTOCALIB_CHECKBOX = 10;
+    static const int LOCK_HEIGHT_CHECKBOX = 11;
 
     ValueInput *manualCalibX;
     ValueInput *manualCalibY;
@@ -49,6 +50,7 @@ public:
     wxCheckBox* cb2;
     wxCheckBox* cb3;
     wxCheckBox* cb4;
+    wxCheckBox* cb5;
 };
 
 class CameraPage : public wxPanel
