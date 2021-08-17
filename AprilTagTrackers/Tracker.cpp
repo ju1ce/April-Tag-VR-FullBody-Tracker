@@ -1045,6 +1045,28 @@ void Tracker::CalibrateTracker()
     trackers.clear();
     for (int i = 0; i < boardIds.size(); i++)
     {
+        cv::Point3f boardCenter = cv::Point3f(0, 0, 0);
+        int numOfCorners = 0;
+        for (int j = 0; j < boardCorners[i].size(); j++)
+        {
+            for (int k = 0; k < boardCorners[i][j].size(); k++)
+            {
+                boardCenter.x += boardCorners[i][j][k].x;
+                boardCenter.y += boardCorners[i][j][k].y;
+                boardCenter.z += boardCorners[i][j][k].z;
+                numOfCorners++;
+            }
+        }
+        boardCenter /= numOfCorners;
+
+        for (int j = 0; j < boardCorners[i].size(); j++)
+        {
+            for (int k = 0; k < boardCorners[i][j].size(); k++)
+            {
+                 boardCorners[i][j][k] -= boardCenter;
+            }
+        }
+
         cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], dictionary, boardIds[i]);
         trackers.push_back(arBoard);
     }
