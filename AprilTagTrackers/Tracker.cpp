@@ -1378,6 +1378,11 @@ void Tracker::MainLoop()
                     tempScale = 0.8;
             }
             
+            if (gui->manualCalibA->value < 90)
+                gui->manualCalibA->SetValue(90);
+            else if (gui->manualCalibA->value > 270)
+                gui->manualCalibA->SetValue(270);
+
             cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
             cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
             cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) *3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
@@ -1547,7 +1552,7 @@ void Tracker::MainLoop()
                 gui->manualCalibZ->SetValue(gui->manualCalibZ->value + (rpos1.at<double>(2) - rpos2.at<double>(2)));
 
                 gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
-                gui->manualCalibB->SetValue(gui->manualCalibB->value - 0.1 * (angleB - angleBDriver));
+                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
                 tempScale = tempScale - 0.1*(1-(xyzLenDriver / xyzLen));
             }
 
