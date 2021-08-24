@@ -19,7 +19,8 @@ bool MyApp::OnInit()
 {
     params = new Parameters();
     conn = new Connection(params);
-    tracker = new Tracker(params, conn);
+    tracker = new Tracker(params, conn, this);
+
 
     gui = new GUI(wxT("AprilTag Trackers"),params);
     gui->Show(true);

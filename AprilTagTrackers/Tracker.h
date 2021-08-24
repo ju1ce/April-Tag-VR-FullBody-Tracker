@@ -13,6 +13,8 @@
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
+#include "MyApp.h"
+
 #include "Quaternion.h"
 
 
@@ -30,7 +32,7 @@ class Parameters;
 class Tracker
 {
 public:
-    Tracker(Parameters*, Connection*);
+    Tracker(Parameters*, Connection*, MyApp*);
     void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
@@ -82,4 +84,6 @@ private:
     //Quaternion<double> q;
 
     clock_t last_frame_time;
+
+    MyApp* parentApp;
 };

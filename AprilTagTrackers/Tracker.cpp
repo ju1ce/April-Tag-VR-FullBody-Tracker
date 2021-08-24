@@ -207,10 +207,11 @@ void previewCalibration(cv::Mat& drawImg, Parameters* parameters)
 
 } // namespace
 
-Tracker::Tracker(Parameters* params, Connection* conn)
+Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
 {
     parameters = params;
     connection = conn;
+    parentApp = app;
     if (!parameters->trackers.empty())
     {
         trackers = parameters->trackers;
@@ -1325,6 +1326,14 @@ void Tracker::MainLoop()
             int inputButton = 0;
             inputButton = connection->GetButtonStates();
             
+            double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
+            if (timeSincePress > 30)                                                                        //we exit playspace calibration after 30 seconds of no input detected
+            {
+                gui->cb3->SetValue(false);
+                wxCommandEvent event(wxEVT_COMMAND_CHECKBOX_CLICKED, gui->MANUAL_CALIB_CHECKBOX);
+                parentApp->ButtonPressedSpaceCalib(event);
+            }
+
             if (inputButton == 1)       //logic for position button first
             {
                 double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
@@ -1455,6 +1464,10 @@ void Tracker::MainLoop()
             double c = -stationPos.at<double>(2, 0);
 
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
+        }
+        else
+        {
+            calibControllerLastPress = clock();
         }
 
         detectMarkersApriltag(image, &corners, &ids, &centers, td);
