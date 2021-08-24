@@ -913,7 +913,7 @@ void Tracker::CalibrateTracker()
         //cv::aruco::detectMarkers(image, dictionary, corners, ids, params);
         detectMarkersApriltag(image, &corners, &ids, &centers, td);
 
-        cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0));
+        cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0));       //draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
 
         //estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
@@ -932,24 +932,24 @@ void Tracker::CalibrateTracker()
 
         float maxDist = parameters->trackerCalibDistance;
 
-        for (int i = 0; i < boardIds.size(); i++)
+        for (int i = 0; i < boardIds.size(); i++)           //for each of the trackers
         {
-            cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], dictionary, boardIds[i]);
+            cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], dictionary, boardIds[i]);         //create an aruco board object made out of already added markers to current tracker
             //cv::Vec3d boardRvec, boardTvec;
             //bool boardFound = false;
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], false) > 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], false) > 0)         //try to estimate current trackers pose
                 {
-                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1f);
+                    cv::aruco::drawAxis(image, parameters->camMat, parameters->distCoeffs, boardRvec[i], boardTvec[i], 0.1f);       //if found, draw axis and mark it found
                     boardFound[i] = true;
                 }
                 else
                 {
-                    boardFound[i] = false;
+                    boardFound[i] = false;          //else, if none of the markers for this tracker are visible, mark it not found
                 }
             }
-            catch (std::exception&)
+            catch (std::exception&)             //on weird images or calibrations, we get an error
             {
                 wxMessageDialog dial(NULL,
                     wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
@@ -962,62 +962,62 @@ void Tracker::CalibrateTracker()
 
             std::string testStr = std::to_string(boardTvec[i][0]) + " " + std::to_string(boardTvec[i][1]) + " " + std::to_string(boardTvec[i][2]);
 
-            for (int j = 0; j < ids.size(); j++)
+            for (int j = 0; j < ids.size(); j++)        //check all of the found markers
             {
-                if (ids[j] >= i * markersPerTracker && ids[j] < (i + 1) * markersPerTracker)
+                if (ids[j] >= i * markersPerTracker && ids[j] < (i + 1) * markersPerTracker)            //if marker is part of current tracker
                 {
                     bool markerInBoard = false;
-                    for (int k = 0; k < boardIds[i].size(); k++)
+                    for (int k = 0; k < boardIds[i].size(); k++)        //check if marker is already part of the tracker
                     {
-                        if (boardIds[i][k] == ids[j])
+                        if (boardIds[i][k] == ids[j])          
                         {
                             markerInBoard = true;
                             break;
                         }
                     }
-                    if (markerInBoard == true)
+                    if (markerInBoard == true)          //if it is, draw it green and continue to next marker
                     {
                         drawMarker(image, corners[j], cv::Scalar(0, 255, 0));
                         continue;
                     }
-                    if (boardFound[i])
+                    if (boardFound[i])                  //if it isnt part of the current tracker, but the tracker was detected, we will attempt to add it
                     {
-                        if (sqrt(tvecs[j][0] * tvecs[j][0] + tvecs[j][1] * tvecs[j][1] + tvecs[j][2] * tvecs[j][2]) > maxDist)
+                        if (sqrt(tvecs[j][0] * tvecs[j][0] + tvecs[j][1] * tvecs[j][1] + tvecs[j][2] * tvecs[j][2]) > maxDist)          //if marker is too far away from camera, we just paint it purple as adding it could have too much error
                         {
                             drawMarker(image, corners[j], cv::Scalar(255, 0, 255));
                             continue;
                         }
 
-                        drawMarker(image, corners[j], cv::Scalar(0, 255, 255));
+                        drawMarker(image, corners[j], cv::Scalar(0, 255, 255));         //start adding marker, mark that by painting it yellow
                         std::vector<cv::Point3f> marker;
-                        transformMarkerSpace(modelMarker, boardRvec[i], boardTvec[i], rvecs[j], tvecs[j], &marker);
+                        transformMarkerSpace(modelMarker, boardRvec[i], boardTvec[i], rvecs[j], tvecs[j], &marker);         //transform marker points to the coordinate system of the tracker
 
                         int listIndex = -1;
-                        for (int k = 0; k < idsList.size(); k++)
+                        for (int k = 0; k < idsList.size(); k++)            //check whether the idsList and cornersList already contains data for this marker
                         {
                             if (idsList[k] == ids[j])
                             {
                                 listIndex = k;
                             }
                         }
-                        if (listIndex < 0)
+                        if (listIndex < 0)                  //if not, add and initialize it
                         {
                             listIndex = idsList.size();
                             idsList.push_back(ids[j]);
                             cornersList.push_back(std::vector<std::vector<cv::Point3f>>());
                         }
 
-                        cornersList[listIndex].push_back(marker);
-                        if (cornersList[listIndex].size() > 50)
+                        cornersList[listIndex].push_back(marker);       //add the current marker corners to the list
+                        if (cornersList[listIndex].size() > 50)         //if we have 50 recorded instances in the list for current marker, we can add it to the tracker
                         {
                             std::vector<cv::Point3f> medianMarker;
 
-                            getMedianMarker(cornersList[listIndex], &medianMarker);
+                            getMedianMarker(cornersList[listIndex], &medianMarker);         //calculate median position of each corner to get rid of outliers
 
-                            boardIds[i].push_back(ids[j]);
+                            boardIds[i].push_back(ids[j]);                                  //add the marker to the tracker
                             boardCorners[i].push_back(medianMarker);
                         }
-
+                        break;       //only add one marker at a time
                     }
                     else
                     {
