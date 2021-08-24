@@ -52,4 +52,5 @@ public:
     double cameraAutoexposure = 0;
     double cameraExposure = 0;
     double cameraGain = 0;
+    bool trackerCalibCenters = false;
 };

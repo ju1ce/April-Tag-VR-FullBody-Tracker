@@ -141,6 +141,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , cameraExposureField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraExposure)))
     , cameraGainField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraGain)))
     , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
+    , trackerCalibCentersField(new wxCheckBox(this, -1, wxT("")))
 {
     //usePredictiveField->SetValue(parameters->usePredictive);
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
@@ -150,6 +151,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
     settingsParametersField->SetValue(parameters->settingsParameters);
+    trackerCalibCentersField->SetValue(parameters->trackerCalibCenters);
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
@@ -234,8 +236,15 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
         "Keep other parameters as default unless you know what you are doing.");
     fgs->Add(chessboardCalibField);
 
+    addTextWithTooltip(this, fgs, "Use centers of trackers", "Experimental. Instead of having position of tracker detected at the main marker, it will be the center of all markers in the tracker.");
+    fgs->Add(trackerCalibCentersField);
+
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
+
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+
     fgs->Add(new wxStaticText(this, -1, wxT("Hover over text for help!")));
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
     //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
@@ -303,6 +312,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->cameraExposure = std::stoi(cameraExposureField->GetValue().ToStdString());
         parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = chessboardCalibField->GetValue();
+        parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
         parameters->Save();
 
         if (parameters->smoothingFactor > 1)

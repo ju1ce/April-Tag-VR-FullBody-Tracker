@@ -95,6 +95,7 @@ private:
     wxTextCtrl* cameraExposureField;
     wxTextCtrl* cameraGainField;
     wxCheckBox* chessboardCalibField;
+    wxCheckBox* trackerCalibCentersField;
     void SaveParams(wxCommandEvent&);
     void ShowHelp(wxCommandEvent&);
 };

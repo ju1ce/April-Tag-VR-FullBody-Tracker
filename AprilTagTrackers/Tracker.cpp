@@ -1042,9 +1042,12 @@ void Tracker::CalibrateTracker()
         cv::imshow("out", drawImg);
         cv::waitKey(1);
     }
+    
     trackers.clear();
+
     for (int i = 0; i < boardIds.size(); i++)
     {
+        /*
         cv::Point3f boardCenter = cv::Point3f(0, 0, 0);
         int numOfCorners = 0;
         for (int j = 0; j < boardCorners[i].size(); j++)
@@ -1066,10 +1069,11 @@ void Tracker::CalibrateTracker()
                  boardCorners[i][j][k] -= boardCenter;
             }
         }
-
+        */
         cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], dictionary, boardIds[i]);
         trackers.push_back(arBoard);
     }
+
     parameters->trackers = trackers;
     parameters->Save();
     trackersCalibrated = true;
@@ -1144,6 +1148,48 @@ void Tracker::MainLoop()
     double calibControllerAngleOffset[] = { 0,0,0 };
 
     double tempScale = 1;
+
+    std::vector<cv::Ptr<cv::aruco::Board>> trackers;
+    std::vector<std::vector<int>> boardIds;
+    std::vector<std::vector < std::vector<cv::Point3f >>> boardCorners;
+
+    if (parameters->trackerCalibCenters)
+    {
+        for (int i = 0; i < this->trackers.size(); i++)
+        {
+            boardCorners.push_back(this->trackers[i]->objPoints);
+            boardIds.push_back(this->trackers[i]->ids);
+
+            cv::Point3f boardCenter = cv::Point3f(0, 0, 0);
+            int numOfCorners = 0;
+            for (int j = 0; j < boardCorners[i].size(); j++)
+            {
+                for (int k = 0; k < boardCorners[i][j].size(); k++)
+                {
+                    boardCenter.x += boardCorners[i][j][k].x;
+                    boardCenter.y += boardCorners[i][j][k].y;
+                    boardCenter.z += boardCorners[i][j][k].z;
+                    numOfCorners++;
+                }
+            }
+            boardCenter /= numOfCorners;
+
+            for (int j = 0; j < boardCorners[i].size(); j++)
+            {
+                for (int k = 0; k < boardCorners[i][j].size(); k++)
+                {
+                    boardCorners[i][j][k] -= boardCenter;
+                }
+            }
+
+            cv::Ptr<cv::aruco::Board> arBoard = cv::aruco::Board::create(boardCorners[i], cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50), boardIds[i]);
+            trackers.push_back(arBoard);
+        }
+    }
+    else
+    {
+        trackers = this->trackers;
+    }
 
     while(mainThreadRunning && cameraRunning)
     {      
