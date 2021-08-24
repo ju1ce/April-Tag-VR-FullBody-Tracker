@@ -315,6 +315,41 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
         parameters->Save();
 
+        if (parameters->numOfPrevValues != 1)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Number of values for smoothing should probably be 1. \n\nOutlier removal has been moved to the driver side, making this parameter pointless"), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->smoothingFactor < 0.2)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Additional smoothing is extremely low, which may cause problems. \n\nIf you get any problems with tracking, try to increase it. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->quadDecimate != 1 && parameters->quadDecimate != 1.5 && parameters->quadDecimate != 2 && parameters->quadDecimate != 3 && parameters->quadDecimate != 4)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Quad Decimate is not a standard value. \n\nKeep it at 1, 1.5, 2, 3 or 4, or else detection may not work. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->cameraSettings && parameters->cameraApiPreference != 700)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Camera settings parameter is on, but camera API preference is not 700 \n\nOpening camera parameters only work when camera API is set to DirectShow, or 700. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->smoothingFactor <= parameters->camLatency)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Camera latency should never be higher than additional smoothing or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
         if (parameters->smoothingFactor > 1)
         {
             wxMessageDialog dial(NULL,
