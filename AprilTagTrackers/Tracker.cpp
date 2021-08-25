@@ -963,6 +963,8 @@ void Tracker::CalibrateTracker()
 
             std::string testStr = std::to_string(boardTvec[i][0]) + " " + std::to_string(boardTvec[i][1]) + " " + std::to_string(boardTvec[i][2]);
 
+            bool foundMarkerToCalibrate = false;
+
             for (int j = 0; j < ids.size(); j++)        //check all of the found markers
             {
                 if (ids[j] >= i * markersPerTracker && ids[j] < (i + 1) * markersPerTracker)            //if marker is part of current tracker
@@ -990,6 +992,13 @@ void Tracker::CalibrateTracker()
                         }
 
                         drawMarker(image, corners[j], cv::Scalar(0, 255, 255));         //start adding marker, mark that by painting it yellow
+ 
+                        if (foundMarkerToCalibrate)                     //only calibrate one marker at a time
+                            continue;
+
+                        foundMarkerToCalibrate = true;
+
+
                         std::vector<cv::Point3f> marker;
                         transformMarkerSpace(modelMarker, boardRvec[i], boardTvec[i], rvecs[j], tvecs[j], &marker);         //transform marker points to the coordinate system of the tracker
 
@@ -1018,7 +1027,6 @@ void Tracker::CalibrateTracker()
                             boardIds[i].push_back(ids[j]);                                  //add the marker to the tracker
                             boardCorners[i].push_back(medianMarker);
                         }
-                        break;       //only add one marker at a time
                     }
                     else
                     {
