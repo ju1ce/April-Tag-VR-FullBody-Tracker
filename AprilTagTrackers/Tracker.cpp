@@ -1335,7 +1335,7 @@ void Tracker::MainLoop()
             inputButton = connection->GetButtonStates();
             
             double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
-            if (timeSincePress > 30)                                                                        //we exit playspace calibration after 30 seconds of no input detected
+            if (timeSincePress > 60)                                                                        //we exit playspace calibration after 30 seconds of no input detected
             {
                 gui->cb3->SetValue(false);
                 wxCommandEvent event(wxEVT_COMMAND_CHECKBOX_CLICKED, gui->MANUAL_CALIB_CHECKBOX);
