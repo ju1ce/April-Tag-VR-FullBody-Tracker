@@ -1,4 +1,5 @@
 #include "Connection.h"
+#include "Ipc.hpp"
 
 Connection::Connection(Parameters* params)
 {
@@ -220,62 +221,12 @@ void Connection::Connect()
 
 }
 
-std::istringstream Connection::Send(std::string lpszWrite)
+std::istringstream Connection::Send(std::string buffer)
 {
-    int hpipe;
 
-    hpipe = open(lpszPipename, O_WRONLY);
-    write(hpipe, lpszWrite.c_str(), strlen(lpszWrite.c_str()) + 1);
-    close(hpipe);
-
-    hpipe = open(lpszPipename, O_RDONLY);
-    cbRead = read(hpipe, chReadBuf, BUFSIZE * sizeof(char));
-    close(hpipe);
-
-    chReadBuf[cbRead] = '\0';
-    std::cout << chReadBuf << std::endl;
-    std::string rec = chReadBuf;
-    std::istringstream iss(rec);
-
-    return iss;
-
-    /*
-
-    //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so I'll leave the dumb conversions and casts in. If it doesn't for you, have fun.
-
-    fSuccess = CallNamedPipe(
-        lpszPipename,        // pipe name
-        (void)lpszWrite.c_str(),           // message to server
-        (strlen(lpszWrite.c_str()) + 1) * sizeof(char), // message length
-        chReadBuf,              // buffer to receive reply
-        BUFSIZE * sizeof(char),  // size of read buffer
-        &cbRead,                // number of bytes read
-        2000);                 // waits for 2 seconds
-
-    if (fSuccess || GetLastError() == ERROR_MORE_DATA)
-    {
-        std::cout << chReadBuf << std::endl;
-        chReadBuf[cbRead] = '\0'; //add terminating zero
-                    //convert our buffer to string
-        std::string rec = chReadBuf;
-        std::istringstream iss(rec);
-        // The pipe is closed; no more data can be read.
-
-        if (!fSuccess)
-        {
-            printf("\nExtra data in message was lost\n");
-        }
-        return iss;
-    }
-    else
-    {
-        std::cout << GetLastError() << " :(" << std::endl;
-        std::string rec = " senderror";
-        std::istringstream iss(rec);
-        return iss;
-    }
-
-    */
+    Ipc::Client client("ApriltagPipeIn");
+    std::string rec = client.sendrecv(buffer);
+    return std::istringstream(rec);
 }
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)
