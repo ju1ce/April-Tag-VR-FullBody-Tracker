@@ -1305,6 +1305,7 @@ void Tracker::MainLoop()
         {
             if (trackerStatus[i].maskCenter.x <= 0 || trackerStatus[i].maskCenter.y <= 0 || trackerStatus[i].maskCenter.x >= image.cols || trackerStatus[i].maskCenter.y >= image.rows)
             {
+                trackerStatus[i].boardFound = false;    //if detected tracker is out of view of the camera, we mark it as not found, as either the prediction is wrong or we wont see it anyway
                 continue;
             }
             doMasking = true;
@@ -1622,13 +1623,30 @@ void Tracker::MainLoop()
                 rpos2.at<double>(0, 0) = -rpos2.at<double>(0, 0);
                 rpos2.at<double>(2, 0) = -rpos2.at<double>(2, 0);
 
-                gui->manualCalibX->SetValue(gui->manualCalibX->value + (rpos1.at<double>(0) - rpos2.at<double>(0)));
-                gui->manualCalibY->SetValue(gui->manualCalibY->value - (rpos1.at<double>(1) - rpos2.at<double>(1)));
-                gui->manualCalibZ->SetValue(gui->manualCalibZ->value + (rpos1.at<double>(2) - rpos2.at<double>(2)));
+                double dX = (rpos1.at<double>(0) - rpos2.at<double>(0)) * 0.1;
+                double dY = -(rpos1.at<double>(1) - rpos2.at<double>(1)) * 0.1;
+                double dZ = (rpos1.at<double>(2) - rpos2.at<double>(2)) * 0.1;
 
-                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
-                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
+                if (abs(dX) > 0.01)
+                    dX = 0.1 * (dX / abs(dX));
+                if (abs(dY) > 0.1)
+                    dY = 0.1 * (dY / abs(dY));
+                if (abs(dZ) > 0.1)
+                    dZ = 0.1 * (dZ / abs(dZ));
+
+                gui->manualCalibX->SetValue(gui->manualCalibX->value + dX);
+                gui->manualCalibY->SetValue(gui->manualCalibY->value + dY);
+                gui->manualCalibZ->SetValue(gui->manualCalibZ->value + dZ);
+
+                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.01 * (angleA - angleADriver));
+                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.01 * (angleB - angleBDriver));
                 tempScale = tempScale - 0.1*(1-(xyzLenDriver / xyzLen));
+
+                if (tempScale > 1.2)
+                    tempScale = 1.2;
+                else if (tempScale < 0.8)
+                    tempScale = 0.8;
+
             }
 
 

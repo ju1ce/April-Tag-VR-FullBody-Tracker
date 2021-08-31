@@ -1,6 +1,5 @@
 #include "Connection.h"
 
-
 Connection::Connection(Parameters* params)
 {
     parameters = params;
@@ -116,6 +115,38 @@ void Connection::Connect()
         return;
     }
 
+    /*
+    vr::HmdMatrix34_t testZeroToStanding = openvr_handle->GetRawZeroPoseToStandingAbsoluteTrackingPose();
+
+    std::string e = "Zero pose to standing: \n ";
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            e += std::to_string(testZeroToStanding.m[i][j]) + ", ";
+        }
+        e += "\n";
+    }
+    wxMessageDialog dial(NULL,
+        e, wxT("Error"), wxOK | wxICON_ERROR);
+    dial.ShowModal();
+
+    vr::HmdMatrix34_t testStandingToSeated = openvr_handle->GetSeatedZeroPoseToStandingAbsoluteTrackingPose();
+
+    e = "Seated pose to standing: \n ";
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            e += std::to_string(testStandingToSeated.m[i][j]) + ", ";
+        }
+        e += "\n";
+    }
+    wxMessageDialog dial2(NULL,
+        e, wxT("Error"), wxOK | wxICON_ERROR);
+    dial2.ShowModal();
+
+    */
     DWORD  retval = 0;
     BOOL   success;
     char  buffer[1024] = "";
@@ -164,7 +195,7 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
-    ret = Send("settings 50 " + std::to_string(parameters->smoothingFactor));         
+    ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor));         
 
     //set that connection is established
     status = CONNECTED;
@@ -296,7 +327,7 @@ void Connection::GetControllerPose(double outpose[])
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
     vr::InputPoseActionData_t poseData;
-    if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseStanding, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None
+    if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseRawAndUncalibrated, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None
         || !poseData.bActive || !poseData.pose.bPoseIsValid)
     {
         return;
@@ -316,6 +347,7 @@ void Connection::GetControllerPose(double outpose[])
         a = matrix.m[0][3];
         b = matrix.m[1][3];
         c = matrix.m[2][3];
+
     }
 
     a = -a;

@@ -139,7 +139,6 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
     {
         if (event.IsChecked())
         {
-            tracker->manualRecalibrate = true;
             gui->posHbox->Show(true);
             gui->rotHbox->Show(true);
             //gui->cb2->SetValue(false);
@@ -152,6 +151,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->manualCalibB->SetValue(params->calibOffsetB);
             gui->manualCalibC->SetValue(params->calibOffsetC);
 
+            tracker->manualRecalibrate = true;
         }
         else
         {
