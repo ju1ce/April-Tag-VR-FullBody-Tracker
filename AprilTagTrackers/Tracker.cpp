@@ -1110,7 +1110,7 @@ void Tracker::MainLoop()
         tf = tagStandard41h12_create();
     else
         tf = tagCircle21h7_create();
-    apriltag_detector_add_family(td, tf);
+    //apriltag_detector_add_family(td, tf);
     apriltag_detector_add_family(td, tf);
 
     int framesSinceLastSeen = 0;
@@ -1487,6 +1487,7 @@ void Tracker::MainLoop()
 
             try
             {
+                trackerStatus[i].boardTvec /= tempScale;
                 if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], parameters->camMat, parameters->distCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && parameters->usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
@@ -1515,6 +1516,36 @@ void Tracker::MainLoop()
             trackerStatus[i].boardFound = true;
 
             trackerStatus[i].boardTvec *= tempScale;
+
+            if (parameters->depthSmoothing > 0 && trackerStatus[i].boardFoundDriver && !manualRecalibrate)
+            {
+                //depth estimation is noisy, so try to smooth it more, especialy if using multiple cameras
+                //if position is close to the position predicted by the driver, take the depth of the driver.
+                //if error is big, take the calculated depth
+                //error threshold is defined in the params as depth smoothing
+
+                double distDriver = sqrt(pow(trackerStatus[i].boardTvecDriver[0], 2)
+                    + pow(trackerStatus[i].boardTvecDriver[1], 2)
+                    + pow(trackerStatus[i].boardTvecDriver[2], 2));
+
+                double distPredict = sqrt(pow(trackerStatus[i].boardTvec[0], 2)
+                    + pow(trackerStatus[i].boardTvec[1], 2)
+                    + pow(trackerStatus[i].boardTvec[2], 2));
+
+                cv::Vec3d normPredict = trackerStatus[i].boardTvec / distPredict;
+
+                double dist = abs(distPredict - distDriver);
+
+                dist = dist / parameters->depthSmoothing + 0.1;
+                if (dist > 1)
+                    dist = 1;
+
+                double distFinal = (dist)*distPredict + (1 - dist) * distDriver;
+
+                trackerStatus[i].boardTvec = normPredict * distFinal;
+
+                //trackerStatus[i].boardTvec[2] = (dist) * trackerStatus[i].boardTvec[2] + (1-dist) * trackerStatus[i].boardTvecDriver[2];
+            }
 
             double posValues[6] = { 
                 trackerStatus[i].boardTvec[0],
@@ -1585,7 +1616,7 @@ void Tracker::MainLoop()
             //frame time is how much time passed since frame was acquired.
             if(!multicamAutocalib)
                 connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
-            else
+            else if(trackerStatus[i].boardFoundDriver)
             {
                 //get rotations of tracker from camera
 
@@ -1638,8 +1669,8 @@ void Tracker::MainLoop()
                 gui->manualCalibY->SetValue(gui->manualCalibY->value + dY);
                 gui->manualCalibZ->SetValue(gui->manualCalibZ->value + dZ);
 
-                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.01 * (angleA - angleADriver));
-                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.01 * (angleB - angleBDriver));
+                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
+                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
                 tempScale = tempScale - 0.1*(1-(xyzLenDriver / xyzLen));
 
                 if (tempScale > 1.2)

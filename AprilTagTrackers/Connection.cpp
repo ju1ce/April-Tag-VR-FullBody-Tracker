@@ -178,6 +178,15 @@ void Connection::Connect()
         status = DISCONNECTED;
         return;
     }
+    ret >> word;
+    if (word != "0.5.3")
+    {
+        std::string e = "";
+        e += "Driver version and ATT version do not match! \n\nDriver version: " + word + "\nApriltagTrackers version: 0.5.3";
+        wxMessageDialog dial(NULL,
+           e,wxT("Warning") , wxOK | wxICON_WARNING);
+        dial.ShowModal();
+    }
     int connected_trackers;
     ret >> connected_trackers;
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
@@ -195,7 +204,10 @@ void Connection::Connect()
     }
     ret = Send("addstation");
 
-    ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor));         
+    std::string sstr = "";
+    sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
+
+    ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
 
     //set that connection is established
     status = CONNECTED;

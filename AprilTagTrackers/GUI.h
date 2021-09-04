@@ -96,6 +96,8 @@ private:
     wxTextCtrl* cameraGainField;
     wxCheckBox* chessboardCalibField;
     wxCheckBox* trackerCalibCentersField;
+    wxTextCtrl* depthSmoothingField;
+    wxTextCtrl* additionalSmoothingField;
     void SaveParams(wxCommandEvent&);
     void ShowHelp(wxCommandEvent&);
 };

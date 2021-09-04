@@ -17,7 +17,7 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 } // namespace
 
 GUI::GUI(const wxString& title, Parameters * params)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 500))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 550))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -142,13 +142,15 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , cameraGainField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraGain)))
     , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
     , trackerCalibCentersField(new wxCheckBox(this, -1, wxT("")))
+    , depthSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->depthSmoothing)))
+    , additionalSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->additionalSmoothing)))
 {
     //usePredictiveField->SetValue(parameters->usePredictive);
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
     rotateClField->SetValue(parameters->rotateCl);
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
     //circularField->SetValue(parameters->circularWindow);
-    //cameraSettingsField->SetValue(parameters->cameraSettings);
+    cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
     settingsParametersField->SetValue(parameters->settingsParameters);
     trackerCalibCentersField->SetValue(parameters->trackerCalibCenters);
@@ -239,6 +241,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     addTextWithTooltip(this, fgs, "Use centers of trackers", "Experimental. Instead of having position of tracker detected at the main marker, it will be the center of all markers in the tracker.");
     fgs->Add(trackerCalibCentersField);
 
+    addTextWithTooltip(this, fgs, "Depth smoothing", "Additional smoothing applied to the depth estimation, as it has higher error. Cam help remove shaking with multiple cameras.");
+    fgs->Add(depthSmoothingField);
+
+    addTextWithTooltip(this, fgs, "Additional additional smoothing", "Extra smoothing applied to tracker position. Should mimic the old style of smoothing in previous versions.");
+    fgs->Add(additionalSmoothingField);
+
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
@@ -313,7 +321,14 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = chessboardCalibField->GetValue();
         parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
+        parameters->depthSmoothing = std::stod(depthSmoothingField->GetValue().ToStdString());
+        parameters->additionalSmoothing = std::stod(additionalSmoothingField->GetValue().ToStdString());
         parameters->Save();
+
+        if (parameters->depthSmoothing > 1)
+            parameters->depthSmoothing = 1;
+        if (parameters->depthSmoothing < 0)
+            parameters->depthSmoothing = 0;
 
         if (parameters->numOfPrevValues != 1)
         {

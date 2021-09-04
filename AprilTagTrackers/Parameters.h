@@ -53,4 +53,6 @@ public:
     double cameraExposure = 0;
     double cameraGain = 0;
     bool trackerCalibCenters = false;
+    float depthSmoothing = 0;
+    float additionalSmoothing = 0;
 };
