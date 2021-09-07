@@ -178,17 +178,19 @@ void Connection::Connect()
         status = DISCONNECTED;
         return;
     }
+    int connected_trackers;
+    ret >> connected_trackers;
+
     ret >> word;
-    if (word != "0.5.3")
+    if (word != "0.5.4")
     {
         std::string e = "";
         e += "Driver version and ATT version do not match! \n\nDriver version: " + word + "\nApriltagTrackers version: 0.5.3";
         wxMessageDialog dial(NULL,
-           e,wxT("Warning") , wxOK | wxICON_WARNING);
+            e, wxT("Warning"), wxOK | wxICON_WARNING);
         dial.ShowModal();
     }
-    int connected_trackers;
-    ret >> connected_trackers;
+
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
     {
         ret = Send("addtracker " + connectedTrackers[i].Name + " " + connectedTrackers[i].Role);
@@ -202,6 +204,7 @@ void Connection::Connect()
             return;
         }
     }
+
     ret = Send("addstation");
 
     std::string sstr = "";
