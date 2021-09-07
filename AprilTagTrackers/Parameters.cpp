@@ -1,3 +1,5 @@
+#define GET_VARIABLE_NAME(Variable) (#Variable)
+
 #include "Parameters.h"
 
 Parameters::Parameters()
@@ -11,6 +13,15 @@ void Parameters::Load()
 
     if (!fs["cameraAddr"].empty())			//if file exists, load all parameters from file into variables
     {
+        aruco_params = cv::aruco::DetectorParameters::create();
+        aruco_params->detectInvertedMarker = true;
+        aruco_params->cornerRefinementMethod = 2;
+        cv::FileNode fn = fs["arucoParams"];
+        if (!fn.empty())		//load all saved aruco params
+        {
+            fn["cornerRefinementMethod"] >> aruco_params->cornerRefinementMethod;
+            fn["markerBorderBits"] >> aruco_params->markerBorderBits;
+        }
         fs["cameraAddr"] >> cameraAddr;
         fs["cameraApiPreference"] >> cameraApiPreference;
         fs["camFps"] >> camFps;
@@ -64,7 +75,7 @@ void Parameters::Load()
         fs["markerLibrary"] >> markerLibrary;
         if(!wrotmat.empty())
             wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
-        cv::FileNode fn = fs["trackers"];
+        fn = fs["trackers"];
         if (!fn.empty())		//load all saved markers
         {
             cv::FileNodeIterator curMarker = fn.begin(), it_end = fn.end();
@@ -98,7 +109,11 @@ void Parameters::Load()
 void Parameters::Save()
 {
     cv::FileStorage fs("params.yml", cv::FileStorage::WRITE);
-
+    fs << "arucoParams";
+    fs << "{";
+    fs << "cornerRefinementMethod" << aruco_params->cornerRefinementMethod;
+    fs << "markerBorderBits" << aruco_params->markerBorderBits;
+    fs << "}";
     fs << "cameraAddr" << cameraAddr;
     fs << "cameraApiPreference" << cameraApiPreference;
     fs << "camFps" << camFps;

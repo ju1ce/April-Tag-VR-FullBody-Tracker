@@ -25,9 +25,7 @@ AprilTagWrapper::AprilTagWrapper(const Parameters* params)
     if (parameters->markerLibrary == ARUCO_4X4)
     {
         aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
-        aruco_params = cv::aruco::DetectorParameters::create();
-
-        aruco_params->markerBorderBits = 1;
+        aruco_params = parameters->aruco_params;
     }
         
     apriltag_detector_add_family(td, tf);

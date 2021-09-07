@@ -58,5 +58,6 @@ public:
     float additionalSmoothing = 0;
     int markerLibrary = 0;
 
+    cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 
 };

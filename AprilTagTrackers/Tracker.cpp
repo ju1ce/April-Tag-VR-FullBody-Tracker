@@ -822,9 +822,7 @@ void Tracker::CalibrateTracker()
     modelMarker.push_back(cv::Point3f(markerSize / 2, -markerSize / 2, 0));
     modelMarker.push_back(cv::Point3f(-markerSize / 2, -markerSize / 2, 0));
 
-
     AprilTagWrapper april{parameters};
-
 
     int markersPerTracker = 45;
     int trackerNum = parameters->trackerNum;
