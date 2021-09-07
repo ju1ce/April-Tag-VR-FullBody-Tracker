@@ -225,6 +225,9 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cap.set(cv::CAP_PROP_GAIN, parameters->cameraGain);
     }
 
+    double codec = 0x47504A4D; //code by FPaul. Should use MJPEG codec to enable fast framerates.
+    cap.set(cv::CAP_PROP_FOURCC, codec);
+
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
     cameraThread.detach();
@@ -253,6 +256,7 @@ void Tracker::CameraLoop()
     cv::Mat drawImg;
     double fps = 0;
     last_frame_time = clock();
+    bool frame_visible = false;
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -287,10 +291,12 @@ void Tracker::CameraLoop()
                 cv::imshow("Preview", drawImg);
                 cv::waitKey(1);
             }
+            frame_visible = true;
         }
-        else
-        {
+        else if(frame_visible)
+        {            
             cv::destroyWindow("Preview");
+            frame_visible = false;
         }
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);

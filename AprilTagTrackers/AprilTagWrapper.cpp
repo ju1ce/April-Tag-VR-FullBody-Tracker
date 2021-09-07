@@ -17,10 +17,19 @@ AprilTagWrapper::AprilTagWrapper(const Parameters* params)
 {
     td->quad_decimate = parameters->quadDecimate;
     apriltag_family_t* tf;
-    if (!parameters->circularMarkers)
-        tf = tagStandard41h12_create();
-    else
+    if (parameters->markerLibrary == APRILTAG_CIRCULAR)
         tf = tagCircle21h7_create();
+    else
+        tf = tagStandard41h12_create();
+
+    if (parameters->markerLibrary == ARUCO_4X4)
+    {
+        aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+        aruco_params = cv::aruco::DetectorParameters::create();
+
+        aruco_params->markerBorderBits = 1;
+    }
+        
     apriltag_detector_add_family(td, tf);
 }
 
@@ -31,7 +40,7 @@ AprilTagWrapper::~AprilTagWrapper()
 
 void AprilTagWrapper::convertToSingleChannel(const cv::Mat& src, cv::Mat& dst)
 {
-    if (parameters->coloredMarkers)
+    if (parameters->markerLibrary == APRILTAG_COLOR)
     {
         cv::Mat ycc;
         cv::cvtColor(src, ycc, cv::COLOR_BGR2YCrCb);
@@ -64,6 +73,16 @@ void AprilTagWrapper::detectMarkers(
     corners->clear();
     ids->clear();
     centers->clear();
+
+    if (parameters->markerLibrary == ARUCO_4X4)
+    {
+        std::vector<std::vector<cv::Point2f>> rejectedCorners;
+        cv::aruco::detectMarkers(gray, aruco_dictionary, *corners, *ids, aruco_params, rejectedCorners);
+        for(int i = 0; i<parameters->trackers.size();i++)
+            cv::aruco::refineDetectedMarkers(gray, parameters->trackers[i], *corners, *ids, rejectedCorners);
+
+        return;
+    }
 
     image_u8_t im = {
         gray.cols,

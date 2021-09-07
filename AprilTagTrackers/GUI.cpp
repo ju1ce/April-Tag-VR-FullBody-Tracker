@@ -48,11 +48,11 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
         wxPoint(20, 20));
     wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, wxT("Preview calibration"),
         wxPoint(20, 20));
-    wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
-       wxPoint(20, 20));
+    //wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
+    //   wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
-    parentGUI->calibrationModeCheckbox = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
+    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
         wxPoint(20, 20));
     //parentGUI->cb2->SetValue(false);
 
@@ -67,15 +67,15 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     fgs->Add(btn2);
     fgs->Add(cb2);
     fgs->Add(btn3);
-    fgs->Add(cb3);
+    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn4);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn5);
-    //fgs->Add(parentGUI->cb2);
+    fgs->Add(parentGUI->cb3);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(parentGUI->calibrationModeCheckbox);
+    //fgs->Add(parentGUI->calibrationModeCheckbox);
 
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 
@@ -119,7 +119,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , cameraAddrField(new wxTextCtrl(this, -1, parameters->cameraAddr))
     , cameraApiField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraApiPreference)))
     , trackerNumField(new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum)))
-    , markerSizeField(new wxTextCtrl(this, -1, std::to_string(parameters->markerSize*100)))
+    , markerSizeField(new wxTextCtrl(this, -1, std::to_string(parameters->markerSize * 100)))
     , prevValuesField(new wxTextCtrl(this, -1, std::to_string(parameters->numOfPrevValues)))
     , smoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->smoothingFactor)))
     , quadDecimateField(new wxTextCtrl(this, -1, std::to_string(parameters->quadDecimate)))
@@ -129,7 +129,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , ignoreTracker0Field(new wxCheckBox(this, -1, wxT("")))
     , rotateClField(new wxCheckBox(this, -1, wxT("")))
     , rotateCounterClField(new wxCheckBox(this, -1, wxT("")))
-    , coloredMarkersField(new wxCheckBox(this, -1, wxT("")))
     // offsetxField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetX)))
     // offsetyField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetY)))
     // offsetzField(new wxTextCtrl(this, -1, std::to_string(parameters->calibOffsetZ)))
@@ -152,7 +151,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
     rotateClField->SetValue(parameters->rotateCl);
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
-    coloredMarkersField->SetValue(parameters->coloredMarkers);
     //circularField->SetValue(parameters->circularWindow);
     cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
@@ -162,7 +160,10 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     wxArrayString markerLibraryValues;
     markerLibraryValues.Add(wxT("ApriltagStandard"));
     markerLibraryValues.Add(wxT("ApriltagCircular"));
-    markerLibraryField = new wxChoice(this, -1,wxDefaultPosition, wxDefaultSize, markerLibraryValues);
+    markerLibraryValues.Add(wxT("Aruco4x4"));
+    markerLibraryValues.Add(wxT("ApriltagColor"));
+
+    markerLibraryField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, markerLibraryValues);
     markerLibraryField->SetSelection(parameters->markerLibrary);
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
@@ -189,33 +190,27 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(cameraAddrField);
     addTextWithTooltip(this, fgs, "Camera API preference", cameraApiDescriptions);
     fgs->Add(cameraApiField);
-    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camWidthField);
-    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
-    fgs->Add(camHeightField);
-    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
-    fgs->Add(camFpsField);
+    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
+    fgs->Add(trackerNumField);
+    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
+    fgs->Add(markerSizeField);
     addTextWithTooltip(this, fgs, "Rotate camera clockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateClField);
     addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
-
     addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     fgs->Add(prevValuesField);
     addTextWithTooltip(this, fgs, "Additional smoothing", "Values in this time window will be used for interpolation. The higher it is, the less shaking there will be, but it will increase delay. 0.2-0.5 are usualy good values");
     fgs->Add(smoothingField);
-
     addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
     addTextWithTooltip(this, fgs, "Search window", "Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
     fgs->Add(searchWindowField);
-    addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
-    fgs->Add(prevValuesField);
-    addTextWithTooltip(this, fgs, "Additional smoothing", "0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot");
-    fgs->Add(smoothingField);
     //wxStaticText* calibrationTrackerText = new wxStaticText(this, -1, wxT("Tracker to use for calibration"));
     //fgs->Add(calibrationTrackerText);
     //fgs->Add(calibrationTrackerField);
+    addTextWithTooltip(this, fgs, "Ignore tracker 0", "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
+    fgs->Add(ignoreTracker0Field);
     //addTextWithTooltip(this, fgs, "Use previous position as guess", "Help tracker detection by using previous pose. There shouldn't be any reason to disable this.");
     //fgs->Add(usePredictiveField);
     //wxStaticText* offsetxText = new wxStaticText(this, -1, wxT("X axis calibration offset"));
@@ -229,7 +224,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //fgs->Add(offsetzField);
     //addTextWithTooltip(this, fgs, "Use circular search window", "Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     //fgs->Add(circularField);
-
     addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
     fgs->Add(camFpsField);
     addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
@@ -325,7 +319,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->ignoreTracker0 = ignoreTracker0Field->GetValue();
         parameters->rotateCl = rotateClField->GetValue();
         parameters->rotateCounterCl = rotateCounterClField->GetValue();
-        parameters->coloredMarkers = coloredMarkersField->GetValue();
+        //parameters->coloredMarkers = coloredMarkersField->GetValue();
         //parameters->calibOffsetX = std::stod(offsetxField->GetValue().ToStdString());
         //parameters->calibOffsetY = std::stod(offsetyField->GetValue().ToStdString());
         //parameters->calibOffsetZ = std::stod(offsetzField->GetValue().ToStdString());
