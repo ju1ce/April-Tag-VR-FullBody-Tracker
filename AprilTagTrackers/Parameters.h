@@ -55,4 +55,5 @@ public:
     bool trackerCalibCenters = false;
     float depthSmoothing = 0;
     float additionalSmoothing = 0;
+    int markerLibrary = 0;
 };

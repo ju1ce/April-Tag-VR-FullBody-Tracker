@@ -155,6 +155,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     settingsParametersField->SetValue(parameters->settingsParameters);
     trackerCalibCentersField->SetValue(parameters->trackerCalibCenters);
 
+    wxArrayString markerLibraryValues;
+    markerLibraryValues.Add(wxT("ApriltagStandard"));
+    markerLibraryValues.Add(wxT("ApriltagCircular"));
+    markerLibraryField = new wxChoice(this, -1,wxDefaultPosition, wxDefaultSize, markerLibraryValues);
+    markerLibraryField->SetSelection(parameters->markerLibrary);
+
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
@@ -247,8 +253,11 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     addTextWithTooltip(this, fgs, "Additional additional smoothing", "Extra smoothing applied to tracker position. Should mimic the old style of smoothing in previous versions.");
     fgs->Add(additionalSmoothingField);
 
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    addTextWithTooltip(this, fgs, "Marker library", "Marker library to use.");
+    fgs->Add(markerLibraryField);
+
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
@@ -323,6 +332,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
         parameters->depthSmoothing = std::stod(depthSmoothingField->GetValue().ToStdString());
         parameters->additionalSmoothing = std::stod(additionalSmoothingField->GetValue().ToStdString());
+        parameters->markerLibrary = markerLibraryField->GetSelection();
         parameters->Save();
 
         if (parameters->depthSmoothing > 1)

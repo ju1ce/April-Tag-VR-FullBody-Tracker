@@ -869,7 +869,7 @@ void Tracker::CalibrateTracker()
     apriltag_detector_t* td = apriltag_detector_create();
     td->quad_decimate = parameters->quadDecimate;
     apriltag_family_t* tf;
-    if(!parameters->circularMarkers)
+    if(parameters->markerLibrary != 1)
         tf = tagStandard41h12_create();
     else
         tf = tagCircle21h7_create();
@@ -1106,7 +1106,7 @@ void Tracker::MainLoop()
     apriltag_detector_t* td = apriltag_detector_create();
     td->quad_decimate = parameters->quadDecimate;
     apriltag_family_t* tf;
-    if (!parameters->circularMarkers)
+    if (parameters->markerLibrary != 1)
         tf = tagStandard41h12_create();
     else
         tf = tagCircle21h7_create();

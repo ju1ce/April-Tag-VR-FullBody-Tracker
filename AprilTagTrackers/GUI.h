@@ -98,6 +98,8 @@ private:
     wxCheckBox* trackerCalibCentersField;
     wxTextCtrl* depthSmoothingField;
     wxTextCtrl* additionalSmoothingField;
+    wxChoice* markerLibraryField;
     void SaveParams(wxCommandEvent&);
     void ShowHelp(wxCommandEvent&);
+
 };
