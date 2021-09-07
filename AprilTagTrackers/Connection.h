@@ -6,6 +6,14 @@
 
 #include "Parameters.h"
 #include <windows.h>
+#include <openvr.h>
+
+struct TrackerConnection {
+    int TrackerId;
+    int DriverId;
+    std::string Name;
+    std::string Role;
+};
 
 class Connection
 {
@@ -19,7 +27,11 @@ public:
     std::istringstream Send(std::string lpszWrite);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
+    void GetControllerPose(double outpose[]);
+    int GetButtonStates();
     int status = DISCONNECTED;
+    vr::IVRSystem* openvr_handle;
+    std::vector<TrackerConnection> connectedTrackers;
 private:
     void Connect();
     HANDLE hpipe;
@@ -29,4 +41,9 @@ private:
     BOOL fSuccess;
     DWORD cbRead;
     LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
+
+    vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
+    vr::VRActionHandle_t m_actionHand = vr::k_ulInvalidActionHandle;
 };

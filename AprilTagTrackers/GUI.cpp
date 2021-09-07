@@ -17,7 +17,7 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 } // namespace
 
 GUI::GUI(const wxString& title, Parameters * params)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(350, 850))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 550))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -34,7 +34,7 @@ GUI::GUI(const wxString& title, Parameters * params)
 CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     :wxPanel(parent)
 {
-    wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
@@ -55,6 +55,12 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->calibrationModeCheckbox = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
         wxPoint(20, 20));
     //parentGUI->cb2->SetValue(false);
+
+    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxT("Refine calibration using second camera"),
+        wxPoint(20, 20));
+
+    parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, wxT("Lock camera height"),
+        wxPoint(20, 20));
 
     fgs->Add(btn1);
     fgs->Add(cb1);
@@ -85,16 +91,19 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(°):"), 0);
     parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(°):"), 0);
 
-    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse the values bellow to align the virtual camera with \nyour IRL one. Use your controllers as references.\nUncheck Calibration mode when done!")), 0, wxEXPAND);
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.\nUncheck Calibration mode when done!\n\n\n")), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
-    parentGUI->rotHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibA, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibB, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->manualCalibC, 1, wxALL | wxEXPAND, 5);
+    parentGUI->posHbox->Add(parentGUI->cb4);
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    parentGUI->posHbox->Add(parentGUI->cb5);
 
     hbox->Add(parentGUI->posHbox, 1, wxALL | wxEXPAND, 15);
-    hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
+    //hbox->Add(parentGUI->rotHbox, 1, wxALL | wxEXPAND, 15);
 
     //hbox2->Show(false);
 
@@ -135,6 +144,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     , cameraExposureField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraExposure)))
     , cameraGainField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraGain)))
     , chessboardCalibField(new wxCheckBox(this, -1, wxT("")))
+    , trackerCalibCentersField(new wxCheckBox(this, -1, wxT("")))
+    , depthSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->depthSmoothing)))
+    , additionalSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->additionalSmoothing)))
 {
     //usePredictiveField->SetValue(parameters->usePredictive);
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
@@ -142,12 +154,20 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     rotateCounterClField->SetValue(parameters->rotateCounterCl);
     coloredMarkersField->SetValue(parameters->coloredMarkers);
     //circularField->SetValue(parameters->circularWindow);
-    //cameraSettingsField->SetValue(parameters->cameraSettings);
+    cameraSettingsField->SetValue(parameters->cameraSettings);
     chessboardCalibField->SetValue(parameters->chessboardCalib);
+    settingsParametersField->SetValue(parameters->settingsParameters);
+    trackerCalibCentersField->SetValue(parameters->trackerCalibCenters);
+
+    wxArrayString markerLibraryValues;
+    markerLibraryValues.Add(wxT("ApriltagStandard"));
+    markerLibraryValues.Add(wxT("ApriltagCircular"));
+    markerLibraryField = new wxChoice(this, -1,wxDefaultPosition, wxDefaultSize, markerLibraryValues);
+    markerLibraryField->SetSelection(parameters->markerLibrary);
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
-    wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 10, 10);
+    wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
 
     static const std::string cameraApiDescriptions = []()
     {
@@ -179,35 +199,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     fgs->Add(rotateClField);
     addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
     fgs->Add(rotateCounterClField);
-    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
-    fgs->Add(camLatencyField);
-    addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but doesnt work with all cameras. Usualy works best with DSHOW api preference");
-    fgs->Add(cameraSettingsField);
-    addTextWithTooltip(this, fgs, "Enable 3 options below", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
-    fgs->Add(settingsParametersField);
-    addTextWithTooltip(this, fgs, "Camera autoexposure", "Experimental. Will try to set camera autoexposure. Usualy 1 for enable and 0 for disable, but can be something dumb as 0.75 and 0.25,");
-    fgs->Add(cameraAutoexposureField);
-    addTextWithTooltip(this, fgs, "Camera exposure", "Experimental. Will try to set camera expousre. Can be on a scale of 0-255, or in exponentials of 2 ( -8 for 4ms exposure)");
-    fgs->Add(cameraExposureField);
-    addTextWithTooltip(this, fgs, "Camera gain", "Experimental. Will try to set gain. Probably on a scale of 0-255, but could be diffrent based on the camera.");
-    fgs->Add(cameraGainField);
-    addTextWithTooltip(this, fgs, "Use chessboard calibration",
-        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
-        "Keep other parameters as default unless you know what you are doing.");
-    fgs->Add(chessboardCalibField);
 
-    // These are used as a divider
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
+    fgs->Add(prevValuesField);
+    addTextWithTooltip(this, fgs, "Additional smoothing", "Values in this time window will be used for interpolation. The higher it is, the less shaking there will be, but it will increase delay. 0.2-0.5 are usualy good values");
+    fgs->Add(smoothingField);
 
-    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
-    fgs->Add(trackerNumField);
-    addTextWithTooltip(this, fgs, "Ignore tracker 0", "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
-    fgs->Add(ignoreTracker0Field);
-    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
-    fgs->Add(markerSizeField);
-    addTextWithTooltip(this, fgs, "Use colored markers", "Colored markers can be slightly faster to detect and possibly less sensitive to shadows.");
-    fgs->Add(coloredMarkersField);
     addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
     fgs->Add(quadDecimateField);
     addTextWithTooltip(this, fgs, "Search window", "Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
@@ -233,8 +230,49 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params)
     //addTextWithTooltip(this, fgs, "Use circular search window", "Use a circle as a search window instead of searching in vertical bands. There should be no reason to disable this.");
     //fgs->Add(circularField);
 
+    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
+    fgs->Add(camFpsField);
+    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    fgs->Add(camWidthField);
+    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    fgs->Add(camHeightField);
+    addTextWithTooltip(this, fgs, "Camera latency", "Experimental. Should represent camera latency in seconds, but seems to work differently. Usually setting this to 1 shows good results.");
+    fgs->Add(camLatencyField);
+    addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but doesnt work with all cameras. Usualy works best with DSHOW api preference");
+    fgs->Add(cameraSettingsField);
+
+    addTextWithTooltip(this, fgs, "Enable 3 options below", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
+    fgs->Add(settingsParametersField);
+    addTextWithTooltip(this, fgs, "Camera autoexposure", "Experimental. Will try to set camera autoexposure. Usualy 1 for enable and 0 for disable, but can be something dumb as 0.75 and 0.25,");
+    fgs->Add(cameraAutoexposureField);
+    addTextWithTooltip(this, fgs, "Camera exposure", "Experimental. Will try to set camera expousre. Can be on a scale of 0-255, or in exponentials of 2 ( -8 for 4ms exposure)");
+    fgs->Add(cameraExposureField);
+    addTextWithTooltip(this, fgs, "Camera gain", "Experimental. Will try to set gain. Probably on a scale of 0-255, but could be diffrent based on the camera.");
+    fgs->Add(cameraGainField);
+
+    addTextWithTooltip(this, fgs, "Use chessboard calibration",
+        "Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
+        "Keep other parameters as default unless you know what you are doing.");
+    fgs->Add(chessboardCalibField);
+
+    addTextWithTooltip(this, fgs, "Use centers of trackers", "Experimental. Instead of having position of tracker detected at the main marker, it will be the center of all markers in the tracker.");
+    fgs->Add(trackerCalibCentersField);
+
+    addTextWithTooltip(this, fgs, "Depth smoothing", "Additional smoothing applied to the depth estimation, as it has higher error. Cam help remove shaking with multiple cameras.");
+    fgs->Add(depthSmoothingField);
+
+    addTextWithTooltip(this, fgs, "Additional additional smoothing", "Extra smoothing applied to tracker position. Should mimic the old style of smoothing in previous versions.");
+    fgs->Add(additionalSmoothingField);
+
+    addTextWithTooltip(this, fgs, "Marker library", "Marker library to use.");
+    fgs->Add(markerLibraryField);
+
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
+
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
+
     fgs->Add(new wxStaticText(this, -1, wxT("Hover over text for help!")));
     wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
     //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
@@ -296,14 +334,66 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->camFps = std::stoi(camFpsField->GetValue().ToStdString());
         parameters->camWidth = std::stoi(camWidthField->GetValue().ToStdString());
         parameters->camHeight = std::stoi(camHeightField->GetValue().ToStdString());
-        parameters->camLatency = std::stoi(camLatencyField->GetValue().ToStdString());
+        parameters->camLatency = std::stod(camLatencyField->GetValue().ToStdString());
         parameters->cameraSettings = cameraSettingsField->GetValue();
         parameters->settingsParameters = settingsParametersField->GetValue();
         parameters->cameraAutoexposure = std::stoi(cameraAutoexposureField->GetValue().ToStdString());
         parameters->cameraExposure = std::stoi(cameraExposureField->GetValue().ToStdString());
         parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = chessboardCalibField->GetValue();
+        parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
+        parameters->depthSmoothing = std::stod(depthSmoothingField->GetValue().ToStdString());
+        parameters->additionalSmoothing = std::stod(additionalSmoothingField->GetValue().ToStdString());
+        parameters->markerLibrary = markerLibraryField->GetSelection();
         parameters->Save();
+
+        if (parameters->depthSmoothing > 1)
+            parameters->depthSmoothing = 1;
+        if (parameters->depthSmoothing < 0)
+            parameters->depthSmoothing = 0;
+
+        if (parameters->numOfPrevValues != 1)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Number of values for smoothing should probably be 1. \n\nOutlier removal has been moved to the driver side, making this parameter pointless"), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->smoothingFactor < 0.2)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Additional smoothing is extremely low, which may cause problems. \n\nIf you get any problems with tracking, try to increase it. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->quadDecimate != 1 && parameters->quadDecimate != 1.5 && parameters->quadDecimate != 2 && parameters->quadDecimate != 3 && parameters->quadDecimate != 4)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Quad Decimate is not a standard value. \n\nKeep it at 1, 1.5, 2, 3 or 4, or else detection may not work. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->cameraSettings && parameters->cameraApiPreference != 700)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Camera settings parameter is on, but camera API preference is not 700 \n\nOpening camera parameters only work when camera API is set to DirectShow, or 700. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->smoothingFactor <= parameters->camLatency)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Camera latency should never be higher than additional smoothing or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
+        if (parameters->smoothingFactor > 1)
+        {
+            wxMessageDialog dial(NULL,
+                wxT("NOTE: Additional smoothing is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5. "), wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
+
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
             wxMessageDialog dial(NULL,

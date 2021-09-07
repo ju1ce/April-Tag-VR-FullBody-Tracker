@@ -37,7 +37,7 @@ public:
     double calibOffsetB = 0;
     double calibOffsetC = 0;
     bool circularWindow = true;
-    double smoothingFactor = 0.7;
+    double smoothingFactor = 0.5;
     int camFps = 30;
     int camHeight = 0;
     int camWidth = 0;
@@ -53,4 +53,8 @@ public:
     double cameraAutoexposure = 0;
     double cameraExposure = 0;
     double cameraGain = 0;
+    bool trackerCalibCenters = false;
+    float depthSmoothing = 0;
+    float additionalSmoothing = 0;
+    int markerLibrary = 0;
 };

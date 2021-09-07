@@ -19,7 +19,8 @@ bool MyApp::OnInit()
 {
     params = new Parameters();
     conn = new Connection(params);
-    tracker = new Tracker(params, conn);
+    tracker = new Tracker(params, conn, this);
+
 
     gui = new GUI(wxT("AprilTag Trackers"),params);
     gui->Show(true);
@@ -39,6 +40,8 @@ bool MyApp::OnInit()
     Connect(GUI::START_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedStart));
     Connect(GUI::SPACE_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
     Connect(GUI::MANUAL_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
+    Connect(GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedMulticamAutocalib));
+    Connect(GUI::LOCK_HEIGHT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedLockHeight));
 
     return true;
 }
@@ -83,6 +86,30 @@ void MyApp::ButtonPressedStart(wxCommandEvent& event)
     tracker->Start();
 }
 
+void MyApp::ButtonPressedMulticamAutocalib(wxCommandEvent& event)
+{
+    if (event.IsChecked())
+    {
+        tracker->multicamAutocalib = true;
+    }
+    else
+    {
+        tracker->multicamAutocalib = false;
+    }
+}
+
+void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
+{
+    if (event.IsChecked())
+    {
+        tracker->lockHeightCalib = true;
+    }
+    else
+    {
+        tracker->lockHeightCalib = false;
+    }
+}
+
 void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
 {
     if (event.GetId() == GUI::SPACE_CALIB_CHECKBOX)
@@ -118,7 +145,6 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
     {
         if (event.IsChecked())
         {
-            tracker->manualRecalibrate = true;
             gui->posHbox->Show(true);
             gui->rotHbox->Show(true);
             //gui->cb2->SetValue(false);
@@ -131,6 +157,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->manualCalibB->SetValue(params->calibOffsetB);
             gui->manualCalibC->SetValue(params->calibOffsetC);
 
+            tracker->manualRecalibrate = true;
         }
         else
         {

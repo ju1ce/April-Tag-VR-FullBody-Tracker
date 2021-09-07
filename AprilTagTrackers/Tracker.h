@@ -4,12 +4,23 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <math.h>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
+#include "MyApp.h"
+
 #include "Quaternion.h"
+
+
+struct TrackerStatus {
+    cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
+    bool boardFound, boardFoundDriver;
+    std::vector<std::vector<double>> prevLocValues;
+    cv::Point2d maskCenter;
+};
 
 class Connection;
 class GUI;
@@ -18,7 +29,7 @@ class Parameters;
 class Tracker
 {
 public:
-    Tracker(Parameters*, Connection*);
+    Tracker(Parameters*, Connection*, MyApp*);
     void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
@@ -31,6 +42,8 @@ public:
     bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
+    bool multicamAutocalib = false;
+    bool lockHeightCalib = false;
 
     GUI* gui;
 
@@ -69,4 +82,6 @@ private:
     //Quaternion<double> q;
 
     clock_t last_frame_time;
+
+    MyApp* parentApp;
 };
