@@ -6,6 +6,7 @@
 #pragma warning(pop)
 
 #include "Parameters.h"
+#include "Connection.h"
 
 class ValueInput : public wxPanel
 {
@@ -24,7 +25,7 @@ private:
 class GUI : public wxFrame
 {
 public:
-    GUI(const wxString& title, Parameters* params);
+    GUI(const wxString& title, Parameters* params, Connection* conn);
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
@@ -63,12 +64,13 @@ public:
 class ParamsPage : public wxPanel
 {
 public:
-    ParamsPage(wxNotebook* parent, Parameters* params);
+    ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn);
 
 private:
     const int SAVE_BUTTON = 2;
     const int HELP_BUTTON = 10;
     Parameters* parameters;
+    Connection* connection;
     wxTextCtrl* cameraAddrField;
     wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;

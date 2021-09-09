@@ -22,7 +22,7 @@ bool MyApp::OnInit()
     tracker = new Tracker(params, conn, this);
 
 
-    gui = new GUI(wxT("AprilTag Trackers"),params);
+    gui = new GUI(wxT("AprilTag Trackers"),params,conn);
     gui->Show(true);
 
     gui->posHbox->Show(false);
