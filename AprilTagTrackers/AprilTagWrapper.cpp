@@ -24,7 +24,7 @@ AprilTagWrapper::AprilTagWrapper(const Parameters* params)
 
     if (parameters->markerLibrary == ARUCO_4X4)
     {
-        aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+        aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
         aruco_params = parameters->aruco_params;
     }
         
@@ -56,7 +56,8 @@ void AprilTagWrapper::detectMarkers(
     const cv::Mat& image,
     std::vector<std::vector<cv::Point2f> >* corners,
     std::vector<int>* ids,
-    std::vector<cv::Point2f>* centers)
+    std::vector<cv::Point2f>* centers,
+    std::vector<cv::Ptr<cv::aruco::Board>> trackers)
 {
     cv::Mat gray;
     if (image.type() != CV_8U)
@@ -76,8 +77,8 @@ void AprilTagWrapper::detectMarkers(
     {
         std::vector<std::vector<cv::Point2f>> rejectedCorners;
         cv::aruco::detectMarkers(gray, aruco_dictionary, *corners, *ids, aruco_params, rejectedCorners);
-        for(int i = 0; i<parameters->trackers.size();i++)
-            cv::aruco::refineDetectedMarkers(gray, parameters->trackers[i], *corners, *ids, rejectedCorners);
+        //for(int i = 0; i<trackers.size();i++)
+        //    cv::aruco::refineDetectedMarkers(gray, trackers[i], *corners, *ids, rejectedCorners);
 
         return;
     }

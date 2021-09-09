@@ -92,7 +92,7 @@ void Connection::Connect()
         for (int i = 0; i < parameters->trackerNum; i++)
         {
             TrackerConnection temp;
-            temp.TrackerId = i + 1;
+            temp.TrackerId = i;
             temp.DriverId = i;
             temp.Name = "ApriltagTracker" + std::to_string(i + 1);
             temp.Role = "TrackerRole_Waist";

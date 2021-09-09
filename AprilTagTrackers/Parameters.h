@@ -57,6 +57,7 @@ public:
     float depthSmoothing = 0;
     float additionalSmoothing = 0;
     int markerLibrary = 0;
+    int markersPerTracker = 45;
 
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 

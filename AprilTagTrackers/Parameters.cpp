@@ -13,6 +13,9 @@ void Parameters::Load()
 
     if (!fs["cameraAddr"].empty())			//if file exists, load all parameters from file into variables
     {
+        fs["markersPerTracker"] >> markersPerTracker;
+        if (markersPerTracker <= 0)
+            markersPerTracker = 45;
         aruco_params = cv::aruco::DetectorParameters::create();
         aruco_params->detectInvertedMarker = true;
         aruco_params->cornerRefinementMethod = 2;
@@ -137,6 +140,7 @@ void Parameters::Load()
 void Parameters::Save()
 {
     cv::FileStorage fs("params.yml", cv::FileStorage::WRITE);
+    fs << "markersPerTracker" << markersPerTracker;
     fs << "arucoParams";
     fs << "{";
     fs << "cornerRefinementMethod" << aruco_params->cornerRefinementMethod;

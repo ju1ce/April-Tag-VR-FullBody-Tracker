@@ -27,7 +27,8 @@ public:
         const cv::Mat& frame,
         std::vector<std::vector<cv::Point2f> >* corners,
         std::vector<int>* ids,
-        std::vector<cv::Point2f>* centers
+        std::vector<cv::Point2f>* centers,
+        std::vector<cv::Ptr<cv::aruco::Board>> trackers
     );
 
     std::vector<std::string> getTimeProfile();

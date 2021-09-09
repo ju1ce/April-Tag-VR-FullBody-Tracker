@@ -824,7 +824,7 @@ void Tracker::CalibrateTracker()
 
     AprilTagWrapper april{parameters};
 
-    int markersPerTracker = 45;
+    int markersPerTracker = parameters->markersPerTracker;
     int trackerNum = parameters->trackerNum;
 
     std::vector<cv::Vec3d> boardRvec, boardTvec;
@@ -847,6 +847,8 @@ void Tracker::CalibrateTracker()
     std::vector<int> idsList;
     std::vector<std::vector < std::vector<cv::Point3f >>> cornersList;
 
+    trackers.clear();
+
     while (cameraRunning && mainThreadRunning)
     {
         CopyFreshCameraImageTo(image);
@@ -861,7 +863,7 @@ void Tracker::CalibrateTracker()
         std::vector<cv::Point2f> centers;
 
         //cv::aruco::detectMarkers(image, dictionary, corners, ids, params);
-        april.detectMarkers(image, &corners, &ids, &centers);
+        april.detectMarkers(image, &corners, &ids, &centers,trackers);
         if (showTimeProfile)
         {
             april.drawTimeProfile(image, cv::Point(10, 60));
@@ -1003,8 +1005,6 @@ void Tracker::CalibrateTracker()
         cv::imshow("out", drawImg);
         cv::waitKey(1);
     }
-    
-    trackers.clear();
 
     for (int i = 0; i < boardIds.size(); i++)
     {
@@ -1241,11 +1241,11 @@ void Tracker::MainLoop()
         }
 
         //Then define your mask image
-        cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+        cv::Mat mask = cv::Mat::zeros(gray.size(), gray.type());
 
-        cv::Mat dstImage = cv::Mat::zeros(image.size(), image.type());
+        cv::Mat dstImage = cv::Mat::zeros(gray.size(), gray.type());
 
-        int size = image.rows * parameters->searchWindow;
+        int size = gray.rows * parameters->searchWindow;
 
         bool doMasking = false;
 
@@ -1273,8 +1273,8 @@ void Tracker::MainLoop()
         //Now you can copy your source image to destination image with masking
         if (doMasking)
         {
-            image.copyTo(dstImage, mask);
-            image = dstImage;
+            gray.copyTo(dstImage, mask);
+            gray = dstImage;
         }
 
         //cv::imshow("test", image);
@@ -1423,8 +1423,11 @@ void Tracker::MainLoop()
 
             connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
         }
-
-        april.detectMarkers(gray, &corners, &ids, &centers);
+        else
+        {
+            calibControllerLastPress = clock();
+        }
+        april.detectMarkers(gray, &corners, &ids, &centers, trackers);
         for (int i = 0; i < trackerNum; ++i) {
 
             //estimate the pose of current board
