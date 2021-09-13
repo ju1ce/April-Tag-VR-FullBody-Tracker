@@ -543,7 +543,7 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    cv::destroyAllWindows();
+    cv::destroyWindow("out");
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
