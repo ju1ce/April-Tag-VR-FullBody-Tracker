@@ -419,7 +419,11 @@ https://discord.gg/g2ctkXB4bb
 ### 已知问题：
 
 如果摄像头只在追踪器上看到一个 AprilTag，追踪器可能会朝向错误的方向。 注意观察腰部，在这视频第 4 秒的时候，腰部有一个不自然的旋转： 
-[replace to video]
+
+
+https://user-images.githubusercontent.com/91396010/134815082-f61b674a-8aad-4b91-8032-b860a1ec93c7.mp4
+
+
 增加 AprilTag 的面数并修改彼此的链接角度可有效解决该问题，关于这点，45° 比 90° 更安全，
 在我们制作更多 pdf 之前，您可以用 Google 搜索 "tagStandard41h12" ，并自行制作制作一些 AprilTag 打印件。
 
