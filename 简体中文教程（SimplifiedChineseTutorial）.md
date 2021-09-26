@@ -168,7 +168,7 @@ https://discord.gg/g2ctkXB4bb
 
 添加一些将追踪器固定到您身体上的方法。 我使用了一些挂钩，然后我可以通过这些挂钩使用橡皮筋固定追踪器。 
 
-注意：确保追踪器上的图案清晰可见且未被遮挡！ 确保标记尽可能不要弯曲！ 
+注意：确保纸板上的AprilTag清晰可见且未被遮挡！ 确保粘贴AprilTag的地方不要弯曲！ 
 
 ## 安装驱动
 
@@ -337,7 +337,7 @@ https://discord.gg/g2ctkXB4bb
 
 #### Rotate camera clockwise/counterclockwise:
 
-如果您将现实生活中的相机竖着摆放，这也许能使您站得离摄像头更近，并勾选 "Rotate camera clockwise" 这会将摄像头采集到的画面旋转 90°，对于不能自己旋转图像的相机是有用的。用这种方式可以牺牲水平视角换垂直视角，这对于没有太多空间或使用低分辨率摄像头 (640x480) 的人们。 您还可以选中两者以将摄像头旋转 180°。 
+如果您将现实生活中的相机竖着摆放，这也许能使您站得离摄像头更近，并勾选 "Rotate camera clockwise" 这会将摄像头采集到的画面旋转 90°，用这种方式可以牺牲水平视角换垂直视角，这对于没有太多空间或使用低分辨率摄像头 (640x480) 的人们是有帮助的。 您还可以选中两者以将摄像头旋转 180°。 
 
 #### Number of values for smoothing:
 
@@ -419,10 +419,7 @@ https://discord.gg/g2ctkXB4bb
 ### 已知问题：
 
 如果摄像头只在追踪器上看到一个 AprilTag，追踪器可能会朝向错误的方向。 注意观察腰部，在这视频第 4 秒的时候，腰部有一个不自然的旋转： 
-
-https://user-images.githubusercontent.com/91396010/134813838-a3c6d3e2-fa00-4e1c-9711-98380cd80350.mp4
-
-
+[replace to video]
 增加 AprilTag 的面数并修改彼此的链接角度可有效解决该问题，关于这点，45° 比 90° 更安全，
 在我们制作更多 pdf 之前，您可以用 Google 搜索 "tagStandard41h12" ，并自行制作制作一些 AprilTag 打印件。
 
