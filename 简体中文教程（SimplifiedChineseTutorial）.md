@@ -260,7 +260,7 @@ https://discord.gg/g2ctkXB4bb
 
 追踪器校准示例。稍微旋转一下追踪器。无论为追踪器检测到的标记数量如何，轴都应该很好地跟随。 
 
-#### 连接 SteamVR
+#### 连接SteamVR
 
 确保SteamVR已启动。 当您按下 "Connect to SteamVR" 按钮时，程序将连接到 SteamVR。 如果连接成功，在SteamVR窗口中您将在头显和手柄旁边看到追踪器和基站。
 * 注意！若您以管理员模式启动Steam，您也必须以管理员模式启动AprilTagTrackers，否则会因为权限不足而导致连接失败。
