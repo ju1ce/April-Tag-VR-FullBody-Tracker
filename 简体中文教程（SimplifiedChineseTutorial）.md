@@ -39,8 +39,9 @@ https://youtu.be/vhTF5ECTpKc
         - [校准至游玩空间](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准至游玩空间)
         - [多摄像头的校准](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#多摄像头的校准)
     - [更多参数](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#更多参数)
-    - [已知问题](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#已知问题：)
-    - [待办事项](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#待办事项：)
+    - [已知问题](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#已知问题)
+    - [待办事项](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#待办事项)
+- [附言](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#附言)
 
 ## 我们现在有一个Discord服务器了！
 
@@ -433,6 +434,6 @@ WxWidgets: A Cross-Platform GUI Library
 
 https://github.com/wxWidgets/wxWidgets
 
-## 附言
+### 附言
 AprilTagTrackers的官方网址为：https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker
 ，您需要在转载此文档时保留这句话。
