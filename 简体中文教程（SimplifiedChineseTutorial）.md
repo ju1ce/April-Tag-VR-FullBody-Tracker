@@ -263,6 +263,7 @@ https://discord.gg/g2ctkXB4bb
 #### 连接 SteamVR
 
 确保SteamVR已启动。 当您按下 "Connect to SteamVR" 按钮时，程序将连接到 SteamVR。 如果连接成功，在SteamVR窗口中您将在头显和手柄旁边看到追踪器和基站。
+* 注意！若您以管理员模式启动Steam，您也必须以管理员模式启动AprilTagTrackers，否则会因为权限不足而导致连接失败。
 
 如果您退出了SteamVR，您必须在再次启动后再次点击 "Connect to SteamVR" 按钮。 当它要求重新启动连接时按是。
 
