@@ -9,8 +9,11 @@
 
 此版本使用更准确的 AprilTag 系统，并包括许多改进以使系统更易于使用，例如优化后的 GUI 界面和更直接的校准。 
 
-如果您遇到任何问题或 BUG，您可随时在 GitHub 提交 Issues 或在 Discord 上我留言。
+
+如果您遇到任何问题或 BUG，您可随时在 GitHub 提交 Issues 或在 Discord 上给我留言。（如果您不方便说英语，您可以发送邮件到 chiliplanet@foxmail.com 获得中文技术支持。）
+
 https://discord.gg/g2ctkXB4bb
+
 
 软件可以从 [发布](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/releases) 页面下载.
 
