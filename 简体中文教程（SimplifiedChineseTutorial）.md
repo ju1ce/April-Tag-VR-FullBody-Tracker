@@ -25,23 +25,23 @@ https://youtu.be/vhTF5ECTpKc
 
 ## 目录
 
-- [Discord 服务器](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#我们现在有一个Discord服务器了！)
-- [连接摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#连接摄像头)
-- [制作追踪器](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#制作追踪器)
-- [安装驱动](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#安装驱动)
-- [运行AprilTagTrackers](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#运行AprilTagTrackers)
-    - [摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#摄像头)
-        - [启动或停止摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头)
-        - [校准摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准摄像头)
-        - [校准追踪器](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准追踪器)
-        - [连接SteamVR](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#连接SteamVR)
-        - [启动追踪器](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动追踪器)
-        - [校准至游玩空间](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准至游玩空间)
-        - [多摄像头的校准](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#多摄像头的校准)
-    - [更多参数](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#更多参数)
-    - [已知问题](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#已知问题)
-    - [待办事项](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#待办事项)
-- [附言](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#附言)
+- [Discord 服务器](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#我们现在有一个Discord服务器了！)
+- [连接摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#连接摄像头)
+- [制作追踪器](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#制作追踪器)
+- [安装驱动](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#安装驱动)
+- [运行AprilTagTrackers](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#运行AprilTagTrackers)
+    - [摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#摄像头)
+        - [启动或停止摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头)
+        - [校准摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准摄像头)
+        - [校准追踪器](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准追踪器)
+        - [连接SteamVR](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#连接SteamVR)
+        - [启动追踪器](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动追踪器)
+        - [校准至游玩空间](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#校准至游玩空间)
+        - [多摄像头的校准](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#多摄像头的校准)
+    - [更多参数](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#更多参数)
+    - [已知问题](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#已知问题)
+    - [待办事项](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#待办事项)
+- [附言](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#附言)
 
 ## 我们现在有一个Discord服务器了！
 
@@ -65,7 +65,7 @@ https://discord.gg/g2ctkXB4bb
 
 如果您刚好有一个 USB 摄像头，您可以先尝试一下。 如果效果不好，您可以随时切换到手机。PS3摄像头可以使用，但几乎没人用，因为它分辨率低。 
 
-为确保摄像头尽可能正常工作，请参考 [启动或停止摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头) 部分.
+为确保摄像头尽可能正常工作，请参考 [启动或停止摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头) 部分.
 
 #### 教程:
 
@@ -89,7 +89,7 @@ https://discord.gg/g2ctkXB4bb
 从 GooglePlay 商店下载 "IP-Webcam" 应用，启动应用程序，在 视频设置 -> 视频分辨率 下，选择您要使用的分辨率。 您应该尝试使用分辨率为 800x600 左右的 4:3 纵横比。 然后返回主界面，将页面下滑到至页面底部并点击开启服务器。 如果您想打开网页后台：点击 如何连接？-> 直接连接 -> 我在使用 WIFI 路由器
 如果您不知道怎么做
 
-为确保摄像头尽可能正常工作，请参考 [启动或停止摄像头](https://github.com/apriltagtrackers-cn/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头) 部分.
+为确保摄像头尽可能正常工作，请参考 [启动或停止摄像头](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/简体中文教程（SimplifiedChineseTutorial）.md#启动或停止摄像头) 部分.
 
 ### 使用 IP-Webcam 有线串流手机:
 
@@ -447,3 +447,4 @@ https://github.com/wxWidgets/wxWidgets
 ### 附言
 AprilTagTrackers 的官方网址为：https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker
 ，您需要在转载此文档时保留这句话。
+若您对简体中文的汉化结果有异议，您可以发送邮件到 chiliplanet@foxmail.com 与我取得联系。
