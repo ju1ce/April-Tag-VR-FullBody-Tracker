@@ -1,8 +1,13 @@
+## This guide is relavant to the v0.4 version only!
+
+If you want to use the latest beta (which you should, it works better), refer to the [wiki](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki).
+
 ## This tutorial is also availible in the folowing languages:
 
 - ![汉语 (Simplified Chinese)](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87%E6%95%99%E7%A8%8B%EF%BC%88SimplifiedChineseTutorial%EF%BC%89.md)
 
 # April-Tag-VR-FullBody-Tracker
+
 Full-body tracking in VR using AprilTag markers.
 
 This is my second attempt at creating a full-body tracking system using fiducial markers. This should enable people to get fullbody tracking for free, using only a phone and some cardboard. It is possible to get pretty good tracking with trackers of sizes as small as 10cm and a PS eye camera of 640x480 resolution. Increasing the marker size or using a higher resolution and faster phone camera further improves tracking.
