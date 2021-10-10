@@ -4,7 +4,8 @@
 #include <opencv2/aruco.hpp>
 #include "Quaternion.h"
 
-#include "Language_English.h"
+//#include "Language_English.h"
+#include "Language.h"
 
 class Parameters
 {
@@ -63,9 +64,10 @@ public:
     float additionalSmoothing = 0;
     int markerLibrary = 0;
     int markersPerTracker = 45;
+    int languageSelection = 0;
 
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 
-    Lang language = Lang();
+    Lang language;
 
 };

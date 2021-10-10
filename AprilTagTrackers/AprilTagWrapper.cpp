@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AprilTagWrapper.h"
 
 #include <vector>

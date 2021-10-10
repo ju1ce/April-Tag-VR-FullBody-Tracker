@@ -104,6 +104,7 @@ void Parameters::Load()
         fs["depthSmoothing"] >> depthSmoothing;
         fs["additionalSmoothing"] >> additionalSmoothing;
         fs["markerLibrary"] >> markerLibrary;
+        fs["languageSelection"] >> languageSelection;
         if(!wrotmat.empty())
             wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
         fn = fs["trackers"];
@@ -135,6 +136,8 @@ void Parameters::Load()
         }
     }
     fs.release();
+
+    language = get_lang_chinese();
 }
 
 void Parameters::Save()
@@ -219,6 +222,7 @@ void Parameters::Save()
     fs << "depthSmoothing" << depthSmoothing;
     fs << "additionalSmoothing" << additionalSmoothing;
     fs << "markerLibrary" << markerLibrary;
+    fs << "languageSelection" << languageSelection;
     fs << "trackers";
     fs << "{";
     for (int i = 0; i < trackers.size(); i++)

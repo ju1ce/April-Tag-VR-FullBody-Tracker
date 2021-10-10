@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>;
 #include <opencv2/videoio/registry.hpp>
 
@@ -154,4 +156,6 @@ public:
 	std::string CONNECT_DRIVER_MISSMATCH2 = "\nExpected driver version: ";
 
 };
+
+Lang get_lang_chinese();
 
