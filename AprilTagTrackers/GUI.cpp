@@ -16,6 +16,38 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 
 } // namespace
 
+class MyDlg : public wxDialog
+{
+public:
+    MyDlg() : wxDialog(NULL, wxID_ANY, "Test", wxDefaultPosition, wxSize(300, 500))
+    {
+        wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+
+        mainSizer->Add(new wxStaticText(this, wxID_ANY, "This control will not be scrolled"), 0, wxALL, 10);
+
+        wxScrolledWindow* scrolled = new wxScrolledWindow(this);
+        wxGridSizer* scrolledSizer = new wxFlexGridSizer(5, wxSize(5, 5));
+
+        for (size_t i = 0; i < 20; ++i)
+        {
+            scrolledSizer->Add(new wxStaticText(scrolled, wxID_ANY, wxString::Format("%zu A", i)));
+            scrolledSizer->Add(new wxTextCtrl(scrolled, wxID_ANY));
+            scrolledSizer->Add(new wxStaticText(scrolled, wxID_ANY, wxString::Format("%zu B", i)));
+            scrolledSizer->Add(new wxTextCtrl(scrolled, wxID_ANY));
+            scrolledSizer->Add(new wxButton(scrolled, wxID_ANY, wxString::Format("%zu", i)));
+        }
+
+        scrolled->SetSizer(scrolledSizer);
+        scrolled->FitInside();
+        scrolled->SetScrollRate(25, 25);
+        mainSizer->Add(scrolled, 1, wxEXPAND);
+
+        mainSizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, 5);
+
+        SetSizer(mainSizer);
+    }
+};
+
 GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 600))
 {
@@ -24,9 +56,35 @@ GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
 
     CameraPage* panel = new CameraPage(nb,this);
     ParamsPage* panel2 = new ParamsPage(nb, params, conn);
+    LicensePage* panel3 = new LicensePage(nb);
 
     nb->AddPage(panel, "Camera");
     nb->AddPage(panel2, "Params");
+    nb->AddPage(panel3, "License");
+
+    Centre();
+}
+
+LicensePage::LicensePage(wxNotebook* parent)
+    :wxPanel(parent)
+{
+    wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
+        wxSize(-1, -1), wxNB_TOP);
+
+    // Add 2 pages to the wxNotebook widget
+    wxTextCtrl* textCtrl1 = new wxTextCtrl(nb, wxID_ANY, ATT_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    nb->AddPage(textCtrl1, "Tracking software");
+    wxTextCtrl* textCtrl2 = new wxTextCtrl(nb, wxID_ANY, APRILTAG_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    nb->AddPage(textCtrl2, "Apriltag library");
+    wxTextCtrl* textCtrl3 = new wxTextCtrl(nb, wxID_ANY, OPENCV_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    nb->AddPage(textCtrl3, "OpenCV");
+
+    wxBoxSizer* bs = new wxBoxSizer(wxHORIZONTAL);
+    bs->Add(nb,1, wxEXPAND);
+    this->SetSizer(bs);
+
+
+    //nb->AddPage(panel, "ATT");
 
     Centre();
 }
