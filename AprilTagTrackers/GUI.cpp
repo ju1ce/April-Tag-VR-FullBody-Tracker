@@ -22,13 +22,13 @@ GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
 
-    CameraPage* panel = new CameraPage(nb,this);
+    CameraPage* panel = new CameraPage(nb,this,params);
     ParamsPage* panel2 = new ParamsPage(nb, params, conn);
     LicensePage* panel3 = new LicensePage(nb);
 
-    nb->AddPage(panel, "Camera");
-    nb->AddPage(panel2, "Params");
-    nb->AddPage(panel3, "License");
+    nb->AddPage(panel, params->language.TAB_CAMERA);
+    nb->AddPage(panel2, params->language.TAB_PARAMS);
+    nb->AddPage(panel3, params->language.TAB_LICENSE);
 
     Centre();
 }
@@ -40,11 +40,11 @@ LicensePage::LicensePage(wxNotebook* parent)
         wxSize(-1, -1), wxNB_TOP);
 
     // Add 2 pages to the wxNotebook widget
-    wxTextCtrl* textCtrl1 = new wxTextCtrl(nb, wxID_ANY, ATT_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    wxTextCtrl* textCtrl1 = new wxTextCtrl(nb, wxID_ANY, ATT_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     nb->AddPage(textCtrl1, "Tracking software");
-    wxTextCtrl* textCtrl2 = new wxTextCtrl(nb, wxID_ANY, APRILTAG_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    wxTextCtrl* textCtrl2 = new wxTextCtrl(nb, wxID_ANY, APRILTAG_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     nb->AddPage(textCtrl2, "Apriltag library");
-    wxTextCtrl* textCtrl3 = new wxTextCtrl(nb, wxID_ANY, OPENCV_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE);
+    wxTextCtrl* textCtrl3 = new wxTextCtrl(nb, wxID_ANY, OPENCV_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     nb->AddPage(textCtrl3, "OpenCV");
 
     wxBoxSizer* bs = new wxBoxSizer(wxHORIZONTAL);
@@ -57,35 +57,35 @@ LicensePage::LicensePage(wxNotebook* parent)
     Centre();
 }
 
-CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
+CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     :wxPanel(parent)
 {
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
-    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, "1. Start/Stop camera");
-    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, "2. Calibrate camera");
-    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, "5. Connect to SteamVR");
-    wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, "3. Calibrate trackers");
-    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, "6. Start/Stop");
+    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, params->language.CAMERA_START_CAMERA);
+    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, params->language.CAMERA_CALIBRATE_CAMERA);
+    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, params->language.CAMERA_CONNECT);
+    wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, params->language.CAMERA_CALIBRATE_TRACKERS);
+    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, params->language.CAMERA_START_DETECTION);
 
-    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, wxT("Preview camera"),
+    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, params->language.CAMERA_PREVIEW_CAMERA,
         wxPoint(20, 20));
-    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, wxT("Preview calibration"),
+    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, params->language.CAMERA_PREVIEW_CALIBRATION,
         wxPoint(20, 20));
     //wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
     //   wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //    wxPoint(20, 20));
-    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, wxT("Calibration mode"),
+    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, params->language.CAMERA_CALIBRATION_MODE,
         wxPoint(20, 20));
     //parentGUI->cb2->SetValue(false);
 
-    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxT("Refine calibration using second camera"),
+    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, params->language.CAMERA_MULTICAM_CALIB,
         wxPoint(20, 20));
 
-    parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, wxT("Lock camera height"),
+    parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, params->language.CAMERA_LOCK_HEIGHT,
         wxPoint(20, 20));
 
     fgs->Add(btn1);
@@ -94,7 +94,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     fgs->Add(cb2);
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(new wxStaticText(this, -1, wxT("4. Start up SteamVR!")), 0, wxEXPAND);
+    fgs->Add(new wxStaticText(this, -1, params->language.CAMERA_START_STEAMVR), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn4);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
@@ -117,7 +117,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI)
     parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(°):"), 0);
     parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(°):"), 0);
 
-    parentGUI->posHbox->Add(new wxStaticText(this, -1, wxT("Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.\nUncheck Calibration mode when done!\n\n\n")), 0, wxEXPAND);
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, params->language.CAMERA_CALIBRATION_INSTRUCTION), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
@@ -197,88 +197,72 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
 
-    static const std::string cameraApiDescriptions = []()
-    {
-        std::stringstream description;
-        description << "0: No preference\n\nCamera backends:";
-        for (const auto backend : cv::videoio_registry::getCameraBackends())
-        {
-            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
-        }
-        description << "\n\nStream backends:";
-        for (const auto backend : cv::videoio_registry::getStreamBackends())
-        {
-            description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
-        }
-        return description.str();
-    }();
-
-    fgs->Add(new wxStaticText(this, -1, wxT("CAMERA PARAMTERS ")));
+    fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    addTextWithTooltip(this, fgs, "Ip or ID of camera", "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_ID, params->language.PARAMS_CAMERA_TOOLTIP_ID);
     fgs->Add(cameraAddrField);
-    addTextWithTooltip(this, fgs, "Camera API preference", cameraApiDescriptions);
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_API, params->language.PARAMS_CAMERA_TOOLTIP_API);
     fgs->Add(cameraApiField);
-    addTextWithTooltip(this, fgs, "Rotate camera clockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, params->language.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE);
     fgs->Add(rotateClField);
-    addTextWithTooltip(this, fgs, "Rotate camera counterclockwise", wxString::FromUTF8("Rotate the camera. Use both to rotate image 180°"));
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_ROT_CCLOCKWISE, params->language.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE);
     fgs->Add(rotateCounterClField);
-    addTextWithTooltip(this, fgs, "Camera width in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_WIDTH, params->language.PARAMS_CAMERA_TOOLTIP_WIDTH);
     fgs->Add(camWidthField);
-    addTextWithTooltip(this, fgs, "Camera height in pixels", "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_HEIGHT, params->language.PARAMS_CAMERA_TOOLTIP_HEIGHT);
     fgs->Add(camHeightField);
-    addTextWithTooltip(this, fgs, "Camera FPS", "Set the fps of the camera");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_FPS, params->language.PARAMS_CAMERA_TOOLTIP_FPS);
     fgs->Add(camFpsField);
-    addTextWithTooltip(this, fgs, "Open camera settings", "Experimental. Should open settings of your camera, but doesnt work with all cameras. Usualy works best with DSHOW api preference");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_SETTINGS, params->language.PARAMS_CAMERA_TOOLTIP_SETTINGS);
     fgs->Add(cameraSettingsField);
-    addTextWithTooltip(this, fgs, "Enable last 3 camera options", "Experimental. Checking this will enable the bottom three options, which will otherwise not work. Will also try to disable autofocus.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_3_OPTIONS, params->language.PARAMS_CAMERA_TOOLTIP_3_OPTIONS);
     fgs->Add(settingsParametersField);
-    addTextWithTooltip(this, fgs, "Camera autoexposure", "Experimental. Will try to set camera autoexposure. Usualy 1 for enable and 0 for disable, but can be something dumb as 0.75 and 0.25,");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_AUTOEXP, params->language.PARAMS_CAMERA_TOOLTIP_AUTOEXP);
     fgs->Add(cameraAutoexposureField);
-    addTextWithTooltip(this, fgs, "Camera exposure", "Experimental. Will try to set camera expousre. Can be on a scale of 0-255, or in exponentials of 2 ( -8 for 4ms exposure)");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_EXP, params->language.PARAMS_CAMERA_TOOLTIP_EXP);
     fgs->Add(cameraExposureField);
-    addTextWithTooltip(this, fgs, "Camera gain", "Experimental. Will try to set gain. Probably on a scale of 0-255, but could be diffrent based on the camera.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_GAIN, params->language.PARAMS_CAMERA_TOOLTIP_GAIN);
     fgs->Add(cameraGainField);
 
-    fgs->Add(new wxStaticText(this, -1, wxT("TRACKER PARAMETERS ")));
+    fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_TRACKER));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    addTextWithTooltip(this, fgs, "Number of trackers", "Set to 3 for full body. 2 will not work in vrchat!");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_NUM_TRACKERS, params->language.PARAMS_TRACKER_TOOLTIP_NUM_TRACKERS);
     fgs->Add(trackerNumField);
-    addTextWithTooltip(this, fgs, "Size of markers in cm", "Measure the white square on markers and input it here");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_MARKER_SIZE, params->language.PARAMS_TRACKER_TOOLTIP_MARKER_SIZE);
     fgs->Add(markerSizeField);
-    addTextWithTooltip(this, fgs, "Quad decimate", "Can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_QUAD_DECIMATE, params->language.PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE);
     fgs->Add(quadDecimateField);
-    addTextWithTooltip(this, fgs, "Search window", "Size of the search window. Smaller window will speed up detection, but having it too small will cause detection to fail if tracker moves too far in one frame.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_SEARCH_WINDOW, params->language.PARAMS_TRACKER_TOOLTIP_SEARCH_WINDOW);
     fgs->Add(searchWindowField);
-    addTextWithTooltip(this, fgs, "Marker library", "Marker library to use.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_MARKER_LIBRARY, params->language.PARAMS_TRACKER_TOOLTIP_MARKER_LIBRARY);
     fgs->Add(markerLibraryField);
-    addTextWithTooltip(this, fgs, "Use centers of trackers", "Experimental. Instead of having position of tracker detected at the main marker, it will be the center of all markers in the tracker.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_USE_CENTERS, params->language.PARAMS_TRACKER_TOOLTIP_USE_CENTERS);
     fgs->Add(trackerCalibCentersField);
-    addTextWithTooltip(this, fgs, "Ignore tracker 0", "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_TRACKER_NAME_IGNORE_0, params->language.PARAMS_TRACKER_TOOLTIP_IGNORE_0);
     fgs->Add(ignoreTracker0Field);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, wxT("SMOOTHING PARAMETERS ")));
+    fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_SMOOTHING));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
     //addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     //fgs->Add(prevValuesField);
-    addTextWithTooltip(this, fgs, "Smoothing time window", "Values in this time window will be used for interpolation. The higher it is, the less shaking there will be, but it will increase delay. 0.2-0.5 are usualy good values");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_SMOOTHING_NAME_WINDOW, params->language.PARAMS_SMOOTHING_TOOLTIP_WINDOW);
     fgs->Add(smoothingField);
-    addTextWithTooltip(this, fgs, "Additional smoothing", "Extra smoothing applied to tracker position. Should mimic the old style of smoothing in previous versions. 0 for no smoothing, 1 for very slow movement.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_SMOOTHING_NAME_ADDITIONAL, params->language.PARAMS_SMOOTHING_TOOLTIP_ADDITIONAL);
     fgs->Add(additionalSmoothingField);
-    addTextWithTooltip(this, fgs, "Depth smoothing", "Experimental. Additional smoothing applied to the depth estimation, as it has higher error. Cam help remove shaking with multiple cameras.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_SMOOTHING_NAME_DEPTH, params->language.PARAMS_SMOOTHING_TOOLTIP_DEPTH);
     fgs->Add(depthSmoothingField);
-    addTextWithTooltip(this, fgs, "Camera latency", "Represents camera latency in seconds. Should counter any delay when using an IP camera. Usualy lower than 0.1.");
+    addTextWithTooltip(this, fgs, params->language.PARAMS_SMOOTHING_NAME_CAM_LATENCY, params->language.PARAMS_SMOOTHING_TOOLTIP_CAM_LATENCY);
     fgs->Add(camLatencyField);
 
 
@@ -288,8 +272,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    fgs->Add(new wxStaticText(this, -1, wxT("Hover over text for help!")));
-    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, "Save");
+    fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_HOVER_HELP));
+    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, params->language.PARAMS_SAVE);
     //wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
     //Connect(HELP_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::ShowHelp));
@@ -367,60 +351,52 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         if (parameters->depthSmoothing < 0)
             parameters->depthSmoothing = 0;
 
-        if (parameters->numOfPrevValues != 1)
-        {
-            wxMessageDialog dial(NULL,
-                wxT("NOTE: Number of values for smoothing should probably be 1. \n\nOutlier removal has been moved to the driver side, making this parameter pointless"), wxT("Warning"), wxOK | wxICON_WARNING);
-            dial.ShowModal();
-        }
-
         if (parameters->smoothingFactor < 0.2)
         {
             wxMessageDialog dial(NULL,
-                wxT("NOTE: Additional smoothing is extremely low, which may cause problems. \n\nIf you get any problems with tracking, try to increase it. "), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_LOW_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (parameters->quadDecimate != 1 && parameters->quadDecimate != 1.5 && parameters->quadDecimate != 2 && parameters->quadDecimate != 3 && parameters->quadDecimate != 4)
         {
             wxMessageDialog dial(NULL,
-                wxT("NOTE: Quad Decimate is not a standard value. \n\nKeep it at 1, 1.5, 2, 3 or 4, or else detection may not work. "), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_QUAD_NONSTANDARD, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (parameters->cameraSettings && parameters->cameraApiPreference != 700)
         {
             wxMessageDialog dial(NULL,
-                wxT("NOTE: Camera settings parameter is on, but camera API preference is not 700 \n\nOpening camera parameters only work when camera API is set to DirectShow, or 700. "), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_NO_DSHOW_CAMSETTINGS, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (parameters->smoothingFactor <= parameters->camLatency)
         {
             wxMessageDialog dial(NULL,
-                wxT("NOTE: Camera latency should never be higher than additional smoothing or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1. "), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_LATENCY_GREATER_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (parameters->smoothingFactor > 1)
         {
             wxMessageDialog dial(NULL,
-                wxT("NOTE: Additional smoothing is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5. "), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_HIGH_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
             wxMessageDialog dial(NULL,
-                wxT("Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3. \n\nParameters saved!"), wxT("Warning"), wxOK | wxICON_WARNING);
+                parameters->language.PARAMS_NOTE_2TRACKERS_IGNORE0, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
-        else
-        {
-            wxMessageDialog dial(NULL,
-                wxT("Parameters saved!"), wxT("Info"), wxOK | wxICON_INFORMATION);
-            dial.ShowModal();
-        }
+
+        wxMessageDialog dial(NULL,
+            parameters->language.PARAMS_SAVED_MSG, wxT("Info"), wxOK | wxICON_INFORMATION);
+        dial.ShowModal();
+
         if (connection->status == connection->CONNECTED)
         {
             connection->Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
@@ -430,7 +406,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
     catch (std::exception&)
     {
         wxMessageDialog dial(NULL,
-            wxT("Please enter appropriate values. Parameters were not saved."), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.PARAMS_WRONG_VALUES, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
     }
     

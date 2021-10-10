@@ -102,7 +102,7 @@ public:
         );
 
     std::string OPENCV_LICENSE = (
-        "Copyright 2021, OpenCV team \n\n"
+        "Copyright(c) 2021, OpenCV team \n\n"
 
         "Licensed under the Apache License, Version 2.0 (the \"License\"); "
         "you may not use this file except in compliance with the License. "
@@ -122,7 +122,7 @@ public:
 class CameraPage : public wxPanel
 {
 public:
-    CameraPage(wxNotebook* parent, GUI* parentGUI);
+    CameraPage(wxNotebook* parent, GUI* parentGUI, Parameters* params);
 };
 
 class ParamsPage : public wxPanel

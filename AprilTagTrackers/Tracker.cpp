@@ -201,9 +201,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (!cap.isOpened())
     {
         wxMessageDialog dial(NULL,
-            wxT("Could not start camera. Make sure you entered the correct ID or IP of your camera in the params.\n"
-            "For USB cameras, it will be a number, usually 0,1,2... try a few until it works.\n"
-            "For IP webcam, the address will be in the format http://'ip - here':8080/video"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_START_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         return;
     }
@@ -262,7 +260,7 @@ void Tracker::CameraLoop()
         if (!cap.read(img))
         {
             wxMessageDialog dial(NULL,
-                wxT("Camera error"), wxT("Error"), wxOK | wxICON_ERROR);
+                parameters->language.TRACKER_CAMERA_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
             dial.ShowModal();
             cameraRunning = false;
             break;
@@ -283,19 +281,19 @@ void Tracker::CameraLoop()
             if (previewCameraCalibration)
             {
                 previewCalibration(drawImg, parameters);
-                cv::imshow("Preview", drawImg);
+                cv::imshow(parameters->language.TRACKER_CAMERA_PREVIEW, drawImg);
                 cv::waitKey(1);
             }
             else
             {
-                cv::imshow("Preview", drawImg);
+                cv::imshow(parameters->language.TRACKER_CAMERA_PREVIEW, drawImg);
                 cv::waitKey(1);
             }
             frame_visible = true;
         }
         else if(frame_visible)
         {            
-            cv::destroyWindow("Preview");
+            cv::destroyWindow(parameters->language.TRACKER_CAMERA_PREVIEW);
             frame_visible = false;
         }
         {
@@ -362,7 +360,7 @@ void Tracker::StartCameraCalib()
     if (!cameraRunning)
     {
         wxMessageDialog dial(NULL,
-            wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_NOTRUNNING, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -405,11 +403,7 @@ void Tracker::CalibrateCameraCharuco()
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
         wxMessageDialog dial(NULL,
-            "Camera calibration started! \n\n"
-            "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
-            "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
-            "Purple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\n\n"
-            "Press OK to save calibration when done.", wxT("Message"), wxOK | wxCANCEL);
+            parameters->language.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS, wxT("Message"), wxOK | wxCANCEL);
         messageDialogResponse = dial.ShowModal();
         mainThreadRunning = false;
     } };
@@ -549,7 +543,7 @@ void Tracker::CalibrateCameraCharuco()
     {
         if (cameraMatrix.empty())
         {
-            wxMessageDialog dial(NULL, wxT("Calibration failed."), wxT("Info"), wxOK | wxICON_ERROR);
+            wxMessageDialog dial(NULL, parameters->language.TRACKER_CAMERA_CALIBRATION_NOTDONE, wxT("Info"), wxOK | wxICON_ERROR);
             dial.ShowModal();
         }
         else
@@ -567,7 +561,7 @@ void Tracker::CalibrateCameraCharuco()
             }
 
             avgPerViewError /= perViewErrors.size();
-
+            /*
             if (avgPerViewError > 0.5)          //a big reprojection error indicates that calibration wasnt done properly
             {
                 wxMessageDialog dial(NULL, wxT("WARNING:\nThe avarage reprojection error is over 0.5 pixel. This usualy indicates a bad calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
@@ -578,18 +572,18 @@ void Tracker::CalibrateCameraCharuco()
                 wxMessageDialog dial(NULL, wxT("WARNING:\nOne or more reprojection errors are over 10 pixels. This usualy indicates something went wrong during calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
             }
-            /*
+            
             volatile double test = stdDeviationsIntrinsics.at<double>(0);
             test = stdDeviationsIntrinsics.at<double>(1); 
             test = stdDeviationsIntrinsics.at<double>(2); 
             test = stdDeviationsIntrinsics.at<double>(3);
-            */
+            
             if (stdDeviationsIntrinsics.at<double>(0) > 5 || stdDeviationsIntrinsics.at<double>(1) > 5)         //high uncertiancy is bad
             {
                 wxMessageDialog dial(NULL, wxT("WARNING:\nThe calibration grid doesnt seem very stable. This usualy indicates a bad calibration."), wxT("Warning"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
             }
-
+            */
             // Save calibration to our global params cameraMatrix and distCoeffs
             parameters->camMat = cameraMatrix;
             parameters->distCoeffs = distCoeffs;
@@ -598,7 +592,7 @@ void Tracker::CalibrateCameraCharuco()
             parameters->allCharucoCorners = allCharucoCorners;
             parameters->allCharucoIds = allCharucoIds;
             parameters->Save();
-            wxMessageDialog dial(NULL, wxT("Calibration complete."), wxT("Info"), wxOK);
+            wxMessageDialog dial(NULL, parameters->language.TRACKER_CAMERA_CALIBRATION_COMPLETE, wxT("Info"), wxOK);
             dial.ShowModal();
         }
     }
@@ -725,7 +719,7 @@ void Tracker::StartTrackerCalib()
     if (!cameraRunning)
     {
         wxMessageDialog dial(NULL,
-            wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_NOTRUNNING, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -733,7 +727,7 @@ void Tracker::StartTrackerCalib()
     if (parameters->camMat.empty())
     {
         wxMessageDialog dial(NULL,
-            wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_NOTCALIBRATED, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -747,14 +741,7 @@ void Tracker::StartTrackerCalib()
     //make a new thread with message box, and stop main thread when we press OK
     std::thread th{ [=]() {
         wxMessageDialog dial(NULL,
-        "Tracker calibration started! \n\nBefore calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,"
-        "neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm \n\n"
-        "Green: This marker is calibrated and can be used to calibrate other markers.\n"
-        "Blue: This marker is not part of any used trackers. You probably have to increase number of trackers in params.\n"
-        "Purple: This marker is too far from the camera to be calibrated. Move it closer than 30cm.\n"
-        "Red: This marker cannot be calibrated as no green markers are seen. Rotate the tracker until a green marker is seen along this one.\n"
-        "Yellow: The marker is being calibrated. Hold it still for a second.\n\n"
-        "When all the markers on all trackers are shown as green, press OK to finish calibration.", wxT("Message"), wxOK);
+        parameters->language.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS, wxT("Message"), wxOK);
     dial.ShowModal();
 
     mainThreadRunning = false;
@@ -774,7 +761,7 @@ void Tracker::Start()
     if (!cameraRunning)
     {
         wxMessageDialog dial(NULL,
-            wxT("Camera not running"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_NOTRUNNING, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -782,7 +769,7 @@ void Tracker::Start()
     if (parameters->camMat.empty())
     {
         wxMessageDialog dial(NULL,
-            wxT("Camera not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_CAMERA_NOTCALIBRATED, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -790,7 +777,7 @@ void Tracker::Start()
     if (!trackersCalibrated)
     {
         wxMessageDialog dial(NULL,
-            wxT("Trackers not calibrated"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_TRACKER_NOTCALIBRATED, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -798,7 +785,7 @@ void Tracker::Start()
     if (connection->status != connection->CONNECTED)
     {
         wxMessageDialog dial(NULL,
-            wxT("Not connected to steamVR"), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.TRACKER_STEAMVR_NOTCONNECTED, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         mainThreadRunning = false;
         return;
@@ -908,7 +895,7 @@ void Tracker::CalibrateTracker()
             catch (std::exception&)             //on weird images or calibrations, we get an error
             {
                 wxMessageDialog dial(NULL,
-                    wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
+                    parameters->language.TRACKER_CALIBRATION_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
                 cv::destroyWindow("out");
                 mainThreadRunning = false;
@@ -1451,8 +1438,7 @@ void Tracker::MainLoop()
             catch (std::exception&)
             {
                 wxMessageDialog dial(NULL,
-                    wxT("Something went wrong when estimating tracker pose. Try again! \n"
-                    "If the problem persists, try to recalibrate camera and trackers."),
+                    parameters->language.TRACKER_DETECTION_SOMETHINGWRONG,
                     wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
                 cv::destroyWindow("out");

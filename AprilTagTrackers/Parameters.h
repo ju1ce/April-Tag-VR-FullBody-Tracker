@@ -4,9 +4,14 @@
 #include <opencv2/aruco.hpp>
 #include "Quaternion.h"
 
+#include "Language_English.h"
+
 class Parameters
 {
 public:
+    std::string version = "0.5.5";
+    std::string driverversion = "0.5.6";
+
     Parameters();
     void Load();
     void Save();
@@ -60,5 +65,7 @@ public:
     int markersPerTracker = 45;
 
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
+
+    Lang language = Lang();
 
 };

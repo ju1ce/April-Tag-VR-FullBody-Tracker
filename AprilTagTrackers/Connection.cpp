@@ -17,7 +17,7 @@ void Connection::StartConnection()
     if (status == CONNECTED)
     {
         wxMessageDialog dial(NULL,
-            wxT("Already connected. Restart connection?"), wxT("Question"),
+            parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
             wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
         if (dial.ShowModal() != wxID_YES)
         {
@@ -106,7 +106,7 @@ void Connection::Connect()
 
     if (error != vr::VRInitError_None)
     {
-        std::string e = "Error when connecting to SteamVR as a client! Make sure your HMD is connected. \nError code: ";
+        std::string e = parameters->language.CONNECT_CLIENT_ERROR;
         e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
         wxMessageDialog dial(NULL,
             e, wxT("Error"), wxOK | wxICON_ERROR);
@@ -173,7 +173,7 @@ void Connection::Connect()
     if (word != "numtrackers")
     {
         wxMessageDialog dial(NULL,
-            wxT("Could not connect to SteamVR driver. Make sure SteamVR is running and the apriltagtrackers driver is installed. \nYou may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2. \nError code: " + std::to_string(GetLastError())), wxT("Error"), wxOK | wxICON_ERROR);
+            parameters->language.CONNECT_DRIVER_ERROR + std::to_string(GetLastError()), wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
         status = DISCONNECTED;
         return;
@@ -185,7 +185,7 @@ void Connection::Connect()
     if (word != "0.5.4")
     {
         std::string e = "";
-        e += "Driver version and ATT version do not match! \n\nDriver version: " + word + "\nApriltagTrackers version: 0.5.3";
+        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + "0.5.3";
         wxMessageDialog dial(NULL,
             e, wxT("Warning"), wxOK | wxICON_WARNING);
         dial.ShowModal();
@@ -198,7 +198,7 @@ void Connection::Connect()
         if (word != "added")
         {
             wxMessageDialog dial(NULL,
-                wxT("Something went wrong. Try again."), wxT("Error"), wxOK | wxICON_ERROR);
+                parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
             dial.ShowModal();
             status = DISCONNECTED;
             return;
