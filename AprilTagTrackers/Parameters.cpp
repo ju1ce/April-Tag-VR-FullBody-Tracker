@@ -217,7 +217,7 @@ void Parameters::Save()
     fs << "cameraGain" << cameraGain;
     fs << "trackerCalibCenters" << trackerCalibCenters;
     fs << "depthSmoothing" << depthSmoothing;
-    fs << "additionalSmoothin" << additionalSmoothing;
+    fs << "additionalSmoothing" << additionalSmoothing;
     fs << "markerLibrary" << markerLibrary;
     fs << "trackers";
     fs << "{";
