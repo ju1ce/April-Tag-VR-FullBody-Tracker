@@ -161,6 +161,9 @@ public:
 	wxString CONNECT_DRIVER_MISSMATCH1 = "Driver version and ATT version do not match! \n\nDriver version: ";
 	wxString CONNECT_DRIVER_MISSMATCH2 = "\nExpected driver version: ";
 
+
+	//Other strings, not for translation
+
 	wxString LANGUAGE_ENGLISH = "English";
 	wxString LANGUAGE_CHINESE = L"简体中文";
 
