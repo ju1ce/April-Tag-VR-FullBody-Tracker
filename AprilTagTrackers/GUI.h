@@ -167,6 +167,8 @@ private:
     wxTextCtrl* depthSmoothingField;
     wxTextCtrl* additionalSmoothingField;
     wxChoice* markerLibraryField;
+    wxChoice* languageField;
+
     void SaveParams(wxCommandEvent&);
     void ShowHelp(wxCommandEvent&);
 

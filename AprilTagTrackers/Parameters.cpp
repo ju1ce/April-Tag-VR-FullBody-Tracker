@@ -136,8 +136,8 @@ void Parameters::Load()
         }
     }
     fs.release();
-
-    language = get_lang_chinese();
+    if(languageSelection == 1)
+        language = get_lang_chinese();
 }
 
 void Parameters::Save()
@@ -242,4 +242,8 @@ void Parameters::Save()
         fs << "}";
     }
     fs << "}";
+    language = Lang();
+
+    if (languageSelection == 1)
+        language = get_lang_chinese();
 }

@@ -281,19 +281,19 @@ void Tracker::CameraLoop()
             if (previewCameraCalibration)
             {
                 previewCalibration(drawImg, parameters);
-                cv::imshow(parameters->language.TRACKER_CAMERA_PREVIEW, drawImg);
+                cv::imshow("preview", drawImg);
                 cv::waitKey(1);
             }
             else
             {
-                cv::imshow(parameters->language.TRACKER_CAMERA_PREVIEW, drawImg);
+                cv::imshow("preview", drawImg);
                 cv::waitKey(1);
             }
             frame_visible = true;
         }
         else if(frame_visible)
         {            
-            cv::destroyWindow(parameters->language.TRACKER_CAMERA_PREVIEW);
+            cv::destroyWindow("preview");
             frame_visible = false;
         }
         {

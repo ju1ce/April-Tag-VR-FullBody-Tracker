@@ -17,7 +17,7 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 } // namespace
 
 GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 600))
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
@@ -193,10 +193,22 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
     markerLibraryField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, markerLibraryValues);
     markerLibraryField->SetSelection(parameters->markerLibrary);
 
+    wxArrayString languageValues;
+    languageValues.Add(params->language.LANGUAGE_ENGLISH);
+    languageValues.Add(params->language.LANGUAGE_CHINESE);
+
+    languageField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, languageValues);
+    languageField->SetSelection(parameters->languageSelection);
+
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
 
+    addTextWithTooltip(this, fgs, params->language.PARAMS_LANGUAGE, params->language.PARAMS_LANGUAGE);
+    fgs->Add(languageField);
+
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
@@ -344,12 +356,21 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->depthSmoothing = std::stod(depthSmoothingField->GetValue().ToStdString());
         parameters->additionalSmoothing = std::stod(additionalSmoothingField->GetValue().ToStdString());
         parameters->markerLibrary = markerLibraryField->GetSelection();
+        int prevLanguage = parameters->languageSelection;
+        parameters->languageSelection = languageField->GetSelection();
         parameters->Save();
 
         if (parameters->depthSmoothing > 1)
             parameters->depthSmoothing = 1;
         if (parameters->depthSmoothing < 0)
             parameters->depthSmoothing = 0;
+
+        if (parameters->languageSelection != prevLanguage)
+        {
+            wxMessageDialog dial(NULL,
+                parameters->language.PARAMS_NOTE_LANGUAGECHANGE, wxT("Warning"), wxOK | wxICON_WARNING);
+            dial.ShowModal();
+        }
 
         if (parameters->smoothingFactor < 0.2)
         {

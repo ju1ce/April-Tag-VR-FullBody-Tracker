@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <opencv2/videoio/registry.hpp>
@@ -9,7 +9,7 @@ Lang get_lang_chinese()
 {
 	Lang language;
 
-	language.APP_TITLE = "Juices VR Marker Tracking, but chinese";
+	language.APP_TITLE = L"Juices VR Marker Tracking, but chinese   简简";		//needs the L prefix or chinese characters wont work
 
 	language.TAB_CAMERA = "Hello";
 	language.TAB_PARAMS = "There";
@@ -44,15 +44,17 @@ Lang get_lang_chinese()
 		return description.str();
 	}();
 
+	language.PARAMS_LANGUAGE = L"简体中文";
+
 	language.PARAMS_CAMERA = "CAMERA PARAMTERS";
 	language.PARAMS_CAMERA_NAME_ID = "Ip or ID of camera";
 	language.PARAMS_CAMERA_TOOLTIP_ID = "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam";
 	language.PARAMS_CAMERA_NAME_API = "Camera API preference";
 	language.PARAMS_CAMERA_TOOLTIP_API = language.cameraApiDescriptions;
 	language.PARAMS_CAMERA_NAME_ROT_CLOCKWISE = "Rotate camera clockwise";
-	language.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE = "Rotate the camera 90�. Use both to rotate image 180�";
+	language.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE = "Rotate the camera 90°. Use both to rotate image 180°";
 	language.PARAMS_CAMERA_NAME_ROT_CCLOCKWISE = "Rotate camera counterclockwise";
-	language.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE = "Rotate the camera 90�. Use both to rotate image 180�";
+	language.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE = "Rotate the camera 90°. Use both to rotate image 180°";
 	language.PARAMS_CAMERA_NAME_WIDTH = "Camera width in pixels";
 	language.PARAMS_CAMERA_TOOLTIP_WIDTH = "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.";
 	language.PARAMS_CAMERA_NAME_HEIGHT = "Camera height in pixels";
@@ -105,6 +107,7 @@ Lang get_lang_chinese()
 	language.PARAMS_NOTE_LATENCY_GREATER_SMOOTHING = "NOTE: Camera latency should never be higher than additional smoothing or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1.";
 	language.PARAMS_NOTE_HIGH_SMOOTHING = "NOTE: Additional smoothing is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5.";
 	language.PARAMS_NOTE_2TRACKERS_IGNORE0 = "Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3.";
+	language.PARAMS_NOTE_LANGUAGECHANGE = L"Language has been changed! Please restart application to apply. But in 简体中文";
 
 	language.PARAMS_SAVED_MSG = "Parameters saved!";
 
