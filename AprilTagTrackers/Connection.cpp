@@ -182,10 +182,10 @@ void Connection::Connect()
     ret >> connected_trackers;
 
     ret >> word;
-    if (word != "0.5.4")
+    if (word != parameters->driverversion)
     {
         std::string e = "";
-        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + "0.5.3";
+        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
         wxMessageDialog dial(NULL,
             e, wxT("Warning"), wxOK | wxICON_WARNING);
         dial.ShowModal();

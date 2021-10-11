@@ -11,7 +11,7 @@ class Parameters
 {
 public:
     std::string version = "0.5.5";
-    std::string driverversion = "0.5.6";
+    std::string driverversion = "0.5.5";
 
     Parameters();
     void Load();
