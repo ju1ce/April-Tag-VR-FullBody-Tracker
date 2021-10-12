@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <opencv2/videoio/registry.hpp>
@@ -11,18 +11,18 @@ Lang get_lang_chinese()
 
 	language.APP_TITLE = L"Juices VR Marker Tracking, but chinese   简简";		//needs the L prefix or chinese characters wont work
 
-	language.TAB_CAMERA = "Hello";
-	language.TAB_PARAMS = "There";
+	language.TAB_CAMERA = "主页";
+	language.TAB_PARAMS = "参数";
 	language.TAB_LICENSE = "Nana";
 
-	language.CAMERA_START_CAMERA = "1. Start/Stop camera";
-	language.CAMERA_CALIBRATE_CAMERA = "2. Calibrate camera";
-	language.CAMERA_CALIBRATE_TRACKERS = "3. Calibrate trackers";
-	language.CAMERA_START_STEAMVR = "4. Start up SteamVR!";
-	language.CAMERA_CONNECT = "5. Connect to SteamVR";
-	language.CAMERA_START_DETECTION = "6. Start/Stop";
-	language.CAMERA_PREVIEW_CAMERA = "Preview camera";
-	language.CAMERA_PREVIEW_CALIBRATION = "Preview calibration";
+	language.CAMERA_START_CAMERA = "1. 启动或停止摄像头";
+	language.CAMERA_CALIBRATE_CAMERA = "2. 校准摄像头";
+	language.CAMERA_CALIBRATE_TRACKERS = "3. 校准追踪器";
+	language.CAMERA_START_STEAMVR = "4. 启动 SeamVR！";
+	language.CAMERA_CONNECT = "5. 连接到 SteamVR";
+	language.CAMERA_START_DETECTION = "6. 启动或停止追踪器";
+	language.CAMERA_PREVIEW_CAMERA = "查看相机画面";
+	language.CAMERA_PREVIEW_CALIBRATION = "查看相机校准数据";
 	language.CAMERA_CALIBRATION_MODE = "Calibration mode";
 	language.CAMERA_MULTICAM_CALIB = "Refine calibration using second camera";
 	language.CAMERA_LOCK_HEIGHT = "Lock camera height";
@@ -46,7 +46,7 @@ Lang get_lang_chinese()
 
 	language.PARAMS_LANGUAGE = L"简体中文";
 
-	language.PARAMS_CAMERA = "CAMERA PARAMTERS";
+	language.PARAMS_CAMERA = "摄像头";
 	language.PARAMS_CAMERA_NAME_ID = "Ip or ID of camera";
 	language.PARAMS_CAMERA_TOOLTIP_ID = "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam";
 	language.PARAMS_CAMERA_NAME_API = "Camera API preference";
@@ -72,7 +72,7 @@ Lang get_lang_chinese()
 	language.PARAMS_CAMERA_NAME_GAIN = "Camera gain";
 	language.PARAMS_CAMERA_TOOLTIP_GAIN = "Experimental. Will try to set gain. Probably on a scale of 0-255, but could be diffrent based on the camera.";
 
-	language.PARAMS_TRACKER = "TRACKER PARAMETERS";
+	language.PARAMS_TRACKER = "追踪器";
 	language.PARAMS_TRACKER_NAME_NUM_TRACKERS = "Number of trackers";
 	language.PARAMS_TRACKER_TOOLTIP_NUM_TRACKERS = "Set to 3 for full body. 2 will not work in vrchat!";
 	language.PARAMS_TRACKER_NAME_MARKER_SIZE = "Size of markers in cm";
@@ -88,7 +88,7 @@ Lang get_lang_chinese()
 	language.PARAMS_TRACKER_NAME_IGNORE_0 = "Ignore tracker 0";
 	language.PARAMS_TRACKER_TOOLTIP_IGNORE_0 = "If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.";
 
-	language.PARAMS_SMOOTHING = "SMOOTHING PARAMETERS";
+	language.PARAMS_SMOOTHING = "平滑算法";
 	language.PARAMS_SMOOTHING_NAME_WINDOW = "Smoothing time window";
 	language.PARAMS_SMOOTHING_TOOLTIP_WINDOW = "Values in this time window will be used for interpolation. The higher it is, the less shaking there will be, but it will increase delay. 0.2-0.5 are usualy good values";
 	language.PARAMS_SMOOTHING_NAME_ADDITIONAL = "Additional smoothing";
@@ -99,7 +99,7 @@ Lang get_lang_chinese()
 	language.PARAMS_SMOOTHING_TOOLTIP_CAM_LATENCY = "Represents camera latency in seconds. Should counter any delay when using an IP camera. Usualy lower than 0.1.";
 
 	language.PARAMS_HOVER_HELP = "Hover over text for help!";
-	language.PARAMS_SAVE = "Save";
+	language.PARAMS_SAVE = "保存";
 
 	language.PARAMS_NOTE_LOW_SMOOTHING = "NOTE: Smoothing time window is extremely low, which may cause problems. \n\nIf you get any problems with tracking, try to increase it.";
 	language.PARAMS_NOTE_QUAD_NONSTANDARD = "NOTE: Quad Decimate is not a standard value. \n\nKeep it at 1, 1.5, 2, 3 or 4, or else detection may not work.";
@@ -109,7 +109,7 @@ Lang get_lang_chinese()
 	language.PARAMS_NOTE_2TRACKERS_IGNORE0 = "Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3.";
 	language.PARAMS_NOTE_LANGUAGECHANGE = L"Language has been changed! Please restart application to apply. But in 简体中文";
 
-	language.PARAMS_SAVED_MSG = "Parameters saved!";
+	language.PARAMS_SAVED_MSG = "参数已保存！";
 
 	language.PARAMS_WRONG_VALUES = "Please enter appropriate values.Parameters were not saved.";
 
