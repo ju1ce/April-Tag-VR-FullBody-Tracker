@@ -39,6 +39,7 @@ public:
     static const int MANUAL_CALIB_CHECKBOX = 9;
     static const int MULTICAM_AUTOCALIB_CHECKBOX = 10;
     static const int LOCK_HEIGHT_CHECKBOX = 11;
+    static const int DISABLE_OUT_CHECKBOX = 12;
 
     ValueInput *manualCalibX;
     ValueInput *manualCalibY;

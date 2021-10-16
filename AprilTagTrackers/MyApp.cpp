@@ -42,6 +42,7 @@ bool MyApp::OnInit()
     Connect(GUI::MANUAL_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
     Connect(GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedMulticamAutocalib));
     Connect(GUI::LOCK_HEIGHT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedLockHeight));
+    Connect(GUI::DISABLE_OUT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedDisableOut));
 
     return true;
 }
@@ -107,6 +108,18 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
     else
     {
         tracker->lockHeightCalib = false;
+    }
+}
+
+void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
+{
+    if (event.IsChecked())
+    {
+        tracker->disableOut = true;
+    }
+    else
+    {
+        tracker->disableOut = false;
     }
 }
 

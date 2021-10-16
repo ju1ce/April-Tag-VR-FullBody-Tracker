@@ -1112,8 +1112,10 @@ void Tracker::MainLoop()
         trackers = this->trackers;
     }
 
-    while(mainThreadRunning && cameraRunning)
-    {      
+    cv::namedWindow("out");
+
+    while (mainThreadRunning && cameraRunning)
+    {
 
         CopyFreshCameraImageTo(image);
 
@@ -1139,7 +1141,7 @@ void Tracker::MainLoop()
         if (!circularWindow)
             framesSinceLastSeen = 0;
 
-        for (int i = 0; i < trackerNum; i++) 
+        for (int i = 0; i < trackerNum; i++)
         {
 
             double frameTime = double(clock() - last_frame_time) / double(CLOCKS_PER_SEC);
@@ -1169,7 +1171,7 @@ void Tracker::MainLoop()
             //transform boards position based on our calibration data
 
             rpos.at<double>(3, 0) = 1;
-            rpos = wtranslation.inv() * rpos; 
+            rpos = wtranslation.inv() * rpos;
 
             std::vector<cv::Point3d> point;
             point.push_back(cv::Point3d(rpos.at<double>(0, 0), rpos.at<double>(1, 0), rpos.at<double>(2, 0)));
@@ -1212,7 +1214,7 @@ void Tracker::MainLoop()
                 trackerStatus[i].boardFound = true;
                 trackerStatus[i].boardFoundDriver = true;
                 trackerStatus[i].boardTvec = tvec;
-                trackerStatus[i].boardTvecDriver= tvec;
+                trackerStatus[i].boardTvecDriver = tvec;
                 trackerStatus[i].boardRvec = rvec;
 
             }
@@ -1222,7 +1224,7 @@ void Tracker::MainLoop()
                 {
                     trackerStatus[i].maskCenter = projected[1];
                 }
-                
+
                 trackerStatus[i].boardFoundDriver = false;        //do we really need to do this? test later
             }
 
@@ -1271,7 +1273,7 @@ void Tracker::MainLoop()
         {
             int inputButton = 0;
             inputButton = connection->GetButtonStates();
-            
+
             double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
             if (timeSincePress > 60)                                                                        //we exit playspace calibration after 30 seconds of no input detected
             {
@@ -1309,7 +1311,7 @@ void Tracker::MainLoop()
                         calibControllerPosActive = false;
                     }
                 }
-                calibControllerLastPress = clock();            
+                calibControllerLastPress = clock();
             }
             if (inputButton == 2)       //logic for position button first
             {
@@ -1385,7 +1387,7 @@ void Tracker::MainLoop()
                         calibScale = 0.8;
                 }
             }
-            
+
             //check that camera is facing correct direction
             if (gui->manualCalibA->value < 90)
                 gui->manualCalibA->SetValue(90);
@@ -1394,7 +1396,7 @@ void Tracker::MainLoop()
 
             cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
             cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
-            cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) *3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
+            cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) * 3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
 
             wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0, 0, 0), calibPos(0), calibPos(1), calibPos(2));
 
@@ -1480,7 +1482,7 @@ void Tracker::MainLoop()
                 //trackerStatus[i].boardTvec[2] = (dist) * trackerStatus[i].boardTvec[2] + (1-dist) * trackerStatus[i].boardTvecDriver[2];
             }
 
-            double posValues[6] = { 
+            double posValues[6] = {
                 trackerStatus[i].boardTvec[0],
                 trackerStatus[i].boardTvec[1],
                 trackerStatus[i].boardTvec[2],
@@ -1529,9 +1531,9 @@ void Tracker::MainLoop()
 
             q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
 
-            double a =  -rpos.at<double>(0, 0);
-            double b =   rpos.at<double>(1, 0);
-            double c =  -rpos.at<double>(2, 0);
+            double a = -rpos.at<double>(0, 0);
+            double b = rpos.at<double>(1, 0);
+            double c = -rpos.at<double>(2, 0);
 
             double factor;
             factor = parameters->smoothingFactor;
@@ -1547,9 +1549,9 @@ void Tracker::MainLoop()
 
             //send all the values
             //frame time is how much time passed since frame was acquired.
-            if(!multicamAutocalib)
-                connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z,-frameTime-parameters->camLatency,factor);
-            else if(trackerStatus[i].boardFoundDriver)
+            if (!multicamAutocalib)
+                connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z, -frameTime - parameters->camLatency, factor);
+            else if (trackerStatus[i].boardFoundDriver)
             {
                 //get rotations of tracker from camera
 
@@ -1604,7 +1606,7 @@ void Tracker::MainLoop()
 
                 gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
                 gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
-                calibScale = calibScale - 0.1*(1-(xyzLenDriver / xyzLen));
+                calibScale = calibScale - 0.1 * (1 - (xyzLenDriver / xyzLen));
 
                 if (calibScale > 1.2)
                     calibScale = 1.2;
@@ -1622,25 +1624,28 @@ void Tracker::MainLoop()
         end = clock();
         double frameTime = double(end - start) / double(CLOCKS_PER_SEC);
 
-        int cols, rows;
-        if (image.cols > image.rows)
+        if (!disableOut)
         {
-            cols = image.cols * drawImgSize / image.rows;
-            rows = drawImgSize;
+            int cols, rows;
+            if (image.cols > image.rows)
+            {
+                cols = image.cols * drawImgSize / image.rows;
+                rows = drawImgSize;
+            }
+            else
+            {
+                cols = drawImgSize;
+                rows = image.rows * drawImgSize / image.cols;
+            }
+            cv::resize(drawImg, drawImg, cv::Size(cols, rows));
+            cv::putText(drawImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            if (showTimeProfile)
+            {
+                april.drawTimeProfile(drawImg, cv::Point(10, 60));
+            }
+            cv::imshow("out", drawImg);
+            cv::waitKey(1);
         }
-        else
-        {
-            cols = drawImgSize;
-            rows = image.rows * drawImgSize / image.cols;
-        }
-        cv::resize(drawImg, drawImg, cv::Size(cols, rows));
-        cv::putText(drawImg, std::to_string(frameTime).substr(0,5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-        if (showTimeProfile)
-        {
-            april.drawTimeProfile(drawImg, cv::Point(10, 60));
-        }
-        cv::imshow("out", drawImg);
-        cv::waitKey(1);
         //time of marker detection
     }
     cv::destroyWindow("out");

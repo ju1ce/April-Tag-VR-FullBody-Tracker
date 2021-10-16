@@ -26,6 +26,7 @@ public:
 	wxString CAMERA_MULTICAM_CALIB = "Refine calibration using second camera";
 	wxString CAMERA_LOCK_HEIGHT = "Lock camera height";
 	wxString CAMERA_CALIBRATION_INSTRUCTION = "Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackersand move those into position.\nUncheck Calibration mode when done!\n\n\n";
+	wxString CAMERA_DISABLE_OUT = "Disable out window";
 
 	wxString cameraApiDescriptions = []()
 	{

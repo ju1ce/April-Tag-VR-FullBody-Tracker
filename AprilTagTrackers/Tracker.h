@@ -44,6 +44,7 @@ public:
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
+    bool disableOut = false;
 
     GUI* gui;
 
