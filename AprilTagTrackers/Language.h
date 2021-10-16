@@ -103,8 +103,8 @@ public:
 	wxString PARAMS_NOTE_LOW_SMOOTHING = "NOTE: Smoothing time window is extremely low, which may cause problems. \n\nIf you get any problems with tracking, try to increase it.";
 	wxString PARAMS_NOTE_QUAD_NONSTANDARD = "NOTE: Quad Decimate is not a standard value. \n\nKeep it at 1, 1.5, 2, 3 or 4, or else detection may not work.";
 	wxString PARAMS_NOTE_NO_DSHOW_CAMSETTINGS = "NOTE: Camera settings parameter is on, but camera API preference is not 700 \n\nOpening camera parameters only work when camera API is set to DirectShow, or 700.";
-	wxString PARAMS_NOTE_LATENCY_GREATER_SMOOTHING = "NOTE: Camera latency should never be higher than additional smoothing or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1.";
-	wxString PARAMS_NOTE_HIGH_SMOOTHING = "NOTE: Additional smoothing is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5.";
+	wxString PARAMS_NOTE_LATENCY_GREATER_SMOOTHING = "NOTE: Camera latency should never be higher than smoothing time window or tracking isnt going to work. \n\nYou probably dont want it any higher than 0.1, and smoothing window probably shouldnt be under 0.2 unless you use high speed cameras.";
+	wxString PARAMS_NOTE_HIGH_SMOOTHING = "NOTE: Smoothing time window is over 1 second, which will cause very slow movement! \n\nYou probably want to update it to something like 0.5.";
 	wxString PARAMS_NOTE_2TRACKERS_IGNORE0 = "Number of trackers is 2 and ignore tracker 0 is on. This will result in only 1 tracker spawning in SteamVR. \nIf you wish to use both feet trackers, keep number of trackers at 3.";
 	wxString PARAMS_NOTE_LANGUAGECHANGE = "Language has been changed! Please restart application to apply.";
 
