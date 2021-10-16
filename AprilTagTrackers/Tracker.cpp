@@ -175,6 +175,7 @@ Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
         wtranslation = parameters->wtranslation;
         wrotation = parameters->wrotation;
     }
+    calibScale = parameters->calibScale;
 }
 
 void Tracker::StartCamera(std::string id, int apiPreference)
@@ -1067,7 +1068,7 @@ void Tracker::MainLoop()
     double calibControllerPosOffset[] = { 0,0,0 };
     double calibControllerAngleOffset[] = { 0,0,0 };
 
-    double tempScale = 1;
+    //double tempScale = 1;
 
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     std::vector<std::vector<int>> boardIds;
@@ -1377,11 +1378,11 @@ void Tracker::MainLoop()
                 if (!lockHeightCalib)
                 {
                     gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
-                    tempScale = xyzLen / calibControllerAngleOffset[2];
-                    if (tempScale > 1.2)
-                        tempScale = 1.2;
-                    else if (tempScale < 0.8)
-                        tempScale = 0.8;
+                    calibScale = xyzLen / calibControllerAngleOffset[2];
+                    if (calibScale > 1.2)
+                        calibScale = 1.2;
+                    else if (calibScale < 0.8)
+                        calibScale = 0.8;
                 }
             }
             
@@ -1421,7 +1422,7 @@ void Tracker::MainLoop()
 
             try
             {
-                trackerStatus[i].boardTvec /= tempScale;
+                trackerStatus[i].boardTvec /= calibScale;
                 if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], parameters->camMat, parameters->distCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && parameters->usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
@@ -1447,7 +1448,7 @@ void Tracker::MainLoop()
             }
             trackerStatus[i].boardFound = true;
 
-            trackerStatus[i].boardTvec *= tempScale;
+            trackerStatus[i].boardTvec *= calibScale;
 
             if (parameters->depthSmoothing > 0 && trackerStatus[i].boardFoundDriver && !manualRecalibrate)
             {
@@ -1603,12 +1604,12 @@ void Tracker::MainLoop()
 
                 gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
                 gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
-                tempScale = tempScale - 0.1*(1-(xyzLenDriver / xyzLen));
+                calibScale = calibScale - 0.1*(1-(xyzLenDriver / xyzLen));
 
-                if (tempScale > 1.2)
-                    tempScale = 1.2;
-                else if (tempScale < 0.8)
-                    tempScale = 0.8;
+                if (calibScale > 1.2)
+                    calibScale = 1.2;
+                else if (calibScale < 0.8)
+                    calibScale = 0.8;
 
             }
 

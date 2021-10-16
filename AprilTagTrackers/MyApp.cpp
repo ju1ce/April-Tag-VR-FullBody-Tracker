@@ -157,6 +157,8 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->manualCalibB->SetValue(params->calibOffsetB);
             gui->manualCalibC->SetValue(params->calibOffsetC);
 
+            tracker->calibScale = params->calibScale;
+
             tracker->manualRecalibrate = true;
         }
         else
@@ -169,6 +171,8 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             params->calibOffsetA = gui->manualCalibA->value;
             params->calibOffsetB = gui->manualCalibB->value;
             params->calibOffsetC = gui->manualCalibC->value;
+            params->calibScale = tracker->calibScale;
+
             params->Save();
             tracker->manualRecalibrate = false;
             gui->posHbox->Show(false);

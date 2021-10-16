@@ -65,6 +65,8 @@ public:
     int markerLibrary = 0;
     int markersPerTracker = 45;
     int languageSelection = 0;
+    double calibScale = 1;
+
 
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 
