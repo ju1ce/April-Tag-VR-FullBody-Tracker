@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <opencv2/videoio/registry.hpp>
@@ -10,7 +10,6 @@ Lang get_lang_chinese()
 	Lang language;
 
 	language.APP_TITLE = L"果汁的二维码全身追踪（简体中文）";		//needs the L prefix or chinese characters wont work
-
 
 	language.TAB_CAMERA = L"主页";
 	language.TAB_PARAMS = L"参数";
@@ -166,3 +165,4 @@ Lang get_lang_chinese()
 
 	return language;
 };
+
