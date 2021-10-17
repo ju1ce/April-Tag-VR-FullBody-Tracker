@@ -33,12 +33,12 @@ Lang get_lang_chinese()
 	language.cameraApiDescriptions = []()
 	{
 		std::stringstream description;
-		description << "0: 自动选择\n\n用于摄像头的API：";
+		description << "0: No preference\n\nCamera backends:";
 		for (const auto backend : cv::videoio_registry::getCameraBackends())
 		{
 			description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
 		}
-		description << "\n\n用于视频流的API：";
+		description << "\n\nStream backends:";
 		for (const auto backend : cv::videoio_registry::getStreamBackends())
 		{
 			description << "\n" << int(backend) << ": " << cv::videoio_registry::getBackendName(backend);
