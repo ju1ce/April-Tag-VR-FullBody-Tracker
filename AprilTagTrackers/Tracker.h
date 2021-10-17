@@ -44,11 +44,14 @@ public:
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
+    bool disableOut = false;
 
     GUI* gui;
 
     cv::Mat wtranslation = (cv::Mat_<double>(4, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     Quaternion<double> wrotation = Quaternion<double>(1, 0, 0, 0);
+
+    double calibScale = 1;
 
 private:
     void CameraLoop();

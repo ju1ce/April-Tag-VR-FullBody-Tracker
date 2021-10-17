@@ -42,6 +42,7 @@ bool MyApp::OnInit()
     Connect(GUI::MANUAL_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedSpaceCalib));
     Connect(GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedMulticamAutocalib));
     Connect(GUI::LOCK_HEIGHT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedLockHeight));
+    Connect(GUI::DISABLE_OUT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedDisableOut));
 
     return true;
 }
@@ -110,6 +111,18 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
     }
 }
 
+void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
+{
+    if (event.IsChecked())
+    {
+        tracker->disableOut = true;
+    }
+    else
+    {
+        tracker->disableOut = false;
+    }
+}
+
 void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
 {
     if (event.GetId() == GUI::SPACE_CALIB_CHECKBOX)
@@ -157,6 +170,8 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->manualCalibB->SetValue(params->calibOffsetB);
             gui->manualCalibC->SetValue(params->calibOffsetC);
 
+            tracker->calibScale = params->calibScale;
+
             tracker->manualRecalibrate = true;
         }
         else
@@ -169,6 +184,8 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             params->calibOffsetA = gui->manualCalibA->value;
             params->calibOffsetB = gui->manualCalibB->value;
             params->calibOffsetC = gui->manualCalibC->value;
+            params->calibScale = tracker->calibScale;
+
             params->Save();
             tracker->manualRecalibrate = false;
             gui->posHbox->Show(false);

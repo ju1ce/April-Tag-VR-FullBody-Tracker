@@ -105,6 +105,9 @@ void Parameters::Load()
         fs["additionalSmoothing"] >> additionalSmoothing;
         fs["markerLibrary"] >> markerLibrary;
         fs["languageSelection"] >> languageSelection;
+        fs["calibScale"] >> calibScale;
+        if (calibScale < 0.5)
+            calibScale = 1;
         if(!wrotmat.empty())
             wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
         fn = fs["trackers"];
@@ -223,6 +226,8 @@ void Parameters::Save()
     fs << "additionalSmoothing" << additionalSmoothing;
     fs << "markerLibrary" << markerLibrary;
     fs << "languageSelection" << languageSelection;
+    fs << "calibScale" << calibScale;
+
     fs << "trackers";
     fs << "{";
     for (int i = 0; i < trackers.size(); i++)
