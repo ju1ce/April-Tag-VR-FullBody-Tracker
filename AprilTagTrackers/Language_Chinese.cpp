@@ -15,7 +15,7 @@ Lang get_lang_chinese()
 
 	language.TAB_CAMERA = "主页";
 	language.TAB_PARAMS = "参数";
-	language.TAB_LICENSE = "版权";
+	language.TAB_LICENSE = "关于";
 
 	language.CAMERA_START_CAMERA = "1. 启动或停止摄像头";
 	language.CAMERA_CALIBRATE_CAMERA = "2. 校准摄像头";
