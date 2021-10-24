@@ -23,7 +23,8 @@ void Connection::StartConnection()
         {
             return;
         }
-        Sleep(1000);
+        sleep_millis(1000);
+        // Sleep(1000);
         status = DISCONNECTED;
     }
     std::thread connectThread(&Connection::Connect, this);
@@ -106,7 +107,7 @@ void Connection::Connect()
 
     if (error != vr::VRInitError_None)
     {
-        std::string e = parameters->language.CONNECT_CLIENT_ERROR;
+        wxString e = parameters->language.CONNECT_CLIENT_ERROR;
         e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
         wxMessageDialog dial(NULL,
             e, wxT("Error"), wxOK | wxICON_ERROR);
@@ -147,17 +148,18 @@ void Connection::Connect()
     dial2.ShowModal();
 
     */
-    DWORD  retval = 0;
-    BOOL   success;
+    const char* retval = NULL;
+    bool   success;
     char  buffer[1024] = "";
     char** lppPart = { NULL };
 
-    retval = GetFullPathNameA("att_actions.json",
-        BUFSIZE,
-        buffer,
-        lppPart);
+    retval = realpath("att_actions.json", NULL);
+    //free(3);
+        // BUFSIZE,
+        // buffer,
+        // lppPart);
 
-    vr::VRInput()->SetActionManifestPath(buffer);
+    vr::VRInput()->SetActionManifestPath(retval);
 
     vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
     vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
@@ -168,6 +170,7 @@ void Connection::Connect()
     std::istringstream ret;
     std::string word;
 
+    /*
     ret = Send("numtrackers");
     ret >> word;
     if (word != "numtrackers")
@@ -211,21 +214,41 @@ void Connection::Connect()
     sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
 
     ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
-
+    */
     //set that connection is established
     status = CONNECTED;
+
 }
 
 std::istringstream Connection::Send(std::string lpszWrite)
 {
+    int hpipe;
+
+    hpipe = open(lpszPipename, O_WRONLY);
+    write(hpipe, lpszWrite.c_str(), strlen(lpszWrite.c_str()) + 1);
+    close(hpipe);
+
+    hpipe = open(lpszPipename, O_RDONLY);
+    cbRead = read(hpipe, chReadBuf, BUFSIZE * sizeof(char));
+    close(hpipe);
+
+    chReadBuf[cbRead] = '\0';
+    std::cout << chReadBuf << std::endl;
+    std::string rec = chReadBuf;
+    std::istringstream iss(rec);
+
+    return iss;
+
+    /*
+
     //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so I'll leave the dumb conversions and casts in. If it doesn't for you, have fun.
 
     fSuccess = CallNamedPipe(
         lpszPipename,        // pipe name
-        (LPVOID)lpszWrite.c_str(),           // message to server
-        (strlen(lpszWrite.c_str()) + 1) * sizeof(TCHAR), // message length
+        (void)lpszWrite.c_str(),           // message to server
+        (strlen(lpszWrite.c_str()) + 1) * sizeof(char), // message length
         chReadBuf,              // buffer to receive reply
-        BUFSIZE * sizeof(TCHAR),  // size of read buffer
+        BUFSIZE * sizeof(char),  // size of read buffer
         &cbRead,                // number of bytes read
         2000);                 // waits for 2 seconds
 
@@ -251,6 +274,8 @@ std::istringstream Connection::Send(std::string lpszWrite)
         std::istringstream iss(rec);
         return iss;
     }
+
+    */
 }
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)

@@ -13,6 +13,7 @@
 #include "MyApp.h"
 
 #include "Quaternion.h"
+#include "Util.h"
 
 
 struct TrackerStatus {
@@ -45,6 +46,7 @@ public:
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
     bool disableOut = false;
+    int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
 

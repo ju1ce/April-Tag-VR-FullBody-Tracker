@@ -5,7 +5,7 @@
 #pragma warning(pop)
 
 #include "Parameters.h"
-#include <windows.h>
+//#include <windows.h>
 #include <openvr.h>
 
 struct TrackerConnection {
@@ -14,6 +14,8 @@ struct TrackerConnection {
     std::string Name;
     std::string Role;
 };
+
+#include "Util.h"
 
 class Connection
 {
@@ -34,16 +36,23 @@ public:
     std::vector<TrackerConnection> connectedTrackers;
 private:
     void Connect();
-    HANDLE hpipe;
+    int hpipe;
     int pipeNum = 1;
     const int BUFSIZE = 1024;
+    /*
     CHAR chReadBuf[1024];
     BOOL fSuccess;
     DWORD cbRead;
     LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
-
+    */
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionHand = vr::k_ulInvalidActionHandle;
+    
+    char chReadBuf[1024];
+    bool fSuccess;
+    unsigned long cbRead;
+    const char* lpszPipename = "\\\\.\\pipe\\ApriltagPipeIn";
+    
 };

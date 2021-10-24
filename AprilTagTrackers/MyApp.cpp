@@ -11,7 +11,7 @@ int MyApp::OnExit()
 {
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
-    Sleep(2000);
+    sleep_millis(2000);
     return 0;
 }
 
