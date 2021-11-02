@@ -315,7 +315,7 @@ void Tracker::CameraLoop()
             if (previewCameraCalibration)
             {
                 cv::Mat *outImg = new cv::Mat();
-                img.copyTo(*outImg);
+                drawImg.copyTo(*outImg);
                 previewCalibration(*outImg, parameters);
                 gui->CallAfter([outImg] ()
                                {
@@ -328,7 +328,7 @@ void Tracker::CameraLoop()
             else
             {
                 cv::Mat *outImg = new cv::Mat();
-                img.copyTo(*outImg);
+                drawImg.copyTo(*outImg);
                 gui->CallAfter([outImg] ()
                                {
                                cv::imshow("Preview", *outImg);
@@ -427,10 +427,14 @@ void Tracker::StartCameraCalib()
     }
     if (!cameraRunning)
     {
-        wxMessageDialog dial(NULL,
-            parameters->language.TRACKER_CAMERA_NOTRUNNING, wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
-        mainThreadRunning = false;
+        bool *mtr = &mainThreadRunning;
+        wxString e = parameters->language.TRACKER_CAMERA_NOTRUNNING;
+        gui->CallAfter([e, mtr] ()
+                        {
+                            wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
+                            dial.ShowModal();
+                            *mtr = false;
+                        });
         return;
     }
 
@@ -438,14 +442,6 @@ void Tracker::StartCameraCalib()
     if(!parameters->chessboardCalib)
     {
         mainThread = std::thread(&Tracker::CalibrateCameraCharuco, this);
-
-        auto dialog =
-            new MessageDialog(wxT("Message"),
-                wxT("Camera calibration started! \n\n"
-                    "Place the printed Charuco calibration board on a flat surface. The camera will take a picture every second - take pictures of the board from as many diffrent angles and distances as you can. \n\n"
-                    "Alternatively, you can use the board shown on a monitor or switch to old chessboard calibration in params, but both will have worse results or might not work at all. \n\n"
-                    "Press OK to save calibration when done."), &DialogOk, &DialogCancel, this);
-        dialog->Show();
     }
     else
     {
@@ -481,10 +477,16 @@ void Tracker::CalibrateCameraCharuco()
 
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
-        wxMessageDialog dial(NULL,
-            parameters->language.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS, wxT("Message"), wxOK | wxCANCEL);
-        messageDialogResponse = dial.ShowModal();
-        mainThreadRunning = false;
+        wxString e = parameters->language.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS;
+        int *mdr = &messageDialogResponse;
+        bool *mtr = &mainThreadRunning;
+        gui->CallAfter([e, mdr, mtr] ()
+            {
+            wxMessageDialog dial(NULL, e, wxT("Message"), wxOK | wxCANCEL);
+            *mdr = dial.ShowModal();
+            *mtr = false;
+            });
+        
     } };
 
     th.detach();
@@ -556,13 +558,13 @@ void Tracker::CalibrateCameraCharuco()
 
         cv::Mat *outImg = new cv::Mat();
         cv::resize(drawImg, *outImg, cv::Size(cols, rows));
-        gui->CallAfter([outImg] ()
+        char key;
+        gui->CallAfter([outImg, &key] ()
                         {
                         cv::imshow("out", *outImg);
-                        cv::waitKey(1);
+                        key = (char)cv::waitKey(1);
                         delete(outImg);
                         });
-        char key = (char)cv::waitKey(1);
 
         //framesSinceLast++;
         if (key != -1 || double(clock() - timeOfLast) / double(CLOCKS_PER_SEC) > 1)
@@ -596,17 +598,15 @@ void Tracker::CalibrateCameraCharuco()
                     allCharucoIds.push_back(charucoIds);
                     picsTaken++;
 
-                    {
-                        cv::Mat *outImg = new cv::Mat();
-                        cv::resize(drawImg, *outImg, cv::Size(cols, rows));
-                        gui->CallAfter([outImg] ()
-                                       {
-                                       cv::imshow("out", *outImg);
-                                       cv::waitKey(1);
-                                       delete(outImg);
-                                       });
-                    }
-
+                    cv::Mat *outImg = new cv::Mat();
+                    cv::resize(drawImg, *outImg, cv::Size(cols, rows));
+                    gui->CallAfter([outImg] ()
+                                    {
+                                    cv::imshow("out", *outImg);
+                                    cv::waitKey(1);
+                                    delete(outImg);
+                                    });
+                    
                     if (picsTaken >= 3)
                     {
                         try
@@ -1787,18 +1787,19 @@ void Tracker::MainLoop()
                 cols = drawImgSize;
                 rows = image.rows * drawImgSize / image.cols;
             }
-            cv::resize(drawImg, drawImg, cv::Size(cols, rows));
-            cv::putText(drawImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            cv::Mat *outImg = new cv::Mat();
+            cv::resize(drawImg, *outImg, cv::Size(cols, rows));
+            cv::putText(*outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {
-                april.drawTimeProfile(drawImg, cv::Point(10, 60));
-            }
-            //cv::imshow("out", drawImg);
-            //cv::waitKey(1);
-            gui->CallAfter([drawImg] ()
+                april.drawTimeProfile(*outImg, cv::Point(10, 60));
+            }            
+            
+            gui->CallAfter([outImg] ()
                            {
-                           cv::imshow("out", drawImg);
+                           cv::imshow("out", *outImg);
                            cv::waitKey(1);
+                           delete(outImg);
                            });
         }
         //time of marker detection
