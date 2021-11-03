@@ -843,23 +843,25 @@ void Tracker::StartTrackerCalib()
     if (!cameraRunning)
     {
         wxString e = parameters->language.TRACKER_CAMERA_NOTRUNNING;
-        gui->CallAfter([e] ()
+        bool *mtr = &mainThreadRunning;
+        gui->CallAfter([e, mtr] ()
                        {
                        wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
                        dial.ShowModal();
+                       *mtr = false;
                        });
-        mainThreadRunning = false;
         return;
     }
     if (parameters->camMat.empty())
     {
         wxString e = parameters->language.TRACKER_CAMERA_NOTCALIBRATED;
-        gui->CallAfter([e] ()
+        bool *mtr = &mainThreadRunning;
+        gui->CallAfter([e, mtr] ()
                        {
                        wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
                        dial.ShowModal();
+                       *mtr = false;
                        });
-        mainThreadRunning = false;
         return;
     }
 
@@ -871,14 +873,13 @@ void Tracker::StartTrackerCalib()
     //make a new thread with message box, and stop main thread when we press OK
     std::thread th{ [=]() {
         wxString e = parameters->language.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS;
-        gui->CallAfter([e] ()
+        bool *mtr = &mainThreadRunning;
+        gui->CallAfter([e, mtr] ()
                         {
                         wxMessageDialog dial(NULL, e, wxT("Message"), wxOK);
                         dial.ShowModal();
+                        *mtr = false;
                         });
-
-        mainThreadRunning = false;
-
     } };
 
     th.detach();
@@ -1028,15 +1029,16 @@ void Tracker::CalibrateTracker()
             catch (std::exception&)             //on weird images or calibrations, we get an error
             {
                 wxString e = parameters->language.TRACKER_CALIBRATION_SOMETHINGWRONG;
-                gui->CallAfter([e] ()
-                               {
-                               wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
-                               dial.ShowModal();
-                               cv::destroyWindow("out");
-                               });
-                //apriltag_detector_destroy(td);
-                mainThreadRunning = false;
+                bool *mtr = &mainThreadRunning;
+                gui->CallAfter([e, mtr] ()
+                                {
+                                wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
+                                dial.ShowModal();
+                                cv::destroyWindow("out");
+                                *mtr = false;
+                                });
                 return;
+                
             }
 
             std::string testStr = std::to_string(boardTvec[i][0]) + " " + std::to_string(boardTvec[i][1]) + " " + std::to_string(boardTvec[i][2]);
@@ -1113,7 +1115,6 @@ void Tracker::CalibrateTracker()
                 }
             }
         }
-        cv::Mat drawImg;
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -1125,16 +1126,14 @@ void Tracker::CalibrateTracker()
             cols = drawImgSize;
             rows = image.rows * drawImgSize / image.cols;
         }
-        {
-            cv::Mat *outImg = new cv::Mat();
-            cv::resize(image, *outImg, cv::Size(cols,rows));
-            gui->CallAfter([outImg] ()
-                           {
-                           cv::imshow("out", *outImg);
-                           cv::waitKey(1);
-                           delete(outImg);
-                           });
-        }
+        cv::Mat *outImg = new cv::Mat();
+        cv::resize(image, *outImg, cv::Size(cols,rows));
+        gui->CallAfter([outImg] ()
+                        {
+                        cv::imshow("out", *outImg);
+                        cv::waitKey(1);
+                        delete(outImg);
+                        });
     }
 
     for (int i = 0; i < boardIds.size(); i++)
@@ -1147,12 +1146,12 @@ void Tracker::CalibrateTracker()
     parameters->Save();
     trackersCalibrated = true;
 
-    gui->CallAfter([] ()
+    bool *mtr = &mainThreadRunning;
+    gui->CallAfter([mtr] ()
                    {
                    cv::destroyWindow("out");
+                   *mtr = false;
                    });
-    //apriltag_detector_destroy(td);
-    mainThreadRunning = false;
 }
 
 void Tracker::MainLoop()
