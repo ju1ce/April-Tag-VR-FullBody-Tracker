@@ -293,9 +293,12 @@ void Tracker::CameraLoop()
     {
         if (!cap.read(img))
         {
-            wxMessageDialog dial(NULL,
-                parameters->language.TRACKER_CAMERA_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
+            gui->CallAfter([parameters] ()
+                           {
+                           wxMessageDialog dial(NULL,
+                               parameters->language.TRACKER_CAMERA_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
             cameraRunning = false;
             break;
         }
