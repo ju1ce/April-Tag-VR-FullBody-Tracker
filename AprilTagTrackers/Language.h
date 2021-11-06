@@ -27,6 +27,7 @@ public:
 	wxString CAMERA_LOCK_HEIGHT = "Lock camera height";
 	wxString CAMERA_CALIBRATION_INSTRUCTION = "Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackersand move those into position.\nUncheck Calibration mode when done!\n\n\n";
 	wxString CAMERA_DISABLE_OUT = "Disable out window";
+	wxString CAMERA_DISABLE_OPENVR_API = "Disable OpenVR API use";
 
 	wxString cameraApiDescriptions = []()
 	{

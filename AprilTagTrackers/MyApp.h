@@ -34,4 +34,5 @@ public:
     void ButtonPressedMulticamAutocalib(wxCommandEvent&);
     void ButtonPressedLockHeight(wxCommandEvent&);
     void ButtonPressedDisableOut(wxCommandEvent&);
+    void ButtonPressedDisableOpenVrApi(wxCommandEvent&);
 };

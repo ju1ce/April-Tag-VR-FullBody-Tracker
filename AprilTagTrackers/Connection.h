@@ -16,6 +16,8 @@ struct TrackerConnection {
 
 #include "Util.h"
 
+class GUI;
+
 class Connection
 {
 public:
@@ -33,6 +35,8 @@ public:
     int status = DISCONNECTED;
     vr::IVRSystem* openvr_handle;
     std::vector<TrackerConnection> connectedTrackers;
+    bool disableOpenVrApi = true;
+    GUI* gui;
 private:
     void Connect();
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;

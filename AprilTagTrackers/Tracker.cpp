@@ -293,7 +293,7 @@ void Tracker::CameraLoop()
     {
         if (!cap.read(img))
         {
-            gui->CallAfter([parameters] ()
+            gui->CallAfter([parameters=parameters] ()
                            {
                            wxMessageDialog dial(NULL,
                                parameters->language.TRACKER_CAMERA_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
@@ -362,19 +362,22 @@ void Tracker::CameraLoop()
             imageReady = true;
         }
 
-        //process events. BETA TEST ONLY, MOVE TO CONNECTION LATER
-        if (connection->status == connection->CONNECTED)
+        if (!disableOpenVrApi)
         {
-            vr::VREvent_t event;
-            while (connection->openvr_handle->PollNextEvent(&event, sizeof(event)))
+            //process events. BETA TEST ONLY, MOVE TO CONNECTION LATER
+            if (connection->status == connection->CONNECTED)
             {
-                if (event.eventType == vr::VREvent_Quit)
+                vr::VREvent_t event;
+                while (connection->openvr_handle->PollNextEvent(&event, sizeof(event)))
                 {
-                    connection->openvr_handle->AcknowledgeQuit_Exiting();       //close connection to steamvr without closing att
-                    connection->status = connection->DISCONNECTED;
-                    vr::VR_Shutdown();
-                    mainThreadRunning = false;
-                    break;
+                    if (event.eventType == vr::VREvent_Quit)
+                    {
+                        connection->openvr_handle->AcknowledgeQuit_Exiting();       //close connection to steamvr without closing att
+                        connection->status = connection->DISCONNECTED;
+                        vr::VR_Shutdown();
+                        mainThreadRunning = false;
+                        break;
+                    }
                 }
             }
         }
@@ -1261,7 +1264,10 @@ void Tracker::MainLoop()
         trackers = this->trackers;
     }
 
-    cv::namedWindow("out");
+    gui->CallAfter([] ()
+                   {
+                   cv::namedWindow("out");
+                   });
 
     while (mainThreadRunning && cameraRunning)
     {
@@ -1296,7 +1302,7 @@ void Tracker::MainLoop()
             double frameTime = double(clock() - last_frame_time) / double(CLOCKS_PER_SEC);
 
             std::string word;
-            std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + std::to_string(-frameTime - parameters->camLatency));
+            std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - parameters->camLatency));
             ret >> word;
             if (word != "trackerpose")
             {
@@ -1652,9 +1658,10 @@ void Tracker::MainLoop()
                 }
 
                 std::vector<double> valArray(trackerStatus[i].prevLocValues[j]);
-                sort(valArray.begin(), valArray.end());
+                //sort(valArray.begin(), valArray.end());
 
-                posValues[j] = valArray[valArray.size() / 2];
+                //posValues[j] = valArray[valArray.size() / 2];
+                posValues[j] = valArray[valArray.size() - 1];
 
             }
             //save fitted values back to our variables

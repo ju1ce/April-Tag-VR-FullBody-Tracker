@@ -1,4 +1,5 @@
 #include "Connection.h"
+#include "GUI.h"
 #include "Ipc.hpp"
 
 Connection::Connection(Parameters* params)
@@ -10,20 +11,23 @@ void Connection::StartConnection()
 {
     if (status == WAITING)
     {
-        wxMessageDialog dial(NULL,
-            wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         return;
     }
     if (status == CONNECTED)
     {
-        wxMessageDialog dial(NULL,
-            parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
-            wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-        if (dial.ShowModal() != wxID_YES)
-        {
-            return;
-        }
+        gui->CallAfter([parameters=parameters] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
+                           wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
+                       dial.ShowModal();
+                       });
         sleep_millis(1000);
         // Sleep(1000);
         status = DISCONNECTED;
@@ -102,19 +106,25 @@ void Connection::Connect()
         }
     }
 
-    //connect to steamvr as a client in order to get buttons.
-    vr::EVRInitError error;
-    openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
-
-    if (error != vr::VRInitError_None)
+    if (!disableOpenVrApi)
     {
-        wxString e = parameters->language.CONNECT_CLIENT_ERROR;
-        e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-        wxMessageDialog dial(NULL,
-            e, wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
-        status = DISCONNECTED;
-        return;
+        //connect to steamvr as a client in order to get buttons.
+        vr::EVRInitError error;
+        openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+
+        if (error != vr::VRInitError_None)
+        {
+            wxString e = parameters->language.CONNECT_CLIENT_ERROR;
+            e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
+            gui->CallAfter([e] ()
+                           {
+                           wxMessageDialog dial(NULL,
+                               e, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
+            status = DISCONNECTED;
+            return;
+        }
     }
 
     /*
@@ -160,31 +170,37 @@ void Connection::Connect()
         // buffer,
         // lppPart);
 
-    vr::VRInput()->SetActionManifestPath(retval);
+    if (!disableOpenVrApi)
+    {
+        vr::VRInput()->SetActionManifestPath(retval);
 
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
 
-    vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+        vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+    }
 
     std::istringstream ret;
     std::string word;
 
-    /*
     ret = Send("numtrackers");
     ret >> word;
     if (word != "numtrackers")
     {
-        wxMessageDialog dial(NULL,
-            parameters->language.CONNECT_DRIVER_ERROR + std::to_string(GetLastError()), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([this] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           parameters->language.CONNECT_DRIVER_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         status = DISCONNECTED;
         return;
     }
     int connected_trackers;
     ret >> connected_trackers;
 
+    /*
     ret >> word;
     if (word != parameters->driverversion)
     {
@@ -194,6 +210,7 @@ void Connection::Connect()
             e, wxT("Warning"), wxOK | wxICON_WARNING);
         dial.ShowModal();
     }
+    */
 
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
     {
@@ -201,9 +218,12 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            wxMessageDialog dial(NULL,
-                parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
+            gui->CallAfter([this] ()
+                           {
+                           wxMessageDialog dial(NULL,
+                               parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
             status = DISCONNECTED;
             return;
         }
@@ -211,6 +231,7 @@ void Connection::Connect()
 
     ret = Send("addstation");
 
+    /*
     std::string sstr = "";
     sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
 
@@ -278,7 +299,7 @@ bool GetDigitalActionState(vr::VRActionHandle_t action)
 
 int Connection::GetButtonStates()
 {
-    if (status == DISCONNECTED)
+    if (status == DISCONNECTED || disableOpenVrApi)
     {
         return 0;
     }
@@ -299,6 +320,8 @@ int Connection::GetButtonStates()
 
 void Connection::GetControllerPose(double outpose[])
 {
+    if (disableOpenVrApi)
+        return;
     
     //std::istringstream ret = Send("getdevicepose 1");
     //std::string word;
