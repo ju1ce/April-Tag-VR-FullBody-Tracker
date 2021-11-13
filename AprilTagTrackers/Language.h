@@ -157,6 +157,7 @@ public:
 
 	wxString CONNECT_ALREADYCONNECTED = "Already connected. Restart connection?";
 	wxString CONNECT_CLIENT_ERROR = "Error when connecting to SteamVR as a client! Make sure your HMD is connected. \nError code: ";
+	wxString CONNECT_BINDINGS_ERROR = "Could not find bindings file att_actions.json."; 		//NOT TRANSLATED YET
 	wxString CONNECT_DRIVER_ERROR = "Could not connect to SteamVR driver. If error code is 2, make sure SteamVR is running and the apriltagtrackers driver is installed and enabled in settings. \n"
 		"You may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2. \nError code: ";
 

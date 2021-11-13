@@ -23,6 +23,9 @@ bool MyApp::OnInit()
 
 
     gui = new GUI(params->language.APP_TITLE,params,conn);
+
+    conn->gui = gui; // juice told me to write this, dont blame me 
+
     gui->Show(true);
 
     gui->posHbox->Show(false);

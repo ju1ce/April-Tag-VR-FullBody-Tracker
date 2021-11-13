@@ -172,6 +172,18 @@ void Connection::Connect()
 
     if (!disableOpenVrApi)
     {
+        if (!retval)
+        {
+            perror("Could not find bindings");
+            gui->CallAfter([this] ()
+                            {
+                            wxMessageDialog dial(NULL,
+                                parameters->language.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                            dial.ShowModal();
+                            });
+            status = DISCONNECTED;
+            return;
+        }
         vr::VRInput()->SetActionManifestPath(retval);
 
         vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
