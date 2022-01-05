@@ -3,14 +3,6 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-if(NOT EXISTS ${APRILTAG_LIB} )
-  message(FATAL_ERROR "Please set the correct apriltags library." )
-endif()
-
-if(NOT EXISTS "${APRILTAG_INCLUDE_DIR}/apriltag.h" )
-  message(FATAL_ERROR "Please set the correct apriltags include directory." )
-endif()
-
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( ${APRILTAG_INCLUDE_DIR} )
@@ -24,5 +16,5 @@ add_executable (AprilTagTrackers ${source})
 
 target_link_libraries( AprilTagTrackers ${OPENVR_LIB} )
 target_link_libraries( AprilTagTrackers ${OpenCV_LIBS} )
-target_link_libraries( AprilTagTrackers ${APRILTAG_LIB} )
+target_link_libraries( AprilTagTrackers apriltags )
 target_link_libraries( AprilTagTrackers wx::net wx::core wx::base)
