@@ -25,9 +25,5 @@ if (MSVC)
     set_target_properties(AprilTagTrackers PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS)
 endif()
 
-# fix for creating debug builds with a release build of opencv
-target_compile_definitions(AprilTagTrackers PUBLIC 
-    $<$<CONFIG:Debug>:CV_IGNORE_DEBUG_BUILD_GUARD>)
-
 # Install target to bin folder
 install(TARGETS AprilTagTrackers RUNTIME)
