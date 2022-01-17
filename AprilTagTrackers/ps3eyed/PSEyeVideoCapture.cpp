@@ -376,8 +376,13 @@ public:
         eye->getFrame(m_MatBayer.data);
 
         //not sure what BayerBG2BGR is, but it seems to be the original format of data. Probably the source of weird colors?
-        //mirroring should also happen here, probably
-        cv::cvtColor(m_MatBayer, outArray, cv::COLOR_BayerBG2RGB);
+
+        //UPDATE: weird colors fixed themselves, somehow?
+        cv::cvtColor(m_MatBayer, outArray, cv::COLOR_BayerGB2BGR);
+
+        //flip the image
+        cv::flip(outArray, outArray, 1);
+
         return true;
     }
 
