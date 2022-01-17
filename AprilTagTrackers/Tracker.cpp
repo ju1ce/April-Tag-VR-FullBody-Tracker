@@ -192,6 +192,9 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     {
         int i = std::stoi(id);	//convert to int
         //cap = cv::VideoCapture(i, apiPreference);
+
+        //Api preference of 2300 is for PS3EYE, as defined in the PSEyeVideoCapture
+
         if(apiPreference == 2300)
             cap = PSEyeVideoCapture(i);
         else

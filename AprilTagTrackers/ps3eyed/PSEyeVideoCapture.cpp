@@ -308,6 +308,7 @@ public:
 
     bool setProperty(int property_id, double value)
     {
+        //set height and set width are disabled since they were added in a branch of ps3driver that we do not have.
         int val;
         if (!eye)
         {
@@ -374,6 +375,8 @@ public:
     {
         eye->getFrame(m_MatBayer.data);
 
+        //not sure what BayerBG2BGR is, but it seems to be the original format of data. Probably the source of weird colors?
+        //mirroring should also happen here, probably
         cv::cvtColor(m_MatBayer, outArray, cv::COLOR_BayerBG2RGB);
         return true;
     }
