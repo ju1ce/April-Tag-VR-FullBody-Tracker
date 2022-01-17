@@ -191,7 +191,11 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id);	//convert to int
-        cap = cv::VideoCapture(i, apiPreference);
+        //cap = cv::VideoCapture(i, apiPreference);
+        if(apiPreference == 2300)
+            cap = PSEyeVideoCapture(i);
+        else
+            cap = cv::VideoCapture(i, apiPreference);
 
     }
     else

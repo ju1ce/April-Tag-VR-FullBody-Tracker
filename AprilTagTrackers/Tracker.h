@@ -14,6 +14,8 @@
 
 #include "Quaternion.h"
 
+#include "ps3eyed/PSEyeVideoCapture.h"
+
 
 struct TrackerStatus {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
