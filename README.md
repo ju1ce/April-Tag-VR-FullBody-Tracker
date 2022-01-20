@@ -1,6 +1,6 @@
-## This guide is relavant to the v0.4 version only!
+# This guide is outdated, and relavant to the v0.4 version only!
 
-If you want to use the latest beta (which you should, it works better), refer to the [wiki](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki).
+If you want to use the latest beta version, refer to the [wiki](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki).
 
 ## This tutorial is also availible in the folowing languages:
 
