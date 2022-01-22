@@ -76,6 +76,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
         wxPoint(20, 20));
     wxCheckBox* cb6 = new wxCheckBox(this, GUI::DISABLE_OUT_CHECKBOX, params->language.CAMERA_DISABLE_OUT,
         wxPoint(20, 20));
+    wxCheckBox* cb7 = new wxCheckBox(this, GUI::DISABLE_OPENVR_API_CHECKBOX, params->language.CAMERA_DISABLE_OPENVR_API,
+        wxPoint(20, 20));
     //wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
     //   wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
@@ -90,6 +92,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, params->language.CAMERA_LOCK_HEIGHT,
         wxPoint(20, 20));
 
+    cb7->SetValue(true);
+
     fgs->Add(btn1);
     fgs->Add(cb1);
     fgs->Add(btn2);
@@ -103,6 +107,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     fgs->Add(btn5);
     fgs->Add(parentGUI->cb3);
     fgs->Add(cb6);
+    fgs->Add(cb7);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     //fgs->Add(parentGUI->calibrationModeCheckbox);
 

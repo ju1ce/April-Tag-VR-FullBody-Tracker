@@ -5,8 +5,8 @@
 #pragma warning(pop)
 
 #include "Parameters.h"
-#include <windows.h>
 #include <openvr.h>
+#include <memory>
 
 struct TrackerConnection {
     int TrackerId;
@@ -15,6 +15,16 @@ struct TrackerConnection {
     std::string Role;
 };
 
+#include "Util.h"
+
+#if OS_WIN
+    #include "IPC/WindowsNamedPipe.h"
+#elif OS_LINUX
+    #include "IPC/UNIXSocket.h"
+#endif
+
+class GUI;
+
 class Connection
 {
 public:
@@ -22,9 +32,10 @@ public:
     const int WAITING = 1;
     const int CONNECTED = 2;
     Connection(Parameters*);
+    ~Connection();
     Parameters* parameters;
     void StartConnection();
-    std::istringstream Send(std::string lpszWrite);
+    std::istringstream Send(std::string buffer);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
     void GetControllerPose(double outpose[]);
@@ -32,18 +43,14 @@ public:
     int status = DISCONNECTED;
     vr::IVRSystem* openvr_handle;
     std::vector<TrackerConnection> connectedTrackers;
+    bool disableOpenVrApi = true;
+    GUI* gui;
 private:
     void Connect();
-    HANDLE hpipe;
-    int pipeNum = 1;
-    const int BUFSIZE = 1024;
-    CHAR chReadBuf[1024];
-    BOOL fSuccess;
-    DWORD cbRead;
-    LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ApriltagPipeIn");
-
+    std::unique_ptr<IPC::IClient> bridge_driver;
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionHand = vr::k_ulInvalidActionHandle;
+    
 };

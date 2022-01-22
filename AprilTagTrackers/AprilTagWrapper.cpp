@@ -1,5 +1,3 @@
-#pragma once
-
 #include "AprilTagWrapper.h"
 
 #include <vector>
@@ -18,6 +16,7 @@ AprilTagWrapper::AprilTagWrapper(const Parameters* params)
     , parameters(params)
 {
     td->quad_decimate = parameters->quadDecimate;
+    td->nthreads = 4; //TODO: make nthreads a parameter or calculate it somehow
     apriltag_family_t* tf;
     if (parameters->markerLibrary == APRILTAG_CIRCULAR)
         tf = tagCircle21h7_create();

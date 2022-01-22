@@ -10,7 +10,7 @@ if (NOT ${OpenCV_opencv_aruco_FOUND})
 endif()
 
 # Add source to this project's executable.
-file(GLOB source "*.cpp" "*.h")
+file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h")
 add_executable (AprilTagTrackers ${source})
 
 # Link paths to libraries
