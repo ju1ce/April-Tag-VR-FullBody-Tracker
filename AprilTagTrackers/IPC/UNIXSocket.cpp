@@ -2,7 +2,7 @@
 
 #if OS_LINUX
 #include <errno.h>
-#include <iostrea>
+#include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
