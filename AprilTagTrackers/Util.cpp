@@ -1,6 +1,8 @@
 #include "Util.h"
 
-#include <Windows.h>
+#if OS_WIN
+    #include <Windows.h>
+#endif
 
 void sleep_millis(int duration)
 {
