@@ -260,9 +260,11 @@ void Tracker::CameraLoop()
     }
     cv::Mat img;
     cv::Mat drawImg;
-    double fps = 0;
+    //double fps = 0;
     last_frame_time = clock();
     bool frame_visible = false;
+    double polka = 0; //basicly FPS after math, Spinny leeky
+    int ovl; //test if it int OVFLW
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -273,19 +275,37 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
+
         clock_t curtime = clock();
-        fps = 0.95*fps + 0.05/(double(curtime - last_frame_time) / double(CLOCKS_PER_SEC));
-        last_frame_time = curtime;        
+        polka = polka * 0.95 + (0.05 / (double(curtime - last_frame_time)/CLOCKS_PER_SEC));
+        last_frame_time = curtime;
+        
+        if (((int)polka == INT_MAX) || ((int)polka == INT_MIN) && (ovl < 1000)) //cuts the loop and tries again incase of overflow
+        {
+            ovl++; //prevents infinite loops
+            continue;
+        }
+        
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
         }
+              
         std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
         if (previewCamera || previewCameraCalibration)
         {
             img.copyTo(drawImg);
-            cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            if (ovl < 1000) //is the overflow still presistant? give up lol
+            {
+                cv::putText(drawImg, std::to_string((int)(polka + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            }
+            else 
+            {
+                cv::putText(drawImg, "OverFlow after 1000 tries. Please Retry" , cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255));
+            }
+            ovl = 0; //reset overload
             cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            
             if (previewCameraCalibration)
             {
                 previewCalibration(drawImg, parameters);
