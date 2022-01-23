@@ -18,7 +18,7 @@ add_subdirectory("openvr" EXCLUDE_FROM_ALL)
 # TODO: fork openvr to fix build errors
 get_directory_property(PLATFORM_NAME DIRECTORY "openvr" DEFINITION "PLATFORM_NAME")
 get_directory_property(PROCESSOR_ARCH DIRECTORY "openvr" DEFINITION "PROCESSOR_ARCH")
-set(OpenVR_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/openvr/lib/${PLATFORM_NAME}${PROCESSOR_ARCH}/openvr_api.lib")
+find_library(OpenVR_LIB openvr_api REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/openvr/lib/${PLATFORM_NAME}${PROCESSOR_ARCH}" NO_DEFAULT_PATH)
 set(OpenVR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/openvr/headers")
 
 # Include main project

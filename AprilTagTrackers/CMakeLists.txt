@@ -14,7 +14,7 @@ file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h")
 add_executable (AprilTagTrackers ${source})
 
 # Link paths to libraries
-target_link_libraries(AprilTagTrackers PUBLIC ${OpenVR_LIBS})
+target_link_libraries(AprilTagTrackers PUBLIC ${OpenVR_LIB})
 target_include_directories(AprilTagTrackers PUBLIC ${OpenVR_INCLUDE_DIR})
 
 # Link libraries defined as targets, includes are automatic
