@@ -261,7 +261,8 @@ void Tracker::CameraLoop()
     cv::Mat img;
     cv::Mat drawImg;
     //double fps = 0;
-    last_frame_time = clock();
+    last_frame_time;
+    clock_t curtime;
     bool frame_visible = false;
     double polka = 0; //basicly FPS after math, Spinny leeky
     int ovl; //test if it int OVFLW
@@ -275,16 +276,21 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
-
-        clock_t curtime = clock();
+      
+       
+        curtime = clock();
         polka = polka * 0.95 + (0.05 / (double(curtime - last_frame_time)/CLOCKS_PER_SEC));
         last_frame_time = curtime;
         
+        
         if (((int)polka == INT_MAX) || ((int)polka == INT_MIN) && (ovl < 1000)) //cuts the loop and tries again incase of overflow
         {
+            
             ovl++; //prevents infinite loops
+          
             continue;
         }
+        
         
         if (rotate)
         {
