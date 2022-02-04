@@ -105,7 +105,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     fgs->Add(cb6);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     //fgs->Add(parentGUI->calibrationModeCheckbox);
-
+    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    fgs->Add(new wxStaticText(this, -1, ("Camera: " + params->octiuSah)), 0, wxEXPAND);
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 
     //hbox->Add(cb3, 1, wxALL | wxEXPAND, 15);
@@ -146,6 +147,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
     : wxPanel(parent)
     , parameters(params)
     , connection(conn)
+    , octiuSahField(new wxTextCtrl(this, -1, parameters->octiuSah)) //maru
     , cameraAddrField(new wxTextCtrl(this, -1, parameters->cameraAddr))
     , cameraApiField(new wxTextCtrl(this, -1, std::to_string(parameters->cameraApiPreference)))
     , trackerNumField(new wxTextCtrl(this, -1, std::to_string(parameters->trackerNum)))
@@ -176,6 +178,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
     , trackerCalibCentersField(new wxCheckBox(this, -1, wxT("")))
     , depthSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->depthSmoothing)))
     , additionalSmoothingField(new wxTextCtrl(this, -1, std::to_string(parameters->additionalSmoothing)))
+    
 {
     //usePredictiveField->SetValue(parameters->usePredictive);
     ignoreTracker0Field->SetValue(parameters->ignoreTracker0);
@@ -209,14 +212,15 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
 
     addTextWithTooltip(this, fgs, params->language.PARAMS_LANGUAGE, params->language.PARAMS_LANGUAGE);
     fgs->Add(languageField);
-
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    addTextWithTooltip(this, fgs, params->language.WINDOW_TITLE, params->language.WINDOW_TITLE_TOOLTIP);
+    fgs->Add(octiuSahField);
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
+    //fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
-
+    
     addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_ID, params->language.PARAMS_CAMERA_TOOLTIP_ID);
     fgs->Add(cameraAddrField);
     addTextWithTooltip(this, fgs, params->language.PARAMS_CAMERA_NAME_API, params->language.PARAMS_CAMERA_TOOLTIP_API);
@@ -327,6 +331,7 @@ void ParamsPage::ShowHelp(wxCommandEvent& event)
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {
     try {
+        parameters->octiuSah = octiuSahField->GetValue().ToStdString();
         parameters->cameraAddr = cameraAddrField->GetValue().ToStdString();
         parameters->cameraApiPreference = std::stoi(cameraApiField->GetValue().ToStdString());
         parameters->trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());

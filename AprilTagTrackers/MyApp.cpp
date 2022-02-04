@@ -4,7 +4,6 @@
 #include "MyApp.h"
 #include "Parameters.h"
 #include "Tracker.h"
-
 wxIMPLEMENT_APP(MyApp);
 
 int MyApp::OnExit()
@@ -20,14 +19,13 @@ bool MyApp::OnInit()
     params = new Parameters();
     conn = new Connection(params);
     tracker = new Tracker(params, conn, this);
-
+    
 
     gui = new GUI(params->language.APP_TITLE,params,conn);
     gui->Show(true);
 
     gui->posHbox->Show(false);
     gui->rotHbox->Show(false);
-
     tracker->gui = gui;
 
     Connect(GUI::CAMERA_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCamera));

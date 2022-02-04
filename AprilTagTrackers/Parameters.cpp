@@ -69,6 +69,7 @@ void Parameters::Load()
         fs["numOfPrevValues"] >> numOfPrevValues;
         fs["quadDecimate"] >> quadDecimate;
         fs["searchWindow"] >> searchWindow;
+        fs["octiuSah"] >> octiuSah;
         fs["usePredictive"] >> usePredictive;
         fs["calibrationTracker"] >> calibrationTracker;
         fs["rotateCl"] >> rotateCl;
@@ -195,6 +196,7 @@ void Parameters::Save()
     fs << "numOfPrevValues" << numOfPrevValues;
     fs << "quadDecimate" << quadDecimate;
     fs << "searchWindow" << searchWindow;
+    fs << "octiuSah" << octiuSah; //maru's
     fs << "usePredictive" << usePredictive;
     fs << "calibrationTracker" << calibrationTracker;
     fs << "rotateCl" << rotateCl;

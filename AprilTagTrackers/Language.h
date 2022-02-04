@@ -14,6 +14,9 @@ public:
 	wxString TAB_PARAMS = "Params";
 	wxString TAB_LICENSE = "License";
 
+	wxString WINDOW_TITLE = "Set title bar [requires app restart]";
+	wxString WINDOW_TITLE_TOOLTIP = "Set a custom title name for the camera \n *requires restarting*";
+
 	wxString CAMERA_START_CAMERA = "1. Start/Stop camera";
 	wxString CAMERA_CALIBRATE_CAMERA = "2. Calibrate camera";
 	wxString CAMERA_CALIBRATE_TRACKERS = "3. Calibrate trackers";
@@ -48,6 +51,7 @@ public:
 
 	wxString PARAMS_CAMERA = "CAMERA PARAMTERS";
 	wxString PARAMS_CAMERA_NAME_ID = "Ip or ID of camera";
+	
 	wxString PARAMS_CAMERA_TOOLTIP_ID = "Will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam";
 	wxString PARAMS_CAMERA_NAME_API = "Camera API preference";
 	wxString PARAMS_CAMERA_TOOLTIP_API = cameraApiDescriptions;

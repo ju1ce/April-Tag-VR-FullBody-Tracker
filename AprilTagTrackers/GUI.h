@@ -3,6 +3,7 @@
 #pragma warning(disable:4996)
 #include <wx/wx.h>
 #include <wx/notebook.h>
+#include <wx/frame.h>
 #pragma warning(pop)
 
 #include "Parameters.h"
@@ -124,6 +125,7 @@ class CameraPage : public wxPanel
 {
 public:
     CameraPage(wxNotebook* parent, GUI* parentGUI, Parameters* params);
+
 };
 
 class ParamsPage : public wxPanel
@@ -137,6 +139,7 @@ private:
     Parameters* parameters;
     Connection* connection;
     wxTextCtrl* cameraAddrField;
+    wxTextCtrl* octiuSahField;
     wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;

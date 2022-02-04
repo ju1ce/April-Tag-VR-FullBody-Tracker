@@ -1,5 +1,5 @@
 ﻿#pragma once
-
+//SetIcon(wxICON(ApplicationIcon));
 #pragma warning(push)
 #pragma warning(disable:4996)
 #include <wx/wx.h>
