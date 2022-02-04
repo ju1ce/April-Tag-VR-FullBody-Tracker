@@ -11,7 +11,7 @@ int MyApp::OnExit()
 {
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
-    Sleep(2000);
+    sleep_millis(2000);
     return 0;
 }
 
@@ -23,6 +23,9 @@ bool MyApp::OnInit()
 
 
     gui = new GUI(params->language.APP_TITLE,params,conn);
+
+    conn->gui = gui; // juice told me to write this, dont blame me 
+
     gui->Show(true);
 
     gui->posHbox->Show(false);
@@ -43,6 +46,7 @@ bool MyApp::OnInit()
     Connect(GUI::MULTICAM_AUTOCALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedMulticamAutocalib));
     Connect(GUI::LOCK_HEIGHT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedLockHeight));
     Connect(GUI::DISABLE_OUT_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedDisableOut));
+    Connect(GUI::DISABLE_OPENVR_API_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedDisableOpenVrApi));
 
     return true;
 }
@@ -120,6 +124,20 @@ void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
     else
     {
         tracker->disableOut = false;
+    }
+}
+
+void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
+{
+    if (event.IsChecked())
+    {
+        tracker->disableOpenVrApi = true;
+        conn->disableOpenVrApi = true;
+    }
+    else
+    {
+        tracker->disableOpenVrApi = false;
+        conn->disableOpenVrApi = false;
     }
 }
 

@@ -5,6 +5,8 @@
 #include <wx/wx.h>
 #pragma warning(pop)
 
+#include "Util.h"
+
 class Connection;
 class GUI;
 class Parameters;
@@ -32,4 +34,5 @@ public:
     void ButtonPressedMulticamAutocalib(wxCommandEvent&);
     void ButtonPressedLockHeight(wxCommandEvent&);
     void ButtonPressedDisableOut(wxCommandEvent&);
+    void ButtonPressedDisableOpenVrApi(wxCommandEvent&);
 };
