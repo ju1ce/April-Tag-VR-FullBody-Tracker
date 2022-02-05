@@ -12,6 +12,7 @@ endif()
 # Add source to this project's executable.
 file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h")
 add_executable (AprilTagTrackers ${source})
+target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Link paths to libraries
 target_link_libraries(AprilTagTrackers PUBLIC ${OpenVR_LIB})

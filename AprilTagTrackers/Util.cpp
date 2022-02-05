@@ -1,5 +1,8 @@
 #include "Util.h"
 
+#include <chrono>
+#include <thread>
+
 #if OS_WIN
     #include <Windows.h>
 #endif

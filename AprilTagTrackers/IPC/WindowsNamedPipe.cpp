@@ -1,4 +1,4 @@
-#include "WindowsNamedPipe.h"
+#include "IPC.h"
 
 #if OS_WIN
 #include <Windows.h>

@@ -17,11 +17,7 @@ struct TrackerConnection {
 
 #include "Util.h"
 
-#if OS_WIN
-    #include "IPC/WindowsNamedPipe.h"
-#elif OS_LINUX
-    #include "IPC/UNIXSocket.h"
-#endif
+#include "IPC/IPC.h"
 
 class GUI;
 
