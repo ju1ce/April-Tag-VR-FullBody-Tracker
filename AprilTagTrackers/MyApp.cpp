@@ -21,7 +21,7 @@ bool MyApp::OnInit()
     tracker = new Tracker(params, conn, this);
     
 
-    gui = new GUI(params->language.APP_TITLE,params,conn);
+    gui = new GUI(params->language.APP_TITLE + " [" + params->octiuSah + "]", params, conn);
     gui->Show(true);
 
     gui->posHbox->Show(false);

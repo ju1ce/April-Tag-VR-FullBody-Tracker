@@ -4,10 +4,11 @@
 #include <wx/wx.h>
 #include <wx/notebook.h>
 #include <wx/frame.h>
+#include <wx/icon.h>
 #pragma warning(pop)
-
 #include "Parameters.h"
 #include "Connection.h"
+
 
 
 class ValueInput : public wxPanel

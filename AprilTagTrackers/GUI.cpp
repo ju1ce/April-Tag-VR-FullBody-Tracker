@@ -21,11 +21,12 @@ GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
-
+    
     CameraPage* panel = new CameraPage(nb,this,params);
     ParamsPage* panel2 = new ParamsPage(nb, params, conn);
     LicensePage* panel3 = new LicensePage(nb);
-
+    SetIcon(wxIcon(wxT("./img/april.ico"), wxBITMAP_TYPE_ICO , -1,-1));
+    //nb->SetIcon(myicon);
     nb->AddPage(panel, params->language.TAB_CAMERA);
     nb->AddPage(panel2, params->language.TAB_PARAMS);
     nb->AddPage(panel3, params->language.TAB_LICENSE);
