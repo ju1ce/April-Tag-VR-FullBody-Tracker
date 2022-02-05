@@ -361,8 +361,8 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         parameters->cameraGain = std::stoi(cameraGainField->GetValue().ToStdString());
         parameters->chessboardCalib = false;// chessboardCalibField->GetValue();
         parameters->trackerCalibCenters = trackerCalibCentersField->GetValue();
-        parameters->depthSmoothing = std::stod(depthSmoothingField->GetValue().ToStdString());
-        parameters->additionalSmoothing = std::stod(additionalSmoothingField->GetValue().ToStdString());
+        parameters->depthSmoothing = std::stof(depthSmoothingField->GetValue().ToStdString());
+        parameters->additionalSmoothing = std::stof(additionalSmoothingField->GetValue().ToStdString());
         parameters->markerLibrary = markerLibraryField->GetSelection();
         int prevLanguage = parameters->languageSelection;
         parameters->languageSelection = languageField->GetSelection();

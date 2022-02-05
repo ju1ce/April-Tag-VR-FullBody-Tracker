@@ -73,12 +73,12 @@ void previewCalibration(
     if (!cameraMatrix.empty())
     {
         const float gridZ = 10.0f;
-        const float width = drawImg.cols;
-        const float height = drawImg.rows;
-        const float fx = cameraMatrix(0, 0);
-        const float fy = cameraMatrix(1, 1);
-        const int gridSizeX = std::round(gridZ * width / fx);
-        const int gridSizeY = std::round(gridZ * height / fy);
+        const float width = static_cast<float>(drawImg.cols);
+        const float height = static_cast<float>(drawImg.rows);
+        const float fx = static_cast<float>(cameraMatrix(0, 0));
+        const float fy = static_cast<float>(cameraMatrix(1, 1));
+        const int gridSizeX = static_cast<int>(std::round(gridZ * width / fx));
+        const int gridSizeY = static_cast<int>(std::round(gridZ * height / fy));
         const std::vector<std::vector<cv::Point3f>> gridLinesInCamera = createXyGridLines(gridSizeX, gridSizeY, 10, gridZ);
         std::vector<cv::Point2f> gridLineInImage; // Will be populated by cv::projectPoints.
 
@@ -627,7 +627,7 @@ void Tracker::CalibrateCameraCharuco()
                             std::cerr << "Failed to calibrate: " << e.what();
                         }
 
-                        int curI = perViewErrors.size();
+                        size_t curI = perViewErrors.size();
 
                     }
                 }
@@ -740,7 +740,7 @@ void Tracker::CalibrateCamera()
     {
         for (int j{ 0 }; j < CHECKERBOARD[1]; j++)
         {
-            objp.push_back(cv::Point3f(j, i, 0));
+            objp.push_back(cv::Point3f(static_cast<float>(j), static_cast<float>(i), 0));
         }
     }
 
@@ -943,11 +943,11 @@ void Tracker::CalibrateTracker()
 
     //making a marker model of our markersize for later use
     std::vector<cv::Point3f> modelMarker;
-    double markerSize = parameters->markerSize;
-    modelMarker.push_back(cv::Point3f(-markerSize / 2, markerSize / 2, 0));
-    modelMarker.push_back(cv::Point3f(markerSize / 2, markerSize / 2, 0));
-    modelMarker.push_back(cv::Point3f(markerSize / 2, -markerSize / 2, 0));
-    modelMarker.push_back(cv::Point3f(-markerSize / 2, -markerSize / 2, 0));
+    int markerSize = static_cast<int>(std::trunc(parameters->markerSize));
+    modelMarker.push_back(cv::Point3f(-markerSize / 2.f, markerSize / 2.f, 0));
+    modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
+    modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));
+    modelMarker.push_back(cv::Point3f(-markerSize / 2.f, -markerSize / 2.f, 0));
 
     AprilTagWrapper april{parameters};
 
@@ -1000,7 +1000,7 @@ void Tracker::CalibrateTracker()
 
         //estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, markerSize, parameters->camMat, parameters->distCoeffs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), parameters->camMat, parameters->distCoeffs, rvecs, tvecs);
         /*
         for (int i = 0; i < rvecs.size(); ++i) {
             //draw axis for each marker
@@ -1013,7 +1013,7 @@ void Tracker::CalibrateTracker()
         }
         */
 
-        float maxDist = parameters->trackerCalibDistance;
+        float maxDist = static_cast<float>(parameters->trackerCalibDistance);
 
         for (int i = 0; i < boardIds.size(); i++)           //for each of the trackers
         {
@@ -1098,7 +1098,7 @@ void Tracker::CalibrateTracker()
                         }
                         if (listIndex < 0)                  //if not, add and initialize it
                         {
-                            listIndex = idsList.size();
+                            listIndex = static_cast<int>(idsList.size());
                             idsList.push_back(ids[j]);
                             cornersList.push_back(std::vector<std::vector<cv::Point3f>>());
                         }
@@ -1163,7 +1163,7 @@ void Tracker::CalibrateTracker()
 void Tracker::MainLoop()
 {
 
-    int trackerNum = connection->connectedTrackers.size();
+    size_t trackerNum = connection->connectedTrackers.size();
     int numOfPrevValues = parameters->numOfPrevValues;
 
     //these variables are used to save detections of apriltags, so we dont define them every frame
@@ -1355,7 +1355,7 @@ void Tracker::MainLoop()
                 tvec[1] = rpos.at<double>(1, 0);
                 tvec[2] = rpos.at<double>(2, 0);
 
-                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.10);
+                cv::aruco::drawAxis(drawImg, parameters->camMat, parameters->distCoeffs, rvec, tvec, 0.10f);
 
                 if (!trackerStatus[i].boardFound)
                 {
@@ -1390,7 +1390,7 @@ void Tracker::MainLoop()
 
         cv::Mat dstImage = cv::Mat::zeros(gray.size(), gray.type());
 
-        int size = gray.rows * parameters->searchWindow;
+        int size = static_cast<int>(std::trunc(gray.rows * parameters->searchWindow));
 
         bool doMasking = false;
 
@@ -1410,8 +1410,9 @@ void Tracker::MainLoop()
             }
             else
             {
-                rectangle(mask, cv::Point(trackerStatus[i].maskCenter.x - size, 0), cv::Point(trackerStatus[i].maskCenter.x + size, image.rows), cv::Scalar(255, 0, 0), -1);
-                rectangle(drawImg, cv::Point(trackerStatus[i].maskCenter.x - size, 0), cv::Point(trackerStatus[i].maskCenter.x + size, image.rows), cv::Scalar(255, 0, 0), 3);
+                int maskCenter = static_cast<int>(std::trunc(trackerStatus[i].maskCenter.x));
+                rectangle(mask, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), -1);
+                rectangle(drawImg, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
             }
         }
 

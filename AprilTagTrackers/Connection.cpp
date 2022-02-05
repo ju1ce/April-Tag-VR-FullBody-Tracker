@@ -317,7 +317,7 @@ int Connection::GetButtonStates()
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
-    vr::InputPoseActionData_t poseData;
+    // vr::InputPoseActionData_t poseData;
 
     if (GetDigitalActionState(m_actionCamera))
         return 1;
