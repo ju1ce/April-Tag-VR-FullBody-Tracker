@@ -287,6 +287,7 @@ void Tracker::CameraLoop()
     cv::Mat img;
     cv::Mat drawImg;
     double fps = 0;
+    clock_t last_preview_time = clock();
     last_frame_time = clock();
     bool frame_visible = false;
     while (cameraRunning)
@@ -310,45 +311,50 @@ void Tracker::CameraLoop()
             cv::rotate(img, img, rotateFlag);
         }
         std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
-        if (previewCamera || previewCameraCalibration)
+        double timeSinceLast = (double(curtime - last_preview_time) / double(CLOCKS_PER_SEC));  //ensure that preview isnt shown more than 60 times per second, otherwise the CallAfter function gets overloaded
+        if (timeSinceLast > 0.015)
         {
-            img.copyTo(drawImg);
-            cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
-            cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
-            if (previewCameraCalibration)
+            if ((previewCamera || previewCameraCalibration))
             {
-                cv::Mat *outImg = new cv::Mat();
-                drawImg.copyTo(*outImg);
-                previewCalibration(*outImg, parameters);
-                gui->CallAfter([outImg] ()
-                               {
-                               cv::imshow("Preview", *outImg);
-                               cv::waitKey(1);
-                               delete(outImg);
-                               });
-                previewShown = true;
+                last_preview_time = clock();
+                img.copyTo(drawImg);
+                cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+                cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+                if (previewCameraCalibration)
+                {
+                    cv::Mat* outImg = new cv::Mat();
+                    drawImg.copyTo(*outImg);
+                    previewCalibration(*outImg, parameters);
+                    gui->CallAfter([outImg]()
+                        {
+                            cv::imshow("Preview", *outImg);
+                            cv::waitKey(1);
+                            delete(outImg);
+                        });
+                    previewShown = true;
+                }
+                else
+                {
+                    cv::Mat* outImg = new cv::Mat();
+                    drawImg.copyTo(*outImg);
+                    gui->CallAfter([outImg]()
+                        {
+                            cv::imshow("Preview", *outImg);
+                            cv::waitKey(1);
+                            delete(outImg);
+                        });
+                    previewShown = true;
+                }
+                frame_visible = true;
             }
-            else
+            else if (previewShown)
             {
-                cv::Mat *outImg = new cv::Mat();
-                drawImg.copyTo(*outImg);
-                gui->CallAfter([outImg] ()
-                               {
-                               cv::imshow("Preview", *outImg);
-                               cv::waitKey(1);
-                               delete(outImg);
-                               });
-                previewShown = true;
-            }
-            frame_visible = true;
-        }
-        else if (previewShown) 
-        {
-                gui->CallAfter([] ()
-                               {
-                               cv::destroyWindow("Preview");
-                               });
+                gui->CallAfter([]()
+                    {
+                        cv::destroyWindow("Preview");
+                    });
                 previewShown = false;
+            }
         }
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
@@ -486,12 +492,17 @@ void Tracker::CalibrateCameraCharuco()
         wxString e = parameters->language.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS;
         int *mdr = &messageDialogResponse;
         bool *mtr = &mainThreadRunning;
+        
+#if OS_LINUX                                        //temporary fix, as showmodal inside a callafter doesnt work on windows, causing the out window to only update when you move your mouse
         gui->CallAfter([e, mdr, mtr] ()
             {
+#endif
             wxMessageDialog dial(NULL, e, wxT("Message"), wxOK | wxCANCEL);
             *mdr = dial.ShowModal();
             *mtr = false;
+#if OS_LINUX
             });
+#endif
         
     } };
 
@@ -564,11 +575,12 @@ void Tracker::CalibrateCameraCharuco()
 
         cv::Mat *outImg = new cv::Mat();
         cv::resize(drawImg, *outImg, cv::Size(cols, rows));
-        char key;
+        char key = -1;
         gui->CallAfter([outImg, &key] ()
                         {
                         cv::imshow("out", *outImg);
-                        key = (char)cv::waitKey(1);
+                        //key = (char)cv::waitKey(1);
+                        cv::waitKey(1);
                         delete(outImg);
                         });
 
@@ -880,12 +892,17 @@ void Tracker::StartTrackerCalib()
     std::thread th{ [=]() {
         wxString e = parameters->language.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS;
         bool *mtr = &mainThreadRunning;
-        gui->CallAfter([e, mtr] ()
-                        {
+
+#if OS_LINUX                                        //temporary fix, as showmodal inside a callafter doesnt work on windows, causing the out window to only update when you move your mouse
+        gui->CallAfter([e, mtr]()
+            {
+#endif
                         wxMessageDialog dial(NULL, e, wxT("Message"), wxOK);
                         dial.ShowModal();
                         *mtr = false;
+#if OS_LINUX 
                         });
+#endif
     } };
 
     th.detach();
