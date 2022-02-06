@@ -2,6 +2,39 @@
 
 #include "Parameters.h"
 
+UserParamsStorage::UserParamsStorage()
+    : ParamStorage(std::move("config.yaml"))
+{
+    Add<int>("markersPerTracker", 45, [](auto &value)
+             { value <= 0 ? value = 45 : 0; });
+    Add<std::string>("cameraAddr", "0");
+    Add<int>("cameraApiPreference");
+    Add<int>("camFPS", 30, [](auto &value)
+             { value < 10 ? value = 10 : value > 60 ? value = 60 : 0; });
+    Add<cv::Point2i>("camRes");
+}
+
+void ParamStorage::Save()
+{
+    std::cout << "Writing to " << file_path << std::endl;
+    cv::FileStorage fs(file_path, cv::FileStorage::WRITE);
+    if (!fs.isOpened()) return;
+
+    for (const auto &p : params)
+        p.second->Serialize(fs, p.first);
+
+    fs.release();
+}
+
+void ParamStorage::Load()
+{
+    cv::FileStorage fs(file_path, cv::FileStorage::READ);
+    if (!fs.isOpened()) return;
+
+    for (auto &p : params)
+        p.second->Deserialize(fs[p.first]);
+}
+
 Parameters::Parameters()
 {
     Load();
@@ -9,18 +42,18 @@ Parameters::Parameters()
 
 void Parameters::Load()
 {
-    cv::FileStorage fs("params.yml", cv::FileStorage::READ);		//open test.yml file to read parameters
+    cv::FileStorage fs("params.yml", cv::FileStorage::READ); // open test.yml file to read parameters
 
-    if (!fs["cameraAddr"].empty())			//if file exists, load all parameters from file into variables
+    if (!fs["cameraAddr"].empty()) // if file exists, load all parameters from file into variables
     {
         fs["markersPerTracker"] >> markersPerTracker;
         if (markersPerTracker <= 0)
             markersPerTracker = 45;
         aruco_params = cv::aruco::DetectorParameters::create();
         aruco_params->detectInvertedMarker = true;
-        aruco_params->cornerRefinementMethod = 2;
+        aruco_params->cornerRefinementMethod = cv::aruco::CORNER_REFINE_CONTOUR;
         cv::FileNode fn = fs["arucoParams"];
-        if (!fn.empty())		//load all saved aruco params
+        if (!fn.empty()) // load all saved aruco params
         {
             fn["cornerRefinementMethod"] >> aruco_params->cornerRefinementMethod;
             fn["markerBorderBits"] >> aruco_params->markerBorderBits;
@@ -108,10 +141,10 @@ void Parameters::Load()
         fs["calibScale"] >> calibScale;
         if (calibScale < 0.5)
             calibScale = 1;
-        if(!wrotmat.empty())
+        if (!wrotmat.empty())
             wrotation = Quaternion<double>(wrotmat.at<double>(0), wrotmat.at<double>(1), wrotmat.at<double>(2), wrotmat.at<double>(3));
         fn = fs["trackers"];
-        if (!fn.empty())		//load all saved markers
+        if (!fn.empty()) // load all saved markers
         {
             cv::FileNodeIterator curMarker = fn.begin(), it_end = fn.end();
             for (; curMarker != it_end; ++curMarker)
@@ -120,7 +153,7 @@ void Parameters::Load()
                 std::vector<int> boardIds;
                 cv::FileNode item = *curMarker;
                 item["trackerIds"] >> boardIds;
-                //data.push_back(tmp);
+                // data.push_back(tmp);
                 cv::FileNode fnCorners = item["trackerCorners"];
                 if (!fnCorners.empty())
                 {
@@ -139,7 +172,7 @@ void Parameters::Load()
         }
     }
     fs.release();
-    if(languageSelection == 1)
+    if (languageSelection == 1)
         language = get_lang_chinese();
 }
 
@@ -210,7 +243,7 @@ void Parameters::Save()
     fs << "smoothingFactor" << smoothingFactor;
     fs << "ignoreTracker0" << ignoreTracker0;
     fs << "wtranslation" << wtranslation;
-    fs <<"wrotation" << (cv::Mat_<double>(4,1) << wrotation.w,wrotation.x,wrotation.y,wrotation.z);
+    fs << "wrotation" << (cv::Mat_<double>(4, 1) << wrotation.w, wrotation.x, wrotation.y, wrotation.z);
     fs << "cameraSettings" << cameraSettings;
     fs << "chessboardCalib" << chessboardCalib;
     fs << "camLatency" << camLatency;

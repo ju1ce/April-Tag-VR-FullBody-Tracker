@@ -1,11 +1,153 @@
 #pragma once
-#include <iostream>
-#include <opencv2/core.hpp>
-#include <opencv2/aruco.hpp>
 #include "Quaternion.h"
+#include <iostream>
+#include <memory>
+#include <opencv2/aruco.hpp>
+#include <opencv2/core.hpp>
+#include <unordered_map>
 
 //#include "Language_English.h"
 #include "Language.h"
+
+// Base class for polymorphism, to store and serialize params in a type agnostic
+// way
+struct ParameterBase
+{
+    virtual ~ParameterBase() {}
+    virtual void Serialize(cv::FileStorage &fs, const std::string &name = "") const = 0;
+    virtual void Deserialize(const cv::FileNode &fn) = 0;
+    virtual void Validate() = 0;
+};
+
+// Typed version of the parameter, generated for each type
+template <typename T>
+struct Parameter : public ParameterBase
+{
+    Parameter(const T &default_value, void (*validate)(T &value))
+        : value(default_value), default_value(default_value), validate(validate) {}
+
+    T value;
+    const T &default_value;
+    void (*validate)(T &value);
+
+    virtual void Serialize(cv::FileStorage &fs, const std::string &name = "") const override
+    {
+        fs << name << value;
+    }
+    virtual void Deserialize(const cv::FileNode &fn) override
+    {
+        if (!fn.empty())
+        {
+            fn >> value;
+            if (validate) validate(value);
+        }
+        else
+            value = default_value;
+    }
+    virtual void Validate() override
+    {
+        if (validate) validate(value);
+    }
+
+    virtual ~Parameter() override {}
+};
+
+class ParamNode
+{
+public:
+    ParamNode() {}
+    ParamNode(ParamNode &&node) noexcept
+        : params(std::move(node.params)) {}
+    ~ParamNode()
+    {
+        for (auto &p : params)
+        {
+            delete p.second;
+        }
+    }
+
+    ParamNode(const ParamNode &) = delete;
+    void operator=(const ParamNode &) = delete;
+
+    // T may be able to be deduced via the return type at the callsite
+    template <typename T>
+    auto &Ref(const std::string &name)
+    {
+        return static_cast<Parameter<T> *>(params.at(name))->value;
+    }
+
+    template <typename T>
+    const auto &Get(const std::string &name) const
+    {
+        return static_cast<const Parameter<T> *>(params.at(name))->value;
+    }
+
+#define REF_TYPE_ALIAS(name, T) \
+    T &name(const std::string &(name)) { return Ref<T>(name); }
+
+    REF_TYPE_ALIAS(Int, int)
+    REF_TYPE_ALIAS(Float, float)
+    REF_TYPE_ALIAS(Bool, bool)
+    REF_TYPE_ALIAS(String, std::string)
+    REF_TYPE_ALIAS(Mat, cv::Mat)
+    REF_TYPE_ALIAS(Node, ParamNode)
+
+#undef REF_TYPE_ALIAS
+
+protected:
+    // Add a parameter optionally specifying default and a validation lambda
+    template <typename T>
+    void Add(std::string &&name, const T &default_value = T(), void (*validate)(T &value) = nullptr)
+    {
+        auto ptr = new Parameter<T>(default_value, validate);
+        params.insert({std::move(name), static_cast<ParameterBase *>(ptr)});
+    }
+
+    std::unordered_map<std::string, ParameterBase *> params;
+
+private:
+    template <typename>
+    friend struct Parameter;
+};
+
+// Explicit templates for params that dont have a serialize implementation for
+// filestorage already
+
+// Providing the name indicates a nested structure
+template <>
+void Parameter<ParamNode>::Serialize(cv::FileStorage &fs, const std::string &name) const
+{
+    if (name.empty()) fs.startWriteStruct(name, cv::FileNode::MAP);
+    for (const auto &p : value.params)
+        p.second->Serialize(fs, p.first);
+    if (name.empty()) fs.endWriteStruct();
+}
+template <>
+void Parameter<ParamNode>::Deserialize(const cv::FileNode &fn)
+{
+    for (auto &p : value.params)
+        p.second->Deserialize(fn[p.first]);
+}
+
+class ParamStorage : public ParamNode
+{
+public:
+    ParamStorage(const std::string &file_path)
+        : file_path(file_path){};
+
+    void Save();
+    void Load();
+
+private:
+    const std::string file_path;
+};
+
+class UserParamsStorage : public ParamStorage
+{
+public:
+    UserParamsStorage();
+    Lang lang;
+};
 
 class Parameters
 {
@@ -67,9 +209,7 @@ public:
     int languageSelection = 0;
     double calibScale = 1;
 
-
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 
     Lang language;
-
 };
