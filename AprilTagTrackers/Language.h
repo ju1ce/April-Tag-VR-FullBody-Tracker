@@ -14,6 +14,9 @@ public:
 	wxString TAB_PARAMS = "Params";
 	wxString TAB_LICENSE = "License";
 
+	wxString WINDOW_TITLE = "Set title bar [requires app restart]";
+	wxString WINDOW_TITLE_TOOLTIP = "Set a custom title name for the camera \n *requires restarting*";
+
 	wxString CAMERA_START_CAMERA = "1. Start/Stop camera";
 	wxString CAMERA_CALIBRATE_CAMERA = "2. Calibrate camera";
 	wxString CAMERA_CALIBRATE_TRACKERS = "3. Calibrate trackers";
