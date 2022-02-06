@@ -138,6 +138,7 @@ private:
     Parameters* parameters;
     Connection* connection;
     wxTextCtrl* cameraAddrField;
+    wxTextCtrl* octiuSahField;
     wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;

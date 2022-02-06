@@ -22,7 +22,7 @@ bool MyApp::OnInit()
     tracker = new Tracker(params, conn, this);
 
 
-    gui = new GUI(params->language.APP_TITLE,params,conn);
+    gui = new GUI(params->language.APP_TITLE + " [" + params->octiuSah + "]", params, conn);
 
     conn->gui = gui; // juice told me to write this, dont blame me 
 

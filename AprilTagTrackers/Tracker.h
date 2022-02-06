@@ -9,7 +9,7 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
-
+#include "Parameters.h"
 #include "MyApp.h"
 
 #include "Quaternion.h"
