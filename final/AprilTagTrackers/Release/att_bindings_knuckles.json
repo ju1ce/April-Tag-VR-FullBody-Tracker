@@ -1,0 +1,32 @@
+{
+  "bindings": {
+    "/actions/demo": {
+      "sources": [
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/demo/in/grab_trackers"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/grip"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/demo/in/grab_camera"
+            }
+          },
+          "mode": "button",
+          "parameters": {
+            "haptic_amplitude": "0"
+          },
+          "path": "/user/hand/left/input/trigger"
+        }
+      ]
+    }
+  },
+  "controller_type": "knuckles",
+  "description": "Bindings for ATT for a knuckles controller",
+  "name": "ATT bindings for a knuckles controller"
+}

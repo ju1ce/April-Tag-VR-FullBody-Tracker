@@ -10,9 +10,11 @@ if (NOT ${OpenCV_opencv_aruco_FOUND})
 endif()
 
 # Add source to this project's executable.
-file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h")
+file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h" "*.rc")
 add_executable (AprilTagTrackers ${source})
 
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/april.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
+S
 # Link paths to libraries
 target_link_libraries(AprilTagTrackers PUBLIC ${OpenVR_LIB})
 target_include_directories(AprilTagTrackers PUBLIC ${OpenVR_INCLUDE_DIR})
@@ -27,3 +29,4 @@ endif()
 
 # Install target to bin folder
 install(TARGETS AprilTagTrackers RUNTIME)
+install(FILES "${AprilTagTrackers_SOURCE_DIR}/april.ico" DESTINATION bin)

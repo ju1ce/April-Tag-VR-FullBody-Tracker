@@ -1,0 +1,10 @@
+^C:\USERS\LOSWHEATLEYNDEW\SOURCE\REPOS\REPO\APRIL-TAG-VR-FULLBODY-TRACKER\APRIL-TAG-VR-FULLBODY-TRACKER-MASTER\CMAKELISTS.TXT
+setlocal
+C:\msys64\mingw64\bin\cmake.exe -SC:/Users/LosWheatleynDew/source/repos/repo/April-Tag-VR-FullBody-Tracker/April-Tag-VR-FullBody-Tracker-master -BC:/Users/LosWheatleynDew/source/repos/repo/April-Tag-VR-FullBody-Tracker/April-Tag-VR-FullBody-Tracker-master/final --check-stamp-file C:/Users/LosWheatleynDew/source/repos/repo/April-Tag-VR-FullBody-Tracker/April-Tag-VR-FullBody-Tracker-master/final/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

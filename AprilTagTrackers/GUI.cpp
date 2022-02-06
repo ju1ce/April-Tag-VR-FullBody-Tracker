@@ -25,7 +25,7 @@ GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
     CameraPage* panel = new CameraPage(nb,this,params);
     ParamsPage* panel2 = new ParamsPage(nb, params, conn);
     LicensePage* panel3 = new LicensePage(nb);
-    SetIcon(wxIcon(wxT("./img/april.ico"), wxBITMAP_TYPE_ICO, -1, -1));
+    SetIcon(wxIcon(wxT("april.ico"), wxBITMAP_TYPE_ICO, -1, -1));
     nb->AddPage(panel, params->language.TAB_CAMERA);
     nb->AddPage(panel2, params->language.TAB_PARAMS);
     nb->AddPage(panel3, params->language.TAB_LICENSE);
@@ -110,7 +110,7 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     fgs->Add(cb7);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     //fgs->Add(parentGUI->calibrationModeCheckbox);
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
+    
     fgs->Add(new wxStaticText(this, -1, ("Camera: " + params->octiuSah)), 0, wxEXPAND);
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 
@@ -218,8 +218,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
     fgs->Add(languageField);
     addTextWithTooltip(this, fgs, params->language.WINDOW_TITLE, params->language.WINDOW_TITLE_TOOLTIP);
     fgs->Add(octiuSahField);
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
