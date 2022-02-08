@@ -1,0 +1,15 @@
+include(ExternalProject)
+
+set(LIB_NAME apriltag)
+ExternalProject_Add(
+    ${LIB_NAME}
+    # Directories
+    PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/${LIB_NAME}"
+
+    EXCLUDE_FROM_ALL ON
+    TLS_VERIFY ON
+    UPDATE_DISCONNECTED ON
+    INSTALL_DIR "<PREFIX>/install"
+    CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    STEP_TARGETS install
+)
