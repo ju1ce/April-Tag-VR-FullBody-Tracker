@@ -1,10 +1,16 @@
-[submodule "apriltag"]
-	path = apriltag
-	url = https://github.com/rasmusgo/apriltag.git
-	branch = fixPullRequestLibraryName
-[submodule "wxWidgets"]
-	path = wxWidgets
-	url = https://github.com/wxWidgets/wxWidgets.git
-[submodule "openvr"]
-	path = openvr
-	url = https://github.com/ValveSoftware/openvr.git
+[submodule "deps/apriltag"]
+	path = deps/apriltag
+	url = https://github.com/funnbot/apriltag
+	ignore = all
+	shallow = true
+[submodule "deps/wxWidgets"]
+	path = deps/wxWidgets
+	url = https://github.com/wxWidgets/wxWidgets
+	branch = 9c0a8be1dc32063d91ed1901fd5fcd54f4f955a1
+	ignore = all
+	shallow = true
+[submodule "deps/openvr"]
+	path = deps/openvr
+	url = https://github.com/ValveSoftware/openvr
+	ignore = all
+	shallow = true
