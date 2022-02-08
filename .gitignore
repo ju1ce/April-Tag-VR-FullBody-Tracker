@@ -1,2 +1,3 @@
-/build
-/.vs
+build/
+.vs/
+.vscode/
