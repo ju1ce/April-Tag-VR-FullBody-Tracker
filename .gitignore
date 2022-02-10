@@ -1,3 +1,6 @@
 build/
 .vs/
 .vscode/
+
+deps/**
+!deps/CMakeList.txt

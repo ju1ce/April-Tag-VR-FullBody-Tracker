@@ -2,19 +2,24 @@
 	path = deps/apriltag
 	url = https://github.com/funnbot/apriltag
 	shallow = true
+	ignore = all
 [submodule "deps/wxWidgets"]
 	path = deps/wxWidgets
 	url = https://github.com/wxWidgets/wxWidgets
 	shallow = true
+	ignore = all
 [submodule "deps/openvr"]
 	path = deps/openvr
 	url = https://github.com/ValveSoftware/openvr
 	shallow = true
+	ignore = all
 [submodule "deps/opencv"]
 	path = deps/opencv
 	url = https://github.com/opencv/opencv
 	shallow = true
+	ignore = all
 [submodule "deps/opencv_contrib"]
 	path = deps/opencv_contrib
 	url = https://github.com/opencv/opencv_contrib
 	shallow = true
+	ignore = all

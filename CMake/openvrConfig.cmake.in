@@ -10,7 +10,7 @@ set_and_check(openvr_INCLUDE_DIR "${PACKGE_PREFIX_DIR}/headers/")
 set(openvr_HEADERS)
 
 foreach(file "openvr_api.json" "openvr_capi.h" "openvr_driver.h" "openvr.h")
-    set_and_check(openvr_HEADER "${OVR_PREFIX}/headers/${file})
+    set_and_check(openvr_HEADER "${OVR_PREFIX}/headers/${file}")
     list(APPEND openvr_HEADERS ${openvr_HEADER})
 endforeach()
 
