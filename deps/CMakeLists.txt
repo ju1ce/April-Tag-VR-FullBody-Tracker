@@ -92,7 +92,7 @@ if (${WX_BFS})
         # Directories
         ${setup_dirs_result}
         # Init the submodule
-        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
+        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --recursive --init <SOURCE_DIR>
         UPDATE_COMMAND ""
         # CMake handles the rest with default build and install
         CMAKE_ARGS -DwxBUILD_SHARED=1 -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
