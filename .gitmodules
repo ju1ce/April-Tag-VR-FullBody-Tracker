@@ -6,11 +6,20 @@
 [submodule "deps/wxWidgets"]
 	path = deps/wxWidgets
 	url = https://github.com/wxWidgets/wxWidgets
-	branch = 9c0a8be1dc32063d91ed1901fd5fcd54f4f955a1
 	ignore = all
 	shallow = true
 [submodule "deps/openvr"]
 	path = deps/openvr
 	url = https://github.com/ValveSoftware/openvr
+	ignore = all
+	shallow = true
+[submodule "deps/opencv"]
+	path = deps/opencv
+	url = https://github.com/opencv/opencv
+	ignore = all
+	shallow = true
+[submodule "deps/opencv_contrib"]
+	path = deps/opencv_contrib
+	url = https://github.com/opencv/opencv_contrib
 	ignore = all
 	shallow = true
