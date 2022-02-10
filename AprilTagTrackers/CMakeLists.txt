@@ -8,7 +8,7 @@ project("AprilTagTrackers")
 find_package(OpenCV REQUIRED 
     opencv_core opencv_imgproc opencv_calib3d
     opencv_features2d opencv_flann opencv_highgui
-    opencv_imgcodecs opencv_videoio opencv_videoio_ffmpeg\
+    opencv_imgcodecs opencv_videoio opencv_videoio_ffmpeg
     opencv_aruco
     "${CMAKE_SOURCE_DIR}/deps/opencv")
 find_package(openvr REQUIRED 

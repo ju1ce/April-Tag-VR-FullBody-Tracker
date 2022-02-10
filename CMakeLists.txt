@@ -25,7 +25,6 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
     # CMake will handle everything else
-    CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     # Deps

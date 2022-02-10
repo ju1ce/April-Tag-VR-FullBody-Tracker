@@ -5,7 +5,7 @@ if (EXISTS ${binary_dir})
 endif()
 message(STATUS "Cleaning build done.")
 
-if (${CLEAN_ALL_DEPS})
+if (${CLEAN_DEPS})
     file(GLOB deps_dirs "${CMAKE_CURRENT_SOURCE_DIR}/deps/*")
     foreach(dir ${deps_dirs})
         file(GLOB build_dirs "${dir}/build/*")

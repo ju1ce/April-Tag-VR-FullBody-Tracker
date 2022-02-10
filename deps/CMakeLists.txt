@@ -13,7 +13,7 @@ if (ON)
         PREFIX "${prefix}" SOURCE_DIR "${prefix}" DOWNLOAD_DIR "${prefix}"
         TMP_DIR "${prefix}/build/CMakeTemp" STAMP_DIR "${prefix}/CMakeStamp"
         BINARY_DIR "${prefix}/build"
-        INSTALL_DIR "${prefix}/install")
+        INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/install")
     endmacro()
 
     set(build_ep_error_result)
@@ -157,8 +157,9 @@ if (ON)
 
     configure_package_config_file(
         "${CMAKE_SOURCE_DIR}/CMake/openvrConfig.cmake.in" 
-        "${OVR_PREFIX}/openvrConfig.cmake"
-        INSTALL_DESTINATION "${OVR_PREFIX}/openvrConfig.cmake")
+        "${CMAKE_CURRENT_SOURCE_DIR}/install/openvrConfig.cmake"
+        INSTALL_DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/install/openvrConfig.cmake"
+        INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install")
 
     setup_dirs(${OVR_PREFIX})
     ExternalProject_Add(
@@ -200,13 +201,8 @@ if (ON)
 
 endif()
 
-
 # ---- OpenCV ---- #
 if (ON)
-    
-    if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-        set(CV_ARCH "x64")
-    endif()
 
     set(CV_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/opencv")
     setup_dirs(${CV_PREFIX})
@@ -216,16 +212,14 @@ if (ON)
         ${setup_dirs_result}
         # Get submodule files 
         DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
+        COMMAND ${CMAKE_COMMAND} -E copy_directory 
+            "${CV_C_PREFIX}/modules/aruco" "${CV_PREFIX}/modules/aruco"
         UPDATE_COMMAND ""
         # CMake handles the rest
-        CMAKE_ARGS -G ${CMAKE_GENERATOR} -A ${CV_ARCH}
-            -DBUILD_JAVA:BOOL=OFF -DBUILD_PERF_TESTS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF
+        CMAKE_ARGS -DBUILD_JAVA:BOOL=OFF -DBUILD_PERF_TESTS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF
             -DBUILD_opencv_apps:BOOL=OFF -DINSTALL_CREATE_DISTRIB:BOOL=ON
-            -DOPENCV_EXTRA_MODULES_PATH:PATH="${CV_C_PREFIX}/modules"
+            -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
         # Other options
         EXCLUDE_FROM_ALL ON
         DEPENDS opencv_contrib
