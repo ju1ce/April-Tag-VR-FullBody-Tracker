@@ -2,61 +2,24 @@ set(openvr_VERSION 1.16.8)
 
 @PACKAGE_INIT@
 
-if (TARGET openvr::openvr)
-    return()
-endif()
+set_and_check(openvr_INCLUDE_DIR "@PACKAGE_OVR_INCLUDE_DIR@")
 
-set_and_check(openvr_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/headers/")
-set(openvr_HEADERS)
+set_and_check(openvr_HEADERS "${openvr_INCLUDE_DIR}/openvr.h"
+    "${openvr_INCLUDE_DIR}/openvr_driver.h")
 
-foreach(file "openvr_api.json" "openvr_capi.h" "openvr_driver.h" "openvr.h")
-    set_and_check(openvr_HEADER "${OVR_PREFIX}/headers/${file}")
-    list(APPEND openvr_HEADERS ${openvr_HEADER})
-endforeach()
-
-# Check if 32 or 64 bit system.
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-    set(openvr_ARCH "64")
-else()
-    set(openvr_ARCH "32")
-endif()
-
-# Get library files
-if(WIN32)
-    set(openvr_PLATFORM "win")
-    set(openvr_LIBNAME "openvr_api")
-    set(openvr_LIBEXT ".dll")
-    if (${openvr_ARCH} STREQUAL "64")
-        set(openvr_LIBNAME "openvr_api64")
-    endif()
-
-    set_and_check(openvr_IMPLIB "${PACKAGE_PREFIX_DIR}/lib/${openvr_PLATFORM}${openvr_ARCH}/${openvr_LIBNAME}.lib")
-    elseif(UNIX)
-    if (APPLE)
-        set(openvr_PLATFORM "osx")
-        set(openvr_LIBEXT ".dylib")
-    else()
-        set(openvr_PLATFORM "linux")
-        set(openvr_LIBEXT ".so")
-    endif()
-    set(openvr_LIBNAME "libopenvr_api")
-endif()
-
-set_and_check(openvr_LIB "${PACKAGE_PREFIX_DIR}/bin/${openvr_LIBNAME}${openvr_LIBEXT}")
-
-# Cleanup
-unset(openvr_HEADER)
-unset(openvr_ARCH)
-unset(openvr_PLATFORM)
-unset(openvr_LIBNAME)
-unset(openvr_LIBEXT)
+set_and_check(openvr_IMPLIB "@PACKAGE_OVR_IMPLIB_OUTPUT@")
+set_and_check(openvr_LIB "@PACKAGE_OVR_LIB_OUTPUT@")
 
 # No components so doesn't do much
 check_required_components("openvr")
 
+if (TARGET openvr::openvr)
+    return()
+endif()
+
 add_library(openvr::openvr SHARED IMPORTED)
-target_set_properties(openvr::openvr PROPERTIES
+set_target_properties(openvr::openvr PROPERTIES
     IMPORTED_LOCATION "${openvr_LIB}"
     IMPORTED_IMPLIB "${openvr_IMPLIB}")
-target_include_directories(openvr::openvr PUBLIC ${openvr_INCLUDE_DIR})
-target_sources(openvr::openvr ${openvr_HEADERS})
+target_include_directories(openvr::openvr INTERFACE ${openvr_INCLUDE_DIR})
+target_sources(openvr::openvr INTERFACE ${openvr_HEADERS})

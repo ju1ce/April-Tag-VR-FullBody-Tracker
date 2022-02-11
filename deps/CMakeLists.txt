@@ -1,26 +1,31 @@
 include(ExternalProject)
 include(CMakePackageConfigHelpers)
+include("${CMAKE_SOURCE_DIR}/CMake/platform.cmake")
 
 find_program(GIT_CMD git REQUIRED)
 find_program(CURL_CMD curl REQUIRED)
+
+execute_process(COMMAND ${GIT_CMD} submodule update --init -j 2 
+    "deps/apriltag" "deps/opencv" "deps/opencv_contrib" "deps/openvr"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/install")
+set(DEPS_INSTALL_DIR ${DEPS_INSTALL_DIR} PARENT_SCOPE)
+
+set(DEPS_BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build")
 
 # ---- Helpers ---- #
 if (ON)
 
     set(setup_dirs_result)
-    macro(setup_dirs prefix)
-    set(setup_dirs_result
-        PREFIX "${prefix}" SOURCE_DIR "${prefix}" DOWNLOAD_DIR "${prefix}"
-        TMP_DIR "${prefix}/build/CMakeTemp" STAMP_DIR "${prefix}/CMakeStamp"
-        BINARY_DIR "${prefix}/build"
-        INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/install")
-    endmacro()
-
-    set(build_ep_error_result)
-    macro(build_ep_error msg)
-    set(build_ep_error_result
-        COMMAND ${CMAKE_COMMAND} -E echo "Dependency Error ${msg}"
-        COMMAND ${CMAKE_COMMAND} -E false)
+    macro(setup_dirs libname)
+        set(libdir "${CMAKE_CURRENT_SOURCE_DIR}/${libname}")
+        set(setup_dirs_result
+            PREFIX "${libdir}" SOURCE_DIR "${libdir}" DOWNLOAD_DIR "${libdir}"
+            TMP_DIR "${DEPS_BINARY_DIR}/cmake-ep/tmp" 
+            STAMP_DIR "${DEPS_BINARY_DIR}/cmake-ep/"
+            INSTALL_DIR "${DEPS_INSTALL_DIR}")
+        unset(libdir)
     endmacro()
 
 endif()
@@ -29,13 +34,14 @@ endif()
 if (ON)
 
     set(AT_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/apriltag")
-    setup_dirs(${AT_PREFIX})
+    setup_dirs("apriltag")
     ExternalProject_Add(
         apriltag
         # Directories
         ${setup_dirs_result}
-        # Init the submodule
-        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
+        BINARY_DIR "${DEPS_BINARY_DIR}/apriltag"
+        # Disable download
+        DOWNLOAD_COMMAND ""
         UPDATE_COMMAND ""
         # CMake handles the rest with default build and install
         CMAKE_ARGS -DBUILD_SHARED_LIBS=0 -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -49,155 +55,72 @@ endif()
 if (ON)
 
     set(WX_URL_BASE "https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/")
-    set(WX_HEADER_ZIP "${WX_URL_BASE}wxWidgets-3.1.5-headers.7z")
-
-    set(WX_BUILD_FROM_SOURCE OFF CACHE BOOL 
-        "Build wxWidgets from source even if a precompiled binary can be downloaded.")
-    set(WX_BFS ${WX_BUILD_FROM_SOURCE})
-
-    # Check if 32 or 64 bit system.
-    if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-        set(WX_ARCH "_x64")
+    if (${WIN32})
+        set(WX_SOURCE_ZIP "${WX_URL_BASE}/wxWidgets-3.1.5.7z")
     else()
-        set(WX_ARCH "")
+        set(WX_SOURCE_ZIP "${WX_URL_BASE}/wxWidgets-3.1.5.tar.bz2")
     endif()
 
-    # Setup urls for wxWidgets release assets
-    if (MSVC)
-        if (${MSVC_VERSION} LESS 1500)
-            set(WX_BFS ON)
-        elseif(${MSVC_VERSION} LESS 1600)
-            set(WX_MSVC_TS 90)
-        elseif(${MSVC_VERSION} LESS 1700)
-            set(WX_MSVC_TS 100)
-        elseif(${MSVC_VERSION} LESS 1800)
-            set(WX_MSVC_TS 110)
-        elseif(${MSVC_VERSION} LESS 1900)
-            set(WX_MSVC_TS 120)
-        else()
-            set(WX_MSVC_TS 14x)
-        endif()
-        
-        set(WX_BINARY_ZIP "${WX_URL_BASE}wxMSW-3.1.5_vc${WX_MSVC_TS}${WX_ARCH}_Dev.7z")
-    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        if (${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 7.3)
-            set(WX_GCC_VER 730)
-        elseif(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 8.1)
-            set(WX_GCC_VER 810)
-        elseif(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 9.2)
-            set(WX_GCC_VER 920TDM)
-        else() # if(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 10.2)
-            set(WX_GCC_VER 1020)
-        endif()
-        
-        set(WX_BINARY_ZIP "${WX_URL_BASE}wxMSW-3.1.5_gcc${WX_GCC_VER}${WX_ARCH}_Dev.7z")
-    else()
-        set(WX_BFS ON)
-    endif()
-
-    if (${WX_BFS})
-        set(WX_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/wxWidgets")
-        setup_dirs(${WX_PREFIX})
-        ExternalProject_Add(
-            wxWidgets
-            # Directories
-            ${setup_dirs_result}
-            # Init the submodule
-            DOWNLOAD_COMMAND ${GIT_CMD} submodule update --recursive --init <SOURCE_DIR>
-            UPDATE_COMMAND ""
-            # CMake handles the rest with default build and install
-            CMAKE_ARGS -DwxBUILD_SHARED=1 -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-            # Other options
-            EXCLUDE_FROM_ALL ON
-        )
-    else() 
-        set(WX_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/wxWidgets/precompiled")
-        setup_dirs(${WX_PREFIX})
-
-        if (MSVC)
-            # Add the wxwidgets props to MSVC projects because it said so
-            # set(WX_PROPS "${WX_PREFIX}/wxwidgets.props")
-            # configure_file("${CMAKE_SOURCE_DIR}/CMake/wxWidgets.vcxproj.user.in"
-            #             "${CMAKE_CURRENT_BINARY_DIR}/wxWidgets.vcxproj.user.IGNORE"
-            #             @ONLY)
-
-            # Later when the install step is run for this project, it can rename that file
-            # set(WX_MSVC_RENAME_PROPS COMMAND ${CMAKE_COMMAND} -E rename 
-            #     "${CMAKE_CURRENT_BINARY_DIR}/wxWidgets.vcxproj.user.IGNORE" 
-            #     "${CMAKE_CURRENT_BINARY_DIR}/wxWidgets.vcxproj.user")
-        endif()
-        # Download precompiled dev package instead of using submodule
-        ExternalProject_Add(
-            wxWidgets
-            # Directories
-            ${setup_dirs_result}
-            # Download and unpack prebuilt binaries
-            DOWNLOAD_COMMAND ${CURL_CMD} -Ls -o "wx_header.zip" "${WX_HEADER_ZIP}"
-            COMMAND ${CURL_CMD} -Ls -o "wx_binary.zip" "${WX_BINARY_ZIP}"
-            COMMAND ${CMAKE_COMMAND} -E tar x "wx_header.zip"
-            COMMAND ${CMAKE_COMMAND} -E tar x "wx_binary.zip"
-            ${WX_MSVC_RENAME_PROPS}
-            # Disable other steps
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            # Other options
-            EXCLUDE_FROM_ALL ON
-            TLS_VERIFY ON
-        )
-    endif()
+    setup_dirs("build/wxWidgets-src")
+    ExternalProject_Add(
+        wxWidgets
+        # Directories
+        ${setup_dirs_result}
+        BINARY_DIR "${DEPS_BINARY_DIR}/wxWidgets"
+        # Init the submodule
+        DOWNLOAD_COMMAND ${CURL_CMD} -Ls -o "wx_source.7z" "${WX_SOURCE_ZIP}"
+        COMMAND ${CMAKE_COMMAND} -E tar x "wx_source.7z"
+        UPDATE_COMMAND ""
+        # CMake handles the rest with default build and install
+        CMAKE_ARGS -DwxBUILD_SHARED:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        # Other options
+        EXCLUDE_FROM_ALL ON)
 
 endif()
 
 # ---- OpenVR ---- #
 if (ON)
-
     set(OVR_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/openvr")
+
+    set(OVR_INCLUDE_DIR "${DEPS_INSTALL_DIR}/include")
+    set(OVR_LIB_OUTPUT "${DEPS_INSTALL_DIR}/bin/openvr_api${PLATFORM_SHARED_EXT}")
+    set(OVR_IMPLIB_OUTPUT "${DEPS_INSTALL_DIR}/lib/openvr_api${PLATFORM_INTERFACE_EXT}")
 
     configure_package_config_file(
         "${CMAKE_SOURCE_DIR}/CMake/openvrConfig.cmake.in" 
-        "${CMAKE_CURRENT_SOURCE_DIR}/install/openvrConfig.cmake"
-        INSTALL_DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/install/openvrConfig.cmake"
-        INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install")
+        "${DEPS_BINARY_DIR}/openvrConfig.cmake.out"
+        PATH_VARS OVR_LIB_OUTPUT OVR_IMPLIB_OUTPUT OVR_INCLUDE_DIR
+        INSTALL_DESTINATION "${DEPS_INSTALL_DIR}"
+        INSTALL_PREFIX "${DEPS_INSTALL_DIR}")
 
-    setup_dirs(${OVR_PREFIX})
-    ExternalProject_Add(
-        openvr
-        # Directories
-        ${setup_dirs_result}
-        # Get submodule files 
-        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
-        # Disable other steps
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        # Other options
-        EXCLUDE_FROM_ALL ON
-    )
+    set(OVR_LIB_PATH "${PLATFORM_OS1}${PLATFORM_ARCH}/${PLATFORM_LIB_PREFIX}openvr_api")
 
+    add_custom_target(openvr
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${OVR_PREFIX}/headers/openvr.h" "${OVR_PREFIX}/headers/openvr_driver.h"
+            "${OVR_PREFIX}/headers/openvr_api.json" "${OVR_INCLUDE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${OVR_PREFIX}/bin/${OVR_LIB_PATH}${PLATFORM_SHARED_EXT}"
+            "${OVR_LIB_OUTPUT}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${OVR_PREFIX}/lib/${OVR_LIB_PATH}${PLATFORM_INTERFACE_EXT}"
+            "${OVR_IMPLIB_OUTPUT}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${DEPS_BINARY_DIR}/openvrConfig.cmake.out"
+            "${DEPS_INSTALL_DIR}/openvrConfig.cmake")
+
+    clean_platform()
 endif()
 
 # ---- OpenCV Contrib ---- #
 if (ON)
 
     set(CV_C_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/opencv_contrib")
-    setup_dirs(${CV_C_PREFIX})
-    ExternalProject_Add(
-        opencv_contrib
-        # Directories
-        ${setup_dirs_result}
-        # Get submodule files 
-        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
-        # Disable other steps
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        # Other options
-        EXCLUDE_FROM_ALL ON
-    )
+    set(CV_C_BINARY_DIR "${DEPS_BINARY_DIR}/opencv_contrib")
+    add_custom_target(opencv_contrib
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CV_C_PREFIX}/modules/aruco" "${CV_C_BINARY_DIR}/modules/aruco"
+        VERBATIM)
 
 endif()
 
@@ -205,20 +128,20 @@ endif()
 if (ON)
 
     set(CV_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/opencv")
-    setup_dirs(${CV_PREFIX})
+    setup_dirs("opencv")
     ExternalProject_Add(
         opencv
         # Directories
         ${setup_dirs_result}
-        # Get submodule files 
-        DOWNLOAD_COMMAND ${GIT_CMD} submodule update --init <SOURCE_DIR>
-        COMMAND ${CMAKE_COMMAND} -E copy_directory 
-            "${CV_C_PREFIX}/modules/aruco" "${CV_PREFIX}/modules/aruco"
+        BINARY_DIR "${DEPS_BINARY_DIR}/opencv"
+        # Disable download
+        DOWNLOAD_COMMAND ""
         UPDATE_COMMAND ""
         # CMake handles the rest
         CMAKE_ARGS -DBUILD_JAVA:BOOL=OFF -DBUILD_PERF_TESTS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF
             -DBUILD_opencv_apps:BOOL=OFF -DINSTALL_CREATE_DISTRIB:BOOL=ON
             -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
+            -DOPENCV_EXTRA_MODULES_PATH:PATH=${CV_C_BINARY_DIR}/modules
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         # Other options
         EXCLUDE_FROM_ALL ON
