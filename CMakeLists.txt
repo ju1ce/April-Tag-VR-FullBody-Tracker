@@ -23,8 +23,7 @@ ExternalProject_Add(
     # CMake handles the rest
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
+        -DBUILD_SHARED_LIBS:BOOL=OFF
     # Deps
     DEPENDS apriltag wxWidgets openvr opencv
-    # Other options
-    BUILD_ALWAYS 1
 )

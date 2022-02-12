@@ -5,6 +5,7 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <unordered_map>
+#include <wx/string.h>
 
 //#include "Language_English.h"
 #include "Language.h"
@@ -89,6 +90,7 @@ public:
     REF_TYPE_ALIAS(Float, float)
     REF_TYPE_ALIAS(Bool, bool)
     REF_TYPE_ALIAS(String, std::string)
+    REF_TYPE_ALIAS(WString, wxString)
     REF_TYPE_ALIAS(Mat, cv::Mat)
     REF_TYPE_ALIAS(Node, ParamNode)
 
@@ -129,6 +131,17 @@ void Parameter<ParamNode>::Deserialize(const cv::FileNode &fn)
         p.second->Deserialize(fn[p.first]);
 }
 
+template <>
+void Parameter<wxString>::Serialize(cv::FileStorage &fs, const std::string &name) const
+{
+
+}
+template <>
+void Parameter<wxString>::Deserialize(const cv::FileNode &fn)
+{
+
+}
+
 class ParamStorage : public ParamNode
 {
 public:
@@ -146,7 +159,12 @@ class UserParamsStorage : public ParamStorage
 {
 public:
     UserParamsStorage();
-    Lang lang;
+};
+
+class LocaleStore : public ParamStorage
+{
+public:
+    LocaleStore();
 };
 
 class Parameters
