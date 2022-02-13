@@ -4,26 +4,33 @@
 cmake_minimum_required (VERSION 3.5)
 project("FullBodyTracking")
 
+option(USE_PRECOMP "Use precompiled headers, requires CMake >= 3.16" ON)
+option(BUILD_DEPS "Ensure that the dependencies are built if modified or empty." ON)
+option(BUILD_DEPS_RELEASE_ONLY "Normally dependencies will build debug and release versions." OFF)
+option(BUILD_DEPS_SHARED "Build dependencies as shared instead of static." OFF)
+
 # Build deps
-add_subdirectory("deps")
+include("CMake/build-deps.cmake")
+set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps" CACHE PATH "Location of deps directory.")
+set(DEPS_BINARY_DIR "${DEPS_PREFIX}/build" CACHE PATH "Deps build location")
+set(DEPS_INSTALL_DIR "${DEPS_PREFIX}/install" CACHE PATH "Deps install location.")
+
+if (${BUILD_DEPS}) 
+    build_deps("Release")
+    if (NOT ${BUILD_DEPS_RELEASE_ONLY})
+        build_deps("Debug")
+    endif()
+endif()
+
+if (${DEPS_BUILD_FAILED})
+    message(FATAL_ERROR "Failed to build deps.")
+    return()
+endif()
 
 # Build project
-set(ATT_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/AprilTagTrackers")
-set(ATT_BINARY_DIR "${ATT_PREFIX}/build")
-set(ATT_INSTALL_DIR "${ATT_PREFIX}/install"
-    CACHE PATH "AprilTagTrackers install directory.")
+set(BUILD_SHARED_LIBS ${BUILD_DEPS_SHARED})
+if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install directory." FORCE)
+endif()
 
-include(ExternalProject)
-ExternalProject_Add(
-    AprilTagTrackers
-    # Directories
-    PREFIX "${ATT_PREFIX}" SOURCE_DIR "${ATT_PREFIX}" DOWNLOAD_DIR "${ATT_PREFIX}"
-    BINARY_DIR "${ATT_BINARY_DIR}" INSTALL_DIR "${ATT_INSTALL_DIR}"
-    TMP_DIR "${ATT_BINARY_DIR}/cmake-tmp" STAMP_DIR "${ATT_BINARY_DIR}/cmake-tmp"
-    # CMake handles the rest
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
-        -DBUILD_SHARED_LIBS:BOOL=OFF
-    # Deps
-    DEPENDS apriltag wxWidgets openvr opencv
-)
+add_subdirectory("AprilTagTrackers")

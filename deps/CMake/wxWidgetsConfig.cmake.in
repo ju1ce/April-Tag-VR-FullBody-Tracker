@@ -1,0 +1,57 @@
+@PACKAGE_INIT@
+
+function(restrict_scope)
+    set_and_check(wxWidgets_ROOT_DIR "@PACKAGE_WX_ROOT_DIR@")
+
+    if (${UNIX})
+        set(wxWidgets_CONFIG_OPTIONS --prefix="@PACKAGE_WX_ROOT_DIR@" )
+    endif()
+
+    find_package(wxWidgets REQUIRED ${wxWidgets_FIND_COMPONENTS})
+    include(${wxWidgets_USE_FILE})
+
+    set(wxWidgets_FOUND true PARENT_SCOPE)
+    set(wxWidgets_mono_FOUND true PARENT_SCOPE)
+
+    set(WX_LIBS)
+    set(WX_DBG_LIBS)
+    set(WX_REL_LIBS)
+
+    set(previous_lib "")
+    foreach(lib ${wxWidgets_LIBRARIES})
+        if ("${previous_lib}" STREQUAL "debug")
+            list(APPEND WX_DBG_LIBS "${lib}")
+        elseif("${previous_lib}" STREQUAL "optimized")
+            list(APPEND WX_REL_LIBS "${lib}")
+        elseif((NOT "${lib}" STREQUAL "debug") AND (NOT "${lib}" STREQUAL "optimized"))
+            list(APPEND WX_LIBS "${lib}")
+        endif()
+        set(previous_lib "${lib}")
+    endforeach(lib)
+
+    list(GET wxWidgets_INCLUDE_DIRS 0 WX_SETUP_INCLUDE)
+    list(GET wxWidgets_INCLUDE_DIRS 1 WX_HEADER_INCLUDE)
+
+    if (TARGET wx::mono)
+        return()
+    endif()
+
+    add_library(wx::mono INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(wx::mono INTERFACE
+        "${WX_LIBS}"
+        "$<$<CONFIG:Release>:${WX_REL_LIBS}>"
+        "$<$<CONFIG:Debug>:${WX_DBG_LIBS}>")
+    target_compile_definitions(wx::mono INTERFACE 
+        ${wxWidgets_DEFINITIONS}
+        $<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG})
+    target_include_directories(wx::mono INTERFACE
+        "${WX_HEADER_INCLUDE}"
+        "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+
+    if (${MSVC})
+        target_link_options(wx::mono INTERFACE
+            "$<$<CONFIG:Release>:/LTCG>")
+    endif()
+
+endfunction()
+restrict_scope()

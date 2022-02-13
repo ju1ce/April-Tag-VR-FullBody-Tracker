@@ -5,9 +5,9 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <apriltag.h>
-#include <tagStandard41h12.h>
-#include <tagCircle21h7.h>
+#include <apriltag/apriltag.h>
+#include <apriltag/tagStandard41h12.h>
+#include <apriltag/tagCircle21h7.h>
 
 #include "Parameters.h"
 

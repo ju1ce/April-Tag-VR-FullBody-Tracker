@@ -83,6 +83,13 @@ public:
         return static_cast<const Parameter<T> *>(params.at(name))->value;
     }
 
+    template <typename T>
+    void Validate(const std::string &name)
+    {   
+        auto& val = Ref<T>(name);
+        static_cast<Parameter<T> *>(params.at(name))->validate(val);
+    }
+
 #define REF_TYPE_ALIAS(name, T) \
     T &name(const std::string &(name)) { return Ref<T>(name); }
 
@@ -138,6 +145,16 @@ void Parameter<wxString>::Serialize(cv::FileStorage &fs, const std::string &name
 }
 template <>
 void Parameter<wxString>::Deserialize(const cv::FileNode &fn)
+{
+
+}
+template <>
+void Parameter<cv::aruco::DetectorParameters>::Serialize(cv::FileStorage &fs, const std::string &name) const
+{
+
+}
+template <>
+void Parameter<cv::aruco::DetectorParameters>::Deserialize(const cv::FileNode &fn)
 {
 
 }

@@ -43,7 +43,7 @@ if(${WIN32})
     set(PLATFORM_STATIC_EXT ".lib")
 
     set(PLATFORM_LIB_PREFIX "")
-elseif(${UNIX} OR ${APPLE})
+elseif(${UNIX})
     if (${APPLE})
         set(PLATFORM_OS "MacOS")
         set(PLATFORM_OS1 "osx")
