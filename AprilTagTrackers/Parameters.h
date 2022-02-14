@@ -10,47 +10,52 @@
 //#include "Language_English.h"
 #include "Language.h"
 
-// Base class for polymorphism, to store and serialize params in a type agnostic
-// way
+// Base class for polymorphism, to store and serialize params in a type agnostic way
 struct ParameterBase
 {
     virtual ~ParameterBase() {}
-    virtual void Serialize(cv::FileStorage &fs, const std::string &name = "") const = 0;
-    virtual void Deserialize(const cv::FileNode &fn) = 0;
     virtual void Validate() = 0;
+    virtual void Serialize(cv::FileStorage &fs) const = 0;
+    virtual void Deserialize(const cv::FileNode &fn) = 0;
 };
 
-// Typed version of the parameter, generated for each type
+// Typed version of the parameter to store value.
 template <typename T>
 struct Parameter : public ParameterBase
 {
+    Parameter(void (*validate)(T &value))
+        : value(), validate(validate) {}
     Parameter(const T &default_value, void (*validate)(T &value))
-        : value(default_value), default_value(default_value), validate(validate) {}
+        : value(default_value), has_default_value(true), default_value(default_value), validate(validate) {}
 
     T value;
-    const T &default_value;
-    void (*validate)(T &value);
+    bool has_default_value = false;
+    const T default_value = T();
+    void (*validate)(T &value) = nullptr;
+#ifdef _DEBUG
+    const size_t tinfo = typeid(T).hash_code();
+#endif
 
-    virtual void Serialize(cv::FileStorage &fs, const std::string &name = "") const override
+    virtual void Validate() override
     {
-        fs << name << value;
+        if (validate) validate(value);
+    }
+    virtual void Serialize(cv::FileStorage &fs) const override
+    {
+        fs << value;
     }
     virtual void Deserialize(const cv::FileNode &fn) override
     {
         if (!fn.empty())
         {
             fn >> value;
-            if (validate) validate(value);
+            Validate();
         }
-        else
+        else if (has_default_value)
+        {
             value = default_value;
+        }
     }
-    virtual void Validate() override
-    {
-        if (validate) validate(value);
-    }
-
-    virtual ~Parameter() override {}
 };
 
 class ParamNode
@@ -59,6 +64,7 @@ public:
     ParamNode() {}
     ParamNode(ParamNode &&node) noexcept
         : params(std::move(node.params)) {}
+
     ~ParamNode()
     {
         for (auto &p : params)
@@ -67,31 +73,37 @@ public:
         }
     }
 
-    ParamNode(const ParamNode &) = delete;
-    void operator=(const ParamNode &) = delete;
+    // ParamNode(const ParamNode &) = delete;
+    void operator=(const ParamNode &pn) { assert(false); }
 
     // T may be able to be deduced via the return type at the callsite
     template <typename T>
-    auto &Ref(const std::string &name)
+    T &Ref(const std::string &name)
     {
+#ifdef _DEBUG
+        assert(typeid(T).hash_code() == static_cast<Parameter<T> *>(params.at(name))->tinfo);
+#endif
         return static_cast<Parameter<T> *>(params.at(name))->value;
     }
 
     template <typename T>
-    const auto &Get(const std::string &name) const
+    const T &Get(const std::string &name) const
     {
+#ifdef _DEBUG
+        assert(typeid(T).hash_code() == static_cast<Parameter<T> *>(params.at(name))->tinfo);
+#endif
         return static_cast<const Parameter<T> *>(params.at(name))->value;
     }
 
-    template <typename T>
     void Validate(const std::string &name)
-    {   
-        auto& val = Ref<T>(name);
-        static_cast<Parameter<T> *>(params.at(name))->validate(val);
+    {
+        params.at(name)->Validate();
     }
 
+    ParamNode &Node(const std::string &n) { return Ref<ParamNode>(n); }
+
 #define REF_TYPE_ALIAS(name, T) \
-    T &name(const std::string &(name)) { return Ref<T>(name); }
+    const T &name(const std::string &n) const { return Get<T>(n); }
 
     REF_TYPE_ALIAS(Int, int)
     REF_TYPE_ALIAS(Float, float)
@@ -99,64 +111,61 @@ public:
     REF_TYPE_ALIAS(String, std::string)
     REF_TYPE_ALIAS(WString, wxString)
     REF_TYPE_ALIAS(Mat, cv::Mat)
-    REF_TYPE_ALIAS(Node, ParamNode)
 
 #undef REF_TYPE_ALIAS
+
+    friend cv::FileStorage &operator<<(cv::FileStorage &fs, const ParamNode &pn)
+    {
+        cv::internal::WriteStructContext wsc(fs, cv::String(), cv::FileNode::MAP + cv::FileNode::FLOW);
+        for (const auto &p : pn.params)
+        {
+            fs << p.first;
+            p.second->Serialize(fs);
+        }
+        return fs;
+    }
+    friend void operator>>(const cv::FileNode &fn, ParamNode &pn)
+    {
+        for (auto &p : pn.params)
+        {
+            p.second->Deserialize(fn[p.first]);
+        }
+    }
 
 protected:
     // Add a parameter optionally specifying default and a validation lambda
     template <typename T>
-    void Add(std::string &&name, const T &default_value = T(), void (*validate)(T &value) = nullptr)
+    void Add(std::string &&name, void (*validate)(T &value) = nullptr)
+    {
+        auto ptr = new Parameter<T>(validate);
+        params.insert({std::move(name), static_cast<ParameterBase *>(ptr)});
+    }
+    template <typename T>
+    void Add(std::string &&name, const T &default_value, void (*validate)(T &value) = nullptr)
     {
         auto ptr = new Parameter<T>(default_value, validate);
         params.insert({std::move(name), static_cast<ParameterBase *>(ptr)});
     }
 
     std::unordered_map<std::string, ParameterBase *> params;
-
-private:
-    template <typename>
-    friend struct Parameter;
 };
 
-// Explicit templates for params that dont have a serialize implementation for
-// filestorage already
+// Implement this for each type that isn't serializable.
+// It's fine to make it inline/in the header.
+// friend cv::FileStorage &operator<<(cv::FileStorage &fs, const Type &v) {}
+// friend void operator>>(const cv::FileNode &fn, Type &v) {}
 
-// Providing the name indicates a nested structure
-template <>
-void Parameter<ParamNode>::Serialize(cv::FileStorage &fs, const std::string &name) const
+// TODO: Is this where extensions for other libraries should go? probably?
+static cv::FileStorage &operator<<(cv::FileStorage &fs, const wxString &s)
 {
-    if (name.empty()) fs.startWriteStruct(name, cv::FileNode::MAP);
-    for (const auto &p : value.params)
-        p.second->Serialize(fs, p.first);
-    if (name.empty()) fs.endWriteStruct();
+    fs << s.utf8_str().data();
+    return fs;
 }
-template <>
-void Parameter<ParamNode>::Deserialize(const cv::FileNode &fn)
+static void operator>>(const cv::FileNode &fn, wxString &s)
 {
-    for (auto &p : value.params)
-        p.second->Deserialize(fn[p.first]);
-}
-
-template <>
-void Parameter<wxString>::Serialize(cv::FileStorage &fs, const std::string &name) const
-{
-
-}
-template <>
-void Parameter<wxString>::Deserialize(const cv::FileNode &fn)
-{
-
-}
-template <>
-void Parameter<cv::aruco::DetectorParameters>::Serialize(cv::FileStorage &fs, const std::string &name) const
-{
-
-}
-template <>
-void Parameter<cv::aruco::DetectorParameters>::Deserialize(const cv::FileNode &fn)
-{
-
+    std::string buf;
+    fn >> buf;
+    s = wxString::FromUTF8(buf);
 }
 
 class ParamStorage : public ParamNode

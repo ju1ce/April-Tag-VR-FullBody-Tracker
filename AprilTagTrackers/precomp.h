@@ -1,3 +1,6 @@
+#ifndef ATT_PRECOMP_HEADER
+#define ATT_PRECOMP_HEADER
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__CYGWIN__) || defined(_MSC_VER)
     #define OS_WIN 1
 #elif defined(unix) || defined(__unix__)
@@ -56,3 +59,5 @@
 #include <wx/notebook.h>
 #include <wx/string.h>
 #pragma warning(pop)
+
+#endif

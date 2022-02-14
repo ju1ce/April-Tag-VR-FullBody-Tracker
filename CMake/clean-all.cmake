@@ -5,7 +5,7 @@ if (EXISTS ${binary_dir})
 endif()
 
 if (${CLEAN_DEPS})
-    foreach(file "deps/build" "deps/install" "AprilTagTrackers/build" "AprilTagTrackers/install")
+    foreach(file "deps/build" "deps/install")
         set(file_path "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
         if (EXISTS ${file_path})
             message(STATUS "Cleaning dep ${file_path}")

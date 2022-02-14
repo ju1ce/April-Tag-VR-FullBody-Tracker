@@ -1,38 +1,37 @@
-#define GET_VARIABLE_NAME(Variable) (#Variable)
-
 #include "Parameters.h"
 
 UserParamsStorage::UserParamsStorage()
-    : ParamStorage(std::move("config.yaml"))
+    : ParamStorage("config.yaml")
 {
-    Add<int>("markersPerTracker", 45, [](auto &value)
-             { value <= 0 ? value = 45 : 0; });
-    Add<std::string>("cameraAddr", "0");
-    Add<int>("cameraApiPreference");
-    Add<int>("camFPS", 30, [](auto &value)
-             { value < 10 ? value = 10 : value > 60 ? value = 60 : 0; });
-    Add<cv::Point2i>("camRes");
+
 }
 
 void ParamStorage::Save()
 {
     std::cout << "Writing to " << file_path << std::endl;
-    cv::FileStorage fs(file_path, cv::FileStorage::WRITE);
+    // Force yaml because we assume FLOW structures.
+    // Encoding arg doesn't do anything for yaml.
+    cv::FileStorage fs(file_path, cv::FileStorage::WRITE | cv::FileStorage::FORMAT_YAML);
     if (!fs.isOpened()) return;
 
-    for (const auto &p : params)
-        p.second->Serialize(fs, p.first);
+    for (const auto& p : params) {
+        fs << p.first;
+        p.second->Serialize(fs);
+    }
 
     fs.release();
-}
+} 
 
 void ParamStorage::Load()
 {
-    cv::FileStorage fs(file_path, cv::FileStorage::READ);
+    cv::FileStorage fs(file_path, cv::FileStorage::READ | cv::FileStorage::FORMAT_YAML);
     if (!fs.isOpened()) return;
-
-    for (auto &p : params)
+    
+    for (const auto& p : params) {
         p.second->Deserialize(fs[p.first]);
+    }
+
+    fs.release();
 }
 
 Parameters::Parameters()
@@ -42,7 +41,7 @@ Parameters::Parameters()
 
 void Parameters::Load()
 {
-    cv::FileStorage fs("params.yml", cv::FileStorage::READ); // open test.yml file to read parameters
+    cv::FileStorage fs("params.yml", cv::FileStorage::READ, "utf"); // open test.yml file to read parameters
 
     if (!fs["cameraAddr"].empty()) // if file exists, load all parameters from file into variables
     {
