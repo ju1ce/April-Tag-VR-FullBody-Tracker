@@ -9,7 +9,7 @@
 #include <apriltag/tagStandard41h12.h>
 #include <apriltag/tagCircle21h7.h>
 
-#include "Parameters.h"
+#include "Parameter.h"
 
 AprilTagWrapper::AprilTagWrapper(const Parameters* params)
     : td{apriltag_detector_create()}

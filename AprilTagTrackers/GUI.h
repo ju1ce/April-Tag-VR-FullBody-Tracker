@@ -5,7 +5,7 @@
 #include <wx/notebook.h>
 #pragma warning(pop)
 
-#include "Parameters.h"
+#include "Parameter.h"
 #include "Connection.h"
 
 

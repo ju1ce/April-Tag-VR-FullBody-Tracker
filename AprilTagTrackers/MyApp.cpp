@@ -2,7 +2,7 @@
 #include "GUI.h"
 #include "Helpers.h"
 #include "MyApp.h"
-#include "Parameters.h"
+#include "Parameter.h"
 #include "Tracker.h"
 
 wxIMPLEMENT_APP(MyApp);
@@ -12,6 +12,11 @@ int MyApp::OnExit()
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
     sleep_millis(2000);
+
+    delete params;
+    delete conn;
+    delete tracker;
+
     return 0;
 }
 
@@ -20,7 +25,6 @@ bool MyApp::OnInit()
     params = new Parameters();
     conn = new Connection(params);
     tracker = new Tracker(params, conn, this);
-
 
     gui = new GUI(params->language.APP_TITLE,params,conn);
 

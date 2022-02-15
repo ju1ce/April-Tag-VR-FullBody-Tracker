@@ -20,7 +20,7 @@
 #include "GUI.h"
 #include "Helpers.h"
 #include "MessageDialog.h"
-#include "Parameters.h"
+#include "Parameter.h"
 #include "Tracker.h"
 
 namespace {

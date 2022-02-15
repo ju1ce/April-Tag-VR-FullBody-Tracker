@@ -1,38 +1,4 @@
-#include "Parameters.h"
-
-UserParamsStorage::UserParamsStorage()
-    : ParamStorage("config.yaml")
-{
-
-}
-
-void ParamStorage::Save()
-{
-    std::cout << "Writing to " << file_path << std::endl;
-    // Force yaml because we assume FLOW structures.
-    // Encoding arg doesn't do anything for yaml.
-    cv::FileStorage fs(file_path, cv::FileStorage::WRITE | cv::FileStorage::FORMAT_YAML);
-    if (!fs.isOpened()) return;
-
-    for (const auto& p : params) {
-        fs << p.first;
-        p.second->Serialize(fs);
-    }
-
-    fs.release();
-} 
-
-void ParamStorage::Load()
-{
-    cv::FileStorage fs(file_path, cv::FileStorage::READ | cv::FileStorage::FORMAT_YAML);
-    if (!fs.isOpened()) return;
-    
-    for (const auto& p : params) {
-        p.second->Deserialize(fs[p.first]);
-    }
-
-    fs.release();
-}
+#include "Parameter.h"
 
 Parameters::Parameters()
 {

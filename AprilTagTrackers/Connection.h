@@ -4,7 +4,7 @@
 #include <wx/wx.h>
 #pragma warning(pop)
 
-#include "Parameters.h"
+#include "Parameter.h"
 #include <openvr.h>
 #include <memory>
 
@@ -28,7 +28,6 @@ public:
     const int WAITING = 1;
     const int CONNECTED = 2;
     Connection(Parameters*);
-    ~Connection();
     Parameters* parameters;
     void StartConnection();
     std::istringstream Send(std::string buffer);
