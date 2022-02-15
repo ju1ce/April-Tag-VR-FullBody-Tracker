@@ -1,18 +1,17 @@
 #include "ParamSerializer.h"
 
-// Access a string with
-// ```
-// locale.Get<wxString>("APP_TITLE"); or
-// locale.WString("APP_TITLE");
-// ```
+/** Access a translated string with
+ *     locale.Get<UniStr>("CAMERA_CALIBRATE_TRACKERS"); or
+ *     locale.UStr("CAMERA_LOCK_HEIGHT");
+ */
 
 #define T(key, val) Add<UniStr>(#key, val)
 
-LocaleStore::LocaleStore(const std::string& lang_id)
+LocaleStore::LocaleStore(const std::string &lang_id)
     : ConfigStorage("lang_" + lang_id + ".yaml")
 {
     Add<std::string>("id", "en");
-    
+
     T(name, "English");
 
     T(APP_TITLE,
@@ -260,7 +259,7 @@ LocaleStore::LocaleStore(const std::string& lang_id)
     // No file loading necessary for english
     if (lang_id.empty() || lang_id == "en") return;
 
-    // Load the file locale_<id>.yaml, if it doesn't exist this function 
+    // Load the file locale_<id>.yaml, if it doesn't exist this function
     // exits on its own, which means the defaults will be set to english
     Load();
 }
