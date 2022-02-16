@@ -15,7 +15,7 @@ set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps" CACHE PATH "Location of deps 
 set(DEPS_BINARY_DIR "${DEPS_PREFIX}/build" CACHE PATH "Deps build location")
 set(DEPS_INSTALL_DIR "${DEPS_PREFIX}/install" CACHE PATH "Deps install location.")
 
-if (${BUILD_DEPS}) 
+if (${BUILD_DEPS})
     build_deps("Release")
     if (NOT ${BUILD_DEPS_RELEASE_ONLY})
         build_deps("Debug")

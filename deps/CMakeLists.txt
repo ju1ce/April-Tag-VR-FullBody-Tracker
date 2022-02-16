@@ -31,7 +31,7 @@ if (ON)
         set(setup_dirs_result
             PREFIX "${dir}" SOURCE_DIR "${dir}" DOWNLOAD_DIR "${dir}"
             BINARY_DIR "${BIN_DIR}/${libname}"
-            TMP_DIR "${BIN_DIR}/${libname}/ExternalProject" 
+            TMP_DIR "${BIN_DIR}/${libname}/ExternalProject"
             STAMP_DIR "${BIN_DIR}/${libname}/ExternalProject"
             INSTALL_DIR "${INT_DIR}")
         unset(dir)
@@ -46,6 +46,12 @@ if (ON)
             INSTALL_DESTINATION "${INT_DIR}"
             INSTALL_PREFIX "${INT_DIR}")
     endfunction()
+
+    if (DEFINED CMAKE_CONFIGURATION_TYPES)
+        set(DEPS_BUILD_MULTI BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>)
+    else()
+        set(DEPS_BUILD_SINGLE -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE})
+    endif()
 
 endif()
 
@@ -64,6 +70,9 @@ if (ON)
         CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED}
             -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_PYTHON_WRAPPER:BOOL=OFF
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            ${DEPS_BUILD_SINGLE}
+        ${DEPS_BUILD_MULTI}
+        EXCLUDE_FROM_ALL 1
     )
     add_dependencies(AprilTagTrackers apriltag-install)
 
@@ -94,6 +103,9 @@ if (ON)
             -DwxBUILD_MONOLITHIC:BOOL=ON
             -DwxBUILD_OPTIMISE:BOOL=$<CONFIG:Release>
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            ${DEPS_BUILD_SINGLE}
+        ${DEPS_BUILD_MULTI}
+        EXCLUDE_FROM_ALL 1
     )
     add_dependencies(AprilTagTrackers wxWidgets-install)
 
@@ -114,6 +126,10 @@ if (ON)
     set(OVR_IMPLIB_OUTPUT "${INT_DIR}/lib/openvr_api${PLATFORM_INTERFACE_EXT}")
     configure_install_file("openvrConfig"
         PATH_VARS OVR_INCLUDE_DIR OVR_LIB_OUTPUT OVR_IMPLIB_OUTPUT)
+
+    make_directory("${INT_DIR}/include")
+    make_directory("${INT_DIR}/lib")
+    make_directory("${INT_DIR}/bin")
 
     set(OVR_LIB_PATH "${PLATFORM_OS1}${PLATFORM_ARCH}/${PLATFORM_LIB_PREFIX}openvr_api")
     add_custom_command(OUTPUT "${OVR_LIB_OUTPUT}"
@@ -150,7 +166,7 @@ endif()
 # ---- OpenCV ---- #
 if (ON)
 
-    set(CV_BUILD_SMALL 
+    set(CV_BUILD_SMALL
         -DBUILD_opencv_apps:BOOL=OFF
         -DBUILD_JAVA:BOOL=OFF
         -DBUILD_opencv_python3:BOOL=OFF
@@ -172,8 +188,12 @@ if (ON)
             -DBUILD_SHARED_LIBS:BOOL=OFF
             -DBUILD_WITH_STATIC_CRT:BOOL=OFF
             -DENABLE_LTO:BOOL=$<CONFIG:Release>
+            -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF
             ${CV_BUILD_SMALL}
+            ${DEPS_BUILD_SINGLE}
+        ${DEPS_BUILD_MULTI}
         # Other options
+        EXCLUDE_FROM_ALL 1
         DEPENDS opencv_contrib)
     add_dependencies(AprilTagTrackers opencv-install)
 

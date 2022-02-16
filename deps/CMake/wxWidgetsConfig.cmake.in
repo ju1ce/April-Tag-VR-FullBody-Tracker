@@ -41,12 +41,19 @@ function(restrict_scope)
         "${WX_LIBS}"
         "$<$<CONFIG:Release>:${WX_REL_LIBS}>"
         "$<$<CONFIG:Debug>:${WX_DBG_LIBS}>")
-    target_compile_definitions(wx::mono INTERFACE 
+    target_compile_definitions(wx::mono INTERFACE
         ${wxWidgets_DEFINITIONS}
-        $<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG})
+        $<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>)
+
+    if (EXISTS "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+        set(setup_include "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+    else()
+        set(setup_include "${WX_SETUP_INCLUDE}")
+    endif()
+
     target_include_directories(wx::mono INTERFACE
         "${WX_HEADER_INCLUDE}"
-        "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+        "${setup_include}")
 
     if (${MSVC})
         target_link_options(wx::mono INTERFACE
