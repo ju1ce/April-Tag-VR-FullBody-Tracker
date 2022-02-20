@@ -9,7 +9,6 @@
 #include <apriltag/tagStandard41h12.h>
 #include <apriltag/tagCircle21h7.h>
 
-#include "Parameter.h"
 
 AprilTagWrapper::AprilTagWrapper(const Parameters* params)
     : td{apriltag_detector_create()}
@@ -28,7 +27,7 @@ AprilTagWrapper::AprilTagWrapper(const Parameters* params)
         aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
         aruco_params = parameters->aruco_params;
     }
-        
+
     apriltag_detector_add_family(td, tf);
 }
 

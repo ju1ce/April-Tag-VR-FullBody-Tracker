@@ -4,6 +4,7 @@
 #include "MyApp.h"
 #include "Parameter.h"
 #include "Tracker.h"
+#include "ConfigStorage.h"
 
 wxIMPLEMENT_APP(MyApp);
 
@@ -22,13 +23,17 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
-    params = new Parameters();
+
+
     conn = new Connection(params);
     tracker = new Tracker(params, conn, this);
 
     gui = new GUI(params->language.APP_TITLE,params,conn);
 
-    conn->gui = gui; // juice told me to write this, dont blame me 
+    conn->gui = gui; // juice told me to write this, dont blame me
+
+    ArucoConfigStorage ac;
+    ac.Save("aruco.yaml");
 
     gui->Show(true);
 
