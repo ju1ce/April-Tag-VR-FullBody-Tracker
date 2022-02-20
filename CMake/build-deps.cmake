@@ -1,5 +1,14 @@
 function(build_deps config)
 
+if (NOT ${BUILD_DEPS})
+    return()
+endif()
+
+if ((NOT ${REBUILD_DEPS}) AND BUILD_DEPS_SUCCESS_${config})
+    message(STATUS "Deps already built for ${config} - skipping.")
+    return()
+endif()
+
 message(STATUS "Build deps: ${config}")
 
 if (DEFINED CMAKE_CONFIGURATION_TYPES)
@@ -42,5 +51,7 @@ if (NOT ${DEPS_BUILD_RESULT} EQUAL 0)
     message(FATAL_ERROR "Failed to install deps: \nError: ${DEPS_BUILD_RESULT}")
 endif()
 message(STATUS "Install done.")
+
+set(BUILD_DEPS_SUCCESS_${config} ON CACHE INTERNAL "Build deps success.")
 
 endfunction()

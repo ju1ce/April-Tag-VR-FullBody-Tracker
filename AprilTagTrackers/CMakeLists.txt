@@ -12,15 +12,14 @@ find_package(openvr REQUIRED ${SEARCH_LOCAL})
 find_package(wxWidgets REQUIRED mono ${SEARCH_LOCAL})
 
 # Add source to this project's executable.
-file(GLOB ATT_SOURCE "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h")
+file(GLOB_RECURSE ATT_SOURCE "*.cpp" "*.h")
 add_executable(${PROJECT_NAME} ${ATT_SOURCE})
 # Set the root of includes, rather than relative
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Link libraries defined as targets, includes are automatic
-target_link_libraries(${PROJECT_NAME} PUBLIC 
+target_link_libraries(${PROJECT_NAME} PUBLIC
     ${OpenCV_LIBS} wx::mono openvr::openvr apriltag::apriltag)
-target_include_directories(${PROJECT_NAME} PUBLIC ${wxWidgets_INCLUDE_DIRS})
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
     target_precompile_headers(${PROJECT_NAME} PRIVATE "precomp.h")
@@ -30,6 +29,15 @@ if (${MSVC})
     # tell the msvc linker this is a windows application
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS)
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        "$<$<CONFIG:Release>:/GL;/GA;/Gw>")
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>")
+    if (${ASAN})
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            "/fsanitize=address")
+    endif()
 endif()
 
 # Install target to bin folder
