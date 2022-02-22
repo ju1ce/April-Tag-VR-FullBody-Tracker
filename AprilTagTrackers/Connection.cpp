@@ -210,17 +210,18 @@ void Connection::Connect()
     int connected_trackers;
     ret >> connected_trackers;
 
-#if OS_WIN
     ret >> word;
     if (word != parameters->driverversion)
     {
-        std::string e = "";
-        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
-        wxMessageDialog dial(NULL,
-            e, wxT("Warning"), wxOK | wxICON_WARNING);
-        dial.ShowModal();
+        gui->CallAfter([this, word]()
+            {
+                std::string e = "";
+                e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
+                wxMessageDialog dial(NULL,
+                    e, wxT("Warning"), wxOK | wxICON_WARNING);
+                dial.ShowModal();
+            });
     }
-#endif
 
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
     {
@@ -241,12 +242,8 @@ void Connection::Connect()
 
     ret = Send("addstation");
 
-    /*
-    std::string sstr = "";
-    sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
-
     ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
-    */
+    
     //set that connection is established
     status = CONNECTED;
 
