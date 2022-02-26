@@ -2,4 +2,6 @@ build/
 install/
 .vs/
 .vscode/
+
+.clangd
 .cache/
