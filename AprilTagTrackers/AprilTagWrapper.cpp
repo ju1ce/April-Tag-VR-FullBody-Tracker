@@ -6,26 +6,23 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include <apriltag/apriltag.h>
-#include <apriltag/tagStandard41h12.h>
 #include <apriltag/tagCircle21h7.h>
+#include <apriltag/tagStandard41h12.h>
 
-
-AprilTagWrapper::AprilTagWrapper(const Parameters* params)
-    : td{apriltag_detector_create()}
-    , parameters(params)
+AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
+    : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
 {
-    td->quad_decimate = parameters->quadDecimate;
-    td->nthreads = 4; //TODO: make nthreads a parameter or calculate it somehow
+    td->quad_decimate = user_config.quadDecimate;
+    td->nthreads = 4; // TODO: make nthreads a parameter or calculate it somehow
     apriltag_family_t* tf;
-    if (parameters->markerLibrary == APRILTAG_CIRCULAR)
+    if (user_config.markerLibrary == APRILTAG_CIRCULAR)
         tf = tagCircle21h7_create();
     else
         tf = tagStandard41h12_create();
 
-    if (parameters->markerLibrary == ARUCO_4X4)
+    if (user_config.markerLibrary == ARUCO_4X4)
     {
         aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
-        aruco_params = parameters->aruco_params;
     }
 
     apriltag_detector_add_family(td, tf);
@@ -38,7 +35,7 @@ AprilTagWrapper::~AprilTagWrapper()
 
 void AprilTagWrapper::convertToSingleChannel(const cv::Mat& src, cv::Mat& dst)
 {
-    if (parameters->markerLibrary == APRILTAG_COLOR)
+    if (user_config.markerLibrary == APRILTAG_COLOR)
     {
         cv::Mat ycc;
         cv::cvtColor(src, ycc, cv::COLOR_BGR2YCrCb);
@@ -54,7 +51,7 @@ void AprilTagWrapper::convertToSingleChannel(const cv::Mat& src, cv::Mat& dst)
 
 void AprilTagWrapper::detectMarkers(
     const cv::Mat& image,
-    std::vector<std::vector<cv::Point2f> >* corners,
+    std::vector<std::vector<cv::Point2f>>* corners,
     std::vector<int>* ids,
     std::vector<cv::Point2f>* centers,
     std::vector<cv::Ptr<cv::aruco::Board>> trackers)
@@ -73,12 +70,12 @@ void AprilTagWrapper::detectMarkers(
     ids->clear();
     centers->clear();
 
-    if (parameters->markerLibrary == ARUCO_4X4)
+    if (user_config.markerLibrary == ARUCO_4X4)
     {
         std::vector<std::vector<cv::Point2f>> rejectedCorners;
-        cv::aruco::detectMarkers(gray, aruco_dictionary, *corners, *ids, aruco_params, rejectedCorners);
-        //for(int i = 0; i<trackers.size();i++)
-        //    cv::aruco::refineDetectedMarkers(gray, trackers[i], *corners, *ids, rejectedCorners);
+        cv::aruco::detectMarkers(gray, aruco_dictionary, *corners, *ids, aruco_config.params, rejectedCorners);
+        // for(int i = 0; i<trackers.size();i++)
+        //     cv::aruco::refineDetectedMarkers(gray, trackers[i], *corners, *ids, rejectedCorners);
 
         return;
     }
@@ -92,7 +89,8 @@ void AprilTagWrapper::detectMarkers(
 
     zarray_t* detections = apriltag_detector_detect(td, &im);
 
-    for (int i = 0; i < zarray_size(detections); i++) {
+    for (int i = 0; i < zarray_size(detections); i++)
+    {
         apriltag_detection_t* det;
         zarray_get(detections, i, &det);
 
@@ -124,12 +122,12 @@ std::vector<std::string> AprilTagWrapper::getTimeProfile()
 
     for (int i = 0; i < zarray_size(tp->stamps); i++)
     {
-        timeprofile_entry *stamp;
+        timeprofile_entry* stamp;
         zarray_get_volatile(tp->stamps, i, &stamp);
-        double cumtime = (stamp->utime - tp->utime)/1000000.0;
-        double parttime = (stamp->utime - lastutime)/1000000.0;
+        double cumtime = (stamp->utime - tp->utime) / 1000000.0;
+        double parttime = (stamp->utime - lastutime) / 1000000.0;
         char buffer[128];
-        snprintf(buffer, sizeof(buffer), "%2d %32s %15f ms %15f ms", i, stamp->name, parttime*1000, cumtime*1000);
+        snprintf(buffer, sizeof(buffer), "%2d %32s %15f ms %15f ms", i, stamp->name, parttime * 1000, cumtime * 1000);
         rows.push_back(buffer);
         lastutime = stamp->utime;
     }

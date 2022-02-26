@@ -2,9 +2,8 @@
 #include "GUI.h"
 #include "Helpers.h"
 #include "MyApp.h"
-#include "Parameter.h"
 #include "Tracker.h"
-#include "ConfigStorage.h"
+#include "i18n.h"
 
 wxIMPLEMENT_APP(MyApp);
 
@@ -14,7 +13,6 @@ int MyApp::OnExit()
     tracker->mainThreadRunning = false;
     sleep_millis(2000);
 
-    delete params;
     delete conn;
     delete tracker;
 
@@ -23,17 +21,15 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
+    user_config.Save();
+    lcl.Save();
+    calib_config.Save();
+    conn = new Connection(user_config, lcl);
+    tracker = new Tracker(this, conn, user_config, calib_config, lcl, aruco_config);
 
-
-    conn = new Connection(params);
-    tracker = new Tracker(params, conn, this);
-
-    gui = new GUI(params->language.APP_TITLE,params,conn);
+    gui = new GUI(lcl.APP_TITLE, conn, user_config, lcl);
 
     conn->gui = gui; // juice told me to write this, dont blame me
-
-    ArucoConfigStorage ac;
-    ac.Save("aruco.yaml");
 
     gui->Show(true);
 
@@ -62,7 +58,7 @@ bool MyApp::OnInit()
 
 void MyApp::ButtonPressedCamera(wxCommandEvent& event)
 {
-    tracker->StartCamera(params->cameraAddr, params->cameraApiPreference);
+    tracker->StartCamera(user_config.cameraAddr, user_config.cameraApiPreference);
 }
 
 void MyApp::ButtonPressedCameraPreview(wxCommandEvent& event)
@@ -141,12 +137,12 @@ void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
     if (event.IsChecked())
     {
         tracker->disableOpenVrApi = true;
-        conn->disableOpenVrApi = true;
+        user_config.disableOpenVrApi = true;
     }
     else
     {
         tracker->disableOpenVrApi = false;
-        conn->disableOpenVrApi = false;
+        user_config.disableOpenVrApi = false;
     }
 }
 
@@ -163,19 +159,19 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->cb3->SetValue(false);
             tracker->manualRecalibrate = false;
 
-            gui->manualCalibX->SetValue(params->calibOffsetX);
-            gui->manualCalibY->SetValue(params->calibOffsetY);
-            gui->manualCalibZ->SetValue(params->calibOffsetZ);
+            gui->manualCalibX->SetValue(user_config.calibOffsetX);
+            gui->manualCalibY->SetValue(user_config.calibOffsetY);
+            gui->manualCalibZ->SetValue(user_config.calibOffsetZ);
 
         }
         else
         {
-            params->wrotation = tracker->wrotation;
-            params->wtranslation = tracker->wtranslation;
-            params->calibOffsetX = gui->manualCalibX->value;
-            params->calibOffsetY = gui->manualCalibY->value;
-            params->calibOffsetZ = gui->manualCalibZ->value;
-            params->Save();
+            calib_config.wrotation = tracker->wrotation;
+            calib_config.wtranslation = tracker->wtranslation;
+            user_config.calibOffsetX = gui->manualCalibX->value;
+            user_config.calibOffsetY = gui->manualCalibY->value;
+            user_config.calibOffsetZ = gui->manualCalibZ->value;
+            user_config.Save();
             tracker->recalibrate = false;
             gui->posHbox->Show(false);
             gui->rotHbox->Show(false);
@@ -190,30 +186,30 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             //gui->cb2->SetValue(false);
             tracker->recalibrate = false;
 
-            gui->manualCalibX->SetValue(params->calibOffsetX);
-            gui->manualCalibY->SetValue(params->calibOffsetY);
-            gui->manualCalibZ->SetValue(params->calibOffsetZ);
-            gui->manualCalibA->SetValue(params->calibOffsetA);
-            gui->manualCalibB->SetValue(params->calibOffsetB);
-            gui->manualCalibC->SetValue(params->calibOffsetC);
+            gui->manualCalibX->SetValue(user_config.calibOffsetX);
+            gui->manualCalibY->SetValue(user_config.calibOffsetY);
+            gui->manualCalibZ->SetValue(user_config.calibOffsetZ);
+            gui->manualCalibA->SetValue(user_config.calibOffsetA);
+            gui->manualCalibB->SetValue(user_config.calibOffsetB);
+            gui->manualCalibC->SetValue(user_config.calibOffsetC);
 
-            tracker->calibScale = params->calibScale;
+            tracker->calibScale = user_config.calibScale;
 
             tracker->manualRecalibrate = true;
         }
         else
         {
-            params->wrotation = tracker->wrotation;
-            params->wtranslation = tracker->wtranslation;
-            params->calibOffsetX = gui->manualCalibX->value;
-            params->calibOffsetY = gui->manualCalibY->value;
-            params->calibOffsetZ = gui->manualCalibZ->value;
-            params->calibOffsetA = gui->manualCalibA->value;
-            params->calibOffsetB = gui->manualCalibB->value;
-            params->calibOffsetC = gui->manualCalibC->value;
-            params->calibScale = tracker->calibScale;
+            calib_config.wrotation = tracker->wrotation;
+            calib_config.wtranslation = tracker->wtranslation;
+            user_config.calibOffsetX = gui->manualCalibX->value;
+            user_config.calibOffsetY = gui->manualCalibY->value;
+            user_config.calibOffsetZ = gui->manualCalibZ->value;
+            user_config.calibOffsetA = gui->manualCalibA->value;
+            user_config.calibOffsetB = gui->manualCalibB->value;
+            user_config.calibOffsetC = gui->manualCalibC->value;
+            user_config.calibScale = tracker->calibScale;
 
-            params->Save();
+            user_config.Save();
             tracker->manualRecalibrate = false;
             gui->posHbox->Show(false);
             gui->rotHbox->Show(false);

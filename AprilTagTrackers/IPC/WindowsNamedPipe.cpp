@@ -1,4 +1,5 @@
 #include "IPC.h"
+#include "Util.h"
 
 #if OS_WIN
 #include <Windows.h>
@@ -8,6 +9,7 @@ namespace IPC
 {
 
 constexpr int BUFFER_SIZE = 512;
+constexpr int SEC_TO_MS = 1000;
 
 WindowsNamedPipe::WindowsNamedPipe(const std::string& pipe_name) {
     this->pipe_name = "\\\\.\\pipe\\" + pipe_name;
@@ -18,18 +20,16 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
     DWORD response_length = 0;
     // Remove const-ness as callnamedpipe expects a void*, it will not change the inbuffer.
     auto msg_cstr = reinterpret_cast<LPVOID>(const_cast<char*>(msg.c_str()));
-    int success = CallNamedPipeA(
+    // success will be zero if failed
+    if (SUCCEEDED(CallNamedPipeA(
         this->pipe_name.c_str(), // pipe name
         msg_cstr, // message
         msg.size(), // message size
         response_buffer, // response
         BUFFER_SIZE, // response max size
         &response_length, // response size
-        2 * 1000 // timeout in ms
-    );
-
-    // success will be zero if failed
-    if (!success) {
+        2 * SEC_TO_MS))) // timeout in ms
+    {
         std::cerr << "Named pipe (" << this->pipe_name << ") send error: " << GetLastError() << std::endl;
         return false;
     }

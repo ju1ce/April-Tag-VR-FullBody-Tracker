@@ -21,7 +21,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 target_link_libraries(${PROJECT_NAME} PUBLIC
     ${OpenCV_LIBS} wx::mono openvr::openvr apriltag::apriltag)
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+if (${USE_PRECOMP} AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
     target_precompile_headers(${PROJECT_NAME} PRIVATE "precomp.h")
 endif()
 
@@ -33,7 +33,8 @@ if (${MSVC})
     target_compile_options(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Release>:/GL;/GA;/Gw>")
     target_link_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>")
+        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>"
+        "$<$<CONFIG:Debug>:/DEBUG:FULL>")
     if (${ASAN})
         target_compile_options(${PROJECT_NAME} PRIVATE
             "/fsanitize=address")

@@ -41,15 +41,18 @@ function(restrict_scope)
         "${WX_LIBS}"
         "$<$<CONFIG:Release>:${WX_REL_LIBS}>"
         "$<$<CONFIG:Debug>:${WX_DBG_LIBS}>")
-    target_compile_definitions(wx::mono INTERFACE
-        ${wxWidgets_DEFINITIONS}
-        $<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>)
 
-    if (EXISTS "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+    if (EXISTS "${WX_SETUP_INCLUDE}d")
         set(setup_include "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
-    else()
+    elseif(EXISTS "${WX_SETUP_INCLUDE}")
         set(setup_include "${WX_SETUP_INCLUDE}")
+    else()
+        message(FATAL_ERROR "wxWidgets setup include not found.")
     endif()
+
+    target_compile_definitions(wx::mono INTERFACE
+        "${wxWidgets_DEFINITIONS}"
+        "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
 
     target_include_directories(wx::mono INTERFACE
         "${WX_HEADER_INCLUDE}"

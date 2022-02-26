@@ -1,4 +1,5 @@
 #include "IPC.h"
+#include "Util.h"
 
 #if OS_LINUX
 #include <errno.h>

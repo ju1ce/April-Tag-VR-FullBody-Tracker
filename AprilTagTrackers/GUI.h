@@ -5,7 +5,8 @@
 #include <wx/notebook.h>
 #pragma warning(pop)
 
-#include "Parameter.h"
+#include "Config.h"
+#include "i18n.h"
 #include "Connection.h"
 
 
@@ -26,7 +27,7 @@ private:
 class GUI : public wxFrame
 {
 public:
-    GUI(const wxString& title, Parameters* params, Connection* conn);
+    GUI(const wxString& title, Connection* conn, UserConfig& user_config, const Localization& lcl);
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
@@ -61,7 +62,7 @@ public:
 class LicensePage : public wxPanel
 {
 public:
-    LicensePage(wxNotebook* parent);
+    explicit LicensePage(wxNotebook* parent);
     std::string ATT_LICENSE = (
 
         "MIT License \n\n"
@@ -124,18 +125,21 @@ public:
 class CameraPage : public wxPanel
 {
 public:
-    CameraPage(wxNotebook* parent, GUI* parentGUI, Parameters* params);
+    CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& lcl);
 };
 
 class ParamsPage : public wxPanel
 {
 public:
-    ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn);
+    ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_config, const Localization& lcl);
 
 private:
     const int SAVE_BUTTON = 2;
     const int HELP_BUTTON = 10;
-    Parameters* parameters;
+
+    UserConfig& user_config;
+    const Localization& lcl;
+
     Connection* connection;
     wxTextCtrl* cameraAddrField;
     wxTextCtrl* cameraApiField;

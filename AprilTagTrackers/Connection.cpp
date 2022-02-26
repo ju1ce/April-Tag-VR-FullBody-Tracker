@@ -1,9 +1,9 @@
 #include "Connection.h"
 #include "GUI.h"
 
-Connection::Connection(Parameters* params)
+Connection::Connection(const UserConfig& user_config, const Localization& lcl)
+    : user_config(user_config), lcl(lcl)
 {
-    parameters = params;
 // TODO: Pass the IPC client* in as an argument
 #if OS_WIN
     auto namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
@@ -18,23 +18,21 @@ void Connection::StartConnection()
 {
     if (status == WAITING)
     {
-        gui->CallAfter([] ()
+        gui->CallAfter([]()
                        {
                        wxMessageDialog dial(NULL,
                            wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
-                       dial.ShowModal();
-                       });
+                       dial.ShowModal(); });
         return;
     }
-    if (status == CONNECTED)
+    else if (status == CONNECTED)
     {
-        gui->CallAfter([parameters=parameters] ()
+        gui->CallAfter([this]()
                        {
                        wxMessageDialog dial(NULL,
-                           parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
+                           lcl.CONNECT_ALREADYCONNECTED, wxT("Question"),
                            wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-                       dial.ShowModal();
-                       });
+                       dial.ShowModal(); });
         sleep_millis(1000);
         // Sleep(1000);
         status = DISCONNECTED;
@@ -45,12 +43,12 @@ void Connection::StartConnection()
 
 void Connection::Connect()
 {
-    //generate vector of tracker connection struct, connecting board ids to apropriate driver ids. In future, this should be done manualy in the gui
+    // generate vector of tracker connection struct, connecting board ids to apropriate driver ids. In future, this should be done manualy in the gui
     connectedTrackers.clear();
 
-    if (parameters->ignoreTracker0 && parameters->trackerNum == 3)
+    if (user_config.ignoreTracker0 && user_config.trackerNum == 3)
     {
-        for (int i = 0; i < parameters->trackerNum - 1; i++)
+        for (int i = 0; i < user_config.trackerNum - 1; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i + 1;
@@ -61,9 +59,9 @@ void Connection::Connect()
         connectedTrackers[0].Role = "TrackerRole_LeftFoot";
         connectedTrackers[1].Role = "TrackerRole_RightFoot";
     }
-    else if (parameters->ignoreTracker0)
+    else if (user_config.ignoreTracker0)
     {
-        for (int i = 0; i < parameters->trackerNum - 1; i++)
+        for (int i = 0; i < user_config.trackerNum - 1; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i + 1;
@@ -73,9 +71,9 @@ void Connection::Connect()
             connectedTrackers.push_back(temp);
         }
     }
-    else if(parameters->trackerNum == 3)
+    else if (user_config.trackerNum == 3)
     {
-        for (int i = 0; i < parameters->trackerNum; i++)
+        for (int i = 0; i < user_config.trackerNum; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i;
@@ -87,9 +85,9 @@ void Connection::Connect()
         connectedTrackers[1].Role = "TrackerRole_LeftFoot";
         connectedTrackers[2].Role = "TrackerRole_RightFoot";
     }
-    else if (parameters->trackerNum == 2)
+    else if (user_config.trackerNum == 2)
     {
-        for (int i = 0; i < parameters->trackerNum; i++)
+        for (int i = 0; i < user_config.trackerNum; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i;
@@ -102,7 +100,7 @@ void Connection::Connect()
     }
     else
     {
-        for (int i = 0; i < parameters->trackerNum; i++)
+        for (int i = 0; i < user_config.trackerNum; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i;
@@ -113,22 +111,21 @@ void Connection::Connect()
         }
     }
 
-    if (!disableOpenVrApi)
+    if (!user_config.disableOpenVrApi)
     {
-        //connect to steamvr as a client in order to get buttons.
+        // connect to steamvr as a client in order to get buttons.
         vr::EVRInitError error;
         openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
 
         if (error != vr::VRInitError_None)
         {
-            wxString e = parameters->language.CONNECT_CLIENT_ERROR;
+            wxString e = lcl.CONNECT_CLIENT_ERROR;
             e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-            gui->CallAfter([e] ()
+            gui->CallAfter([e]()
                            {
                            wxMessageDialog dial(NULL,
                                e, wxT("Error"), wxOK | wxICON_ERROR);
-                           dial.ShowModal();
-                           });
+                           dial.ShowModal(); });
             status = DISCONNECTED;
             return;
         }
@@ -168,17 +165,16 @@ void Connection::Connect()
     */
     std::string fullpath;
 
-    if (!disableOpenVrApi)
+    if (!user_config.disableOpenVrApi)
     {
         if (!get_full_path("att_actions.json", fullpath))
         {
             perror("Could not find bindings");
-            gui->CallAfter([this] ()
-                            {
+            gui->CallAfter([this]()
+                           {
                             wxMessageDialog dial(NULL,
-                                parameters->language.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-                            dial.ShowModal();
-                            });
+                                lcl.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                            dial.ShowModal(); });
             status = DISCONNECTED;
             return;
         }
@@ -198,12 +194,11 @@ void Connection::Connect()
     ret >> word;
     if (word != "numtrackers")
     {
-        gui->CallAfter([this] ()
+        gui->CallAfter([this]()
                        {
                        wxMessageDialog dial(NULL,
-                           parameters->language.CONNECT_DRIVER_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-                       dial.ShowModal();
-                       });
+                           lcl.CONNECT_DRIVER_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal(); });
         status = DISCONNECTED;
         return;
     }
@@ -212,12 +207,12 @@ void Connection::Connect()
 
 #if OS_WIN
     ret >> word;
-    if (word != parameters->driverversion)
+    if (word != user_config.driver_version)
     {
         std::string e = "";
-        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
+        e += lcl.CONNECT_DRIVER_MISSMATCH_1 + word + lcl.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version;
         wxMessageDialog dial(NULL,
-            e, wxT("Warning"), wxOK | wxICON_WARNING);
+                             e, wxT("Warning"), wxOK | wxICON_WARNING);
         dial.ShowModal();
     }
 #endif
@@ -228,12 +223,11 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            gui->CallAfter([this] ()
+            gui->CallAfter([this]()
                            {
                            wxMessageDialog dial(NULL,
-                               parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
-                           dial.ShowModal();
-                           });
+                               lcl.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal(); });
             status = DISCONNECTED;
             return;
         }
@@ -243,13 +237,12 @@ void Connection::Connect()
 
     /*
     std::string sstr = "";
-    sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
+    sstr += "settings 120 " + std::to_string(user_config.smoothingFactor());
 
-    ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
+    ret = Send("settings 120 " + std::to_string(user_config.smoothingFactor()) + " " + std::to_string(user_config.additionalSmoothing()));
     */
-    //set that connection is established
+    // set that connection is established
     status = CONNECTED;
-
 }
 
 std::istringstream Connection::Send(std::string buffer)
@@ -274,7 +267,7 @@ std::istringstream Connection::SendTracker(int id, double a, double b, double c,
         " " + std::to_string(time) +
         " " + std::to_string(smoothing) + "\n";
 
-    //send the string to our driver
+    // send the string to our driver
 
     return Send(s);
 }
@@ -292,7 +285,7 @@ std::istringstream Connection::SendStation(int id, double a, double b, double c,
         " " + std::to_string(qy) +
         " " + std::to_string(qz) + "\n";
 
-    //send the string to our driver
+    // send the string to our driver
 
     return Send(s);
 }
@@ -302,18 +295,18 @@ bool GetDigitalActionState(vr::VRActionHandle_t action)
     vr::InputDigitalActionData_t actionData;
     if (vr::VRInput()->GetDigitalActionData(action, &actionData, sizeof(actionData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None)
         return false;
-    
+
     return actionData.bActive && actionData.bState;
 }
 
 int Connection::GetButtonStates()
 {
-    if (status == DISCONNECTED || disableOpenVrApi)
+    if (status == DISCONNECTED || user_config.disableOpenVrApi)
     {
         return 0;
     }
 
-    vr::VRActiveActionSet_t actionSet = { 0 };
+    vr::VRActiveActionSet_t actionSet = {0};
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
@@ -329,29 +322,33 @@ int Connection::GetButtonStates()
 
 void Connection::GetControllerPose(double outpose[])
 {
-    if (disableOpenVrApi)
+    if (user_config.disableOpenVrApi)
         return;
-    
-    //std::istringstream ret = Send("getdevicepose 1");
-    //std::string word;
 
-    //first three variables are a position vector
-    //int idx; 
-    double a; double b; double c;
+    // std::istringstream ret = Send("getdevicepose 1");
+    // std::string word;
 
-    //second four are rotation quaternion
-    double qw; double qx; double qy; double qz;
+    // first three variables are a position vector
+    // int idx;
+    double a;
+    double b;
+    double c;
 
-    //read to our variables
-    //ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+    // second four are rotation quaternion
+    double qw;
+    double qx;
+    double qy;
+    double qz;
 
-    vr::VRActiveActionSet_t actionSet = { 0 };
+    // read to our variables
+    // ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
+
+    vr::VRActiveActionSet_t actionSet = {0};
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
     vr::InputPoseActionData_t poseData;
-    if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseRawAndUncalibrated, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None
-        || !poseData.bActive || !poseData.pose.bPoseIsValid)
+    if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseRawAndUncalibrated, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None || !poseData.bActive || !poseData.pose.bPoseIsValid)
     {
         return;
     }
@@ -370,11 +367,16 @@ void Connection::GetControllerPose(double outpose[])
         a = matrix.m[0][3];
         b = matrix.m[1][3];
         c = matrix.m[2][3];
-
     }
 
     a = -a;
     c = -c;
 
-    outpose[0] = a; outpose[1] = b; outpose[2] = c; outpose[3] = qw; outpose[4] = qx; outpose[5] = qy; outpose[6] = qz;
+    outpose[0] = a;
+    outpose[1] = b;
+    outpose[2] = c;
+    outpose[3] = qw;
+    outpose[4] = qx;
+    outpose[5] = qy;
+    outpose[6] = qz;
 }

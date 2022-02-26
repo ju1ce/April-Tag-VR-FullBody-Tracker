@@ -13,7 +13,9 @@
 #include "MyApp.h"
 
 #include "Quaternion.h"
-#include "Util.h"
+#include "Config.h"
+#include "i18n.h"
+#include <opencv2/videoio.hpp>
 
 
 struct TrackerStatus {
@@ -30,7 +32,7 @@ class Parameters;
 class Tracker
 {
 public:
-    Tracker(Parameters*, Connection*, MyApp*);
+    Tracker(MyApp* myApp, Connection* connection, UserConfig& user_config, CalibrationConfig& calib_config, const Localization& lcl, const ArucoConfig& aruco_config);
     void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
@@ -74,7 +76,11 @@ private:
     cv::Mat cameraImage;
     bool imageReady = false;
 
-    Parameters* parameters;
+    UserConfig& user_config;
+    CalibrationConfig& calib_config;
+    const Localization& lcl;
+    const ArucoConfig& aruco_config;
+
     Connection* connection;
 
     std::thread cameraThread;

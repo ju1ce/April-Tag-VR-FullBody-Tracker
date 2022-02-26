@@ -6,6 +6,8 @@
 #pragma warning(pop)
 
 #include "Util.h"
+#include "Config.h"
+#include "i18n.h"
 
 class Connection;
 class GUI;
@@ -15,9 +17,15 @@ class Tracker;
 class MyApp : public wxApp
 {
     Tracker* tracker;
-    Parameters* params;
     Connection* conn;
     GUI* gui;
+
+    // Various configs exist for duration of app
+    // Other classes should only use these as (const) references.
+    UserConfig user_config;
+    CalibrationConfig calib_config;
+    ArucoConfig aruco_config;
+    Localization lcl = Localization(user_config.langId);
 
 public:
     virtual int OnExit() wxOVERRIDE;

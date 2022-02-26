@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) || defined(__CYGWIN__)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32)
     #define OS_WIN 1
 #elif defined(unix) || defined(__unix__)
     #define OS_LINUX 1
