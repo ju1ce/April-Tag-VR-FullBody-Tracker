@@ -2,7 +2,8 @@
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.1)
-project("AprilTagTrackers")
+project("AprilTagTrackers" CXX)
+set(CMAKE_CXX_STANDARD 14)
 
 set(SEARCH_LOCAL PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
 # Find prebuilt libraries
@@ -11,9 +12,14 @@ find_package(apriltag REQUIRED ${SEARCH_LOCAL})
 find_package(openvr REQUIRED ${SEARCH_LOCAL})
 find_package(wxWidgets REQUIRED mono ${SEARCH_LOCAL})
 
+set(MAKE_WIN_APP)
+if (WIN32)
+    set(MAKE_WIN_APP "WIN32")
+endif()
+
 # Add source to this project's executable.
 file(GLOB_RECURSE ATT_SOURCE "*.cpp" "*.h")
-add_executable(${PROJECT_NAME} ${ATT_SOURCE})
+add_executable(${PROJECT_NAME} ${MAKE_WIN_APP} ${ATT_SOURCE})
 # Set the root of includes, rather than relative
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -25,9 +31,19 @@ if (${USE_PRECOMP} AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
     target_precompile_headers(${PROJECT_NAME} PRIVATE "precomp.h")
 endif()
 
+# Setup platform defines
+if (WIN32)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "OS_WIN")
+elseif (UNIX)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "OS_LINUX")
+else()
+    message(FATAL_ERROR "Unknown platform ${CMAKE_SYSTEM_NAME}, compilation will fail.")
+endif()
+
+# Setup compiler specific options
 if (${MSVC})
     # tell the msvc linker this is a windows application
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS)
+    target_link_options(${PROJECT_NAME} PRIVATE "/SUBSYSTEM:WINDOWS")
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
     target_compile_options(${PROJECT_NAME} PRIVATE

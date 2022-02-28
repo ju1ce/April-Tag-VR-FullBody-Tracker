@@ -55,8 +55,8 @@ function(restrict_scope)
         "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
 
     target_include_directories(wx::mono INTERFACE
-        "${WX_HEADER_INCLUDE}"
-        "${setup_include}")
+        "${setup_include}"
+        "${WX_HEADER_INCLUDE}")
 
     if (${MSVC})
         target_link_options(wx::mono INTERFACE
