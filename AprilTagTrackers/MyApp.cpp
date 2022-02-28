@@ -1,9 +1,8 @@
 #include "Connection.h"
 #include "GUI.h"
-#include "Helpers.h"
 #include "MyApp.h"
 #include "Tracker.h"
-#include "i18n.h"
+#include "Util.h"
 
 wxIMPLEMENT_APP(MyApp);
 
@@ -21,9 +20,6 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
-    user_config.Save();
-    lcl.Save();
-    calib_config.Save();
     conn = new Connection(user_config, lcl);
     tracker = new Tracker(this, conn, user_config, calib_config, lcl, aruco_config);
 

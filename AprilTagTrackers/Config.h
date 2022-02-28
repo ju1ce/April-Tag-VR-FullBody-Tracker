@@ -3,10 +3,10 @@
 #define APP_VERSION "0.5.5"
 #define DRIVER_VERSION "0.5.5"
 
-#include "Serializable.h"
 #include "Quaternion.h"
-#include <string>
+#include "Serializable.h"
 #include <opencv2/aruco.hpp>
+#include <string>
 
 // Create definitions for each config file below
 
@@ -19,11 +19,6 @@ public:
         Load();
     }
 
-    template <typename T>
-    static void clamp(T& val, T min, T max) {
-        val = val < min ? min : val > max ? max : val;
-    }
-
     S_FIELD(std::string, version) = APP_VERSION;
     S_FIELD(std::string, driver_version) = DRIVER_VERSION;
 
@@ -32,7 +27,8 @@ public:
     S_FIELD(int, cameraApiPreference) = 0;
     S_FIELD(int, trackerNum) = 1;
     S_FIELD(double, markerSize,
-        [](auto& value){ clamp(value, 0., 1.); }) = 0.05;
+            [](auto& value)
+            { Clamp(value, 0., 1.); }) = 0.05;
     S_FIELD(int, numOfPrevValues) = 5;
     S_FIELD(double, quadDecimate) = 1;
     S_FIELD(double, searchWindow) = 0.25;
@@ -58,9 +54,11 @@ public:
     S_FIELD(double, camLatency) = 0;
     S_FIELD(bool, circularMarkers) = false;
     S_FIELD(double, trackerCalibDistance,
-        [](auto& value){ if (value < 0.5) value = 0.5; }) = 0.5;
+            [](auto& value)
+            { if (value < 0.5) value = 0.5; }) = 0.5;
     S_FIELD(int, cameraCalibSamples,
-        [](auto& value){ if (value < 15) value = 15; }) = 15;
+            [](auto& value)
+            { if (value < 15) value = 15; }) = 15;
     S_FIELD(bool, settingsParameters) = false;
     S_FIELD(double, cameraAutoexposure) = 0;
     S_FIELD(double, cameraExposure) = 0;
@@ -70,17 +68,28 @@ public:
     S_FIELD(float, additionalSmoothing) = 0;
     S_FIELD(int, markerLibrary) = 0;
     S_FIELD(int, markersPerTracker,
-        [](auto& value){ if (value <= 0) value = 45; }) = 45;
+            [](auto& value)
+            { if (value <= 0) value = 45; }) = 45;
     S_FIELD(int, languageSelection) = 0;
     S_FIELD(double, calibScale,
-        [](auto& value){ if (value < 0.5) value = 1.0; }) = 1.0;
+            [](auto& value)
+            { if (value < 0.5) value = 1.0; }) = 1.0;
     S_FIELD(bool, disableOpenVrApi) = false;
+
+private:
+    template <typename T>
+    static void Clamp(T& val, T min, T max)
+    {
+        val = val < min ? min : val > max ? max
+                                          : val;
+    }
 };
 
 // Non-user editable calibration data, long lists of numbers.
 // Potentially store this in a file.yaml.gz to reduce size,
 //  and show that it is not user editable. FileStorage has this ability built in
-class CalibrationConfig : public FileStorageSerializable {
+class CalibrationConfig : public FileStorageSerializable
+{
 public:
     CalibrationConfig() : FileStorageSerializable("calibration.yaml")
     {

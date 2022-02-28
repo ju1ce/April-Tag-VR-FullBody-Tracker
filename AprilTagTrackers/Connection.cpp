@@ -1,12 +1,13 @@
 #include "Connection.h"
 #include "GUI.h"
+#include "Util.h"
 
 Connection::Connection(const UserConfig& user_config, const Localization& lcl)
     : user_config(user_config), lcl(lcl)
 {
 // TODO: Pass the IPC client* in as an argument
 #if OS_WIN
-    auto namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
+    auto* namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
 #elif OS_LINUX
     auto namedPipe = new IPC::UNIXSocket("ApriltagPipeIn");
@@ -25,7 +26,7 @@ void Connection::StartConnection()
                        dial.ShowModal(); });
         return;
     }
-    else if (status == CONNECTED)
+    if (status == CONNECTED)
     {
         gui->CallAfter([this]()
                        {

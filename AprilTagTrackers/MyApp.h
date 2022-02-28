@@ -5,9 +5,8 @@
 #include <wx/wx.h>
 #pragma warning(pop)
 
-#include "Util.h"
 #include "Config.h"
-#include "i18n.h"
+#include "Localization.h"
 
 class Connection;
 class GUI;

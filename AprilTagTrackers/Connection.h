@@ -6,8 +6,7 @@
 
 #include "Config.h"
 #include "IPC/IPC.h"
-#include "Util.h"
-#include "i18n.h"
+#include "Localization.h"
 #include <memory>
 #include <openvr.h>
 

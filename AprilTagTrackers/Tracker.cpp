@@ -23,6 +23,7 @@
 #include "Helpers.h"
 #include "MessageDialog.h"
 #include "Tracker.h"
+#include "Util.h"
 
 namespace {
 

@@ -6,8 +6,8 @@
 #include <type_traits>
 #include <vector>
 
-//! Define your own macro to implement this one, like in the example below
-//! arg_field will also be the stringized name, appended to the prefix, and needs to reference a real field
+// Define your own macro to implement this one, like in the example below
+// arg_field will also be the stringized name, appended to the prefix, and needs to reference a real field
 #define REFLECTABLE_VISITOR(arg_visitor_prefix, arg_type, arg_field, ...)                           \
     const FieldVisitorImpl_t<std::remove_reference<arg_type>::type> arg_visitor_prefix##arg_field = \
         RegisterField<std::remove_reference<arg_type>::type>(arg_visitor_prefix##arg_field, #arg_field, arg_field, ##__VA_ARGS__)
@@ -84,27 +84,40 @@ class Reflectable
 {
 public:
     Reflectable() = default;
+    virtual ~Reflectable() = default;
+
 protected:
     using FieldVisitor_t = FieldVisitor;
-    template <typename T>
-    using FieldVisitorImpl_t = FieldVisitorImpl<T>;
+    template <typename FieldType>
+    using FieldVisitorImpl_t = FieldVisitorImpl<FieldType>;
 
     /// Enabled if validator function is an option
-    template <typename T, typename std::enable_if<
-                              std::is_base_of<FieldReferenceWithValidatingAccessor<T>, FieldVisitorImpl<T>>::value, int>::type = 0>
-    FieldVisitorImpl<T> RegisterField(const FieldVisitorImpl<T>& self, std::string name, T& field_ref, Validator<T> validator = nullptr)
+    template <typename FieldType,
+              std::enable_if_t<std::is_base_of<
+                  FieldReferenceWithValidatingAccessor<FieldType>,
+                  FieldVisitorImpl<FieldType>>::value, int> = 0>
+    FieldVisitorImpl<FieldType> RegisterField(
+        const FieldVisitorImpl<FieldType>& self,
+        std::string name,
+        FieldType& field_ref,
+        Validator<FieldType> validator = nullptr)
     {
-        fields.push_back(std::cref(self));
-        return FieldVisitorImpl<T>(std::move(name), field_ref, validator);
+        fields.emplace_back(std::cref(self));
+        return FieldVisitorImpl<FieldType>(std::move(name), field_ref, validator);
     }
 
-    /// Enabled if above is disabled
-    template <typename T, typename std::enable_if<
-                              !std::is_base_of<FieldReferenceWithValidatingAccessor<T>, FieldVisitorImpl<T>>::value, int>::type = 0>
-    FieldVisitorImpl<T> RegisterField(const FieldVisitorImpl<T>& self, std::string name, T& field_ref)
+    /// Enabled if no validator function
+    template <typename FieldType,
+              std::enable_if_t<!std::is_base_of<
+                  FieldReferenceWithValidatingAccessor<FieldType>,
+                  FieldVisitorImpl<FieldType>>::value, int> = 0>
+    FieldVisitorImpl<FieldType> RegisterField(
+        const FieldVisitorImpl<FieldType>& self,
+        std::string name,
+        FieldType& field_ref)
     {
-        fields.push_back(std::cref(self));
-        return FieldVisitorImpl<T>(std::move(name), field_ref);
+        fields.emplace_back(std::cref(self));
+        return FieldVisitorImpl<FieldType>(std::move(name), field_ref);
     }
     /// Reference to all visitor_ fields for iterating, in order of declaration
     std::vector<std::reference_wrapper<const FieldVisitor>> fields;
