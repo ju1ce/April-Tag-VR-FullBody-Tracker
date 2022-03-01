@@ -23,3 +23,8 @@ set_target_properties(openvr::openvr PROPERTIES
     IMPORTED_IMPLIB "${openvr_IMPLIB}")
 target_include_directories(openvr::openvr INTERFACE ${openvr_INCLUDE_DIR})
 target_sources(openvr::openvr INTERFACE ${openvr_HEADERS})
+
+# add_library(openvr::openvr STATIC IMPORTED)
+# set_target_properties(openvr::openvr PROPERTIES
+#    IMPORTED_LOCATION "${openvr_IMPLIB}")
+# target_compile_definitions(openvr::openvr INTERFACE "OPENVR_BUILD_STATIC")

@@ -42,20 +42,18 @@ endif()
 
 # Setup compiler specific options
 if (${MSVC})
-    # tell the msvc linker this is a windows application
-    target_link_options(${PROJECT_NAME} PRIVATE "/SUBSYSTEM:WINDOWS")
-    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-
     target_compile_options(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Release>:/GL;/GA;/Gw>")
     target_link_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>"
-        "$<$<CONFIG:Debug>:/DEBUG:FULL>")
-    if (${ASAN})
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            "/fsanitize=address")
-    endif()
+        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>")
 endif()
+
+if (${ASAN})
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        "fsanitize=address")
+endif()
+
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
 # Install target to bin folder
 install(TARGETS ${PROJECT_NAME} RUNTIME)
