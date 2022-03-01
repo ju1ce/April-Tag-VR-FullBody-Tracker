@@ -4,6 +4,7 @@
 #include <string>
 
 #include <opencv2/videoio/registry.hpp>
+#include "license.h"
 
 namespace
 {

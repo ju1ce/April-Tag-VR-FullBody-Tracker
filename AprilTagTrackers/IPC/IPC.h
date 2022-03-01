@@ -11,7 +11,7 @@ class IServer
 {
 public:
     virtual ~IServer() = default;
-    void (*on_message)(std::string message) = 0;
+    void (*on_message)(std::string message) = nullptr;
 };
 
 // Interface for inter-process-communication, be that over network, udp, or pipes, multithreaded or not
