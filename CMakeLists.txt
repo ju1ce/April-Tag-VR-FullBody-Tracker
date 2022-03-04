@@ -1,36 +1,44 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
-cmake_minimum_required (VERSION 3.5)
-project("FullBodyTracking")
+cmake_minimum_required(VERSION 3.6)
+project("April-Tag-VR-FullBody-Tracker")
 
-option(USE_PRECOMP "Use precompiled headers, requires CMake >= 3.16" ON)
-option(USE_ASAN "Enable address sanitizer." OFF)
+# Fix default install path on windows
+# Noone wants to provide admin access and install to C:/Program Files (x86)/, come on...
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    message(FATAL_ERROR "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
+which requires admin rights and usually results in errors. \
+Explicitly set with -DCMAKE_INSTALL_PREFIX= to a relative or absolute path. \
+Rerun if you are sure about installing to this location.")
+endif()
 
-option(BUILD_DEPS "Disable building any dependencies" ON)
-option(REBUILD_DEPS "Ensure that the dependencies are rebuilt if modified." OFF)
-option(BUILD_DEPS_RELEASE_ONLY "Normally dependencies will build debug and release versions." OFF)
-option(BUILD_DEPS_SHARED "Build dependencies as shared instead of static." OFF)
-option(BUILD_DEPS_VERBOSE "Forward cmake output when building dependencies, otherwise saved to deps/build/build-deps.cmake.log." OFF)
+# Options
+option(USE_ASAN "Create an address sanitizer build." OFF)
+option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
+option(CMAKE_EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." OFF)
 
-option(EXPORT_COMPILE_COMMANDS "Generate compile_commands.json for clangd." OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ${EXPORT_COMPILE_COMMANDS})
-
-# Build deps
-include("CMake/build-deps.cmake")
+# Add deps sub-project
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps" CACHE PATH "Location of deps directory.")
-set(DEPS_BINARY_DIR "${DEPS_PREFIX}/build" CACHE PATH "Deps build location")
-set(DEPS_INSTALL_DIR "${DEPS_PREFIX}/install" CACHE PATH "Deps install location.")
+set(DEPS_BINARY_DIR "${DEPS_PREFIX}/build" CACHE PATH "Deps build directory.")
+set(DEPS_INSTALL_DIR "${DEPS_PREFIX}/install" CACHE PATH "Deps install directory.")
+add_subdirectory("${DEPS_PREFIX}" "${DEPS_BINARY_DIR}")
 
-build_deps("Release")
-if (NOT ${BUILD_DEPS_RELEASE_ONLY})
-    build_deps("Debug")
-endif()
+# Add ATT external project
+include(ExternalProject)
+ExternalProject_Add(
+    AprilTagTrackers
+    PREFIX "${CMAKE_CURRENT_BINARY_DIR}/AprilTagTrackers"
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/AprilTagTrackers"
+    INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
+        -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=${CMAKE_EXPORT_COMPILE_COMMANDS}
+        -DUSE_ASAN:BOOL=${USE_ASAN}
+        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+    DEPENDS opencv apriltag openvr wxWidgets
+)
 
-# Build project
-set(BUILD_SHARED_LIBS ${BUILD_DEPS_SHARED})
-if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install directory." FORCE)
-endif()
-
-add_subdirectory("AprilTagTrackers")
+# Make AprilTagTrackers the default target in Visual Studio
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)

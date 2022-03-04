@@ -1,90 +1,96 @@
-cmake_minimum_required(VERSION 3.5)
-project("deps")
-
-set(BUILD_SHARED OFF CACHE BOOL "Build shared libs.")
-
-add_custom_target(AprilTagTrackers)
+# for fetching submodules
+find_program(GIT_CMD git REQUIRED)
+# for downloading the wxWidgets source
+find_program(CURL_CMD curl REQUIRED)
 
 # ---- Helpers ---- #
 if (ON)
 
-    set(CUSTOM_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
-    set(BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-    set(INT_DIR "${CMAKE_INSTALL_PREFIX}")
-    set_property(DIRECTORY PROPERTY EP_STEP_TARGETS install)
+    # Ensure the destination folders exist
+    make_directory("${DEPS_INSTALL_DIR}/include")
+    make_directory("${DEPS_INSTALL_DIR}/lib")
+    make_directory("${DEPS_INSTALL_DIR}/bin")
 
     include(ExternalProject)
     include(CMakePackageConfigHelpers)
-    include("${CUSTOM_SCRIPTS}/platform.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/platform.cmake")
 
-    find_program(GIT_CMD git REQUIRED)
-    find_program(CURL_CMD curl REQUIRED)
-
+    # alias for shallow checkout of the set commit hash for this submodule
     set(SUBMODULE_UPDATE_CMD ${GIT_CMD} submodule update --depth 1 -f --checkout --init)
 
+    # common cmake args for external projects using cmake
+    set(COMMON_CMAKE_ARGS
+        -Wno-dev # Suppress dependency warnings we can't fix
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> # gets replaced
+        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+        -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=${CMAKE_EXPORT_COMPILE_COMMANDS})
+
+    # common external project args
+    set(COMMON_EP_ARGS
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
+        EXCLUDE_FROM_ALL ON
+        UPDATE_COMMAND "")
+
+    # Macro to set the standard layout of external projects
     set(setup_dirs_result)
-    macro(setup_dirs namespace libname srcdir)
-        set(${namespace}_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/${srcdir}")
-        set(${namespace}_BIN_DIR "${BIN_DIR}/${libname}")
+    function(setup_dirs namespace libname)
+        cmake_parse_arguments(_a "" "SOURCE_DIR" "" ${ARGN})
 
-        set(dir "${CMAKE_CURRENT_SOURCE_DIR}/${srcdir}")
+        if (DEFINED _a_SOURCE_DIR)
+            set(libsource "${_a_SOURCE_DIR}")
+        else()
+            set(libsource "${CMAKE_CURRENT_SOURCE_DIR}/${libname}")
+        endif()
+        set(libbuild "${CMAKE_CURRENT_BINARY_DIR}/${libname}")
+        set(${namespace}_PREFIX "${libsource}" PARENT_SCOPE)
+        set(${namespace}_BIN_DIR "${libbuild}" PARENT_SCOPE)
+
         set(setup_dirs_result
-            PREFIX "${dir}" SOURCE_DIR "${dir}" DOWNLOAD_DIR "${dir}"
-            BINARY_DIR "${BIN_DIR}/${libname}"
-            TMP_DIR "${BIN_DIR}/${libname}/ExternalProject"
-            STAMP_DIR "${BIN_DIR}/${libname}/ExternalProject"
-            INSTALL_DIR "${INT_DIR}")
-        unset(dir)
-    endmacro()
-
-    function(configure_install_file _c_NAME)
-        cmake_parse_arguments(_c "" "" "PATH_VARS" ${ARGN})
-        configure_package_config_file(
-            "${CUSTOM_SCRIPTS}/${_c_NAME}.cmake.in"
-            "${INT_DIR}/${_c_NAME}.cmake"
-            PATH_VARS ${_c_PATH_VARS}
-            INSTALL_DESTINATION "${INT_DIR}"
-            INSTALL_PREFIX "${INT_DIR}")
+            PREFIX "${CMAKE_CURRENT_SOURCE_DIR}"
+            SOURCE_DIR "${libsource}" DOWNLOAD_DIR "${libsource}"
+            BINARY_DIR "${libbuild}" TMP_DIR "${libbuild}/tmp" STAMP_DIR "${libbuild}/stamp"
+            INSTALL_DIR "${DEPS_INSTALL_DIR}"
+            PARENT_SCOPE)
     endfunction()
 
-    if (DEFINED CMAKE_CONFIGURATION_TYPES)
-        set(DEPS_BUILD_MULTI BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>)
-    else()
-        set(DEPS_BUILD_SINGLE -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE})
-    endif()
+    function(configure_install_file libname)
+        cmake_parse_arguments(_a "" "" "PATH_VARS" ${ARGN})
+        configure_package_config_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/CMake/${libname}.cmake.in"
+            "${DEPS_INSTALL_DIR}/${libname}.cmake"
+            PATH_VARS ${_a_PATH_VARS}
+            INSTALL_DESTINATION "${DEPS_INSTALL_DIR}"
+            INSTALL_PREFIX "${DEPS_INSTALL_DIR}")
+    endfunction()
 
 endif()
 
 # ---- Apriltag ---- #
 if (ON)
 
-    setup_dirs(AT "apriltag" "apriltag")
+    setup_dirs(AT "apriltag")
     ExternalProject_Add(
         apriltag
         # Directories
         ${setup_dirs_result}
-        # Disable download
+        # Fetch submodule files
         DOWNLOAD_COMMAND ${SUBMODULE_UPDATE_CMD} <SOURCE_DIR>
-        UPDATE_COMMAND ""
         # CMake handles the rest with default build and install
-        CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED}
+        CMAKE_ARGS ${COMMON_CMAKE_ARGS}
             -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_PYTHON_WRAPPER:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            ${DEPS_BUILD_SINGLE}
-        ${DEPS_BUILD_MULTI}
-        EXCLUDE_FROM_ALL 1
+        ${COMMON_EP_ARGS}
     )
-    add_dependencies(AprilTagTrackers apriltag-install)
 
 endif()
 
 # ---- wxWidgets ---- #
 if (ON)
 
-    setup_dirs(WX "wxWidgets" "build/wxWidgets-src")
+    setup_dirs(WX "wxWidgets" SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/wxWidgets/src")
 
     set(WX_URL_BASE "https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/")
-    if (${WIN32})
+    if (WIN32)
         set(WX_SOURCE_ZIP "${WX_URL_BASE}/wxWidgets-3.1.5.7z")
     else()
         set(WX_SOURCE_ZIP "${WX_URL_BASE}/wxWidgets-3.1.5.tar.bz2")
@@ -97,40 +103,32 @@ if (ON)
         # Init the submodule
         DOWNLOAD_COMMAND ${CURL_CMD} -Ls -o "wx_source.7z" "${WX_SOURCE_ZIP}"
         COMMAND ${CMAKE_COMMAND} -E tar x "wx_source.7z"
-        UPDATE_COMMAND ""
         # CMake handles the rest with default build and install
-        CMAKE_ARGS -DwxBUILD_SHARED:BOOL=${BUILD_SHARED}
+        CMAKE_ARGS ${COMMON_CMAKE_ARGS}
             -DwxBUILD_MONOLITHIC:BOOL=ON
             -DwxBUILD_OPTIMISE:BOOL=$<CONFIG:Release>
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            ${DEPS_BUILD_SINGLE}
-        ${DEPS_BUILD_MULTI}
-        EXCLUDE_FROM_ALL 1
+        STEP_TARGETS install
+        ${COMMON_EP_ARGS}
     )
-    add_dependencies(AprilTagTrackers wxWidgets-install)
 
-    set(WX_ROOT_DIR "${INT_DIR}")
-    configure_install_file("wxWidgetsConfig"
-        PATH_VARS WX_ROOT_DIR)
-    target_sources(AprilTagTrackers PRIVATE "${CUSTOM_SCRIPTS}/wxWidgetsConfig.cmake.in")
+    configure_install_file("wxWidgetsConfig" PATH_VARS DEPS_INSTALL_DIR)
+    target_sources(wxWidgets-install PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/wxWidgetsConfig.cmake.in")
 
 endif()
 
 # ---- OpenVR ---- #
 if (ON)
+    # TODO: switch to funnbot/openvr and build statically
+    setup_dirs(OVR "openvr")
 
-    setup_dirs(OVR "openvr" "openvr")
-
-    set(OVR_INCLUDE_DIR "${INT_DIR}/include")
-    set(OVR_LIB_OUTPUT "${INT_DIR}/bin/openvr_api${PLATFORM_SHARED_EXT}")
-    set(OVR_IMPLIB_OUTPUT "${INT_DIR}/lib/openvr_api${PLATFORM_INTERFACE_EXT}")
+    set(OVR_INCLUDE_DIR "${DEPS_INSTALL_DIR}/include")
+    set(OVR_LIB_OUTPUT "${DEPS_INSTALL_DIR}/bin/openvr_api${PLATFORM_SHARED_EXT}")
+    set(OVR_IMPLIB_OUTPUT "${DEPS_INSTALL_DIR}/lib/openvr_api${PLATFORM_INTERFACE_EXT}")
     configure_install_file("openvrConfig"
         PATH_VARS OVR_INCLUDE_DIR OVR_LIB_OUTPUT OVR_IMPLIB_OUTPUT)
 
-    make_directory("${INT_DIR}/include")
-    make_directory("${INT_DIR}/lib")
-    make_directory("${INT_DIR}/bin")
-
+    # fake install of the files from the repo, into a standard layout and correct location
     set(OVR_LIB_PATH "${PLATFORM_OS1}${PLATFORM_ARCH}/${PLATFORM_LIB_PREFIX}openvr_api")
     add_custom_command(OUTPUT "${OVR_LIB_OUTPUT}"
         COMMAND ${SUBMODULE_UPDATE_CMD} ${OVR_PREFIX}
@@ -145,20 +143,23 @@ if (ON)
             "${OVR_IMPLIB_OUTPUT}"
         VERBATIM)
     add_custom_target(openvr DEPENDS "${OVR_LIB_OUTPUT}")
-    add_dependencies(AprilTagTrackers openvr)
-    target_sources(AprilTagTrackers PRIVATE "${CUSTOM_SCRIPTS}/openvrConfig.cmake.in")
+    target_sources(openvr PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/openvrConfig.cmake.in")
 
 endif()
 
 # ---- OpenCV Contrib ---- #
 if (ON)
 
-    setup_dirs(CV_C "opencv_contrib" "opencv_contrib")
+    setup_dirs(CV_C "opencv_contrib")
+    # Copies the aruco module to a folder in build,
+    # where opencv can reference when building
     add_custom_command(OUTPUT "${CV_C_BIN_DIR}/modules/aruco/CMakeLists.txt"
         COMMAND ${SUBMODULE_UPDATE_CMD} ${CV_C_PREFIX}
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CV_C_PREFIX}/modules/aruco" "${CV_C_BIN_DIR}/modules/aruco"
         VERBATIM)
+    # using the cmakelists file as dependency to link to opencv
     add_custom_target(opencv_contrib DEPENDS "${CV_C_BIN_DIR}/modules/aruco/CMakeLists.txt")
 
 endif()
@@ -166,35 +167,36 @@ endif()
 # ---- OpenCV ---- #
 if (ON)
 
+    # remove some unnecessary build outputs,
+    # hopefully decreases build time
     set(CV_BUILD_SMALL
         -DBUILD_opencv_apps:BOOL=OFF
         -DBUILD_JAVA:BOOL=OFF
         -DBUILD_opencv_python3:BOOL=OFF
-        -DBUILD_opencv_python_bindings_generator:BOOL=OFF)
+        -DBUILD_opencv_python_bindings_generator:BOOL=OFF
+        -DBUILD_PERF_TESTS:BOOL=OFF
+        -DBUILD_TESTS:BOOL=OFF)
 
-    setup_dirs(CV "opencv" "opencv")
+    setup_dirs(CV "opencv")
     ExternalProject_Add(
         opencv
-        # Directories
         ${setup_dirs_result}
-        # Disable download
+        # Fetch the submodule files if needed
         DOWNLOAD_COMMAND ${SUBMODULE_UPDATE_CMD} <SOURCE_DIR>
-        UPDATE_COMMAND ""
         # CMake handles the rest
-        CMAKE_ARGS -DBUILD_PERF_TESTS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF
+        CMAKE_ARGS ${COMMON_CMAKE_ARGS}
             -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
+            # The modules folder with aruco created by opencv_contrib
             -DOPENCV_EXTRA_MODULES_PATH:PATH=${CV_C_BIN_DIR}/modules
-            -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-            -DBUILD_SHARED_LIBS:BOOL=OFF
-            -DBUILD_WITH_STATIC_CRT:BOOL=OFF
+            # multiple static libs using different versions of static crt leads to issues
+            -DBUILD_WITH_STATIC_CRT:BOOL=${DEPS_BUILD_SHARED}
             -DENABLE_LTO:BOOL=$<CONFIG:Release>
+            # random file opencv creates that we dont use
             -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF
             ${CV_BUILD_SMALL}
-            ${DEPS_BUILD_SINGLE}
-        ${DEPS_BUILD_MULTI}
         # Other options
-        EXCLUDE_FROM_ALL 1
-        DEPENDS opencv_contrib)
-    add_dependencies(AprilTagTrackers opencv-install)
+        DEPENDS opencv_contrib
+        ${COMMON_EP_ARGS}
+    )
 
 endif()
