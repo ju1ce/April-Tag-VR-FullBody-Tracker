@@ -1,5 +1,4 @@
-#include "GUI.h"
-#include <memory>
+#include "wxWrapper.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
@@ -23,9 +22,5 @@ UString::UString()
 
 UString::UString(const char* cStr)
     : impl(new UStringImpl(cStr)) {}
-
-UString::UString(std::string&& stdStr)
-    : impl(new UStringImpl(std::move(stdStr))) {}
-
 
 };
