@@ -10,13 +10,6 @@
 
 #include <iostream>
 
-// Define a reflectable field with optional validator,
-// within a class that derives from FileStorageSerializable
-#define S_FIELD(arg_type, arg_name, ...)                                \
-public:                                                                 \
-    REFLECTABLE_VISITOR(interface_, arg_type, arg_name, ##__VA_ARGS__); \
-    arg_type arg_name
-
 // Helper for FS_COMMENT to use the special __COUNTER__ macro
 #define FILESTORAGE_COMMENT_WITH_UID(arg_comment, arg_uid)                 \
 private:                                                                   \
@@ -40,12 +33,12 @@ public:
 template <typename T>
 class FileStorageField
     : public IFileStorageField,
-      public Reflect::FieldReferenceWithValidatingAccessor<T>
+      public Reflect::FieldValidateAccessor<T>
 {
 public:
     FileStorageField(std::string name, T& field, Reflect::Validator<T> validator)
         : IFileStorageField(std::move(name)),
-          Reflect::FieldReferenceWithValidatingAccessor<T>(field, validator) {}
+          Reflect::FieldValidateAccessor<T>(field, validator) {}
 
     void Serialize(cv::FileStorage& fs) const override;
     void Deserialize(const cv::FileNode& fn) const override;
@@ -168,5 +161,5 @@ inline void operator>>(const cv::FileNode& fn, wxString& s)
     std::string buf;
     fn >> buf;
     // TODO: can the need for a temporary be eliminated? check FileNode::readObj()
-    s = wxString::FromUTF8(buf);
+    s = wxString::FromUTF8Unchecked(buf);
 }

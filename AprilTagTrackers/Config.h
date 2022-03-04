@@ -8,6 +8,13 @@
 #include <opencv2/aruco.hpp>
 #include <string>
 
+// Define a reflectable field with optional validator,
+// within a class that derives from FileStorageSerializable
+#define FIELD(arg_type, arg_name, ...)                                \
+public:                                                                 \
+    REFLECTABLE_VISITOR(interface_, arg_type, arg_name, ##__VA_ARGS__); \
+    arg_type arg_name
+
 // Create definitions for each config file below
 
 // User editable storage
@@ -19,62 +26,62 @@ public:
         Load();
     }
 
-    S_FIELD(std::string, version) = APP_VERSION;
-    S_FIELD(std::string, driver_version) = DRIVER_VERSION;
+    FIELD(std::string, version) = APP_VERSION;
+    FIELD(std::string, driver_version) = DRIVER_VERSION;
 
-    S_FIELD(std::string, langId) = "en";
-    S_FIELD(std::string, cameraAddr) = "0";
-    S_FIELD(int, cameraApiPreference) = 0;
-    S_FIELD(int, trackerNum) = 1;
-    S_FIELD(double, markerSize,
+    FIELD(std::string, langId) = "en";
+    FIELD(std::string, cameraAddr) = "0";
+    FIELD(int, cameraApiPreference) = 0;
+    FIELD(int, trackerNum) = 1;
+    FIELD(double, markerSize,
             [](auto& value)
             { Clamp(value, 0., 1.); }) = 0.05;
-    S_FIELD(int, numOfPrevValues) = 5;
-    S_FIELD(double, quadDecimate) = 1;
-    S_FIELD(double, searchWindow) = 0.25;
-    S_FIELD(bool, usePredictive) = true;
-    S_FIELD(int, calibrationTracker) = 0;
-    S_FIELD(bool, chessboardCalib) = false;
-    S_FIELD(bool, ignoreTracker0) = false;
-    S_FIELD(bool, rotateCl) = false;
-    S_FIELD(bool, rotateCounterCl) = false;
-    S_FIELD(bool, coloredMarkers) = true;
-    S_FIELD(double, calibOffsetX) = 0;
-    S_FIELD(double, calibOffsetY) = 100;
-    S_FIELD(double, calibOffsetZ) = 100;
-    S_FIELD(double, calibOffsetA) = 100;
-    S_FIELD(double, calibOffsetB) = 0;
-    S_FIELD(double, calibOffsetC) = 0;
-    S_FIELD(bool, circularWindow) = true;
-    S_FIELD(double, smoothingFactor) = 0.5;
-    S_FIELD(int, camFps) = 30;
-    S_FIELD(int, camHeight) = 0;
-    S_FIELD(int, camWidth) = 0;
-    S_FIELD(bool, cameraSettings) = false;
-    S_FIELD(double, camLatency) = 0;
-    S_FIELD(bool, circularMarkers) = false;
-    S_FIELD(double, trackerCalibDistance,
+    FIELD(int, numOfPrevValues) = 5;
+    FIELD(double, quadDecimate) = 1;
+    FIELD(double, searchWindow) = 0.25;
+    FIELD(bool, usePredictive) = true;
+    FIELD(int, calibrationTracker) = 0;
+    FIELD(bool, chessboardCalib) = false;
+    FIELD(bool, ignoreTracker0) = false;
+    FIELD(bool, rotateCl) = false;
+    FIELD(bool, rotateCounterCl) = false;
+    FIELD(bool, coloredMarkers) = true;
+    FIELD(double, calibOffsetX) = 0;
+    FIELD(double, calibOffsetY) = 100;
+    FIELD(double, calibOffsetZ) = 100;
+    FIELD(double, calibOffsetA) = 100;
+    FIELD(double, calibOffsetB) = 0;
+    FIELD(double, calibOffsetC) = 0;
+    FIELD(bool, circularWindow) = true;
+    FIELD(double, smoothingFactor) = 0.5;
+    FIELD(int, camFps) = 30;
+    FIELD(int, camHeight) = 0;
+    FIELD(int, camWidth) = 0;
+    FIELD(bool, cameraSettings) = false;
+    FIELD(double, camLatency) = 0;
+    FIELD(bool, circularMarkers) = false;
+    FIELD(double, trackerCalibDistance,
             [](auto& value)
             { if (value < 0.5) value = 0.5; }) = 0.5;
-    S_FIELD(int, cameraCalibSamples,
+    FIELD(int, cameraCalibSamples,
             [](auto& value)
             { if (value < 15) value = 15; }) = 15;
-    S_FIELD(bool, settingsParameters) = false;
-    S_FIELD(double, cameraAutoexposure) = 0;
-    S_FIELD(double, cameraExposure) = 0;
-    S_FIELD(double, cameraGain) = 0;
-    S_FIELD(bool, trackerCalibCenters) = false;
-    S_FIELD(float, depthSmoothing) = 0;
-    S_FIELD(float, additionalSmoothing) = 0;
-    S_FIELD(int, markerLibrary) = 0;
-    S_FIELD(int, markersPerTracker,
+    FIELD(bool, settingsParameters) = false;
+    FIELD(double, cameraAutoexposure) = 0;
+    FIELD(double, cameraExposure) = 0;
+    FIELD(double, cameraGain) = 0;
+    FIELD(bool, trackerCalibCenters) = false;
+    FIELD(float, depthSmoothing) = 0;
+    FIELD(float, additionalSmoothing) = 0;
+    FIELD(int, markerLibrary) = 0;
+    FIELD(int, markersPerTracker,
             [](auto& value)
             { if (value <= 0) value = 45; }) = 45;
-    S_FIELD(int, languageSelection) = 0;
-    S_FIELD(double, calibScale,
+    FIELD(int, languageSelection) = 0;
+    FIELD(double, calibScale,
             [](auto& value)
             { if (value < 0.5) value = 1.0; }) = 1.0;
-    S_FIELD(bool, disableOpenVrApi) = false;
+    FIELD(bool, disableOpenVrApi) = false;
 
 private:
     template <typename T>
@@ -96,15 +103,15 @@ public:
         Load();
     }
 
-    S_FIELD(cv::Mat, camMat);
-    S_FIELD(cv::Mat, distCoeffs);
-    S_FIELD(cv::Mat, stdDeviationsIntrinsics);
-    S_FIELD(std::vector<double>, perViewErrors);
-    S_FIELD(std::vector<std::vector<cv::Point2f>>, allCharucoCorners);
-    S_FIELD(std::vector<std::vector<int>>, allCharucoIds);
-    S_FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers);
-    S_FIELD(cv::Mat, wtranslation);
-    S_FIELD(Quaternion<double>, wrotation);
+    FIELD(cv::Mat, camMat);
+    FIELD(cv::Mat, distCoeffs);
+    FIELD(cv::Mat, stdDeviationsIntrinsics);
+    FIELD(std::vector<double>, perViewErrors);
+    FIELD(std::vector<std::vector<cv::Point2f>>, allCharucoCorners);
+    FIELD(std::vector<std::vector<int>>, allCharucoIds);
+    FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers);
+    FIELD(cv::Mat, wtranslation);
+    FIELD(Quaternion<double>, wrotation);
 };
 
 class ArucoConfig : public FileStorageSerializable
@@ -120,5 +127,7 @@ public:
         Load();
     }
 
-    S_FIELD(cv::Ptr<cv::aruco::DetectorParameters>, params);
+    FIELD(cv::Ptr<cv::aruco::DetectorParameters>, params);
 };
+
+#undef FIELD

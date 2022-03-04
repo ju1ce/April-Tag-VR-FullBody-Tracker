@@ -13,19 +13,20 @@
 //  and not in a source file.
 using UniStr = wxString;
 
-// temporary alias, different than FS_FIELD due to making the interfaces private
+// temporary alias, undefined at end of file,
+// Makes the visitor fields private, essentially const fields except when Load is called
 #define T(arg_key)                        \
-private:                                               \
-    REFLECTABLE_VISITOR(_interface_, UniStr, arg_key); \
-                                                       \
-public:                                                \
-    UniStr arg_key
+private: REFLECTABLE_VISITOR(_interface_, const UniStr, arg_key); \
+public: const UniStr arg_key
 
 class Localization : public FileStorageSerializable
 {
 public:
     explicit Localization(const std::string& lang_id)
-        : FileStorageSerializable("lang_" + lang_id + ".yaml") {}
+        : FileStorageSerializable("lang_" + lang_id + ".yaml")
+    {
+        Load();
+    }
 
     // TODO:
     void FindAvailableLangs()
