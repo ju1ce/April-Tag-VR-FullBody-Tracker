@@ -31,7 +31,7 @@ set(COMMON_CMAKE_ARGS
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps" CACHE PATH "Location of deps directory.")
 set(DEPS_BINARY_DIR "${DEPS_PREFIX}/build" CACHE PATH "Deps build directory.")
 set(DEPS_INSTALL_DIR "${DEPS_PREFIX}/install" CACHE PATH "Deps install directory.")
-add_subdirectory("${DEPS_PREFIX}" "${DEPS_BINARY_DIR}")
+add_subdirectory("${DEPS_PREFIX}" "${DEPS_BINARY_DIR}" EXCLUDE_FROM_ALL)
 
 # Add ATT external project
 include(ExternalProject)
