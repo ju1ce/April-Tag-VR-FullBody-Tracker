@@ -6,25 +6,12 @@ find_program(CURL_CMD curl REQUIRED)
 # ---- Helpers ---- #
 if (ON)
 
-    # Ensure the destination folders exist
-    make_directory("${DEPS_INSTALL_DIR}/include")
-    make_directory("${DEPS_INSTALL_DIR}/lib")
-    make_directory("${DEPS_INSTALL_DIR}/bin")
-
     include(ExternalProject)
     include(CMakePackageConfigHelpers)
     include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/platform.cmake")
 
     # alias for shallow checkout of the set commit hash for this submodule
     set(SUBMODULE_UPDATE_CMD ${GIT_CMD} submodule update --depth 1 -f --checkout --init)
-
-    # common cmake args for external projects using cmake
-    set(COMMON_CMAKE_ARGS
-        -Wno-dev # Suppress dependency warnings we can't fix
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> # gets replaced
-        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-        -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=${CMAKE_EXPORT_COMPILE_COMMANDS})
 
     # common external project args
     set(COMMON_EP_ARGS
@@ -132,6 +119,8 @@ if (ON)
     set(OVR_LIB_PATH "${PLATFORM_OS1}${PLATFORM_ARCH}/${PLATFORM_LIB_PREFIX}openvr_api")
     add_custom_command(OUTPUT "${OVR_LIB_OUTPUT}"
         COMMAND ${SUBMODULE_UPDATE_CMD} ${OVR_PREFIX}
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            ${OVR_INCLUDE_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy
             "${OVR_PREFIX}/headers/openvr.h" "${OVR_PREFIX}/headers/openvr_driver.h"
             "${OVR_PREFIX}/headers/openvr_api.json" "${OVR_INCLUDE_DIR}"

@@ -1,6 +1,6 @@
 @PACKAGE_INIT@
 
-function(restrict_scope)
+function(_wxWidgetsConfig_find_real)
     set_and_check(wxWidgets_ROOT_DIR "@PACKAGE_DEPS_INSTALL_DIR@")
 
     if (${UNIX})
@@ -58,10 +58,8 @@ function(restrict_scope)
         "${setup_include}"
         "${WX_HEADER_INCLUDE}")
 
-    if (${MSVC})
-        target_link_options(wx::mono INTERFACE
-            "$<$<CONFIG:Release>:/LTCG>")
-    endif()
+    set_target_properties(wx::mono PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 endfunction()
-restrict_scope()
+_wxWidgetsConfig_find_real()

@@ -30,10 +30,14 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
 # Install target to bin folder
 install(TARGETS ${PROJECT_NAME} RUNTIME)
+install(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> CONFIGURATIONS Debug DESTINATION "bin")
 install(FILES $<TARGET_FILE:openvr::openvr> DESTINATION "bin")
 
 # Ensure compiler with c++14 language features
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+# Enable LTO in release
+set_target_properties(wx::mono PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 # Setup platform options
 if(WIN32)
@@ -48,10 +52,9 @@ endif()
 
 # Setup compiler specific options
 if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Release>:/GL;/GA;/Gw>")
-    target_link_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Release>:/LTCG;/OPT:ICF=3>")
+    # Include PDB within exe
+    # target_compile_options(${PROJECT_NAME} PUBLIC
+    #     "$<$<CONFIG:Debug>:/>")
 endif()
 
 # Build with Address Sanitizer

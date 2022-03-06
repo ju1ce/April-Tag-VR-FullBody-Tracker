@@ -19,7 +19,7 @@ endmacro(clean_platform)
 clean_platform()
 
 # Check if 32 or 64 bit system.
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "64")
     set(PLATFORM_ARCH "64")
     set(PLATFORM_ARCH1 "x64")
     set(PLATFORM_ARCH2 "x86_64")
