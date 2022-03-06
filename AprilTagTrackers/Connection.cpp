@@ -1,6 +1,8 @@
 #include "Connection.h"
+
 #include "GUI.h"
 #include "Util.h"
+#include <thread>
 
 Connection::Connection(const UserConfig& user_config, const Localization& lcl)
     : user_config(user_config), lcl(lcl)

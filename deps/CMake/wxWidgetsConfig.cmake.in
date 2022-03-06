@@ -3,15 +3,22 @@
 function(_wxWidgetsConfig_find_real)
     set_and_check(wxWidgets_ROOT_DIR "@PACKAGE_DEPS_INSTALL_DIR@")
 
-    if (${UNIX})
-        set(wxWidgets_CONFIG_OPTIONS --prefix="${wxWidgets_ROOT_DIR}" )
-    endif()
+    set(ENV{WX_CONFIG} "${wxWidgets_ROOT_DIR}/bin/wx-config")
+    set(wxWidgets_CONFIG_OPTIONS --prefix="${wxWidgets_ROOT_DIR}" )
 
     find_package(wxWidgets REQUIRED ${wxWidgets_FIND_COMPONENTS})
     include(${wxWidgets_USE_FILE})
 
-    set(wxWidgets_FOUND true PARENT_SCOPE)
-    set(wxWidgets_mono_FOUND true PARENT_SCOPE)
+    set(wxWidgets_FOUND True PARENT_SCOPE)
+    if (wxWidgets_mono_FOUND)
+        set(wxWidgets_mono_FOUND True PARENT_SCOPE)
+    else()
+        foreach(wx_comp ${wxWidgets_FIND_COMPONENTS})
+            if (wxWidgets_${wx_comp}_FOUND)
+                set(wxWidgets_${wx_comp}_FOUND True PARENT_SCOPE)
+            endif()
+        endforeach()
+    endif()
 
     set(WX_LIBS)
     set(WX_DBG_LIBS)
@@ -23,7 +30,7 @@ function(_wxWidgetsConfig_find_real)
             list(APPEND WX_DBG_LIBS "${lib}")
         elseif("${previous_lib}" STREQUAL "optimized")
             list(APPEND WX_REL_LIBS "${lib}")
-        elseif((NOT "${lib}" STREQUAL "debug") AND (NOT "${lib}" STREQUAL "optimized"))
+        elseif(NOT ("${lib}" STREQUAL "debug") AND NOT ("${lib}" STREQUAL "optimized"))
             list(APPEND WX_LIBS "${lib}")
         endif()
         set(previous_lib "${lib}")
@@ -31,6 +38,16 @@ function(_wxWidgetsConfig_find_real)
 
     list(GET wxWidgets_INCLUDE_DIRS 0 WX_SETUP_INCLUDE)
     list(GET wxWidgets_INCLUDE_DIRS 1 WX_HEADER_INCLUDE)
+
+    if (EXISTS "${WX_SETUP_INCLUDE}d" AND EXISTS "${WX_SETUP_INCLUDE}")
+        set(WX_SETUP_INCLUDE "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
+    elseif(EXISTS "${WX_SETUP_INCLUDE}d")
+        set(WX_SETUP_INCLUDE "${WX_SETUP_INCLUDE}d")
+    elseif(EXISTS "${WX_SETUP_INCLUDE}")
+        set(WX_SETUP_INCLUDE "${WX_SETUP_INCLUDE}")
+    else()
+        message(FATAL_ERROR "Could not find wx/setup.h for any configuration.")
+    endif()
 
     if (TARGET wx::mono)
         return()
@@ -42,24 +59,13 @@ function(_wxWidgetsConfig_find_real)
         "$<$<CONFIG:Release>:${WX_REL_LIBS}>"
         "$<$<CONFIG:Debug>:${WX_DBG_LIBS}>")
 
-    if (EXISTS "${WX_SETUP_INCLUDE}d")
-        set(setup_include "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
-    elseif(EXISTS "${WX_SETUP_INCLUDE}")
-        set(setup_include "${WX_SETUP_INCLUDE}")
-    else()
-        message(FATAL_ERROR "wxWidgets setup include not found.")
-    endif()
-
     target_compile_definitions(wx::mono INTERFACE
         "${wxWidgets_DEFINITIONS}"
         "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
 
     target_include_directories(wx::mono INTERFACE
-        "${setup_include}"
+        "${WX_SETUP_INCLUDE}"
         "${WX_HEADER_INCLUDE}")
-
-    set_target_properties(wx::mono PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 endfunction()
 _wxWidgetsConfig_find_real()

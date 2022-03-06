@@ -1,21 +1,13 @@
 ﻿#pragma once
 
-// #include <iostream>
-// #include <mutex>
-// #include <thread>
-// #include <vector>
-// #include <math.h>
-
-// #include <opencv2/aruco.hpp>
-// #include <opencv2/core.hpp>
-// #include <opencv2/videoio.hpp>
-
 #include "MyApp.h"
 
 #include "Quaternion.h"
 #include "Config.h"
 #include "Localization.h"
 #include <opencv2/videoio.hpp>
+#include <thread>
+#include <mutex>
 
 
 struct TrackerStatus {

@@ -1,7 +1,8 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
-#
-cmake_minimum_required(VERSION 3.6)
+
+# TODO: Oldest tested version, update if you test an older version.
+cmake_minimum_required(VERSION 3.16)
 project("April-Tag-VR-FullBody-Tracker" NONE)
 
 # Fix default install path on windows
