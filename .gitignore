@@ -6,3 +6,6 @@ install/
 .clangd
 .clang-format
 .cache/
+
+/build2/
+/build3/
