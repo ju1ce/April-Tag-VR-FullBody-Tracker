@@ -39,17 +39,23 @@ https://youtu.be/ncN8Vw_0DrE
 
 **NOTE: THIS IS ONLY FOR DEVELOPERS. IF YOU ONLY WANT TO USE APRILTAGTRACKERS AND NOT WRITE CODE, THE TUTORIAL IS ON THE [WIKI](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki)**
 
-A detailed build instructions will be here, some day. For the instructions on how to install and use ATT, refer to the link to the wiki on the top of the page!
+The project is a CMake project. You should be able to build it either using CMake and your favourite IDE/compiler, or some IDEs already support opening cmake projects directly.
 
-The project is a CMAKE project. You should be able to build it either using CMAKE and your favourite IDE/compiler, or some IDES already support opening cmake projects directly. It should also work both on Windows and Linux.
+### Linux prerequisites
+```
+sudo apt install build-essentials libgtk-3-dev
+```
+### Windows prerequisites
+Open in Visual Studio, or use the Visual Studio Command Prompt.
 
-The only library you need to install seperately is opencv with contrib modules (aruco, specificaly). You should be able to find a guide on how to do that.
 
-So:
-- Build opencv with contrib modules
-- Generate project with CMAKE, if opencv isnt found automaticaly, point cmake to its build directory
-- Open generated project with your favourite c++ IDE and compile!
-- The compiled .exe will need some additional dlls to work. Simplest way to do this is just to copy the missing dlls to the same folder the .exe is in (or into build/ApriltagTrackers if running from IDE). The opencv dlls are in the opencv build directory, openvr is in the openvr/bin directory.
+### Clone and build
+```
+git clone https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker
+cd April-Tag-VR-FullBody-Tracker
+cmake -B build
+cmake --build build --target install
+```
 
 That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)
 
