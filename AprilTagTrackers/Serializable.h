@@ -11,14 +11,12 @@
 #include <iostream>
 
 // Helper for FS_COMMENT to use the special __COUNTER__ macro
-#define FILESTORAGE_COMMENT_WITH_UID(arg_comment, arg_uid)                 \
-private:                                                                   \
-    REFLECTABLE_VISITOR(_comment_, FileStorageComment, comment_##arg_uid); \
-    FileStorageComment comment_##arg_uid { arg_comment }
+#define FILESTORAGE_COMMENT_WITH_UID(a_unique_id, a_comment) \
+    REFLECTABLE_FIELD(private, _comment_, private, const FileStorageComment, _comment_##a_unique_id){a_comment}
 
 // Places a comment in the resulting yaml file, at the current line
-#define FS_COMMENT(arg_comment) \
-    FILESTORAGE_COMMENT_WITH_UID(arg_comment, __COUNTER__)
+#define FS_COMMENT(a_comment) \
+    FILESTORAGE_COMMENT_WITH_UID(__COUNTER__, a_comment)
 
 /// IFieldVisitor
 class IFileStorageField : public Reflect::FieldIdentifier
@@ -62,13 +60,13 @@ protected:
     std::string file_path;
 };
 
-template<typename FieldType>
-inline void FileStorageField<FieldType>::Serialize(cv::FileStorage &fs) const
+template <typename FieldType>
+inline void FileStorageField<FieldType>::Serialize(cv::FileStorage& fs) const
 {
     fs << this->name << this->field;
 }
 template <typename FieldType>
-inline void FileStorageField<FieldType>::Deserialize(const cv::FileNode &fn) const
+inline void FileStorageField<FieldType>::Deserialize(const cv::FileNode& fn) const
 {
     const cv::FileNode& elem = fn[name];
     if (elem.empty()) return;
@@ -83,21 +81,23 @@ struct FileStorageComment
     const std::string str;
 };
 
-template<>
-inline void FileStorageField<FileStorageComment>::Serialize(cv::FileStorage &fs) const
+template <>
+inline void FileStorageField<FileStorageComment>::Serialize(cv::FileStorage& fs) const
 {
     fs.writeComment(field.str);
 }
-template<>
-inline void FileStorageField<FileStorageComment>::Deserialize(const cv::FileNode &fn) const { /* empty */ }
+template <>
+inline void FileStorageField<FileStorageComment>::Deserialize(const cv::FileNode& fn) const
+{ /* empty */
+}
 
 // OpenCV dosnt have an implementation for storing its own aruco config file, so here it is.
 // This is a specialization instead of an overload, so that the params can be written
 //  at root level instead of inside a named object
-template<>
-void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Serialize(cv::FileStorage &fs) const;
-template<>
-inline void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Deserialize(const cv::FileNode &fn) const
+template <>
+void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Serialize(cv::FileStorage& fs) const;
+template <>
+inline void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Deserialize(const cv::FileNode& fn) const
 {
     cv::aruco::DetectorParameters::readDetectorParameters(fn, field);
 }

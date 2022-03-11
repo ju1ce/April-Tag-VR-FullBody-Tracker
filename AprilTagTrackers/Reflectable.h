@@ -7,20 +7,17 @@
 #include <vector>
 
 // Define your own macro to implement this one, like in the example below
-// arg_field will also be the stringized name, appended to the prefix, and needs to reference a real field
-#define REFLECTABLE_VISITOR(arg_visitor_prefix, arg_type, arg_field, ...)                 \
-    const FieldVisitorImpl_t<Reflect::remove_constref_t<arg_type>> arg_visitor_prefix##arg_field = \
-        RegisterField<Reflect::remove_constref_t<arg_type>>(                                       \
-            arg_visitor_prefix##arg_field,                                                \
-            #arg_field,                                                                   \
-            const_cast<Reflect::remove_constref_t<arg_type>&>(arg_field),                          \
-            ##__VA_ARGS__)
-
-// #define R_FIELD(arg_type, arg_name, ...) \
-// public: \
-//     REFLECTABLE_VISITOR(visitor_, arg_type, arg_name,##__VA_ARGS__); \
-// private: \
-//     arg_type arg_name
+// field_name will also be the stringized name, appended to the prefix, and needs to reference a real field
+#define REFLECTABLE_FIELD(a_visitor_visibility, a_visitor_prefix, a_field_visibility, a_field_type, a_field_name, ...) \
+    a_visitor_visibility:                                                                                              \
+    const FieldVisitorImpl_t<Reflect::remove_constref_t<a_field_type>> a_visitor_prefix##a_field_name =                \
+        RegisterField<Reflect::remove_constref_t<a_field_type>>(                                                       \
+            a_visitor_prefix##a_field_name,                                                                            \
+            #a_field_name,                                                                                             \
+            const_cast<Reflect::remove_constref_t<a_field_type>&>(a_field_name),                                       \
+            ##__VA_ARGS__);                                                                                            \
+    a_field_visibility:                                                                                                \
+    a_field_type a_field_name
 
 namespace Reflect
 {

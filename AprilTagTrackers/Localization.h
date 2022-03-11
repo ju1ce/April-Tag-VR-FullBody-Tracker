@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Reflectable.h"
 #include "Serializable.h"
 #include <wx/string.h>
 
@@ -15,15 +16,14 @@ using UniStr = wxString;
 
 // temporary alias, undefined at end of file,
 // Makes the visitor fields private, essentially const fields except when Load is called
-#define T(arg_key)                        \
-private: REFLECTABLE_VISITOR(_interface_, const UniStr, arg_key); \
-public: const UniStr arg_key
+#define T(key) \
+    REFLECTABLE_FIELD(private, _unused_, public, const UniStr, key)
 
-class Localization : public FileStorageSerializable
+class Localization : protected FileStorageSerializable
 {
 public:
-    explicit Localization(const std::string& lang_id)
-        : FileStorageSerializable("lang_" + lang_id + ".yaml")
+    explicit Localization(const std::string& lang_code)
+        : FileStorageSerializable("locales/lang_" + lang_code + ".yaml")
     {
         Load();
     }
@@ -33,7 +33,9 @@ public:
     {
     }
 
-    T(ID) = "en";
+    FS_COMMENT("Put all strings in \"double quotes\".");
+
+    T(CODE) = "en";
     T(NAME_ENGLISH) = "English";
     T(NAME_NATIVE) = "English";
 
@@ -55,21 +57,20 @@ public:
     T(CAMERA_MULTICAM_CALIB) = "Refine calibration using second camera";
     T(CAMERA_LOCK_HEIGHT) = "Lock camera height";
     T(CAMERA_CALIBRATION_INSTRUCTION) =
-R"(Disable SteamVR home to see the camera.
+        R"(Disable SteamVR home to see the camera.
 Use your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.
 
 Uncheck Calibration mode when done!)";
     T(CAMERA_DISABLE_OUT) = "Disable out window";
     T(CAMERA_DISABLE_OPENVR_API) = "Disable OpenVR API use";
 
-    T(PARAMS_CAMERA_TOOLTIP_API_1) = "0: No preference";
-    T(PARAMS_CAMERA_TOOLTIP_API_2) = "Camera backends:";
-    T(PARAMS_CAMERA_TOOLTIP_API_3) = "Stream backends:";
+    T(PARAMS_CAMERA_TOOLTIP_API_1) = "0: No preference\n\nCamera backends:";
+    T(PARAMS_CAMERA_TOOLTIP_API_2) = "Stream backends:";
 
     T(PARAMS_LANGUAGE) = "Language";
     T(PARAMS_CAMERA) = "CAMERA PARAMETERS";
     T(PARAMS_CAMERA_NAME_ID) = "Ip or ID of camera";
-    T(PARAMS_CAMERA_TOOLTIP_ID) = "Will be a number 0-10 for USB cameras and\nhttp://'ip - here':8080/video for IP webcam)";
+    T(PARAMS_CAMERA_TOOLTIP_ID) = "Will be a number 0-10 for USB cameras and\nhttp://<ip here>:8080/video for IP webcam)";
     T(PARAMS_CAMERA_NAME_API) = "Camera API preference";
     T(PARAMS_CAMERA_NAME_ROT_CLOCKWISE) = "Rotate camera clockwise";
     T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
@@ -131,10 +132,10 @@ Uncheck Calibration mode when done!)";
 
     T(PARAMS_SAVED_MSG) = "Parameters saved!";
 
-    T(PARAMS_WRONG_VALUES) = "Please enter appropriate values.Parameters were not saved.";
+    T(PARAMS_WRONG_VALUES) = "Please enter appropriate values. Parameters were not saved.";
 
     T(TRACKER_CAMERA_START_ERROR) =
-R"(Could not start camera.Make sure you entered the correct ID or IP of your camera in the params.
+        R"(Could not start camera.Make sure you entered the correct ID or IP of your camera in the params.
 "For USB cameras, it will be a number, usually 0,1,2... try a few until it works.
 "For IP webcam, the address will be in the format http://<ip here>:8080/video)";
     T(TRACKER_CAMERA_ERROR) = "Camera error";
@@ -143,7 +144,7 @@ R"(Could not start camera.Make sure you entered the correct ID or IP of your cam
     T(TRACKER_CAMERA_NOTRUNNING) = "Camera not running";
 
     T(TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS) =
-R"(Camera calibration started!
+        R"(Camera calibration started!
 
 Place the printed Charuco calibration board on a flat surface, or display it on a (non-curved) monitor. The camera will take a picture every second - take pictures of the board from as many different angles and distances as you can.
 
@@ -164,7 +165,7 @@ Press OK to save calibration when done.)";
     T(TRACKER_CAMERA_NOTCALIBRATED) = "Camera not calibrated";
 
     T(TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS) =
-R"(Tracker calibration started!
+        R"(Tracker calibration started!
 
 Before calibrating, set the number of trackers and marker size parameters (measure the white square). Make sure the trackers are completely rigid and cannot bend,
 neither the markers or at the connections between markers - use images on github for reference. Wear your trackers, then calibrate them by moving them to the camera closer than 30cm.
@@ -184,13 +185,13 @@ When all the markers on all trackers are shown as green, press OK to finish cali
     T(TRACKER_CALIBRATION_SOMETHINGWRONG) = "Something went wrong. Try again.";
     T(CONNECT_SOMETHINGWRONG) = "Something went wrong. Try again.";
     T(TRACKER_DETECTION_SOMETHINGWRONG) = "Something went wrong when estimating tracker pose. Try again! \n"
-      "If the problem persists, try to recalibrate camera and trackers.";
+                                          "If the problem persists, try to recalibrate camera and trackers.";
 
     T(CONNECT_ALREADYCONNECTED) = "Already connected. Restart connection?";
     T(CONNECT_CLIENT_ERROR) = "Error when connecting to SteamVR as a client! Make sure your HMD is connected. \nError code: ";
     T(CONNECT_BINDINGS_ERROR) = "Could not find bindings file att_actions.json.";
     T(CONNECT_DRIVER_ERROR) =
-R"(Could not connect to SteamVR driver. If error code is 2, make sure SteamVR is running and the apriltagtrackers driver is installed and enabled in settings.
+        R"(Could not connect to SteamVR driver. If error code is 2, make sure SteamVR is running and the apriltagtrackers driver is installed and enabled in settings.
 You may also have to run bin/ApriltagTrackers.exe as administrator, if error code is not 2.
 Error code: )";
 

@@ -10,10 +10,8 @@
 
 // Define a reflectable field with optional validator,
 // within a class that derives from FileStorageSerializable
-#define FIELD(arg_type, arg_name, ...)                                \
-public:                                                                 \
-    REFLECTABLE_VISITOR(interface_, arg_type, arg_name, ##__VA_ARGS__); \
-    arg_type arg_name
+#define FIELD(a_type, a_name, ...) \
+    REFLECTABLE_FIELD(public, i_, public, a_type, a_name, ##__VA_ARGS__)
 
 // Create definitions for each config file below
 
@@ -29,13 +27,13 @@ public:
     FIELD(std::string, version) = APP_VERSION;
     FIELD(std::string, driver_version) = DRIVER_VERSION;
 
-    FIELD(std::string, langId) = "en";
+    FIELD(std::string, langCode) = "en";
     FIELD(std::string, cameraAddr) = "0";
     FIELD(int, cameraApiPreference) = 0;
     FIELD(int, trackerNum) = 1;
     FIELD(double, markerSize,
-            [](auto& value)
-            { Clamp(value, 0., 1.); }) = 0.05;
+          [](auto& value)
+          { Clamp(value, 0., 1.); }) = 0.05;
     FIELD(int, numOfPrevValues) = 5;
     FIELD(double, quadDecimate) = 1;
     FIELD(double, searchWindow) = 0.25;
@@ -61,11 +59,11 @@ public:
     FIELD(double, camLatency) = 0;
     FIELD(bool, circularMarkers) = false;
     FIELD(double, trackerCalibDistance,
-            [](auto& value)
-            { if (value < 0.5) value = 0.5; }) = 0.5;
+          [](auto& value)
+          { if (value < 0.5) value = 0.5; }) = 0.5;
     FIELD(int, cameraCalibSamples,
-            [](auto& value)
-            { if (value < 15) value = 15; }) = 15;
+          [](auto& value)
+          { if (value < 15) value = 15; }) = 15;
     FIELD(bool, settingsParameters) = false;
     FIELD(double, cameraAutoexposure) = 0;
     FIELD(double, cameraExposure) = 0;
@@ -75,12 +73,12 @@ public:
     FIELD(float, additionalSmoothing) = 0;
     FIELD(int, markerLibrary) = 0;
     FIELD(int, markersPerTracker,
-            [](auto& value)
-            { if (value <= 0) value = 45; }) = 45;
+          [](auto& value)
+          { if (value <= 0) value = 45; }) = 45;
     FIELD(int, languageSelection) = 0;
     FIELD(double, calibScale,
-            [](auto& value)
-            { if (value < 0.5) value = 1.0; }) = 1.0;
+          [](auto& value)
+          { if (value < 0.5) value = 1.0; }) = 1.0;
     FIELD(bool, disableOpenVrApi) = false;
 
 private:

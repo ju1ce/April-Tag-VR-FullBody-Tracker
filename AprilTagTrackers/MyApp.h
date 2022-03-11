@@ -24,7 +24,7 @@ class MyApp : public wxApp
     UserConfig user_config;
     CalibrationConfig calib_config;
     ArucoConfig aruco_config;
-    Localization lcl = Localization(user_config.langId);
+    Localization lcl = Localization(user_config.langCode);
 
 public:
     virtual int OnExit() wxOVERRIDE;

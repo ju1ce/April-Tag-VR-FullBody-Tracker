@@ -225,7 +225,22 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
 
     addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_ID, lcl.PARAMS_CAMERA_TOOLTIP_ID);
     fgs->Add(cameraAddrField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_API, lcl.PARAMS_CAMERA_TOOLTIP_API_1);
+
+    std::stringstream cameraTooltipApi;
+    cameraTooltipApi << lcl.PARAMS_CAMERA_TOOLTIP_API_1;
+    for (const auto& backend : cv::videoio_registry::getCameraBackends())
+    {
+        cameraTooltipApi << "\n" << static_cast<int>(backend)
+            << ": " << cv::videoio_registry::getBackendName(backend);
+    }
+    cameraTooltipApi << "\n\n" << lcl.PARAMS_CAMERA_TOOLTIP_API_2;
+    for (const auto& backend : cv::videoio_registry::getStreamBackends())
+    {
+        cameraTooltipApi << "\n" << static_cast<int>(backend)
+            << ": " << cv::videoio_registry::getBackendName(backend);
+    }
+
+    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_API, cameraTooltipApi.str());
     fgs->Add(cameraApiField);
     addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lcl.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE);
     fgs->Add(rotateClField);
@@ -304,28 +319,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     this->SetSizer(hbox);
 }
 
+// deprecated
 void ParamsPage::ShowHelp(wxCommandEvent& event)
 {
-    wxMessageDialog dial(NULL, wxString::FromUTF8("Short descriptions of main parameters \n\n"
-                                                  "Check the github for full tutorial and parameter descriptions!\n\n"
-                                                  "Parameters you have to set before starting:\n"
-                                                  "- Ip or ID of camera: will be a number 0-10 for USB cameras and \nhttp://'ip - here':8080/video for IP webcam\n"
-                                                  "- Number of trackers: set to 3 for full body. 2 will not work in vrchat!\n"
-                                                  "- Size of markers: Measure the white square on markers.\n"
-                                                  "- Quad decimate: can be 1, 1.5, 2, 3, 4. Higher values will increase FPS, but reduce maximum range of detections\n"
-                                                  "- Camera FPS, width, height: Set the fps. Width and height should be fine on 0, but change it in case camera doesn't work correctly.\n\n"
-                                                  "Other usefull parameters:\n"
-                                                  "- Rotate camera: Self explanatory. Use both for a 180° flip\n"
-                                                  "- Number of values for smoothing: Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.\n"
-                                                  "- Additional smoothing: 0 to be fast, but very shaky, 1 to barely move the tracker, but smoothly. Experiment to find the sweet spot\n"
-                                                  "- Ignore tracker 0: If you want to replace the hip tracker with a vive tracker/owotrack, check this option. Keep number of trackers on 3.\n\n"
-                                                  "Experimental:\n"
-                                                  "- Camera latency: Increasing this value can help with camera latency. 1 seems to work best.\n"
-                                                  "- Use chessboard calibration: Use the old chessboard calibration. It is not recommended, but if you just have a chessboard and cant print a new board yet, you can check this.\n\n"
-                                                  "Keep other parameters as default unless you know what you are doing.\n\n"
-                                                  "Press OK to close this window."),
-                         wxT("Message"), wxOK);
-    dial.ShowModal();
+    // wxMessageDialog dial(NULL, lcl.PARAMS_SHOW_HELP,
+    //                      wxT("Message"), wxOK);
+    // dial.ShowModal();
 }
 
 void ParamsPage::SaveParams(wxCommandEvent& event)
