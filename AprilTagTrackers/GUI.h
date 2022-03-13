@@ -122,4 +122,3 @@ private:
     void ShowHelp(wxCommandEvent&);
 
 };
-
