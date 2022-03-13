@@ -1,1 +1,16 @@
+# Default behavior
 * text=auto
+
+# Normalize source files to native line endings on checkout
+*.c text
+*.cpp text
+*.h text
+*.json text
+
+# Mark binary files
+*.png binary
+*.gif binary
+*.mkv binary
+*.jpg binary
+*.mp4 binary
+*.exe binary
