@@ -23,7 +23,6 @@
 #include "Helpers.h"
 #include "MessageDialog.h"
 #include "Tracker.h"
-#include "Util.h"
 
 namespace {
 
@@ -184,7 +183,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         cameraRunning = false;
         mainThreadRunning = false;
         //cameraThread.join();
-        sleep_millis(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         return;
     }
     if (id.length() <= 2)		//if camera address is a single character, try to open webcam
@@ -395,7 +394,7 @@ void Tracker::CameraLoop()
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
     // Sleep happens between each iteration when the mutex is not locked.
-    for (;;sleep_millis(1))
+    for (;;std::this_thread::sleep_for(std::chrono::milliseconds(1)))
     {
         std::lock_guard<std::mutex> lock(cameraImageMutex);
         if (imageReady)
@@ -832,7 +831,7 @@ void Tracker::CalibrateCamera()
                                delete(outImg);
                                });
             }
-            sleep_millis(1000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 

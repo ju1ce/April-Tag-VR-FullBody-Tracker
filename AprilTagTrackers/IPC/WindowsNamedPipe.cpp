@@ -1,7 +1,6 @@
-#include "IPC.h"
-#include "Util.h"
-
 #if OS_WIN
+#include "IPC.h"
+
 #include <Windows.h>
 #include <iostream>
 

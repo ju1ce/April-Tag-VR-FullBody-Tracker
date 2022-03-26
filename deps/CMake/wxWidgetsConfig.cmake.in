@@ -1,20 +1,45 @@
-@PACKAGE_INIT@
+# @PACKAGE_INIT@
 
+# Intercept find_package, create cmake targets
 function(_wxWidgetsConfig_find_real)
     set_and_check(wxWidgets_ROOT_DIR "@PACKAGE_DEPS_INSTALL_DIR@")
 
     set(ENV{WX_CONFIG} "${wxWidgets_ROOT_DIR}/bin/wx-config")
-    set(wxWidgets_CONFIG_OPTIONS --prefix="${wxWidgets_ROOT_DIR}" )
+    set(wxWidgets_CONFIG_OPTIONS --prefix="${wxWidgets_ROOT_DIR}")
+
+    # Check if 32 or 64 bit system.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "64")
+        set(WX_ARCH "_x64")
+    else()
+        message(FATAL_ERROR "TODO: Is 32-bit possible?")
+        set(WX_ARCH "")
+    endif()
+
+    # compiler prefix in path
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(WX_COMPILER_ID "vc")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(WX_COMPILER_ID "clang")
+    else()
+        message(FATAL_ERROR "TODO: Other compiler names wxWidgets uses.")
+    endif()
+
+    if(BUILD_SHARED_LIBS)
+        set(wxWidgets_LIB_DIR "${wxWidgets_ROOT_DIR}/bin/${WX_COMPILER_ID}${WX_ARCH}_dll")
+    else()
+        set(wxWidgets_LIB_DIR "${wxWidgets_ROOT_DIR}/lib/${WX_COMPILER_ID}${WX_ARCH}_lib")
+    endif()
 
     find_package(wxWidgets REQUIRED ${wxWidgets_FIND_COMPONENTS})
     include(${wxWidgets_USE_FILE})
 
     set(wxWidgets_FOUND True PARENT_SCOPE)
-    if (wxWidgets_mono_FOUND)
+
+    if(wxWidgets_mono_FOUND)
         set(wxWidgets_mono_FOUND True PARENT_SCOPE)
     else()
         foreach(wx_comp ${wxWidgets_FIND_COMPONENTS})
-            if (wxWidgets_${wx_comp}_FOUND)
+            if(wxWidgets_${wx_comp}_FOUND)
                 set(wxWidgets_${wx_comp}_FOUND True PARENT_SCOPE)
             endif()
         endforeach()
@@ -25,21 +50,23 @@ function(_wxWidgetsConfig_find_real)
     set(WX_REL_LIBS)
 
     set(previous_lib "")
+
     foreach(lib ${wxWidgets_LIBRARIES})
-        if ("${previous_lib}" STREQUAL "debug")
+        if("${previous_lib}" STREQUAL "debug")
             list(APPEND WX_DBG_LIBS "${lib}")
         elseif("${previous_lib}" STREQUAL "optimized")
             list(APPEND WX_REL_LIBS "${lib}")
-        elseif(NOT ("${lib}" STREQUAL "debug") AND NOT ("${lib}" STREQUAL "optimized"))
+        elseif(NOT("${lib}" STREQUAL "debug") AND NOT("${lib}" STREQUAL "optimized"))
             list(APPEND WX_LIBS "${lib}")
         endif()
+
         set(previous_lib "${lib}")
     endforeach(lib)
 
     list(GET wxWidgets_INCLUDE_DIRS 0 WX_SETUP_INCLUDE)
     list(GET wxWidgets_INCLUDE_DIRS 1 WX_HEADER_INCLUDE)
 
-    if (EXISTS "${WX_SETUP_INCLUDE}d" AND EXISTS "${WX_SETUP_INCLUDE}")
+    if(EXISTS "${WX_SETUP_INCLUDE}d" AND EXISTS "${WX_SETUP_INCLUDE}")
         set(WX_SETUP_INCLUDE "${WX_SETUP_INCLUDE}$<$<CONFIG:Debug>:d>")
     elseif(EXISTS "${WX_SETUP_INCLUDE}d")
         set(WX_SETUP_INCLUDE "${WX_SETUP_INCLUDE}d")
@@ -49,7 +76,7 @@ function(_wxWidgetsConfig_find_real)
         message(FATAL_ERROR "Could not find wx/setup.h for any configuration.")
     endif()
 
-    if (TARGET wx::mono)
+    if(TARGET wx::mono)
         return()
     endif()
 
@@ -66,6 +93,6 @@ function(_wxWidgetsConfig_find_real)
     target_include_directories(wx::mono INTERFACE
         "${WX_SETUP_INCLUDE}"
         "${WX_HEADER_INCLUDE}")
-
 endfunction()
+
 _wxWidgetsConfig_find_real()

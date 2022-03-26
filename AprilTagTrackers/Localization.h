@@ -1,41 +1,81 @@
 #pragma once
 
-#include "Reflectable.h"
 #include "Serializable.h"
+#include <filesystem>
+#include <vector>
 #include <wx/string.h>
 
 // This typedef hopefully makes it more obvious of the purpose of wxString,
 //  and it should only be used for frontend user facing strings.
 // On Windows this will be utf-16 and is essentially a typedef for std::wstring,
 //  other platforms this is an encoding aware utf-8 string.
-// May be useful for windows file paths aswell, although opencv and other
-//  libraries don't always support io with widestring paths anyway.
+// Use std::filesystem::path for windows paths.
 // In general, all unicode string literals should be in the translation yaml files,
 //  and not in a source file.
 using UniStr = wxString;
 
 // temporary alias, undefined at end of file,
 // Makes the visitor fields private, essentially const fields except when Load is called
-#define T(key) \
-    REFLECTABLE_FIELD(private, _unused_, public, const UniStr, key)
+#define T(key)                           \
+    REFLECTABLE_FIELD_DATA(UniStr, key); \
+    UniStr key
 
-class Localization : protected FileStorageSerializable
+class Localization : public FS::Serializable<Localization>
 {
 public:
-    explicit Localization(const std::string& lang_code)
-        : FileStorageSerializable("locales/lang_" + lang_code + ".yaml")
+    static inline const FS::Path localesDir{"locales"};
+
+    struct LangInfo
     {
-        Load();
+        LangInfo(std::string _code, const UniStr& _nameEng, const UniStr& _nameNat)
+            : code(std::move(_code)), nameEng(_nameEng), nameNat(_nameNat) {}
+
+        std::string code; ///< Standard identifying code
+        UniStr nameEng;   ///< Language name in english
+        UniStr nameNat;   ///< Native language name
+    };
+
+    Localization()
+        : FS::Serializable<Localization>("locales/en.yaml") {}
+
+    bool LoadLang(const std::string& langCode)
+    {
+        SetPath(localesDir / (langCode + ".yaml"));
+        return Load();
     }
 
-    // TODO:
-    void FindAvailableLangs()
+    /// List of parsed language codes from XX.yaml files inside locales dir,
+    /// grabs the language name from the file aswell.
+    static std::vector<LangInfo> FindAvailLangs()
     {
+        std::vector<LangInfo> localeList{};
+        // English available by default
+        localeList.emplace_back("en", "English", "English");
+        // No locales dir, only english available
+        if (!std::filesystem::exists(localesDir) || !std::filesystem::is_directory(localesDir))
+            return localeList;
+
+        Localization tempLc;
+        for (const auto& dirEntry : std::filesystem::directory_iterator(localesDir))
+        {
+            if (!dirEntry.is_regular_file() || dirEntry.path().extension() != ".yaml") continue;
+            const auto& code = dirEntry.path().stem().generic_string(); // stem = filename without extension
+            // TODO: Alternative to parsing every locale file just for name.
+            std::cerr << "FOUND CODE: " << code << std::endl;
+            tempLc.LoadLang(code);
+            localeList.emplace_back(tempLc.CODE, tempLc.NAME_ENGLISH, tempLc.NAME_NATIVE);
+        }
+        return localeList;
     }
 
+    // TODO: Group names in structs, instead of long ids (stored in subobjects in yaml)
+
+    REFLECTABLE_BEGIN;
     FS_COMMENT("Put all strings in \"double quotes\".");
 
-    T(CODE) = "en";
+    // Standard language code, char string instead of unicode
+    REFLECTABLE_FIELD(std::string, CODE) = "en";
+
     T(NAME_ENGLISH) = "English";
     T(NAME_NATIVE) = "English";
 
@@ -197,6 +237,7 @@ Error code: )";
 
     T(CONNECT_DRIVER_MISSMATCH_1) = "Driver version and ATT version do not match! \n\nDriver version: ";
     T(CONNECT_DRIVER_MISSMATCH_2) = "\nExpected driver version: ";
+    REFLECTABLE_END;
 };
 
 #undef T

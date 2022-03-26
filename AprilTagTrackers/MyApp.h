@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #pragma warning(push)
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #include <wx/wx.h>
 #pragma warning(pop)
 
@@ -24,7 +24,7 @@ class MyApp : public wxApp
     UserConfig user_config;
     CalibrationConfig calib_config;
     ArucoConfig aruco_config;
-    Localization lcl = Localization(user_config.langCode);
+    Localization lc;
 
 public:
     virtual int OnExit() wxOVERRIDE;

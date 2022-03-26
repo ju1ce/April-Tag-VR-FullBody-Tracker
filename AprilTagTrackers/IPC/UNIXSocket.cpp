@@ -1,7 +1,6 @@
-#include "IPC.h"
-#include "Util.h"
-
 #if OS_LINUX
+#include "IPC.h"
+
 #include <errno.h>
 #include <iostream>
 #include <sys/socket.h>

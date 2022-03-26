@@ -6,6 +6,11 @@
 *.cpp text
 *.h text
 *.json text
+*.yaml text
+*.cmake text
+*.cmake.in text
+*.txt text
+*.md text
 
 # Mark binary files
 *.png binary

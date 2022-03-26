@@ -1,10 +1,11 @@
 #include "GUI.h"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 
-#include <opencv2/videoio/registry.hpp>
 #include "license.h"
+#include <opencv2/videoio/registry.hpp>
 
 namespace
 {
@@ -203,8 +204,12 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     markerLibraryField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, markerLibraryValues);
     markerLibraryField->SetSelection(user_config.markerLibrary);
 
+    const auto langInfoList = Localization::FindAvailLangs();
     wxArrayString languageValues;
-    languageValues.Add(lcl.NAME_NATIVE);
+    for (const auto& langInfo : langInfoList)
+    {
+        languageValues.push_back(langInfo.nameNat);
+    }
 
     languageField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, languageValues);
     languageField->SetSelection(user_config.languageSelection);
@@ -230,14 +235,17 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     cameraTooltipApi << lcl.PARAMS_CAMERA_TOOLTIP_API_1;
     for (const auto& backend : cv::videoio_registry::getCameraBackends())
     {
-        cameraTooltipApi << "\n" << static_cast<int>(backend)
-            << ": " << cv::videoio_registry::getBackendName(backend);
+        cameraTooltipApi << "\n"
+                         << static_cast<int>(backend)
+                         << ": " << cv::videoio_registry::getBackendName(backend);
     }
-    cameraTooltipApi << "\n\n" << lcl.PARAMS_CAMERA_TOOLTIP_API_2;
+    cameraTooltipApi << "\n\n"
+                     << lcl.PARAMS_CAMERA_TOOLTIP_API_2;
     for (const auto& backend : cv::videoio_registry::getStreamBackends())
     {
-        cameraTooltipApi << "\n" << static_cast<int>(backend)
-            << ": " << cv::videoio_registry::getBackendName(backend);
+        cameraTooltipApi << "\n"
+                         << static_cast<int>(backend)
+                         << ": " << cv::videoio_registry::getBackendName(backend);
     }
 
     addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_API, cameraTooltipApi.str());

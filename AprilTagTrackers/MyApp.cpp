@@ -1,8 +1,7 @@
+#include "MyApp.h"
 #include "Connection.h"
 #include "GUI.h"
-#include "MyApp.h"
 #include "Tracker.h"
-#include "Util.h"
 
 wxIMPLEMENT_APP(MyApp);
 
@@ -10,7 +9,7 @@ int MyApp::OnExit()
 {
     tracker->cameraRunning = false;
     tracker->mainThreadRunning = false;
-    sleep_millis(2000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     delete conn;
     delete tracker;
@@ -20,10 +19,15 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
-    conn = new Connection(user_config, lcl);
-    tracker = new Tracker(this, conn, user_config, calib_config, lcl, aruco_config);
+    user_config.Load();
+    calib_config.Load();
+    aruco_config.Load();
+    lc.LoadLang(user_config.langCode);
 
-    gui = new GUI(lcl.APP_TITLE, conn, user_config, lcl);
+    conn = new Connection(user_config, lc);
+    tracker = new Tracker(this, conn, user_config, calib_config, lc, aruco_config);
+
+    gui = new GUI(lc.APP_TITLE, conn, user_config, lc);
 
     conn->gui = gui; // juice told me to write this, dont blame me
 
@@ -38,7 +42,7 @@ bool MyApp::OnInit()
     Connect(GUI::CAMERA_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraPreview));
     Connect(GUI::CAMERA_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraCalib));
     Connect(GUI::CAMERA_CALIB_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedCameraCalibPreview));
-    //Connect(GUI::TIME_PROFILE_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTimeProfile));
+    // Connect(GUI::TIME_PROFILE_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTimeProfile));
     Connect(GUI::CONNECT_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedConnect));
     Connect(GUI::TRACKER_CALIB_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedTrackerCalib));
     Connect(GUI::START_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MyApp::ButtonPressedStart));
@@ -146,7 +150,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
 {
     if (event.GetId() == GUI::SPACE_CALIB_CHECKBOX)
     {
-        //deprecated
+        // deprecated
         if (event.IsChecked())
         {
             tracker->recalibrate = true;
@@ -158,7 +162,6 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
             gui->manualCalibX->SetValue(user_config.calibOffsetX);
             gui->manualCalibY->SetValue(user_config.calibOffsetY);
             gui->manualCalibZ->SetValue(user_config.calibOffsetZ);
-
         }
         else
         {
@@ -179,7 +182,7 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
         {
             gui->posHbox->Show(true);
             gui->rotHbox->Show(true);
-            //gui->cb2->SetValue(false);
+            // gui->cb2->SetValue(false);
             tracker->recalibrate = false;
 
             gui->manualCalibX->SetValue(user_config.calibOffsetX);

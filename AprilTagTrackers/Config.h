@@ -5,25 +5,24 @@
 
 #include "Quaternion.h"
 #include "Serializable.h"
+#include <algorithm>
 #include <opencv2/aruco.hpp>
 #include <string>
 
 // Define a reflectable field with optional validator,
 // within a class that derives from FileStorageSerializable
-#define FIELD(a_type, a_name, ...) \
-    REFLECTABLE_FIELD(public, i_, public, a_type, a_name, ##__VA_ARGS__)
+#define FIELD(a_type, a_name) \
+    REFLECTABLE_FIELD(a_type, a_name)
 
 // Create definitions for each config file below
 
 // User editable storage
-class UserConfig : public FileStorageSerializable
+class UserConfig : public FS::Serializable<UserConfig>
 {
 public:
-    UserConfig() : FileStorageSerializable("config.yaml")
-    {
-        Load();
-    }
+    UserConfig() : FS::Serializable<UserConfig>("config.yaml") {}
 
+    REFLECTABLE_BEGIN;
     FIELD(std::string, version) = APP_VERSION;
     FIELD(std::string, driver_version) = DRIVER_VERSION;
 
@@ -31,9 +30,9 @@ public:
     FIELD(std::string, cameraAddr) = "0";
     FIELD(int, cameraApiPreference) = 0;
     FIELD(int, trackerNum) = 1;
-    FIELD(double, markerSize,
-          [](auto& value)
-          { Clamp(value, 0., 1.); }) = 0.05;
+    FIELD(FS::Valid<double>, markerSize){
+        0.05, [](auto& value)
+        { value = std::clamp(value, 0., 1.); }};
     FIELD(int, numOfPrevValues) = 5;
     FIELD(double, quadDecimate) = 1;
     FIELD(double, searchWindow) = 0.25;
@@ -58,12 +57,14 @@ public:
     FIELD(bool, cameraSettings) = false;
     FIELD(double, camLatency) = 0;
     FIELD(bool, circularMarkers) = false;
-    FIELD(double, trackerCalibDistance,
-          [](auto& value)
-          { if (value < 0.5) value = 0.5; }) = 0.5;
-    FIELD(int, cameraCalibSamples,
-          [](auto& value)
-          { if (value < 15) value = 15; }) = 15;
+    FIELD(FS::Valid<double>, trackerCalibDistance){
+        0.5,
+        [](auto& value)
+        { if (value < 0.5) value = 0.5; }};
+    FIELD(FS::Valid<int>, cameraCalibSamples){
+        15,
+        [](auto& value)
+        { if (value < 15) value = 15; }};
     FIELD(bool, settingsParameters) = false;
     FIELD(double, cameraAutoexposure) = 0;
     FIELD(double, cameraExposure) = 0;
@@ -72,35 +73,28 @@ public:
     FIELD(float, depthSmoothing) = 0;
     FIELD(float, additionalSmoothing) = 0;
     FIELD(int, markerLibrary) = 0;
-    FIELD(int, markersPerTracker,
-          [](auto& value)
-          { if (value <= 0) value = 45; }) = 45;
+    FIELD(FS::Valid<int>, markersPerTracker){
+        45,
+        [](auto& value)
+        { if (value <= 0) value = 45; }};
     FIELD(int, languageSelection) = 0;
-    FIELD(double, calibScale,
-          [](auto& value)
-          { if (value < 0.5) value = 1.0; }) = 1.0;
+    FIELD(FS::Valid<double>, calibScale){
+        1.0,
+        [](auto& value)
+        { if (value < 0.5) value = 1.0; }};
     FIELD(bool, disableOpenVrApi) = false;
-
-private:
-    template <typename T>
-    static void Clamp(T& val, T min, T max)
-    {
-        val = val < min ? min : val > max ? max
-                                          : val;
-    }
+    REFLECTABLE_END;
 };
 
 // Non-user editable calibration data, long lists of numbers.
 // Potentially store this in a file.yaml.gz to reduce size,
 //  and show that it is not user editable. FileStorage has this ability built in
-class CalibrationConfig : public FileStorageSerializable
+class CalibrationConfig : public FS::Serializable<CalibrationConfig>
 {
 public:
-    CalibrationConfig() : FileStorageSerializable("calibration.yaml")
-    {
-        Load();
-    }
+    CalibrationConfig() : FS::Serializable<CalibrationConfig>("calib.yaml") {}
 
+    REFLECTABLE_BEGIN;
     FIELD(cv::Mat, camMat);
     FIELD(cv::Mat, distCoeffs);
     FIELD(cv::Mat, stdDeviationsIntrinsics);
@@ -110,22 +104,23 @@ public:
     FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers);
     FIELD(cv::Mat, wtranslation);
     FIELD(Quaternion<double>, wrotation);
+    REFLECTABLE_END;
 };
 
-class ArucoConfig : public FileStorageSerializable
+class ArucoConfig : public FS::Serializable<ArucoConfig>
 {
 public:
-    ArucoConfig() : FileStorageSerializable("aruco.yaml")
+    ArucoConfig() : FS::Serializable<ArucoConfig>("aruco.yaml")
     {
         auto p = cv::aruco::DetectorParameters::create();
         p->detectInvertedMarker = true;
         p->cornerRefinementMethod = cv::aruco::CORNER_REFINE_CONTOUR;
         params = p;
-
-        Load();
     }
 
+    REFLECTABLE_BEGIN;
     FIELD(cv::Ptr<cv::aruco::DetectorParameters>, params);
+    REFLECTABLE_END;
 };
 
 #undef FIELD

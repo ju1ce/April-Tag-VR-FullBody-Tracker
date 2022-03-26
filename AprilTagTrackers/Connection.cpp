@@ -1,8 +1,8 @@
 #include "Connection.h"
 
 #include "GUI.h"
-#include "Util.h"
 #include <thread>
+#include <filesystem>
 
 Connection::Connection(const UserConfig& user_config, const Localization& lcl)
     : user_config(user_config), lcl(lcl)
@@ -36,8 +36,7 @@ void Connection::StartConnection()
                            lcl.CONNECT_ALREADYCONNECTED, wxT("Question"),
                            wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
                        dial.ShowModal(); });
-        sleep_millis(1000);
-        // Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         status = DISCONNECTED;
     }
     std::thread connectThread(&Connection::Connect, this);
@@ -166,11 +165,12 @@ void Connection::Connect()
     dial2.ShowModal();
 
     */
-    std::string fullpath;
+
 
     if (!user_config.disableOpenVrApi)
     {
-        if (!get_full_path("att_actions.json", fullpath))
+        const auto bindingsPath = std::filesystem::path("att_actions.json").root_path();
+        if (!std::filesystem::exists(bindingsPath))
         {
             perror("Could not find bindings");
             gui->CallAfter([this]()
@@ -181,7 +181,7 @@ void Connection::Connect()
             status = DISCONNECTED;
             return;
         }
-        vr::VRInput()->SetActionManifestPath(fullpath.c_str());
+        vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
 
         vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
         vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);

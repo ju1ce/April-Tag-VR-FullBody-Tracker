@@ -34,9 +34,9 @@ PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "Rotate the camera 90Â°. Use both to rota
 PARAMS_CAMERA_NAME_ROT_CCLOCKWISE: Rotate camera counterclockwise
 PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE: "Rotate the camera 90Â°. Use both to rotate image 180Â°"
 PARAMS_CAMERA_NAME_WIDTH: Camera width in pixels
-PARAMS_CAMERA_TOOLTIP_WIDTH: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn\'t work correctly."
+PARAMS_CAMERA_TOOLTIP_WIDTH: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly."
 PARAMS_CAMERA_NAME_HEIGHT: Camera height in pixels
-PARAMS_CAMERA_TOOLTIP_HEIGHT: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn\'t work correctly."
+PARAMS_CAMERA_TOOLTIP_HEIGHT: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly."
 PARAMS_CAMERA_NAME_FPS: Camera FPS
 PARAMS_CAMERA_TOOLTIP_FPS: Set the fps of the camera
 PARAMS_CAMERA_NAME_SETTINGS: Open camera settings
@@ -88,7 +88,7 @@ TRACKER_CAMERA_START_ERROR: "Could not start camera.Make sure you entered the co
 TRACKER_CAMERA_ERROR: Camera error
 TRACKER_CAMERA_PREVIEW: Preview
 TRACKER_CAMERA_NOTRUNNING: Camera not running
-TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS: "Camera calibration started!\n\nPlace the printed Charuco calibration board on a flat surface, or display it on a (non-curved) monitor. The camera will take a picture every second - take pictures of the board from as many different angles and distances as you can.\n\nMake sure that the board is seen nicely and isn\'t blurred. Move the camera around slowly.\n\nPurple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\nThe dots should be spread across the whole image\n\nPress OK to save calibration when done."
+TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS: "Camera calibration started!\n\nPlace the printed Charuco calibration board on a flat surface, or display it on a (non-curved) monitor. The camera will take a picture every second - take pictures of the board from as many different angles and distances as you can.\n\nMake sure that the board is seen nicely and isn't blurred. Move the camera around slowly.\n\nPurple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\nThe dots should be spread across the whole image\n\nPress OK to save calibration when done."
 TRACKER_CAMERA_CALIBRATION_COMPLETE: "Calibration complete."
 TRACKER_CAMERA_CALIBRATION_NOTDONE: "Calibration has not been completed as too few images have been taken."
 TRACKER_CAMERA_NOTCALIBRATED: Camera not calibrated

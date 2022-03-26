@@ -2,164 +2,268 @@
 
 #include "Quaternion.h"
 #include "Reflectable.h"
-#include "Serializable.h"
+#include <filesystem>
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/persistence.hpp>
 #include <opencv2/core/quaternion.hpp>
 #include <wx/string.h>
 
-#include <iostream>
+// clang-format off
+#define FILESTORAGE_COMMENT_WITH_ID(a_id, a_commentStr)   \
+    REFLECTABLE_FIELD_DATA(const FS::Comment, _comment_##a_id); \
+    static constexpr const FS::Comment _comment_##a_id { a_commentStr }
+// clang-format on
 
-// Helper for FS_COMMENT to use the special __COUNTER__ macro
-#define FILESTORAGE_COMMENT_WITH_UID(a_unique_id, a_comment) \
-    REFLECTABLE_FIELD(private, _comment_, private, const FileStorageComment, _comment_##a_unique_id){a_comment}
+#define FS_COMMENT(a_commentStr) \
+    FILESTORAGE_COMMENT_WITH_ID(__LINE__, a_commentStr)
 
-// Places a comment in the resulting yaml file, at the current line
-#define FS_COMMENT(a_comment) \
-    FILESTORAGE_COMMENT_WITH_UID(__COUNTER__, a_comment)
-
-/// IFieldVisitor
-class IFileStorageField : public Reflect::FieldIdentifier
+/// OpenCV FileStorage serialization.
+namespace FS
 {
-public:
-    IFileStorageField(std::string name) : Reflect::FieldIdentifier(std::move(name)) {}
-    virtual void Serialize(cv::FileStorage& fs) const = 0;
-    virtual void Deserialize(const cv::FileNode& fn) const = 0;
-};
 
-/// FieldVisitorImpl
 template <typename T>
-class FileStorageField
-    : public IFileStorageField,
-      public Reflect::FieldValidateAccessor<T>
+inline std::enable_if_t<Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
 {
-public:
-    FileStorageField(std::string name, T& field, Reflect::Validator<T> validator)
-        : IFileStorageField(std::move(name)),
-          Reflect::FieldValidateAccessor<T>(field, validator) {}
-
-    void Serialize(cv::FileStorage& fs) const override;
-    void Deserialize(const cv::FileNode& fn) const override;
-};
-
-class FileStorageSerializable
-    : public Reflect::Reflectable<IFileStorageField, FileStorageField>
-{
-public:
-    explicit FileStorageSerializable(std::string file_path)
-        : file_path(std::move(file_path)) {}
-    /// Write to file_path
-    bool Save() const;
-    /// Read from file_path
-    bool Load();
-
-protected:
-    void SerializeAll(cv::FileStorage& fs) const;
-    void DeserializeAll(const cv::FileNode& fn);
-
-    std::string file_path;
-};
-
-template <typename FieldType>
-inline void FileStorageField<FieldType>::Serialize(cv::FileStorage& fs) const
-{
-    fs << this->name << this->field;
+    WriteEach(fs, field);
 }
-template <typename FieldType>
-inline void FileStorageField<FieldType>::Deserialize(const cv::FileNode& fn) const
+template <typename T>
+inline std::enable_if_t<Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+{
+    ReadEach(fn, field);
+}
+
+template <typename T>
+inline std::enable_if_t<!Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
+{
+    fs << field;
+}
+template <typename T>
+inline std::enable_if_t<!Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+{
+    fn >> field;
+}
+
+template <typename T>
+inline void WriteNode(cv::FileStorage& fs, const char* name, const T& field)
+{
+    fs << name;
+    Write(fs, field);
+}
+template <typename T>
+inline void ReadNode(const cv::FileNode& fn, const char* name, T& field)
 {
     const cv::FileNode& elem = fn[name];
     if (elem.empty()) return;
-    elem >> this->field;
-
-    if (this->validator != nullptr)
-        this->validator(this->field);
+    Read(elem, field);
 }
 
-struct FileStorageComment
+using Path = std::filesystem::path;
+
+struct Comment
 {
-    const std::string str;
+    const char* const str = nullptr;
 };
 
-template <>
-inline void FileStorageField<FileStorageComment>::Serialize(cv::FileStorage& fs) const
+/// Controls access through setter and calls a validator on update.
+template <typename T>
+class Valid
+{
+public:
+    using Validator = void (*)(T& value);
+
+    Valid(T _value, Validator _validator)
+        : value(std::move(_value)), validator(_validator) {}
+
+    Valid<T>& operator=(T&& rhs)
+    {
+        value = std::move(rhs);
+        validator(value);
+        return *this;
+    }
+    Valid<T>& operator=(const T& rhs)
+    {
+        value = rhs;
+        validator(value);
+        return *this;
+    }
+
+    operator const T&() { return value; }
+
+    friend inline void Write(cv::FileStorage& fs, const Valid<T>& field)
+    {
+        Write(fs, field.value);
+    }
+    friend inline void Read(const cv::FileNode& fn, Valid<T>& field)
+    {
+        Read(fn, field.value);
+        field.validator(field.value);
+    }
+
+private:
+    T value;
+    const Validator validator;
+};
+
+template <typename ST>
+class Serializable
+{
+public:
+    Serializable(Path _filePath) : filePath(std::move(_filePath)) {}
+
+    bool Save() const;
+    bool Load();
+
+protected:
+    void SetPath(Path path) { filePath = std::move(path); }
+
+private:
+    Path filePath;
+
+    ST& derivedThis() { return static_cast<ST&>(*this); }
+    const ST& derivedThis() const { return static_cast<const ST&>(*this); }
+
+    friend inline void Write<ST>(cv::FileStorage& fs, const ST& field)
+    {
+        field.WriteAll(fs, field);
+    }
+    friend inline void Read<ST>(const cv::FileNode& fn, ST& field)
+    {
+        field.ReadAll(fn, field);
+    }
+};
+
+/*
+// Called first to write/read name to node, and optionally call Write/Read
+inline void WriteNode(cv::FileStorage& fs, const char* name, const FieldType& field) {}
+inline void ReadNode(const cv::FileNode& fn, const char* name, FieldType& field) {}
+
+// Called second, to write to named node
+inline void Write(cv::FileStorage&, const FieldType& field) {}
+inline void Read(const cv::FileNode&, FieldType&) {}
+*/
+
+// -- Overloaded Write and Read without name --
+
+inline void Write(cv::FileStorage& fs, const cv::Ptr<cv::aruco::Board>& board)
+{
+    fs << "{";
+    fs << "ids" << board->ids;
+    fs << "objPoints" << board->objPoints;
+    fs << "}";
+}
+inline void Read(const cv::FileNode& fn, cv::Ptr<cv::aruco::Board>& board)
+{
+    // Resize might grow and initialize null cv::Ptr (alias of std::shared_ptr)
+    if (board.empty()) board = cv::makePtr<cv::aruco::Board>();
+    // TODO: make our own aruco::Board, as we don't need to store the dictionary
+    // Dictionary will be nullptr
+    fn["ids"] >> board->ids;
+    fn["objPoints"] >> board->objPoints;
+}
+
+// TODO: Use cv:Quat
+template <typename T>
+inline void Write(cv::FileStorage& fs, const Quaternion<T>& q)
+{
+    fs << "[" << q.w << q.x << q.y << q.z << "]";
+}
+template <typename T>
+inline void Read(const cv::FileNode& fn, Quaternion<T>& q)
+{
+    auto it = fn.begin();
+    Read(*(it++), q.w);
+    Read(*(it++), q.x);
+    Read(*(it++), q.y);
+    Read(*(it++), q.z);
+}
+
+// On windows this converts from a widestring (utf16) to utf8, but on other platforms its free
+inline void Write(cv::FileStorage& fs, const wxString& str)
+{
+    cv::write(fs, str.utf8_str().data());
+}
+inline void Read(const cv::FileNode& fn, wxString& str)
+{
+    std::string buf;
+    fn >> buf;
+    // TODO: Replace with UniStr from gui.
+    str = wxString::FromUTF8Unchecked(buf.c_str());
+}
+
+template <typename T>
+inline void Write(cv::FileStorage& fs, const std::vector<T>& v)
+{
+    fs << "[";
+    for (const auto& elem : v)
+        Write(fs, elem);
+    fs << "]";
+}
+template <typename T>
+inline void Read(const cv::FileNode& fn, std::vector<T>& v)
+{
+    auto it = fn.begin();
+    const size_t length = it.remaining();
+    v.resize(length);
+
+    for (size_t i = 0; i < length; i++)
+        Read(*(it++), v[i]);
+}
+
+// -- Overloaded Write and Read with name --
+
+inline void WriteNode(cv::FileStorage& fs, const char*, const Comment& field)
 {
     fs.writeComment(field.str);
 }
-template <>
-inline void FileStorageField<FileStorageComment>::Deserialize(const cv::FileNode& fn) const
-{ /* empty */
+inline void ReadNode(const cv::FileNode&, const char*, const Comment&)
+{ /*unused*/
 }
 
 // OpenCV dosnt have an implementation for storing its own aruco config file, so here it is.
-// This is a specialization instead of an overload, so that the params can be written
-//  at root level instead of inside a named object
-template <>
-void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Serialize(cv::FileStorage& fs) const;
-template <>
-inline void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Deserialize(const cv::FileNode& fn) const
+// This will expand the params in-place in the object, instead of under some sub-object.
+void WriteNode(cv::FileStorage& fs, const char*, const cv::Ptr<cv::aruco::DetectorParameters>& field);
+inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::DetectorParameters>& field)
 {
     cv::aruco::DetectorParameters::readDetectorParameters(fn, field);
 }
 
-// --- Custom file storage overloads for unimplemented types ---
-
-inline cv::FileStorage& operator<<(cv::FileStorage& fs, const std::vector<cv::Ptr<cv::aruco::Board>>& boards)
+template <typename ST>
+inline bool Serializable<ST>::Save() const
 {
-    fs << "[";
-    for (const auto& b : boards)
-    {
-        fs << "{";
-        fs << "ids" << b->ids;
-        fs << "objPoints" << b->objPoints;
-        fs << "}";
-    }
-    fs << "]";
-    return fs;
-}
-// This could be implemented as overload of file storage iterator?
-inline void operator>>(const cv::FileNode& fn, std::vector<cv::Ptr<cv::aruco::Board>>& boards)
-{
-    auto it = fn.begin();
-    boards.resize(it.remaining());
-    for (int i = 0; i < boards.size(); i++, it++)
-    {
-        assert(it.remaining() > 0);
-        // Resize might grow and initialize null cv::Ptr (alias of std::shared_ptr)
-        if (boards[i].empty()) boards[i] = cv::makePtr<cv::aruco::Board>();
-        // TODO: make our own aruco::Board, as we don't need to store the dictionary
-        // Dictionary will be nullptr and should not be accessed.
-        (*it)["ids"] >> boards[i]->ids;
-        (*it)["objPoints"] >> boards[i]->objPoints;
-    }
+    cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
+    if (!fs.isOpened()) return false;
+    WriteEach(fs, derivedThis());
+    fs.release();
+    return true;
 }
 
-template <typename T>
-inline cv::FileStorage& operator<<(cv::FileStorage& fs, const Quaternion<T>& q)
+template <typename ST>
+inline bool Serializable<ST>::Load()
 {
-    fs << std::vector<T>({q.w, q.x, q.y, q.z});
-    return fs;
-}
-template <typename T>
-inline void operator>>(const cv::FileNode& fn, Quaternion<T>& q)
-{
-    auto it = fn.begin();
-    (*(it++)) >> q.w;
-    (*(it++)) >> q.x;
-    (*(it++)) >> q.y;
-    (*(it++)) >> q.z;
+    if (!std::filesystem::exists(filePath)) return false;
+    cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::READ};
+    if (!fs.isOpened()) return false;
+    ReadEach(fs.root(), derivedThis());
+    fs.release();
+    return true;
 }
 
-// On windows this converts from a widestring (utf16) to utf8, but on other platforms its free
-inline cv::FileStorage& operator<<(cv::FileStorage& fs, const wxString& s)
+template <typename RT>
+inline void WriteEach(cv::FileStorage& fs, const RT& reflType)
 {
-    fs << s.utf8_str().data();
-    return fs;
+    Reflect::ForEach(
+        reflType,
+        [&](const char* name, const auto& field)
+        { WriteNode(fs, name, field); });
 }
-inline void operator>>(const cv::FileNode& fn, wxString& s)
+
+template <typename RT>
+inline void ReadEach(const cv::FileNode& fn, RT& reflType)
 {
-    std::string buf;
-    fn >> buf;
-    // TODO: can the need for a temporary be eliminated? check FileNode::readObj()
-    s = wxString::FromUTF8Unchecked(buf);
+    Reflect::ForEach(
+        reflType,
+        [&](const char* name, auto& field)
+        { ReadNode(fn, name, field); });
 }
+
+};

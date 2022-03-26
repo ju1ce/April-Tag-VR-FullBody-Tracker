@@ -18,7 +18,7 @@ public:
     void SetValue(double val);
 
 private:
-    wxTextCtrl* input = 0;
+    wxTextCtrl* input = nullptr;
 
     void ButtonPressed(wxCommandEvent&);
     void MouseScroll(wxMouseEvent&);

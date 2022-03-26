@@ -1,35 +1,9 @@
 #include "Serializable.h"
 
-bool FileStorageSerializable::Save() const
+namespace FS
 {
-    cv::FileStorage fs(file_path, cv::FileStorage::WRITE);
-    if (!fs.isOpened()) return false;
-    SerializeAll(fs);
-    fs.release();
-    return true;
-}
-bool FileStorageSerializable::Load()
-{
-    cv::FileStorage fs(file_path, cv::FileStorage::READ);
-    if (!fs.isOpened()) return false;
-    DeserializeAll(fs.root());
-    fs.release();
-    return true;
-}
 
-void FileStorageSerializable::SerializeAll(cv::FileStorage& fs) const
-{
-    for (const auto& field : fields)
-        field.get().Serialize(fs);
-}
-void FileStorageSerializable::DeserializeAll(const cv::FileNode& fn)
-{
-    for (const auto& field : fields)
-        field.get().Deserialize(fn);
-}
-
-template<>
-void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Serialize(cv::FileStorage& fs) const
+void SerializeField(cv::FileStorage& fs, const char*, const cv::Ptr<cv::aruco::DetectorParameters>& field)
 {
     // Aruco parameters.
     fs << "adaptiveThreshWinSizeMin" << field->adaptiveThreshWinSizeMin;
@@ -68,3 +42,5 @@ void FileStorageField<cv::Ptr<cv::aruco::DetectorParameters>>::Serialize(cv::Fil
     // to detect white (inverted) markers
     fs << "detectInvertedMarker" << field->detectInvertedMarker;
 }
+
+};
