@@ -1,19 +1,17 @@
+# @PACKAGE_INIT@
 set(openvr_VERSION 1.16.8)
 
-@PACKAGE_INIT@
-
-set_and_check(openvr_INCLUDE_DIR "@PACKAGE_OVR_INCLUDE_DIR@")
+set_and_check(openvr_INCLUDE_DIR "@PACKAGE_OVR_INSTALL_INCLUDE_DIR@")
 
 set_and_check(openvr_HEADERS "${openvr_INCLUDE_DIR}/openvr.h"
     "${openvr_INCLUDE_DIR}/openvr_driver.h")
 
-set_and_check(openvr_IMPLIB "@PACKAGE_OVR_IMPLIB_OUTPUT@")
-set_and_check(openvr_LIB "@PACKAGE_OVR_LIB_OUTPUT@")
+set_and_check(openvr_IMPLIB "@PACKAGE_OVR_INSTALL_LINK_FILE@")
+set_and_check(openvr_LIB "@PACKAGE_OVR_INSTALL_SHARED_FILE@")
 
-# No components so doesn't do much
-check_required_components("openvr")
+set(openvr_FOUND TRUE)
 
-if (TARGET openvr::openvr)
+if(TARGET openvr::openvr)
     return()
 endif()
 
@@ -24,7 +22,8 @@ set_target_properties(openvr::openvr PROPERTIES
 target_include_directories(openvr::openvr INTERFACE ${openvr_INCLUDE_DIR})
 target_sources(openvr::openvr INTERFACE ${openvr_HEADERS})
 
+# TODO: Use this when switching to static openvr
 # add_library(openvr::openvr STATIC IMPORTED)
 # set_target_properties(openvr::openvr PROPERTIES
-#    IMPORTED_LOCATION "${openvr_IMPLIB}")
+# IMPORTED_LOCATION "${openvr_IMPLIB}")
 # target_compile_definitions(openvr::openvr INTERFACE "OPENVR_BUILD_STATIC")

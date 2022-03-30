@@ -21,6 +21,27 @@
 namespace FS
 {
 
+using Path = std::filesystem::path;
+
+template <typename ST>
+class Serializable
+{
+public:
+    Serializable(Path _filePath) : filePath(std::move(_filePath)) {}
+
+    bool Save() const;
+    bool Load();
+
+protected:
+    void SetPath(Path path) { filePath = std::move(path); }
+
+private:
+    Path filePath;
+
+    ST& derivedThis() { return static_cast<ST&>(*this); }
+    const ST& derivedThis() const { return static_cast<const ST&>(*this); }
+};
+
 template <typename T>
 inline std::enable_if_t<Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
 {
@@ -42,95 +63,6 @@ inline std::enable_if_t<!Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn
 {
     fn >> field;
 }
-
-template <typename T>
-inline void WriteNode(cv::FileStorage& fs, const char* name, const T& field)
-{
-    fs << name;
-    Write(fs, field);
-}
-template <typename T>
-inline void ReadNode(const cv::FileNode& fn, const char* name, T& field)
-{
-    const cv::FileNode& elem = fn[name];
-    if (elem.empty()) return;
-    Read(elem, field);
-}
-
-using Path = std::filesystem::path;
-
-struct Comment
-{
-    const char* const str = nullptr;
-};
-
-/// Controls access through setter and calls a validator on update.
-template <typename T>
-class Valid
-{
-public:
-    using Validator = void (*)(T& value);
-
-    Valid(T _value, Validator _validator)
-        : value(std::move(_value)), validator(_validator) {}
-
-    Valid<T>& operator=(T&& rhs)
-    {
-        value = std::move(rhs);
-        validator(value);
-        return *this;
-    }
-    Valid<T>& operator=(const T& rhs)
-    {
-        value = rhs;
-        validator(value);
-        return *this;
-    }
-
-    operator const T&() { return value; }
-
-    friend inline void Write(cv::FileStorage& fs, const Valid<T>& field)
-    {
-        Write(fs, field.value);
-    }
-    friend inline void Read(const cv::FileNode& fn, Valid<T>& field)
-    {
-        Read(fn, field.value);
-        field.validator(field.value);
-    }
-
-private:
-    T value;
-    const Validator validator;
-};
-
-template <typename ST>
-class Serializable
-{
-public:
-    Serializable(Path _filePath) : filePath(std::move(_filePath)) {}
-
-    bool Save() const;
-    bool Load();
-
-protected:
-    void SetPath(Path path) { filePath = std::move(path); }
-
-private:
-    Path filePath;
-
-    ST& derivedThis() { return static_cast<ST&>(*this); }
-    const ST& derivedThis() const { return static_cast<const ST&>(*this); }
-
-    friend inline void Write<ST>(cv::FileStorage& fs, const ST& field)
-    {
-        field.WriteAll(fs, field);
-    }
-    friend inline void Read<ST>(const cv::FileNode& fn, ST& field)
-    {
-        field.ReadAll(fn, field);
-    }
-};
 
 /*
 // Called first to write/read name to node, and optionally call Write/Read
@@ -211,6 +143,25 @@ inline void Read(const cv::FileNode& fn, std::vector<T>& v)
 
 // -- Overloaded Write and Read with name --
 
+template <typename T>
+inline void WriteNode(cv::FileStorage& fs, const char* name, const T& field)
+{
+    fs << name;
+    Write(fs, field);
+}
+template <typename T>
+inline void ReadNode(const cv::FileNode& fn, const char* name, T& field)
+{
+    const cv::FileNode& elem = fn[name];
+    if (elem.empty()) return;
+    Read(elem, field);
+}
+
+struct Comment
+{
+    const char* const str = nullptr;
+};
+
 inline void WriteNode(cv::FileStorage& fs, const char*, const Comment& field)
 {
     fs.writeComment(field.str);
@@ -226,6 +177,46 @@ inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::Det
 {
     cv::aruco::DetectorParameters::readDetectorParameters(fn, field);
 }
+
+/// Controls access through setter and calls a validator on update.
+template <typename T>
+class Valid
+{
+public:
+    using Validator = void (*)(T& value);
+
+    Valid(T _value, Validator _validator)
+        : value(std::move(_value)), validator(_validator) {}
+
+    Valid<T>& operator=(T&& rhs)
+    {
+        value = std::move(rhs);
+        validator(value);
+        return *this;
+    }
+    Valid<T>& operator=(const T& rhs)
+    {
+        value = rhs;
+        validator(value);
+        return *this;
+    }
+
+    operator const T&() { return value; }
+
+    friend inline void Write(cv::FileStorage& fs, const Valid<T>& field)
+    {
+        Write(fs, field.value);
+    }
+    friend inline void Read(const cv::FileNode& fn, Valid<T>& field)
+    {
+        Read(fn, field.value);
+        field.validator(field.value);
+    }
+
+private:
+    T value;
+    const Validator validator;
+};
 
 template <typename ST>
 inline bool Serializable<ST>::Save() const

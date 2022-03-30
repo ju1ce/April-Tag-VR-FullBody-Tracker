@@ -40,7 +40,6 @@ public:
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
     bool disableOut = false;
-    bool disableOpenVrApi = true;
     int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;

@@ -113,24 +113,27 @@ void Connection::Connect()
         }
     }
 
-    if (!user_config.disableOpenVrApi)
+    if (user_config.disableOpenVrApi)
     {
-        // connect to steamvr as a client in order to get buttons.
-        vr::EVRInitError error;
-        openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+        status = CONNECTED;
+        return;
+    }
 
-        if (error != vr::VRInitError_None)
-        {
-            wxString e = lcl.CONNECT_CLIENT_ERROR;
-            e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-            gui->CallAfter([e]()
-                           {
-                           wxMessageDialog dial(NULL,
-                               e, wxT("Error"), wxOK | wxICON_ERROR);
-                           dial.ShowModal(); });
-            status = DISCONNECTED;
-            return;
-        }
+    // connect to steamvr as a client in order to get buttons.
+    vr::EVRInitError error;
+    openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+
+    if (error != vr::VRInitError_None)
+    {
+        wxString e = lcl.CONNECT_CLIENT_ERROR;
+        e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
+        gui->CallAfter([e]()
+                        {
+                        wxMessageDialog dial(NULL,
+                            e, wxT("Error"), wxOK | wxICON_ERROR);
+                        dial.ShowModal(); });
+        status = DISCONNECTED;
+        return;
     }
 
     /*
@@ -167,28 +170,25 @@ void Connection::Connect()
     */
 
 
-    if (!user_config.disableOpenVrApi)
+    const auto bindingsPath = std::filesystem::path("att_actions.json").root_path();
+    if (!std::filesystem::exists(bindingsPath))
     {
-        const auto bindingsPath = std::filesystem::path("att_actions.json").root_path();
-        if (!std::filesystem::exists(bindingsPath))
-        {
-            perror("Could not find bindings");
-            gui->CallAfter([this]()
-                           {
-                            wxMessageDialog dial(NULL,
-                                lcl.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-                            dial.ShowModal(); });
-            status = DISCONNECTED;
-            return;
-        }
-        vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
-
-        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
-        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
-        vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
-
-        vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+        perror("Could not find bindings");
+        gui->CallAfter([this]()
+                        {
+                        wxMessageDialog dial(NULL,
+                            lcl.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                        dial.ShowModal(); });
+        status = DISCONNECTED;
+        return;
     }
+    vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
+
+    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
+    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
+    vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
+
+    vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
 
     std::istringstream ret;
     std::string word;

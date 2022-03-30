@@ -1,12 +1,13 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
 
 /// Placed in a class before a list of REFLECTABE_FIELDS
-#define REFLECTABLE_BEGIN  \
-    friend class Reflect;  \
-    template <size_t N>    \
-    struct _rfl_FieldData; \
+#define REFLECTABLE_BEGIN                \
+    friend class Reflect;                \
+    template <size_t N, typename = void> \
+    struct _rfl_FieldData;               \
     static constexpr size_t _rfl_fieldOffset = __COUNTER__
 
 /// Placed in a class after a list of REFLECTABE_FIELDS
@@ -14,8 +15,8 @@
     static constexpr size_t _rfl_fieldCount = __COUNTER__ - _rfl_fieldOffset - 1
 
 #define REFLECTABLE_FIELD_DATA(a_type, a_fieldName)                               \
-    template <>                                                                   \
-    struct _rfl_FieldData<__COUNTER__ - _rfl_fieldOffset - 1>                     \
+    template <typename _unused_>                                                  \
+    struct _rfl_FieldData<__COUNTER__ - _rfl_fieldOffset - 1, _unused_>           \
     {                                                                             \
         using Type = a_type;                                                      \
         static constexpr const char* name = #a_fieldName;                         \

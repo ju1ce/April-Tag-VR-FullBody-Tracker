@@ -1,9 +1,6 @@
 %YAML:1.0
 ---
 # Put all strings in "double quotes".
-CODE: "zh-CN"
-NAME_ENGLISH: "Chinese (PRC)"
-NAME_NATIVE: "Chinese (PRC)"
 APP_TITLE: "果汁的二维码全身追踪（简体中文）"
 TAB_CAMERA: "主页"
 TAB_PARAMS: "参数"

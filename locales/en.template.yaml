@@ -1,9 +1,6 @@
 %YAML:1.0
 ---
 # Put all strings in "double quotes".
-CODE: en
-NAME_ENGLISH: English
-NAME_NATIVE: English
 APP_TITLE: Juices VR Marker Tracking
 TAB_CAMERA: Camera
 TAB_PARAMS: Params

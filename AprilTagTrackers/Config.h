@@ -77,7 +77,6 @@ public:
         45,
         [](auto& value)
         { if (value <= 0) value = 45; }};
-    FIELD(int, languageSelection) = 0;
     FIELD(FS::Valid<double>, calibScale){
         1.0,
         [](auto& value)

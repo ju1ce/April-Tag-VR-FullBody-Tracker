@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "Localization.h"
 #include "license.h"
 #include <opencv2/videoio/registry.hpp>
 
@@ -204,15 +205,11 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     markerLibraryField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, markerLibraryValues);
     markerLibraryField->SetSelection(user_config.markerLibrary);
 
-    const auto langInfoList = Localization::FindAvailLangs();
-    wxArrayString languageValues;
-    for (const auto& langInfo : langInfoList)
-    {
-        languageValues.push_back(langInfo.nameNat);
-    }
+
+    wxArrayString languageValues{Localization::LANG_NAME_MAP.size(), Localization::LANG_NAME_MAP.data()};
 
     languageField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, languageValues);
-    languageField->SetSelection(user_config.languageSelection);
+    languageField->SetSelection(Localization::LangCodeToIndex(user_config.langCode));
 
     wxBoxSizer* hbox = new wxBoxSizer(wxVERTICAL);
 
@@ -371,8 +368,8 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         user_config.depthSmoothing = std::stof(depthSmoothingField->GetValue().ToStdString());
         user_config.additionalSmoothing = std::stof(additionalSmoothingField->GetValue().ToStdString());
         user_config.markerLibrary = markerLibraryField->GetSelection();
-        int prevLanguage = user_config.languageSelection;
-        user_config.languageSelection = languageField->GetSelection();
+        auto prevLanguage = user_config.langCode;
+        user_config.langCode = Localization::LANG_CODE_MAP.at(languageField->GetSelection());
         user_config.Save();
 
         if (user_config.depthSmoothing > 1)
@@ -380,7 +377,7 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         if (user_config.depthSmoothing < 0)
             user_config.depthSmoothing = 0;
 
-        if (user_config.languageSelection != prevLanguage)
+        if (user_config.langCode != prevLanguage)
         {
             wxMessageDialog dial(NULL,
                                  lcl.PARAMS_NOTE_LANGUAGECHANGE, wxT("Warning"), wxOK | wxICON_WARNING);

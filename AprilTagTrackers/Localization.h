@@ -2,6 +2,8 @@
 
 #include "Serializable.h"
 #include <filesystem>
+#include <iterator>
+#include <string_view>
 #include <vector>
 #include <wx/string.h>
 
@@ -25,16 +27,6 @@ class Localization : public FS::Serializable<Localization>
 public:
     static inline const FS::Path localesDir{"locales"};
 
-    struct LangInfo
-    {
-        LangInfo(std::string _code, const UniStr& _nameEng, const UniStr& _nameNat)
-            : code(std::move(_code)), nameEng(_nameEng), nameNat(_nameNat) {}
-
-        std::string code; ///< Standard identifying code
-        UniStr nameEng;   ///< Language name in english
-        UniStr nameNat;   ///< Native language name
-    };
-
     Localization()
         : FS::Serializable<Localization>("locales/en.yaml") {}
 
@@ -44,40 +36,28 @@ public:
         return Load();
     }
 
-    /// List of parsed language codes from XX.yaml files inside locales dir,
-    /// grabs the language name from the file aswell.
-    static std::vector<LangInfo> FindAvailLangs()
-    {
-        std::vector<LangInfo> localeList{};
-        // English available by default
-        localeList.emplace_back("en", "English", "English");
-        // No locales dir, only english available
-        if (!std::filesystem::exists(localesDir) || !std::filesystem::is_directory(localesDir))
-            return localeList;
+    // TODO: Add back find available langs with new lang code mapping implementation
 
-        Localization tempLc;
-        for (const auto& dirEntry : std::filesystem::directory_iterator(localesDir))
-        {
-            if (!dirEntry.is_regular_file() || dirEntry.path().extension() != ".yaml") continue;
-            const auto& code = dirEntry.path().stem().generic_string(); // stem = filename without extension
-            // TODO: Alternative to parsing every locale file just for name.
-            std::cerr << "FOUND CODE: " << code << std::endl;
-            tempLc.LoadLang(code);
-            localeList.emplace_back(tempLc.CODE, tempLc.NAME_ENGLISH, tempLc.NAME_NATIVE);
-        }
-        return localeList;
+    // Keep synced
+    static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
+        "en",
+        "zh-CN"};
+    static const inline std::array<UniStr, LANG_CODE_MAP.size()> LANG_NAME_MAP{
+        "English",
+        "Chinese (PRC)"};
+    static size_t LangCodeToIndex(std::string_view langCode)
+    {
+        auto indexItr = std::find(LANG_CODE_MAP.cbegin(), LANG_CODE_MAP.cend(), langCode);
+        assert(indexItr != LANG_CODE_MAP.cend());
+        auto index = std::distance(LANG_CODE_MAP.cbegin(), indexItr);
+        assert(index >= 0);
+        return static_cast<size_t>(index);
     }
 
-    // TODO: Group names in structs, instead of long ids (stored in subobjects in yaml)
+    // TODO: Group names in structs, instead of long ids (stored in sub-objects in yaml)
 
     REFLECTABLE_BEGIN;
     FS_COMMENT("Put all strings in \"double quotes\".");
-
-    // Standard language code, char string instead of unicode
-    REFLECTABLE_FIELD(std::string, CODE) = "en";
-
-    T(NAME_ENGLISH) = "English";
-    T(NAME_NATIVE) = "English";
 
     T(APP_TITLE) = "Juices VR Marker Tracking";
 
@@ -113,9 +93,9 @@ Uncheck Calibration mode when done!)";
     T(PARAMS_CAMERA_TOOLTIP_ID) = "Will be a number 0-10 for USB cameras and\nhttp://<ip here>:8080/video for IP webcam)";
     T(PARAMS_CAMERA_NAME_API) = "Camera API preference";
     T(PARAMS_CAMERA_NAME_ROT_CLOCKWISE) = "Rotate camera clockwise";
-    T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
+    T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = L"Rotate the camera 90°. Use both to rotate image 180°";
     T(PARAMS_CAMERA_NAME_ROT_CCLOCKWISE) = "Rotate camera counterclockwise";
-    T(PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
+    T(PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE) = L"Rotate the camera 90°. Use both to rotate image 180°";
     T(PARAMS_CAMERA_NAME_WIDTH) = "Camera width in pixels";
     T(PARAMS_CAMERA_TOOLTIP_WIDTH) = "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.";
     T(PARAMS_CAMERA_NAME_HEIGHT) = "Camera height in pixels";

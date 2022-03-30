@@ -136,14 +136,13 @@ void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
 {
     if (event.IsChecked())
     {
-        tracker->disableOpenVrApi = true;
         user_config.disableOpenVrApi = true;
     }
     else
     {
-        tracker->disableOpenVrApi = false;
         user_config.disableOpenVrApi = false;
     }
+    user_config.Save();
 }
 
 void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)

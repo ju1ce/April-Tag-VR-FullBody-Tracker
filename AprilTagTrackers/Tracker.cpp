@@ -364,7 +364,7 @@ void Tracker::CameraLoop()
             imageReady = true;
         }
 
-        if (!disableOpenVrApi)
+        if (!user_config.disableOpenVrApi)
         {
             //process events. BETA TEST ONLY, MOVE TO CONNECTION LATER
             if (connection->status == connection->CONNECTED)
@@ -968,7 +968,7 @@ void Tracker::CalibrateTracker()
 
     //making a marker model of our markersize for later use
     std::vector<cv::Point3f> modelMarker;
-    int markerSize = static_cast<int>(std::trunc(user_config.markerSize));
+    double markerSize = user_config.markerSize;
     modelMarker.push_back(cv::Point3f(-markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));
