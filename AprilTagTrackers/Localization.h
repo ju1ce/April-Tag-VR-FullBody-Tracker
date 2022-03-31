@@ -17,10 +17,7 @@
 using UniStr = wxString;
 
 // temporary alias, undefined at end of file,
-// Makes the visitor fields private, essentially const fields except when Load is called
-#define T(key)                           \
-    REFLECTABLE_FIELD_DATA(UniStr, key); \
-    UniStr key
+#define T(key) REFLECTABLE_FIELD(UniStr, key)
 
 class Localization : public FS::Serializable<Localization>
 {

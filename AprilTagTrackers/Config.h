@@ -9,8 +9,7 @@
 #include <opencv2/aruco.hpp>
 #include <string>
 
-// Define a reflectable field with optional validator,
-// within a class that derives from FileStorageSerializable
+// Temporary alias
 #define FIELD(a_type, a_name) \
     REFLECTABLE_FIELD(a_type, a_name)
 
