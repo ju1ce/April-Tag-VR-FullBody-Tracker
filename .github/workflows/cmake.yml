@@ -21,29 +21,37 @@ jobs:
         os: [windows-latest, ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout project and recurse submodules.
+        uses: actions/checkout@v3
         with:
           submodules: "recursive"
 
-      - if: ${{ matrix.os == 'ubuntu-latest'}}
+      - name: If on Linux, Install GTK3 dev build.
+        if: ${{ matrix.os == 'ubuntu-latest'}}
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libgtk-3-dev
 
-      - id: deps-hash
+      - name: Combine commit hash of submodules in deps.
+        id: deps-hash
+        shell: bash
         run: |
           echo "::set-output name=all::$(for d in deps/*/.git;do echo -n -$(git -C ${d%/.git} rev-parse --short HEAD);done)"
 
-      - id: deps-cache
+      - name: Check dep cache for matching OS and combined hash
+        id: deps-cache
         uses: actions/cache@v3
         with:
           path: ${{ env.BINARY_DIR }}/deps/install
           key: os-${{ runner.os }}-hash${{ steps.deps-hash.outputs.all }}
 
-      - run: >-
+      - name: CMake configure, skip building deps if cached.
+        run: >-
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DCMAKE_INSTALL_PREFIX=install
           -DEXPORT_COMPILE_COMMANDS=0
           -DSKIP_BUILD_DEPS=${{ steps.deps-cache.outputs.cache-hit }}
-      - run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: CMake build release.
+        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }}
