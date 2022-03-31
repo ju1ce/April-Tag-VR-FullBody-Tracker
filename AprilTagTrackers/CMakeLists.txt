@@ -58,7 +58,6 @@ target_link_libraries(AprilTagTrackers PUBLIC
 
 # Install target to bin folder
 install(TARGETS AprilTagTrackers RUNTIME)
-install(FILES "$<TARGET_FILE:openvr::openvr>" DESTINATION "bin")
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)

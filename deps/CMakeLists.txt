@@ -54,56 +54,9 @@ ExternalProject_Add_Step(opencv aruco DEPENDERS configure
 
 # --- OpenVR ---
 
-# TODO: switch to funnbot/openvr and build statically
-set(OVR_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/openvr")
-set(OVR_INSTALL_DIR "${DEPS_INSTALL_DIR}/openvr")
+att_add_dep(
+    openvr
 
-if(WIN32)
-    set(OVR_OS "win")
-    set(OVR_LINK_EXT ".lib")
-    set(OVR_SHARED_EXT ".dll")
-    unset(OVR_NAME_PREFIX)
-elseif(UNIX)
-    set(OVR_OS "linux")
-    set(OVR_LINK_EXT ".so")
-    set(OVR_SHARED_EXT ".so")
-    set(OVR_NAME_PREFIX "lib")
-endif()
-
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "64")
-    set(OVR_ARCH "64")
-else()
-    set(OVR_ARCH "32")
-endif()
-
-set(OVR_SHARED_FILE "${OVR_PREFIX}/bin/${OVR_OS}${OVR_ARCH}/${OVR_NAME_PREFIX}openvr_api${OVR_SHARED_EXT}")
-set(OVR_LINK_FILE "${OVR_PREFIX}/lib/${OVR_OS}${OVR_ARCH}/${OVR_NAME_PREFIX}openvr_api${OVR_LINK_EXT}")
-set(OVR_INCLUDE_FILES
-    "${OVR_PREFIX}/headers/openvr.h"
-    "${OVR_PREFIX}/headers/openvr_driver.h")
-
-get_filename_component(OVR_SHARED_NAME "${OVR_SHARED_FILE}" NAME)
-get_filename_component(OVR_LINK_NAME "${OVR_LINK_FILE}" NAME)
-
-set(OVR_INSTALL_INCLUDE_DIR "${OVR_INSTALL_DIR}/include")
-set(OVR_INSTALL_SHARED_FILE "${OVR_INSTALL_DIR}/bin/${OVR_SHARED_NAME}")
-set(OVR_INSTALL_LINK_FILE "${OVR_INSTALL_DIR}/lib/${OVR_LINK_NAME}")
-
-find_program(GIT_CMD git REQUIRED DOC "Checkout submodules.")
-
-# fake install of the files from the repo, into a standard-ish layout
-add_custom_command(OUTPUT "${OVR_INSTALL_SHARED_FILE}"
-    COMMAND "${GIT_CMD}" submodule update --init --depth 1 --checkout "${OVR_PREFIX}"
-    COMMAND "${CMAKE_COMMAND}" -E make_directory ${OVR_INSTALL_INCLUDE_DIR}
-    COMMAND "${CMAKE_COMMAND}" -E copy ${OVR_INCLUDE_FILES} "${OVR_INSTALL_INCLUDE_DIR}"
-    COMMAND "${CMAKE_COMMAND}" -E copy "${OVR_SHARED_FILE}" "${OVR_INSTALL_SHARED_FILE}"
-    COMMAND "${CMAKE_COMMAND}" -E copy "${OVR_LINK_FILE}" "${OVR_INSTALL_LINK_FILE}"
-    VERBATIM)
-
-add_custom_target(openvr-install DEPENDS
-    "${OVR_INSTALL_SHARED_FILE}")
-
-att_configure_package_config(openvr PATH_VARS
-    OVR_INSTALL_INCLUDE_DIR
-    OVR_INSTALL_SHARED_FILE
-    OVR_INSTALL_LINK_FILE)
+    EXTRA_CMAKE_ARGS
+    -DBUILD_SHARED=${BUILD_SHARED_LIBS}
+)
