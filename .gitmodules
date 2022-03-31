@@ -10,7 +10,7 @@
 	ignore = dirty
 [submodule "deps/openvr"]
 	path = deps/openvr
-	url = https://github.com/ValveSoftware/openvr
+	url = https://github.com/funnbot/openvr
 	shallow = true
 	ignore = dirty
 [submodule "deps/opencv"]
