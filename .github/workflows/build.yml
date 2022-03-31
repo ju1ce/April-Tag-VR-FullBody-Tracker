@@ -65,6 +65,7 @@ jobs:
             ${{ env.INSTALL_DIR }}/
 
       - name: Upload build logs.
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
