@@ -7,9 +7,9 @@ on:
     branches: [master]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
   BINARY_DIR: build
+  INSTALL_DIR: install
 
 jobs:
   build:
@@ -33,25 +33,43 @@ jobs:
           sudo apt-get install -y libgtk-3-dev
 
       - name: Combine commit hash of submodules in deps.
-        id: deps-hash
+        id: hash
         shell: bash
         run: |
-          echo "::set-output name=all::$(for d in deps/*/.git;do echo -n -$(git -C ${d%/.git} rev-parse --short HEAD);done)"
+          echo "::set-output name=deps_combined::$(for d in deps/*/.git;do echo -n -$(git -C ${d%/.git} rev-parse --short HEAD);done)"
+          echo "::set-output name=this_short::$(git rev-parse --short HEAD)"
 
       - name: Check dep cache for matching OS and combined hash
         id: deps-cache
         uses: actions/cache@v3
         with:
           path: ${{ env.BINARY_DIR }}/deps/install
-          key: deps-${{ runner.os }}${{ steps.deps-hash.outputs.all }}
+          key: deps-${{ runner.os }}${{ steps.hash.outputs.deps_combined }}
 
       - name: CMake configure, skip building deps if cached.
         run: >-
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_INSTALL_PREFIX=install
+          -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_DIR }}
           -DEXPORT_COMPILE_COMMANDS=0
           -DSKIP_BUILD_DEPS=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
 
       - name: CMake build release.
         run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: Upload install.
+        uses: actions/upload-artifact@v3
+        with:
+          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}-${{ steps.hash.outputs.this_short }}
+          retention-days: 7
+          path: |
+            ${{ env.INSTALL_DIR }}/
+
+      - name: Upload logs.
+        uses: actions/upload-artifact@v3
+        with:
+          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}-${{ steps.hash.outputs.this_short }}
+          retention-days: 14
+          path: |
+            ${{ env.BINARY_DIR }}/**/CMakeOutput.log
+            ${{ env.BINARY_DIR }}/**/CMakeError.log
