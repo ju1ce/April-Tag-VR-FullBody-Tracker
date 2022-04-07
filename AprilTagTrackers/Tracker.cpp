@@ -27,11 +27,12 @@
 namespace {
 
 // Create a grid in front of the camera for visualization purposes.
-std::vector<std::vector<cv::Point3f>> createXyGridLines(
-    const int gridSizeX, // Number of units from leftmost to rightmost line.
-    const int gridSizeY, // Number of units from top to bottom line.
-    const int gridSubdivision, // Number of segments per line.
-    const float z) // Z-coord of grid.
+    std::vector<std::vector<cv::Point3f>> createXyGridLines(
+        const int gridSizeX, // Number of units from leftmost to rightmost line.
+        const int gridSizeY, // Number of units from top to bottom line.
+        const int gridSubdivision, // Number of segments per line.
+        const float z) // Z-coord of grid.
+    
 {
     std::vector<std::vector<cv::Point3f>> gridLines(gridSizeX + gridSizeY + 2);
     for (int i = 0; i <= gridSizeX; ++i)
@@ -165,6 +166,7 @@ Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
     parameters = params;
     connection = conn;
     parentApp = app;
+    
     if (!parameters->trackers.empty())
     {
         trackers = parameters->trackers;
@@ -180,6 +182,7 @@ Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
 
 void Tracker::StartCamera(std::string id, int apiPreference)
 {
+
     if (cameraRunning)
     {
         cameraRunning = false;
@@ -260,9 +263,12 @@ void Tracker::CameraLoop()
     }
     cv::Mat img;
     cv::Mat drawImg;
-    double fps = 0;
-    last_frame_time = clock();
+    //double fps = 0;
+    last_frame_time;
+    clock_t curtime;
     bool frame_visible = false;
+    double polka = 0; //basicly FPS after math, Spinny leeky
+    int ovl; //test if it int OVFLW
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -273,35 +279,58 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
-        clock_t curtime = clock();
-        fps = 0.95*fps + 0.05/(double(curtime - last_frame_time) / double(CLOCKS_PER_SEC));
-        last_frame_time = curtime;        
+      
+       
+        curtime = clock();
+        polka = polka * 0.95 + (0.05 / (double(curtime - last_frame_time)/CLOCKS_PER_SEC));
+        last_frame_time = curtime;
+        
+        
+        if (((int)polka == INT_MAX) || ((int)polka == INT_MIN) && (ovl < 1000)) //cuts the loop and tries again incase of overflow
+        {
+            
+            ovl++; //prevents infinite loops
+          
+            continue;
+        }
+        
+        
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
         }
+              
         std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
         if (previewCamera || previewCameraCalibration)
         {
             img.copyTo(drawImg);
-            cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            if (ovl < 1000) //is the overflow still presistant? give up lol
+            {
+                cv::putText(drawImg, std::to_string((int)(polka + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            }
+            else 
+            {
+                cv::putText(drawImg, "OverFlow after 1000 tries. Please Retry" , cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255));
+            }
+            ovl = 0; //reset overload
             cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+            
             if (previewCameraCalibration)
             {
                 previewCalibration(drawImg, parameters);
-                cv::imshow("preview", drawImg);
+                cv::imshow(parameters->octiuSah + " Preview", drawImg);
                 cv::waitKey(1);
             }
             else
             {
-                cv::imshow("preview", drawImg);
+                cv::imshow(parameters->octiuSah + " Preview", drawImg);
                 cv::waitKey(1);
             }
             frame_visible = true;
         }
         else if(frame_visible)
         {            
-            cv::destroyWindow("preview");
+            cv::destroyWindow(parameters->octiuSah + " Preview");
             frame_visible = false;
         }
         {
@@ -404,10 +433,10 @@ void Tracker::CalibrateCameraCharuco()
 
     //set our detectors marker border bits to 1 since thats what charuco uses
     params->markerBorderBits = 1;
-
+    
     //int framesSinceLast = -2 * parameters->camFps;
     clock_t timeOfLast = clock();
-
+    const std::string& nameWin = parameters->octiuSah;
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
         wxMessageDialog dial(NULL,
@@ -423,10 +452,11 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<double> perViewErrors;
     std::vector<std::vector<cv::Point2f>> allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds;
-
+    //const cv::String& octiuZah << parameters->octiuSah;
     int picsTaken = 0;
     while(mainThreadRunning && cameraRunning)
     {
+        
         CopyFreshCameraImageTo(image);
         int cols, rows;
         if (image.cols > image.rows)
@@ -482,9 +512,9 @@ void Tracker::CalibrateCameraCharuco()
                 picsTaken--;
             }
         }
-
+        
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        cv::imshow("out", outImg);
+        cv::imshow(parameters->octiuSah + " Calibration", outImg);
         char key = (char)cv::waitKey(1);
 
         //framesSinceLast++;
@@ -520,7 +550,7 @@ void Tracker::CalibrateCameraCharuco()
                     picsTaken++;
 
                     cv::resize(drawImg, outImg, cv::Size(cols, rows));
-                    cv::imshow("out", outImg);
+                    cv::imshow(parameters->octiuSah + " Calibration", outImg);
                     char key = (char)cv::waitKey(1);
 
                     if (picsTaken >= 3)
@@ -545,7 +575,7 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    cv::destroyWindow("out");
+    cv::destroyWindow(parameters->octiuSah + " Calibration");
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
@@ -674,7 +704,7 @@ void Tracker::CalibrateCamera()
             rows = image.rows * drawImgSize / image.cols;
         }
         cv::resize(image, drawImg, cv::Size(cols,rows));
-        cv::imshow("out", drawImg);
+        cv::imshow(parameters->octiuSah + " Calibration", drawImg);
         char key = (char)cv::waitKey(1);
         framesSinceLast++;
         if (key != -1 || framesSinceLast > 50)
@@ -698,7 +728,7 @@ void Tracker::CalibrateCamera()
             }
 
             cv::resize(image, drawImg, cv::Size(cols, rows));
-            cv::imshow("out", drawImg);
+            cv::imshow(parameters->octiuSah + " Calibration", drawImg);
             cv::waitKey(1000);
         }
     }
@@ -905,7 +935,7 @@ void Tracker::CalibrateTracker()
                 wxMessageDialog dial(NULL,
                     parameters->language.TRACKER_CALIBRATION_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
-                cv::destroyWindow("out");
+                cv::destroyWindow("Tracker Calibration [" + parameters->octiuSah + "]");
                 mainThreadRunning = false;
                 return;
             }
@@ -997,7 +1027,7 @@ void Tracker::CalibrateTracker()
             rows = image.rows * drawImgSize / image.cols;
         }
         cv::resize(image, drawImg, cv::Size(cols, rows));
-        cv::imshow("out", drawImg);
+        cv::imshow("Tracker Calibration [" + parameters->octiuSah + "]", drawImg);
         cv::waitKey(1);
     }
 
@@ -1011,7 +1041,7 @@ void Tracker::CalibrateTracker()
     parameters->Save();
     trackersCalibrated = true;
 
-    cv::destroyWindow("out");
+    cv::destroyWindow("Tracker Calibration [" + parameters->octiuSah + "]");
     mainThreadRunning = false;
 }
 
@@ -1119,7 +1149,7 @@ void Tracker::MainLoop()
         trackers = this->trackers;
     }
 
-    cv::namedWindow("out");
+    cv::namedWindow("Running on... " + parameters->octiuSah);
 
     while (mainThreadRunning && cameraRunning)
     {
@@ -1451,7 +1481,7 @@ void Tracker::MainLoop()
                     parameters->language.TRACKER_DETECTION_SOMETHINGWRONG,
                     wxT("Error"), wxOK | wxICON_ERROR);
                 dial.ShowModal();
-                cv::destroyWindow("out");
+                cv::destroyWindow("Running on... " + parameters->octiuSah);
                 mainThreadRunning = false;
                 return;
             }
@@ -1650,10 +1680,10 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(drawImg, cv::Point(10, 60));
             }
-            cv::imshow("out", drawImg);
+            cv::imshow("Running on... " + parameters->octiuSah, drawImg);
             cv::waitKey(1);
         }
         //time of marker detection
     }
-    cv::destroyWindow("out");
+    cv::destroyWindow("Running on... " + parameters->octiuSah);
 }

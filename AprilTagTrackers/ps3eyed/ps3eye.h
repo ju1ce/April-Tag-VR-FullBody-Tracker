@@ -171,7 +171,33 @@ public:
 	void getFrame(uint8_t* frame);
 
 	uint32_t getWidth() const { return frame_width; }
+	bool setWidth(uint32_t width) {
+		if (is_streaming) return false;
+		if (width == 0 || width > 320)
+		{
+			frame_width = 640;
+			frame_height = 480;
+		}
+		else {
+			frame_width = 320;
+			frame_height = 240;
+		}
+		return true;
+	}
 	uint32_t getHeight() const { return frame_height; }
+	bool setHeight(uint32_t height) {
+		if (is_streaming) return false;
+		if (height == 0 || height > 240)
+		{
+			frame_width = 640;
+			frame_height = 480;
+		}
+		else {
+			frame_width = 320;
+			frame_height = 240;
+		}
+		return true;
+	}
 	uint16_t getFrameRate() const { return frame_rate; }
 	bool setFrameRate(uint8_t val) {
 		if (is_streaming) return false;

@@ -66,7 +66,7 @@ public:
     int markersPerTracker = 45;
     int languageSelection = 0;
     double calibScale = 1;
-
+    std::string octiuSah = "";
 
     cv::Ptr<cv::aruco::DetectorParameters> aruco_params = cv::aruco::DetectorParameters::create();
 

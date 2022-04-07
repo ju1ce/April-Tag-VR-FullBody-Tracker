@@ -336,13 +336,13 @@ public:
 			break;
         case CV_CAP_PROP_FRAME_HEIGHT:
 			eye->stop();
-			//if (!eye->setHeight((int)round(value))) return false;
+			if (!eye->setHeight((int)round(value))) return false;
 			eye->start();
 			break;
-            //return false; //TODO: Modifying frame size probably requires resetting the camera
+            return false; //TODO: Modifying frame size probably requires resetting the camera
         case CV_CAP_PROP_FRAME_WIDTH:
 			eye->stop();
-			//if (!eye->setWidth((int)round(value))) return false;
+			if (!eye->setWidth((int)round(value))) return false;
 			eye->start();
 			break;
             //return false;

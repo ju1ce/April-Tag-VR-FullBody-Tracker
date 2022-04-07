@@ -26,7 +26,7 @@ include_directories( ${OPENVR_INCLUDE_DIR} )
 include_directories( ${LIBUSB_INCLUDE_DIR} )
 
 # Add source to this project's executable.
-file(GLOB source "*.cpp" "*.h" "ps3eyed/*.cpp" "ps3eyed/*.h")
+file(GLOB source "*.cpp" "*.h" "ps3eyed/*.cpp" "ps3eyed/*.h" "GUI.rc")
 add_executable (AprilTagTrackers ${source})
 
 # TODO: Add tests and install targets if needed.

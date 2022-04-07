@@ -9,7 +9,7 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
-
+#include "Parameters.h"
 #include "MyApp.h"
 
 #include "Quaternion.h"
@@ -56,6 +56,7 @@ public:
     double calibScale = 1;
 
 private:
+
     void CameraLoop();
     void CopyFreshCameraImageTo(cv::Mat& image);
     void CalibrateCamera();
@@ -72,9 +73,11 @@ private:
     std::mutex cameraImageMutex;
     cv::Mat cameraImage;
     bool imageReady = false;
-
+    
     Parameters* parameters;
     Connection* connection;
+
+    
 
     std::thread cameraThread;
     std::thread mainThread;
