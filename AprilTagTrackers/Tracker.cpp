@@ -202,7 +202,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         {
             std::stringstream ss;
             ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
-            if(parameters->camWidth != 0)
+            if (parameters->camWidth != 0)
                 ss << ",width=" << parameters->camWidth;
             if (parameters->camHeight != 0)
                 ss << ",height=" << parameters->camHeight;
@@ -211,15 +211,17 @@ void Tracker::StartCamera(std::string id, int apiPreference)
             cap = cv::VideoCapture(ss.str(), apiPreference);
         }
         else
-#endif
         {
-            //API preference of 2300 is defined in pseyecapi
-            if (apiPreference == 2300)
-                cap = PSEyeVideoCapture(i);
-            else
-                cap = cv::VideoCapture(i, apiPreference);
+            cap = cv::VideoCapture(i, apiPreference);
         }
-
+#else
+        
+        //API preference of 2300 is defined in pseyecapi
+        if (apiPreference == 2300)
+            cap = PSEyeVideoCapture(i);
+        else
+            cap = cv::VideoCapture(i, apiPreference);
+#endif
     }
     else
     {			//if address is longer, we try to open it as an ip address

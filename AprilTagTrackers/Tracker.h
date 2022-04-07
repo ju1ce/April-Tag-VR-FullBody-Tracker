@@ -15,8 +15,10 @@
 #include "Quaternion.h"
 #include "Util.h"
 
+#if OS_LINUX
+#else
 #include "ps3eyed/PSEyeVideoCapture.h"
-
+#endif
 
 struct TrackerStatus {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
