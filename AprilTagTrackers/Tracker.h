@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 #include <math.h>
+#include <chrono>
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
@@ -94,7 +95,7 @@ private:
 
     //Quaternion<double> q;
 
-    clock_t last_frame_time;
+    std::chrono::steady_clock::time_point last_frame_time;
 
     MyApp* parentApp;
 };
