@@ -1,15 +1,17 @@
 ﻿# CMakeList.txt : CMake project for AprilTagTrackers, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.8)
 
-if(NOT EXISTS ${APRILTAG_LIB} )
-  message(FATAL_ERROR "Please set the correct apriltags library." )
+# Find prebuilt libraries
+find_package(OpenCV REQUIRED)
+if (NOT ${OpenCV_opencv_aruco_FOUND})
+    message(FATAL_ERROR "Missing Aruco module. Rebuild OpenCV with modules from opencv_contrib")
 endif()
 
-if(NOT EXISTS "${APRILTAG_INCLUDE_DIR}/apriltag.h" )
-  message(FATAL_ERROR "Please set the correct apriltags include directory." )
-endif()
+# Add source to this project's executable.
+file(GLOB source "*.cpp" "*.h" "IPC/*.cpp" "IPC/*.h" "*.rc")
+add_executable (AprilTagTrackers ${source})
 
 if(NOT EXISTS ${LIBUSB_LIB} )
   message(FATAL_ERROR "Please set the correct LIBUSB library." )
@@ -19,20 +21,25 @@ if(NOT EXISTS "${LIBUSB_INCLUDE_DIR}/libusb.h" )
   message(FATAL_ERROR "Please set the correct LIBUSB include directory." )
 endif()
 
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-include_directories( ${APRILTAG_INCLUDE_DIR} )
-include_directories( ${OPENVR_INCLUDE_DIR} )
-include_directories( ${LIBUSB_INCLUDE_DIR} )
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/april.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
 
+# Link paths to libraries
+target_link_libraries(AprilTagTrackers PUBLIC ${OpenVR_LIB})
+target_include_directories(AprilTagTrackers PUBLIC ${OpenVR_INCLUDE_DIR})
+
+# Link libraries defined as targets, includes are automatic
+target_link_libraries(AprilTagTrackers PUBLIC ${OpenCV_LIBS} apriltags wx::net wx::core wx::base)
 # Add source to this project's executable.
 file(GLOB source "*.cpp" "*.h" "ps3eyed/*.cpp" "ps3eyed/*.h" "GUI.rc")
 add_executable (AprilTagTrackers ${source})
 
-# TODO: Add tests and install targets if needed.
+if (MSVC)
+    # tell the msvc linker this is a windows application
+    set_target_properties(AprilTagTrackers PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS)
+endif()
 
-target_link_libraries( AprilTagTrackers ${OPENVR_LIB} )
-target_link_libraries( AprilTagTrackers ${OpenCV_LIBS} )
-target_link_libraries( AprilTagTrackers ${APRILTAG_LIB} )
+# Install target to bin folder
+install(TARGETS AprilTagTrackers RUNTIME)
+install(FILES "${AprilTagTrackers_SOURCE_DIR}/april.ico" DESTINATION bin)
+
 target_link_libraries( AprilTagTrackers ${LIBUSB_LIB} )
-target_link_libraries( AprilTagTrackers wx::net wx::core wx::base)

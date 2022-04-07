@@ -13,6 +13,7 @@
 #include "MyApp.h"
 
 #include "Quaternion.h"
+#include "Util.h"
 
 #include "ps3eyed/PSEyeVideoCapture.h"
 
@@ -47,6 +48,8 @@ public:
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
     bool disableOut = false;
+    bool disableOpenVrApi = true;
+    int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
 

@@ -25,8 +25,7 @@ GUI::GUI(const wxString& title, Parameters * params, Connection* conn)
     CameraPage* panel = new CameraPage(nb,this,params);
     ParamsPage* panel2 = new ParamsPage(nb, params, conn);
     LicensePage* panel3 = new LicensePage(nb);
-    SetIcon(wxIcon(wxT("./img/april.ico"), wxBITMAP_TYPE_ICO , -1,-1));
-    //nb->SetIcon(myicon);
+
     nb->AddPage(panel, params->language.TAB_CAMERA);
     nb->AddPage(panel2, params->language.TAB_PARAMS);
     nb->AddPage(panel3, params->language.TAB_LICENSE);
@@ -77,6 +76,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
         wxPoint(20, 20));
     wxCheckBox* cb6 = new wxCheckBox(this, GUI::DISABLE_OUT_CHECKBOX, params->language.CAMERA_DISABLE_OUT,
         wxPoint(20, 20));
+    wxCheckBox* cb7 = new wxCheckBox(this, GUI::DISABLE_OPENVR_API_CHECKBOX, params->language.CAMERA_DISABLE_OPENVR_API,
+        wxPoint(20, 20));
     //wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
     //   wxPoint(20, 20));
     //parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
@@ -91,6 +92,8 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, params->language.CAMERA_LOCK_HEIGHT,
         wxPoint(20, 20));
 
+    cb7->SetValue(true);
+
     fgs->Add(btn1);
     fgs->Add(cb1);
     fgs->Add(btn2);
@@ -104,10 +107,10 @@ CameraPage::CameraPage(wxNotebook* parent,GUI* parentGUI, Parameters* params)
     fgs->Add(btn5);
     fgs->Add(parentGUI->cb3);
     fgs->Add(cb6);
+    fgs->Add(cb7);
     //fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     //fgs->Add(parentGUI->calibrationModeCheckbox);
-    fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(new wxStaticText(this, -1, ("Camera: " + params->octiuSah)), 0, wxEXPAND);
+
     hbox->Add(fgs, 1, wxALL | wxEXPAND, 15);
 
     //hbox->Add(cb3, 1, wxALL | wxEXPAND, 15);
@@ -213,10 +216,9 @@ ParamsPage::ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn)
 
     addTextWithTooltip(this, fgs, params->language.PARAMS_LANGUAGE, params->language.PARAMS_LANGUAGE);
     fgs->Add(languageField);
-    addTextWithTooltip(this, fgs, params->language.WINDOW_TITLE, params->language.WINDOW_TITLE_TOOLTIP);
-    fgs->Add(octiuSahField);
-    //fgs->Add(new wxStaticText(this, -1, wxT("")));
-    //fgs->Add(new wxStaticText(this, -1, wxT("")));
+
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
+    fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, params->language.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));

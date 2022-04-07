@@ -3,28 +3,29 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-project ("AprilTagTrackers")
+project("AprilTagTrackers")
 
-#only supported for now
-SET (PLATFORM_NAME "win")
-SET (PROCESSOR_ARCH "64")
+# Force wxWidgets to build as a static library
+set(wxBUILD_SHARED "0")
 
-SET (APRILTAG_LIB "${CMAKE_CURRENT_SOURCE_DIR}/apriltag/build/LIBRARY_OUTPUT_DIRECTORY/Release/apriltags.lib" CACHE FILEPATH "Path to apriltags.lib library file." )
-SET (APRILTAG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/apriltag" CACHE PATH "Directory of apriltag header files." )
-SET (wxBUILD_SHARED "0" CACHE BOOL "")
+# Include subprojects, but exclude them from ALL_BUILD 
+# as they may have extra unnecessary targets
+add_subdirectory("apriltag" EXCLUDE_FROM_ALL)
+add_subdirectory("wxWidgets" EXCLUDE_FROM_ALL)
+add_subdirectory("openvr" EXCLUDE_FROM_ALL)
 
-SET (OPENVR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/openvr/headers")
-find_library(OPENVR_LIB openvr_api HINTS "${CMAKE_CURRENT_SOURCE_DIR}/openvr/lib/${PLATFORM_NAME}${PROCESSOR_ARCH}/" NO_DEFAULT_PATH )
+# Hacky way to get openvr lib, as the main repo has been broken for months
+# TODO: fork openvr to fix build errors
+get_directory_property(PLATFORM_NAME DIRECTORY "openvr" DEFINITION "PLATFORM_NAME")
+get_directory_property(PROCESSOR_ARCH DIRECTORY "openvr" DEFINITION "PROCESSOR_ARCH")
+find_library(OpenVR_LIB openvr_api REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/openvr/lib/${PLATFORM_NAME}${PROCESSOR_ARCH}" NO_DEFAULT_PATH)
+set(OpenVR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/openvr/headers")
+
+# Include main project
+add_subdirectory("AprilTagTrackers")
 
 SET (LIBUSB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/include/libusb-1.0")
 find_library(LIBUSB_LIB libusb-1.0 HINTS "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/VS2019/MS64/dll/" NO_DEFAULT_PATH )
 
-# Include sub-projects.
-add_subdirectory("wxWidgets")
-add_subdirectory("openvr")
-add_subdirectory ("AprilTagTrackers")
-
-#add_subdirectory ("PS3EYEDriver")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
-set_target_properties("AprilTagTrackers" PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS )

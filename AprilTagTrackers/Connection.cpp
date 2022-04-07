@@ -1,29 +1,42 @@
 #include "Connection.h"
+#include "GUI.h"
 
 Connection::Connection(Parameters* params)
 {
     parameters = params;
+// TODO: Pass the IPC client* in as an argument
+#if OS_WIN
+    auto namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
+    bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
+#elif OS_LINUX
+    auto namedPipe = new IPC::UNIXSocket("ApriltagPipeIn");
+    bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
+#endif
 }
 
 void Connection::StartConnection()
 {
     if (status == WAITING)
     {
-        wxMessageDialog dial(NULL,
-            wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         return;
     }
     if (status == CONNECTED)
     {
-        wxMessageDialog dial(NULL,
-            parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
-            wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-        if (dial.ShowModal() != wxID_YES)
-        {
-            return;
-        }
-        Sleep(1000);
+        gui->CallAfter([parameters=parameters] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           parameters->language.CONNECT_ALREADYCONNECTED, wxT("Question"),
+                           wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
+                       dial.ShowModal();
+                       });
+        sleep_millis(1000);
+        // Sleep(1000);
         status = DISCONNECTED;
     }
     std::thread connectThread(&Connection::Connect, this);
@@ -100,19 +113,25 @@ void Connection::Connect()
         }
     }
 
-    //connect to steamvr as a client in order to get buttons.
-    vr::EVRInitError error;
-    openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
-
-    if (error != vr::VRInitError_None)
+    if (!disableOpenVrApi)
     {
-        std::string e = parameters->language.CONNECT_CLIENT_ERROR;
-        e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-        wxMessageDialog dial(NULL,
-            e, wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
-        status = DISCONNECTED;
-        return;
+        //connect to steamvr as a client in order to get buttons.
+        vr::EVRInitError error;
+        openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+
+        if (error != vr::VRInitError_None)
+        {
+            wxString e = parameters->language.CONNECT_CLIENT_ERROR;
+            e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
+            gui->CallAfter([e] ()
+                           {
+                           wxMessageDialog dial(NULL,
+                               e, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
+            status = DISCONNECTED;
+            return;
+        }
     }
 
     /*
@@ -147,23 +166,30 @@ void Connection::Connect()
     dial2.ShowModal();
 
     */
-    DWORD  retval = 0;
-    BOOL   success;
-    char  buffer[1024] = "";
-    char** lppPart = { NULL };
+    std::string fullpath;
 
-    retval = GetFullPathNameA("att_actions.json",
-        BUFSIZE,
-        buffer,
-        lppPart);
+    if (!disableOpenVrApi)
+    {
+        if (!get_full_path("att_actions.json", fullpath))
+        {
+            perror("Could not find bindings");
+            gui->CallAfter([this] ()
+                            {
+                            wxMessageDialog dial(NULL,
+                                parameters->language.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                            dial.ShowModal();
+                            });
+            status = DISCONNECTED;
+            return;
+        }
+        vr::VRInput()->SetActionManifestPath(fullpath.c_str());
 
-    vr::VRInput()->SetActionManifestPath(buffer);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
 
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
-
-    vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+        vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
+    }
 
     std::istringstream ret;
     std::string word;
@@ -172,9 +198,12 @@ void Connection::Connect()
     ret >> word;
     if (word != "numtrackers")
     {
-        wxMessageDialog dial(NULL,
-            parameters->language.CONNECT_DRIVER_ERROR + std::to_string(GetLastError()), wxT("Error"), wxOK | wxICON_ERROR);
-        dial.ShowModal();
+        gui->CallAfter([this] ()
+                       {
+                       wxMessageDialog dial(NULL,
+                           parameters->language.CONNECT_DRIVER_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
+                       dial.ShowModal();
+                       });
         status = DISCONNECTED;
         return;
     }
@@ -184,11 +213,14 @@ void Connection::Connect()
     ret >> word;
     if (word != parameters->driverversion)
     {
-        std::string e = "";
-        e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
-        wxMessageDialog dial(NULL,
-            e, wxT("Warning"), wxOK | wxICON_WARNING);
-        dial.ShowModal();
+        gui->CallAfter([this, word]()
+            {
+                std::string e = "";
+                e += parameters->language.CONNECT_DRIVER_MISSMATCH1 + word + parameters->language.CONNECT_DRIVER_MISSMATCH2 + parameters->driverversion;
+                wxMessageDialog dial(NULL,
+                    e, wxT("Warning"), wxOK | wxICON_WARNING);
+                dial.ShowModal();
+            });
     }
 
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
@@ -197,9 +229,12 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            wxMessageDialog dial(NULL,
-                parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
-            dial.ShowModal();
+            gui->CallAfter([this] ()
+                           {
+                           wxMessageDialog dial(NULL,
+                               parameters->language.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
+                           dial.ShowModal();
+                           });
             status = DISCONNECTED;
             return;
         }
@@ -207,50 +242,18 @@ void Connection::Connect()
 
     ret = Send("addstation");
 
-    std::string sstr = "";
-    sstr += "settings 120 " + std::to_string(parameters->smoothingFactor);
-
     ret = Send("settings 120 " + std::to_string(parameters->smoothingFactor) + " " + std::to_string(parameters->additionalSmoothing));
-
+    
     //set that connection is established
     status = CONNECTED;
+
 }
 
-std::istringstream Connection::Send(std::string lpszWrite)
+std::istringstream Connection::Send(std::string buffer)
 {
-    //function expecting LPWGSTR instead of LPCASDFGEGTFSTR you are passing? I have no bloody clue what any of that even means. It works for me, so I'll leave the dumb conversions and casts in. If it doesn't for you, have fun.
-
-    fSuccess = CallNamedPipe(
-        lpszPipename,        // pipe name
-        (LPVOID)lpszWrite.c_str(),           // message to server
-        (strlen(lpszWrite.c_str()) + 1) * sizeof(TCHAR), // message length
-        chReadBuf,              // buffer to receive reply
-        BUFSIZE * sizeof(TCHAR),  // size of read buffer
-        &cbRead,                // number of bytes read
-        2000);                 // waits for 2 seconds
-
-    if (fSuccess || GetLastError() == ERROR_MORE_DATA)
-    {
-        std::cout << chReadBuf << std::endl;
-        chReadBuf[cbRead] = '\0'; //add terminating zero
-                    //convert our buffer to string
-        std::string rec = chReadBuf;
-        std::istringstream iss(rec);
-        // The pipe is closed; no more data can be read.
-
-        if (!fSuccess)
-        {
-            printf("\nExtra data in message was lost\n");
-        }
-        return iss;
-    }
-    else
-    {
-        std::cout << GetLastError() << " :(" << std::endl;
-        std::string rec = " senderror";
-        std::istringstream iss(rec);
-        return iss;
-    }
+    std::string resp;
+    this->bridge_driver->send(buffer, resp);
+    return std::istringstream(resp);
 }
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)
@@ -302,7 +305,7 @@ bool GetDigitalActionState(vr::VRActionHandle_t action)
 
 int Connection::GetButtonStates()
 {
-    if (status == DISCONNECTED)
+    if (status == DISCONNECTED || disableOpenVrApi)
     {
         return 0;
     }
@@ -323,6 +326,8 @@ int Connection::GetButtonStates()
 
 void Connection::GetControllerPose(double outpose[])
 {
+    if (disableOpenVrApi)
+        return;
     
     //std::istringstream ret = Send("getdevicepose 1");
     //std::string word;
