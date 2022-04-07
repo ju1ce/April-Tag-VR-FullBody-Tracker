@@ -8,10 +8,3 @@
 [submodule "openvr"]
 	path = openvr
 	url = https://github.com/ValveSoftware/openvr.git
-[submodule "PS3EYEDriver"]
-	path = PS3EYEDriver
-	url = https://github.com/zelmon64/PS3EYEDriver
-	branch = set_resolution
-[submodule "libusb"]
-	path = libusb
-	url = https://github.com/libusb/libusb.git
