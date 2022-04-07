@@ -29,12 +29,11 @@
 namespace {
 
 // Create a grid in front of the camera for visualization purposes.
-    std::vector<std::vector<cv::Point3f>> createXyGridLines(
-        const int gridSizeX, // Number of units from leftmost to rightmost line.
-        const int gridSizeY, // Number of units from top to bottom line.
-        const int gridSubdivision, // Number of segments per line.
-        const float z) // Z-coord of grid.
-    
+std::vector<std::vector<cv::Point3f>> createXyGridLines(
+    const int gridSizeX, // Number of units from leftmost to rightmost line.
+    const int gridSizeY, // Number of units from top to bottom line.
+    const int gridSubdivision, // Number of segments per line.
+    const float z) // Z-coord of grid.
 {
     std::vector<std::vector<cv::Point3f>> gridLines(gridSizeX + gridSizeY + 2);
     for (int i = 0; i <= gridSizeX; ++i)
@@ -168,7 +167,6 @@ Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
     parameters = params;
     connection = conn;
     parentApp = app;
-    
     if (!parameters->trackers.empty())
     {
         trackers = parameters->trackers;
@@ -184,7 +182,6 @@ Tracker::Tracker(Parameters* params, Connection* conn, MyApp* app)
 
 void Tracker::StartCamera(std::string id, int apiPreference)
 {
-
     if (cameraRunning)
     {
         cameraRunning = false;
@@ -216,6 +213,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         else
 #endif
         {
+            //API preference of 2300 is defined in pseyecapi
             if (apiPreference == 2300)
                 cap = PSEyeVideoCapture(i);
             else
@@ -296,8 +294,6 @@ void Tracker::CameraLoop()
     clock_t last_preview_time = clock();
     last_frame_time = clock();
     bool frame_visible = false;
-    double polka = 0; //basicly FPS after math, Spinny leeky
-    int ovl; //test if it int OVFLW
     while (cameraRunning)
     {
         if (!cap.read(img))
@@ -311,27 +307,13 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
-      
-       
-        curtime = clock();
-        polka = polka * 0.95 + (0.05 / (double(curtime - last_frame_time)/CLOCKS_PER_SEC));
-        last_frame_time = curtime;
-        
-        
-        if (((int)polka == INT_MAX) || ((int)polka == INT_MIN) && (ovl < 1000)) //cuts the loop and tries again incase of overflow
-        {
-            
-            ovl++; //prevents infinite loops
-          
-            continue;
-        }
-        
-        
+        clock_t curtime = clock();
+        fps = 0.95*fps + 0.05/(double(curtime - last_frame_time) / double(CLOCKS_PER_SEC));
+        last_frame_time = curtime;        
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
         }
-              
         std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
         double timeSinceLast = (double(curtime - last_preview_time) / double(CLOCKS_PER_SEC));  //ensure that preview isnt shown more than 60 times per second, otherwise the CallAfter function gets overloaded
         if (timeSinceLast > 0.015)
@@ -501,10 +483,10 @@ void Tracker::CalibrateCameraCharuco()
 
     //set our detectors marker border bits to 1 since thats what charuco uses
     params->markerBorderBits = 1;
-    
+
     //int framesSinceLast = -2 * parameters->camFps;
     clock_t timeOfLast = clock();
-    const std::string& nameWin = parameters->octiuSah;
+
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
         wxString e = parameters->language.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS;
@@ -531,11 +513,10 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<double> perViewErrors;
     std::vector<std::vector<cv::Point2f>> allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds;
-    //const cv::String& octiuZah << parameters->octiuSah;
+
     int picsTaken = 0;
     while(mainThreadRunning && cameraRunning)
     {
-        
         CopyFreshCameraImageTo(image);
         int cols, rows;
         if (image.cols > image.rows)

@@ -8,6 +8,9 @@ project("AprilTagTrackers")
 # Force wxWidgets to build as a static library
 set(wxBUILD_SHARED "0")
 
+SET (LIBUSB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/include/libusb-1.0")
+find_library(LIBUSB_LIB libusb-1.0 HINTS "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/VS2019/MS64/dll/" NO_DEFAULT_PATH )
+
 # Include subprojects, but exclude them from ALL_BUILD 
 # as they may have extra unnecessary targets
 add_subdirectory("apriltag" EXCLUDE_FROM_ALL)
@@ -23,9 +26,5 @@ set(OpenVR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/openvr/headers")
 
 # Include main project
 add_subdirectory("AprilTagTrackers")
-
-SET (LIBUSB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/include/libusb-1.0")
-find_library(LIBUSB_LIB libusb-1.0 HINTS "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled/VS2019/MS64/dll/" NO_DEFAULT_PATH )
-
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
