@@ -325,9 +325,9 @@ void Tracker::CameraLoop()
                     cv::Mat* outImg = new cv::Mat();
                     drawImg.copyTo(*outImg);
                     previewCalibration(*outImg, parameters);
-                    gui->CallAfter([outImg]()
+                    gui->CallAfter([outImg, &win_OTU = parameters->octiuSah]()
                         {
-                            cv::imshow("Preview", *outImg);
+                            cv::imshow(win_OTU + " Preview", *outImg);
                             cv::waitKey(1);
                             delete(outImg);
                         });
@@ -337,9 +337,9 @@ void Tracker::CameraLoop()
                 {
                     cv::Mat* outImg = new cv::Mat();
                     drawImg.copyTo(*outImg);
-                    gui->CallAfter([outImg]()
+                    gui->CallAfter([outImg, &win_OTU = parameters->octiuSah]()
                         {
-                            cv::imshow("Preview", *outImg);
+                            cv::imshow(win_OTU + " Preview", *outImg);
                             cv::waitKey(1);
                             delete(outImg);
                         });
@@ -349,9 +349,9 @@ void Tracker::CameraLoop()
             }
             else if (previewShown)
             {
-                gui->CallAfter([]()
+                gui->CallAfter([&win_OTU = parameters->octiuSah]()
                     {
-                        cv::destroyWindow("Preview");
+                        cv::destroyWindow(win_OTU + " Preview");
                     });
                 previewShown = false;
             }
@@ -572,9 +572,9 @@ void Tracker::CalibrateCameraCharuco()
         cv::Mat *outImg = new cv::Mat();
         cv::resize(drawImg, *outImg, cv::Size(cols, rows));
         char key = -1;
-        gui->CallAfter([outImg, &key] ()
+        gui->CallAfter([outImg, &key, &win_OTU = parameters->octiuSah] ()
                         {
-                        cv::imshow("out", *outImg);
+                        cv::imshow(win_OTU + " Calibration", *outImg);
                         //key = (char)cv::waitKey(1);
                         cv::waitKey(1);
                         delete(outImg);
@@ -615,9 +615,9 @@ void Tracker::CalibrateCameraCharuco()
 
                     cv::Mat *outImg = new cv::Mat();
                     cv::resize(drawImg, *outImg, cv::Size(cols, rows));
-                    gui->CallAfter([outImg] ()
+                    gui->CallAfter([outImg, &win_OTU = parameters->octiuSah] ()
                                     {
-                                    cv::imshow("out", *outImg);
+                                    cv::imshow(win_OTU + " Calibration", *outImg);
                                     cv::waitKey(1);
                                     delete(outImg);
                                     });
@@ -644,9 +644,9 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    gui->CallAfter([] ()
+    gui->CallAfter([&win_OTU = parameters->octiuSah] ()
                    {
-                   cv::destroyWindow("out");
+                   cv::destroyWindow(win_OTU + " Calibration");
                    });
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
@@ -797,9 +797,9 @@ void Tracker::CalibrateCamera()
         {
             cv::Mat *outImg = new cv::Mat();
             cv::resize(image, *outImg, cv::Size(cols,rows));
-            gui->CallAfter([outImg] ()
+            gui->CallAfter([outImg, &win_OTU = parameters->octiuSah] ()
                            {
-                           cv::imshow("out", *outImg);
+                           cv::imshow(win_OTU + " Calibration", *outImg);
                            cv::waitKey(1);
                            delete(outImg);
                            });
@@ -828,9 +828,9 @@ void Tracker::CalibrateCamera()
             {
                 cv::Mat *outImg = new cv::Mat();
                 cv::resize(image, *outImg, cv::Size(cols,rows));
-                gui->CallAfter([outImg] ()
+                gui->CallAfter([outImg, &win_OTU = parameters->octiuSah] ()
                                {
-                               cv::imshow("out", *outImg);
+                               cv::imshow(win_OTU + " Calibration", *outImg);
                                cv::waitKey(1);
                                delete(outImg);
                                });
@@ -1055,11 +1055,11 @@ void Tracker::CalibrateTracker()
             {
                 wxString e = parameters->language.TRACKER_CALIBRATION_SOMETHINGWRONG;
                 bool *mtr = &mainThreadRunning;
-                gui->CallAfter([e, mtr] ()
+                gui->CallAfter([e, mtr, &win_OTU = parameters->octiuSah] ()
                                 {
                                 wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
                                 dial.ShowModal();
-                                cv::destroyWindow("out");
+                                cv::destroyWindow("Calibrating Tracker [" + win_OTU + "]");
                                 *mtr = false;
                                 });
                 return;
@@ -1154,9 +1154,9 @@ void Tracker::CalibrateTracker()
         }
         cv::Mat *outImg = new cv::Mat();
         cv::resize(image, *outImg, cv::Size(cols,rows));
-        gui->CallAfter([outImg] ()
+        gui->CallAfter([outImg, &win_OTU = parameters->octiuSah] ()
                         {
-                        cv::imshow("out", *outImg);
+                        cv::imshow("Calibrating Tracker [" + win_OTU + "]", *outImg);
                         cv::waitKey(1);
                         delete(outImg);
                         });
@@ -1175,9 +1175,9 @@ void Tracker::CalibrateTracker()
 
     //close preview window
     bool *mtr = &mainThreadRunning;
-    gui->CallAfter([mtr] ()
+    gui->CallAfter([mtr, &win_OTU = parameters->octiuSah] ()
                    {
-                   cv::destroyWindow("out");
+                   cv::destroyWindow("Calibrating Tracker [" + win_OTU + "]");
                    *mtr = false;
                    });
 }
@@ -1287,10 +1287,11 @@ void Tracker::MainLoop()
         trackers = this->trackers;
     }
 
+
     //initialize CV out window
-    gui->CallAfter([] ()
+    gui->CallAfter([&win_OTU = parameters->octiuSah] ()
                    {
-                   cv::namedWindow("out");
+                   cv::namedWindow("Running on... " + win_OTU);
                    });
 
     while (mainThreadRunning && cameraRunning)      //run detection until camera is stopped or the start/stop button is pressed again
@@ -1619,12 +1620,14 @@ void Tracker::MainLoop()
             }
             catch (std::exception&)
             {
+
                 wxString e = parameters->language.TRACKER_DETECTION_SOMETHINGWRONG; // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
-                gui->CallAfter([e] ()
+                gui->CallAfter([e, &win_OTU = parameters->octiuSah] ()
+
                                {
                                wxMessageDialog dial(NULL, e, wxT("Error"), wxOK | wxICON_ERROR);
                                 dial.ShowModal();
-                               cv::destroyWindow("out");
+                               cv::destroyWindow("Running on... " + win_OTU);
                                });
                 //apriltag_detector_destroy(td);
                 mainThreadRunning = false;
@@ -1834,17 +1837,17 @@ void Tracker::MainLoop()
                 april.drawTimeProfile(*outImg, cv::Point(10, 60));
             }            
             
-            gui->CallAfter([outImg] ()
+            gui->CallAfter([outImg, &win_OTU = parameters->octiuSah] ()
                            {
-                           cv::imshow("out", *outImg);
+                           cv::imshow("Running on... " + win_OTU, *outImg);
                            cv::waitKey(1);
                            delete(outImg);
                            });
         }
         //time of marker detection
     }
-    gui->CallAfter([] ()
+    gui->CallAfter([&win_OTU = parameters->octiuSah] ()
                    {
-                   cv::destroyWindow("out");
+                   cv::destroyWindow("Running on... " + win_OTU);
                    });
 }
