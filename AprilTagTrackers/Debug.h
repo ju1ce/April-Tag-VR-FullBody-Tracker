@@ -56,8 +56,10 @@
 
 #if defined(__clang__) || defined(__GNUG__) || defined(__GNUC__)
 #define ATT_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#else
+#elif defined(_MSC_VER)
 #define ATT_PRETTY_FUNCTION __FUNCSIG__
+#else
+#define ATT_PRETTY_FUNCTION ""
 #endif
 
 #if ATT_LOG_LEVEL > 0
