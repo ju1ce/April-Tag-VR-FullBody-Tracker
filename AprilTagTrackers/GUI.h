@@ -28,6 +28,7 @@ class GUI : public wxFrame
 {
 public:
     GUI(const wxString& title, Connection* conn, UserConfig& user_config, const Localization& lcl);
+
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
@@ -84,6 +85,7 @@ private:
     const Localization& lcl;
 
     Connection* connection;
+    wxTextCtrl* windowTitleField;
     wxTextCtrl* cameraAddrField;
     wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
@@ -119,6 +121,5 @@ private:
     wxChoice* languageField;
 
     void SaveParams(wxCommandEvent&);
-    void ShowHelp(wxCommandEvent&);
 
 };

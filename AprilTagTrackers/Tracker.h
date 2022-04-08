@@ -8,7 +8,7 @@
 #include <opencv2/videoio.hpp>
 #include <thread>
 #include <mutex>
-
+#include <chrono>
 
 struct TrackerStatus {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
@@ -84,7 +84,7 @@ private:
 
     //Quaternion<double> q;
 
-    clock_t last_frame_time;
+    std::chrono::steady_clock::time_point last_frame_time;
 
     MyApp* parentApp;
 };

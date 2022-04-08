@@ -53,10 +53,49 @@ ExternalProject_Add_Step(opencv aruco DEPENDERS configure
     "${CVC_PREFIX}/modules/aruco" "${CVC_BIN_DIR}/modules/aruco")
 
 # --- OpenVR ---
-
 att_add_dep(
     openvr
 
     EXTRA_CMAKE_ARGS
     -DBUILD_SHARED=${BUILD_SHARED_LIBS}
 )
+
+# --- libusb ---
+set(USB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled")
+set(USB_INSTALL "${DEPS_INSTALL_DIR}/libusb")
+
+add_custom_command(
+    OUTPUT "${USB_INSTALL}/include/libusb.h"
+    "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
+    "${USB_INSTALL}/lib/Debug/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${USB_INSTALL}/include" "${USB_INSTALL}/lib/Release" "${USB_INSTALL}/lib/Debug"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Release/lib/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.lib"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Release/lib/libusb-1.0.pdb" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Debug/lib/libusb-1.0.lib"  "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Debug/lib/libusb-1.0.pdb"  "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/include/libusb-1.0/libusb.h" "${USB_INSTALL}/include/libusb.h"
+    VERBATIM
+)
+add_custom_target(libusb-install
+    DEPENDS "${USB_INSTALL}/include/libusb.h"
+    "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
+    "${USB_INSTALL}/lib/Debug/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    SOURCES "${USB_PREFIX}/include/libusb-1.0/libusb.h"
+)
+
+# --- PS3EyeDriver + PS3EyeVideoCapture ---
+set(PSD_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PS3EyeDriver")
+set(PSMS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PSMoveService")
+set(PS_INSTALL "${DEPS_INSTALL_DIR}/ps3eye")
+
+add_custom_command(
+    OUTPUT "${PS_INSTALL}/include/ps3eye.h" "${PS_INSTALL}/src/ps3eye.cpp" "${PS_INSTALL}/include/PSEyeVideoCapture.h" "${PS_INSTALL}/src/PSEyeVideoCapture.cpp"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PS_INSTALL}/include" "${PS_INSTALL}/src"
+    COMMAND ${CMAKE_COMMAND} -E copy "${PSD_PREFIX}/ps3eye.h" "${PSMS_PREFIX}/PSEyeVideoCapture.h" "${PS_INSTALL}/include"
+    COMMAND ${CMAKE_COMMAND} -E copy "${PSD_PREFIX}/ps3eye.cpp" "${PSMS_PREFIX}/PSEyeVideoCapture.cpp" "${PS_INSTALL}/src"
+    VERBATIM
+)
+add_custom_target(ps3eye-install
+    DEPENDS "${PS_INSTALL}/include/ps3eye.h" "${PS_INSTALL}/src/ps3eye.cpp" "${PS_INSTALL}/include/PSEyeVideoCapture.h" "${PS_INSTALL}/src/PSEyeVideoCapture.cpp"
+    SOURCES "${PSD_PREFIX}/ps3eye.h" "${PSD_PREFIX}/ps3eye.cpp" "${PSMS_PREFIX}/PSEyeVideoCapture.h" "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
+add_dependencies(ps3eye-install libusb-install)

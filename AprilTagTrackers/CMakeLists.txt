@@ -6,6 +6,7 @@ project("AprilTagTrackers" CXX)
 
 option(USE_ASAN "Create an address sanitizer build." OFF)
 option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
+option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
 set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
 
 # If using a multi config generator, wxWidgets and opencv due to this random blog post
@@ -16,18 +17,27 @@ if(CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Search our locally built deps only
-if(DEPS_INSTALL_DIR)
-    set(FIND_LOCAL PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
-endif()
+set(FIND_LOCAL PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
 
 # Find our dependencies
 find_package(OpenCV REQUIRED ${FIND_LOCAL})
 find_package(apriltag REQUIRED ${FIND_LOCAL})
 find_package(openvr REQUIRED ${FIND_LOCAL})
 find_package(wxWidgets REQUIRED core base ${FIND_LOCAL})
+set(PS3EYE_FILES
+    "${DEPS_INSTALL_DIR}/ps3eye/src/ps3eye.cpp"
+    "${DEPS_INSTALL_DIR}/ps3eye/include/ps3eye.h"
+    "${DEPS_INSTALL_DIR}/ps3eye/src/PSEyeVideoCapture.cpp"
+    "${DEPS_INSTALL_DIR}/ps3eye/include/PSEyeVideoCapture.h"
+    "${DEPS_INSTALL_DIR}/libusb/include/libusb.h")
+set(PS3EYE_INCLUDE_DIRS
+    "${DEPS_INSTALL_DIR}/ps3eye/include"
+    "${DEPS_INSTALL_DIR}/libusb/include")
+set(PS3EYE_LIBS
+    "${DEPS_INSTALL_DIR}/libusb/lib/$<CONFIG>/libusb-1.0.lib")
 
 # Explicitly list source files as recommended by cmake
-set(SOURCE_FILES
+set(ATT_SOURCE_FILES
     AprilTagWrapper.cpp AprilTagWrapper.h
     Config.h
     Connection.cpp Connection.h
@@ -36,7 +46,6 @@ set(SOURCE_FILES
     license.h
     Localization.h
     MessageDialog.cpp MessageDialog.h
-    MyApp.cpp MyApp.h
     Quaternion.cpp Quaternion.h
     Reflectable.h
     Serializable.cpp Serializable.h
@@ -46,50 +55,46 @@ set(SOURCE_FILES
     IPC/UNIXSocket.cpp
     IPC/WindowsNamedPipe.cpp)
 
-# Main build output, AprilTagTrackers binary
-add_executable(AprilTagTrackers ${SOURCE_FILES})
+# Create library of sources (except MyApp which has entry), useful for testing, and separation
+add_library(libATT STATIC ${ATT_SOURCE_FILES})
 
 # Set the root of includes, rather than relative
-target_include_directories(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(libATT PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+# Add the ps3eye driver, video capture, and its libusb dependency
+if (WIN32 AND ENABLE_PS3EYE)
+    target_compile_definitions(libATT PRIVATE ENABLE_PS3EYE)
+    target_link_libraries(libATT PRIVATE ${PS3EYE_LIBS})
+    target_include_directories(libATT SYSTEM PRIVATE ${PS3EYE_INCLUDE_DIRS})
+    target_sources(libATT PRIVATE ${PS3EYE_FILES})
+endif()
 
 # Link libraries defined as targets, includes are automatic
-target_link_libraries(AprilTagTrackers PUBLIC
+target_link_libraries(libATT PUBLIC
     ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag)
 
-# Install target to bin folder
-install(TARGETS AprilTagTrackers RUNTIME)
-
 # Ensure compiler with c++17 language features
-target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
+target_compile_features(libATT PUBLIC cxx_std_17)
 
 # Enable LTO in release
 if(NOT USE_ASAN)
-    set_target_properties(AprilTagTrackers PROPERTIES
+    set_target_properties(libATT PROPERTIES
         INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 endif()
 
 # Set cross-platform defines in sources
 if(WIN32)
-    target_compile_definitions(AprilTagTrackers PUBLIC "OS_WIN=1")
-
-    # Link as gui app instead of console app
-    set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE ON)
+    target_compile_definitions(libATT PUBLIC "OS_WIN=1")
 elseif(UNIX)
-    target_compile_definitions(AprilTagTrackers PUBLIC "OS_LINUX=1")
+    target_compile_definitions(libATT PUBLIC "OS_LINUX=1")
 else()
     message(FATAL_ERROR "Unknown platform ${CMAKE_SYSTEM_NAME}, compilation will fail.")
-endif()
-
-set(COMPILER_IS_CLANGCL FALSE)
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-    set(COMPILER_IS_CLANGCL TRUE)
 endif()
 
 # Build with Address Sanitizer
 if(USE_ASAN)
     if(MSVC)
-        set(ASAN_FLAGS /fsanitize=address /Zi)
+        set(ASAN_FLAGS /fsanitize=address)
     else()
         set(ASAN_FLAGS
             -fsanitive=address
@@ -97,5 +102,25 @@ if(USE_ASAN)
             -fsanitive=undefined)
     endif()
 
-    target_compile_options(AprilTagTrackers PRIVATE "${ASAN_FLAGS}")
+    target_compile_options(libATT PUBLIC "${ASAN_FLAGS}")
 endif()
+
+# Find the resource file and icon
+target_include_directories(libATT PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+
+# Create the AprilTagTrackers binary
+add_executable(AprilTagTrackers MyApp.cpp MyApp.h)
+# Link with our configured library
+target_link_libraries(AprilTagTrackers PUBLIC libATT)
+# Install application to bin folder
+install(TARGETS AprilTagTrackers RUNTIME)
+
+if(WIN32)
+    # set as GUI application on windows
+    set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE TRUE)
+    # wxWidgets will compile a resource.rc file for us
+    target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
+endif()
+
+# Make AprilTagTrackers the default target in Visual Studio
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)

@@ -7,6 +7,7 @@ project("April-Tag-VR-FullBody-Tracker" NONE)
 # Options
 option(USE_ASAN "Create an address sanitizer build." OFF)
 option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
+option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
 option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
 
@@ -32,7 +33,7 @@ add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
 
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
 if(NOT SKIP_BUILD_DEPS)
-    set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
+    set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install ps3eye-install)
 endif()
 
 att_add_external_project(
@@ -40,6 +41,7 @@ att_add_external_project(
     EXTRA_CMAKE_ARGS
     -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
     -DUSE_ASAN:BOOL=${USE_ASAN}
+    -DENABLE_PS3EYE=${ENABLE_PS3EYE}
 
     EXTRA_EP_ARGS
     INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
@@ -48,6 +50,3 @@ att_add_external_project(
 )
 
 att_add_install_compile_commands_step(AprilTagTrackers "${CMAKE_CURRENT_SOURCE_DIR}/build")
-
-# Make AprilTagTrackers the default target in Visual Studio
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)

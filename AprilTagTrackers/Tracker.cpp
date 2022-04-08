@@ -4,18 +4,13 @@
 #include <sstream>
 #include <vector>
 
-#pragma warning(push)
-#pragma warning(disable:4996)
-#include <wx/wx.h>
-#pragma warning(pop)
-
 #include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/charuco.hpp>
-#include <thread>
 
 #include "AprilTagWrapper.h"
 #include "Connection.h"
@@ -23,6 +18,10 @@
 #include "Helpers.h"
 #include "MessageDialog.h"
 #include "Tracker.h"
+
+#ifdef ENABLE_PS3EYE
+#include "PSEyeVideoCapture.h"
+#endif
 
 namespace {
 
@@ -208,6 +207,13 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         }
         else
 #endif
+#if ENABLE_PS3EYE
+        if (apiPreference == 2300)
+        {
+            cap = PSEyeVideoCapture(i);
+        }
+        else
+#endif
         {
             cap = cv::VideoCapture(i, apiPreference);
         }
@@ -283,8 +289,8 @@ void Tracker::CameraLoop()
     cv::Mat img;
     cv::Mat drawImg;
     double fps = 0;
-    clock_t last_preview_time = clock();
-    last_frame_time = clock();
+    auto last_preview_time = std::chrono::steady_clock::now();
+    last_frame_time = std::chrono::steady_clock::now();
     bool frame_visible = false;
     while (cameraRunning)
     {
@@ -299,20 +305,21 @@ void Tracker::CameraLoop()
             cameraRunning = false;
             break;
         }
-        clock_t curtime = clock();
-        fps = 0.95*fps + 0.05/(double(curtime - last_frame_time) / double(CLOCKS_PER_SEC));
+        auto curtime = std::chrono::steady_clock::now();
+        fps = 0.95*fps + 0.05/std::chrono::duration<double>(curtime - last_frame_time).count();
         last_frame_time = curtime;
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
         }
         std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
-        double timeSinceLast = (double(curtime - last_preview_time) / double(CLOCKS_PER_SEC));  //ensure that preview isnt shown more than 60 times per second, otherwise the CallAfter function gets overloaded
+        //ensure that preview isnt shown more than 60 times per second, otherwise the CallAfter function gets overloaded
+        double timeSinceLast = std::chrono::duration<double>(curtime - last_preview_time).count();
         if (timeSinceLast > 0.015)
         {
             if ((previewCamera || previewCameraCalibration))
             {
-                last_preview_time = clock();
+                last_preview_time = std::chrono::steady_clock::now();
                 img.copyTo(drawImg);
                 cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
                 cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
@@ -477,7 +484,7 @@ void Tracker::CalibrateCameraCharuco()
     params->markerBorderBits = 1;
 
     //int framesSinceLast = -2 * user_config.camFps;
-    clock_t timeOfLast = clock();
+    auto timeOfLast = std::chrono::steady_clock::now();
 
     int messageDialogResponse = wxID_CANCEL;
     std::thread th{ [this, &messageDialogResponse]() {
@@ -578,10 +585,10 @@ void Tracker::CalibrateCameraCharuco()
 
         //if more than one second has passed since last calibration image, add current frame to calibration images
         //framesSinceLast++;
-        if (key != -1 || double(clock() - timeOfLast) / double(CLOCKS_PER_SEC) > 1)
+        if (key != -1 || std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 1)
         {
             //framesSinceLast = 0;
-            timeOfLast = clock();
+            timeOfLast = std::chrono::steady_clock::now();
             //if any button was pressed
             cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
@@ -1008,9 +1015,9 @@ void Tracker::CalibrateTracker()
     {
         CopyFreshCameraImageTo(image);
 
-        clock_t start;
+        std::chrono::steady_clock::time_point start;
         //clock for timing of detection
-        start = clock();
+        start = std::chrono::steady_clock::now();
 
         //detect and draw all markers on image
         std::vector<int> ids;
@@ -1236,7 +1243,7 @@ void Tracker::MainLoop()
     //initialize variables for playspace calibration
     bool calibControllerPosActive = false;
     bool calibControllerAngleActive = false;
-    clock_t calibControllerLastPress = clock();
+    auto calibControllerLastPress = std::chrono::steady_clock::now();
     double calibControllerPosOffset[] = { 0,0,0 };
     double calibControllerAngleOffset[] = { 0,0,0 };
 
@@ -1297,9 +1304,9 @@ void Tracker::MainLoop()
         drawImg = image;
         april.convertToSingleChannel(image, gray);
 
-        clock_t start, end;
+        std::chrono::steady_clock::time_point start, end;
         //for timing our detection
-        start = clock();
+        start = std::chrono::steady_clock::now();
 
         bool circularWindow = user_config.circularWindow;
 
@@ -1320,7 +1327,7 @@ void Tracker::MainLoop()
         for (int i = 0; i < trackerNum; i++)
         {
 
-            double frameTime = double(clock() - last_frame_time) / double(CLOCKS_PER_SEC);
+            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame_time).count();
 
             std::string word;
             std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - user_config.camLatency));
@@ -1447,7 +1454,7 @@ void Tracker::MainLoop()
             int inputButton = 0;
             inputButton = connection->GetButtonStates();
 
-            double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);
+            double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
             if (timeSincePress > 60)                                                                        //we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
             {
                 gui->cb3->SetValue(false);
@@ -1457,7 +1464,8 @@ void Tracker::MainLoop()
 
             if (inputButton == 1)       //logic for position button
             {
-                double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);      //to prevent accidental double presses, 0.2 seconds must pass between presses.
+                //to prevent accidental double presses, 0.2 seconds must pass between presses.
+                double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
                     if (!calibControllerPosActive)          //if position calibration is inactive, set it to active and calculate offsets between the camera and controller
@@ -1476,7 +1484,7 @@ void Tracker::MainLoop()
 
                         quat.inverse().QuatRotation(calibControllerPosOffset);
 
-                        calibControllerLastPress = clock();
+                        calibControllerLastPress = std::chrono::steady_clock::now();
 
                     }
                     else       //else, deactivate it
@@ -1484,11 +1492,12 @@ void Tracker::MainLoop()
                         calibControllerPosActive = false;
                     }
                 }
-                calibControllerLastPress = clock();
+                calibControllerLastPress = std::chrono::steady_clock::now();
             }
             if (inputButton == 2)       //logic for rotation button
             {
-                double timeSincePress = double(start - calibControllerLastPress) / double(CLOCKS_PER_SEC);      //to prevent accidental double presses, 0.2 seconds must pass between presses.
+                //to prevent accidental double presses, 0.2 seconds must pass between presses.
+                double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
                     if (!calibControllerAngleActive)          //if rotation calibration is inactive, set it to active and calculate angle offsets and distance
@@ -1506,7 +1515,7 @@ void Tracker::MainLoop()
                         calibControllerAngleOffset[1] = angleB - gui->manualCalibB->value;
                         calibControllerAngleOffset[2] = xyzLen;
 
-                        calibControllerLastPress = clock();
+                        calibControllerLastPress = std::chrono::steady_clock::now();
 
                     }
                     else       //else, deactivate it
@@ -1514,7 +1523,7 @@ void Tracker::MainLoop()
                         calibControllerAngleActive = false;
                     }
                 }
-                calibControllerLastPress = clock();
+                calibControllerLastPress = std::chrono::steady_clock::now();
             }
 
             if (calibControllerPosActive)       //while position calibration is active, apply the camera to controller offset to X, Y and Z values
@@ -1591,7 +1600,7 @@ void Tracker::MainLoop()
         }
         else
         {
-            calibControllerLastPress = clock();
+            calibControllerLastPress = std::chrono::steady_clock::now();
         }
         april.detectMarkers(gray, &corners, &ids, &centers, trackers);
         for (int i = 0; i < trackerNum; ++i) {
@@ -1723,8 +1732,8 @@ void Tracker::MainLoop()
             else if (factor >= 1)
                 factor = 0.99;
 
-            end = clock();
-            double frameTime = double(end - last_frame_time) / double(CLOCKS_PER_SEC);
+            end = std::chrono::steady_clock::now();
+            double frameTime = std::chrono::duration<double>(end - last_frame_time).count();
 
 
             //send all the values
@@ -1807,8 +1816,8 @@ void Tracker::MainLoop()
         if (ids.size() > 0)
             cv::aruco::drawDetectedMarkers(drawImg, corners, ids);
 
-        end = clock();
-        double frameTime = double(end - start) / double(CLOCKS_PER_SEC);
+        end = std::chrono::steady_clock::now();
+        double frameTime = std::chrono::duration<double>(end - start).count();
 
         if (!disableOut)
         {

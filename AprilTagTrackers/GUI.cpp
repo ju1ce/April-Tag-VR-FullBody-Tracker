@@ -7,6 +7,10 @@
 #include "Localization.h"
 #include "license.h"
 #include <opencv2/videoio/registry.hpp>
+#include <wx/msw/textctrl.h>
+
+// Application icon in special c code format
+#include "apriltag.xpm"
 
 namespace
 {
@@ -33,6 +37,8 @@ GUI::GUI(const wxString& title, Connection* conn, UserConfig& user_config, const
     nb->AddPage(panel, lcl.TAB_CAMERA);
     nb->AddPage(panel2, lcl.TAB_PARAMS);
     nb->AddPage(panel3, lcl.TAB_LICENSE);
+
+    SetIcon(apriltag_xpm);
 
     Centre();
 }
@@ -155,6 +161,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
       connection(conn),
       user_config(user_config),
       lcl(lcl),
+      windowTitleField(new wxTextCtrl(this, -1, user_config.windowTitle)),
       cameraAddrField(new wxTextCtrl(this, -1, user_config.cameraAddr)),
       cameraApiField(new wxTextCtrl(this, -1, std::to_string(user_config.cameraApiPreference))),
       trackerNumField(new wxTextCtrl(this, -1, std::to_string(user_config.trackerNum))),
@@ -217,6 +224,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
 
     addTextWithTooltip(this, fgs, lcl.PARAMS_LANGUAGE, lcl.PARAMS_LANGUAGE);
     fgs->Add(languageField);
+    addTextWithTooltip(this, fgs, lcl.WINDOW_TITLE, lcl.WINDOW_TITLE_TOOLTIP);
+    fgs->Add(windowTitleField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
@@ -324,18 +333,11 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     this->SetSizer(hbox);
 }
 
-// deprecated
-void ParamsPage::ShowHelp(wxCommandEvent& event)
-{
-    // wxMessageDialog dial(NULL, lcl.PARAMS_SHOW_HELP,
-    //                      wxT("Message"), wxOK);
-    // dial.ShowModal();
-}
-
 void ParamsPage::SaveParams(wxCommandEvent& event)
 {
     try
     {
+        user_config.windowTitle = windowTitleField->GetValue();
         user_config.cameraAddr = cameraAddrField->GetValue().ToStdString();
         user_config.cameraApiPreference = std::stoi(cameraApiField->GetValue().ToStdString());
         user_config.trackerNum = std::stoi(trackerNumField->GetValue().ToStdString());

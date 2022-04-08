@@ -58,6 +58,9 @@ public:
 
     T(APP_TITLE) = "Juices VR Marker Tracking";
 
+    T(WINDOW_TITLE) = "Set title bar [requires app restart]";
+    T(WINDOW_TITLE_TOOLTIP) = "Set a custom title name for the camera\n *requires restarting*";
+
     T(TAB_CAMERA) = "Camera";
     T(TAB_PARAMS) = "Params";
     T(TAB_LICENSE) = "License";
