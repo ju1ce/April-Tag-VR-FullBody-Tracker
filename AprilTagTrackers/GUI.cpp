@@ -7,7 +7,6 @@
 #include "Localization.h"
 #include "license.h"
 #include <opencv2/videoio/registry.hpp>
-#include <wx/msw/textctrl.h>
 
 // Application icon in special c code format
 #include "apriltag.xpm"
