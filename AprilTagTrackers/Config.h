@@ -26,7 +26,7 @@ public:
     FIELD(std::string, version) = APP_VERSION;
     FIELD(std::string, driver_version) = DRIVER_VERSION;
 
-    FIELD(wxString, windowTitle) = "";
+    FIELD(wxString, windowTitle);
     FIELD(std::string, langCode) = "en";
     FIELD(std::string, cameraAddr) = "0";
     FIELD(int, cameraApiPreference) = 0;

@@ -73,8 +73,10 @@ function(att_add_external_project project_name)
         STAMP_DIR "${epw_files_dir}/stamp"
         CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+        -DBUILD_SHARED_LIBS=$<BOOL:${BUILD_SHARED_LIBS}>
         -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
+        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
+        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
         ${TOOLCHAIN_FLAG}
         ${SINGLE_CONFIG_FLAG}
         ${_arg_EXTRA_CMAKE_ARGS}
@@ -110,4 +112,13 @@ function(att_add_dep project_name)
         INSTALL_DIR "${DEPS_INSTALL_DIR}/${project_name}"
         DEPENDS ${_arg_DEPENDS})
     att_add_install_compile_commands_step(${project_name} "<INSTALL_DIR>")
+endfunction()
+
+function(att_replace_lang_flags match_value replace_value)
+    foreach(lang_val ${ARGN})
+        foreach(suffix_val "_DEBUG" "_RELEASE" "_MINSIZEREL" "_RELWITHDEBINFO")
+            set(flags_var "CMAKE_${lang_val}_FLAGS${suffix_val}")
+            string(REPLACE ${match_value} ${replace_value} ${flags_var} "${${flags_var}}")
+        endforeach()
+    endforeach()
 endfunction()

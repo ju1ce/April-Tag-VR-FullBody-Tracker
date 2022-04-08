@@ -17,6 +17,7 @@ att_add_dep(
 
     EXTRA_CMAKE_ARGS
     -DwxBUILD_OPTIMISE:BOOL=$<CONFIG:Release>
+    -DwxBUILD_USE_STATIC_RUNTIME:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
 )
 att_configure_package_config(wxWidgets)
 
@@ -30,12 +31,12 @@ att_add_dep(
 
     EXTRA_CMAKE_ARGS
     -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
-    -DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules # The modules folder with aruco created by opencv_contrib
-    -DBUILD_WITH_STATIC_CRT:BOOL=OFF # multiple static libs using different versions of static crt leads to issues
+    "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules" # The modules folder with aruco created by opencv_contrib
+    -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
     -DENABLE_LTO:BOOL=$<CONFIG:Release>
     -DWITH_ITT=OFF
     -DBUILD_ITT=OFF
-    -DINSTALL_CREATE_DISTRIB:BOOL=${BUILD_SHARED_LIBS}
+    -DINSTALL_CREATE_DISTRIB:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
     -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF # random file opencv creates that we dont use
     -DBUILD_PERF_TESTS:BOOL=OFF
     -DBUILD_TESTS:BOOL=OFF
@@ -57,7 +58,8 @@ att_add_dep(
     openvr
 
     EXTRA_CMAKE_ARGS
-    -DBUILD_SHARED=${BUILD_SHARED_LIBS}
+    -DBUILD_SHARED:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
+    -DUSE_LIBCXX:BOOL=OFF
 )
 
 # --- libusb ---
@@ -65,21 +67,15 @@ set(USB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled")
 set(USB_INSTALL "${DEPS_INSTALL_DIR}/libusb")
 
 add_custom_command(
-    OUTPUT "${USB_INSTALL}/include/libusb.h"
-    "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
-    "${USB_INSTALL}/lib/Debug/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    OUTPUT "${USB_INSTALL}/include/libusb.h" "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${USB_INSTALL}/include" "${USB_INSTALL}/lib/Release" "${USB_INSTALL}/lib/Debug"
-    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Release/lib/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.lib"
-    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Release/lib/libusb-1.0.pdb" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
-    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Debug/lib/libusb-1.0.lib"  "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
-    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2019/MS64/Debug/lib/libusb-1.0.pdb"  "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2022/MS64/Release/lib/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.lib"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS2022/MS64/Debug/lib/libusb-1.0.lib"  "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/include/libusb-1.0/libusb.h" "${USB_INSTALL}/include/libusb.h"
     VERBATIM
 )
 add_custom_target(libusb-install
-    DEPENDS "${USB_INSTALL}/include/libusb.h"
-    "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.pdb"
-    "${USB_INSTALL}/lib/Debug/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.pdb"
+    DEPENDS "${USB_INSTALL}/include/libusb.h" "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     SOURCES "${USB_PREFIX}/include/libusb-1.0/libusb.h"
 )
 

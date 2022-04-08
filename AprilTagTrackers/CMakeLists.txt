@@ -1,7 +1,7 @@
 # CMakeList.txt : CMake project for AprilTagTrackers, include source and define
 # project specific logic here.
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.15)
 project("AprilTagTrackers" CXX)
 
 option(USE_ASAN "Create an address sanitizer build." OFF)
@@ -76,12 +76,6 @@ target_link_libraries(libATT PUBLIC
 # Ensure compiler with c++17 language features
 target_compile_features(libATT PUBLIC cxx_std_17)
 
-# Enable LTO in release
-if(NOT USE_ASAN)
-    set_target_properties(libATT PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-endif()
-
 # Set cross-platform defines in sources
 if(WIN32)
     target_compile_definitions(libATT PUBLIC "OS_WIN=1")
@@ -121,6 +115,12 @@ if(WIN32)
     # wxWidgets will compile a resource.rc file for us
     target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
 endif()
-
+set(CMAKE_VS_TARGET_FRAMEWORK_VERSION)
 # Make AprilTagTrackers the default target in Visual Studio
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
+
+# Enable LTO in release
+if(NOT USE_ASAN)
+    set_target_properties(AprilTagTrackers PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+endif()

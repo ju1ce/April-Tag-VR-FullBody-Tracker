@@ -18,7 +18,6 @@ set(CMAKE_LINKER "${LLD_LINK_CMD}" CACHE STRING "Set by toolchain" FORCE)
 add_compile_options(
     -fuse-ld=lld-link
 
-    -fcolor-diagnostics
     -fmsc-version=${MSVC_VERSION}
     -mssse3
     -msse4.1
