@@ -2,7 +2,7 @@
 # and include sub-projects here.
 
 cmake_minimum_required(VERSION 3.15)
-project("April-Tag-VR-FullBody-Tracker" NONE)
+project("April-Tag-VR-FullBody-Tracker" CXX)
 
 # Options
 option(USE_ASAN "Create an address sanitizer build." OFF)
