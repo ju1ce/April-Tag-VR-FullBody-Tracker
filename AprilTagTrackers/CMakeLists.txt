@@ -7,6 +7,8 @@ project("AprilTagTrackers" CXX)
 option(USE_ASAN "Create an address sanitizer build." OFF)
 option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
+option(ENABLE_ASSERT "Enable assertions." OFF)
+set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
 
 # If using a multi config generator, wxWidgets and opencv due to this random blog post
@@ -75,6 +77,12 @@ target_link_libraries(libATT PUBLIC
 
 # Ensure compiler with c++17 language features
 target_compile_features(libATT PUBLIC cxx_std_17)
+
+if (ENABLE_ASSERT)
+    target_compile_definitions(libATT PUBLIC ATT_ENABLE_ASSERT)
+endif()
+
+target_compile_definitions(libATT PUBLIC ATT_LOG_LEVEL=${LOG_LEVEL})
 
 # Set cross-platform defines in sources
 if(WIN32)

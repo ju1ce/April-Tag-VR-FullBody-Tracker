@@ -1,11 +1,14 @@
 #include "Connection.h"
 
+#include "Debug.h"
 #include "GUI.h"
-#include <thread>
-#include <filesystem>
 
-Connection::Connection(const UserConfig& user_config, const Localization& lcl)
-    : user_config(user_config), lcl(lcl)
+#include <filesystem>
+#include <thread>
+
+
+Connection::Connection(const UserConfig& user_config, const Localization& lc)
+    : user_config(user_config), lc(lc)
 {
 // TODO: Pass the IPC client* in as an argument
 #if OS_WIN
@@ -21,21 +24,12 @@ void Connection::StartConnection()
 {
     if (status == WAITING)
     {
-        gui->CallAfter([]()
-                       {
-                       wxMessageDialog dial(NULL,
-                           wxT("Already waiting for a connection"), wxT("Error"), wxOK | wxICON_ERROR);
-                       dial.ShowModal(); });
+        gui->ShowErrorPopup(wxT("Already waiting for a connection"));
         return;
     }
     if (status == CONNECTED)
     {
-        gui->CallAfter([this]()
-                       {
-                       wxMessageDialog dial(NULL,
-                           lcl.CONNECT_ALREADYCONNECTED, wxT("Question"),
-                           wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-                       dial.ShowModal(); });
+        gui->QueuePopup(lc.CONNECT_ALREADYCONNECTED, wxT("Question"), wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         status = DISCONNECTED;
     }
@@ -125,13 +119,9 @@ void Connection::Connect()
 
     if (error != vr::VRInitError_None)
     {
-        wxString e = lcl.CONNECT_CLIENT_ERROR;
+        wxString e = lc.CONNECT_CLIENT_ERROR;
         e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-        gui->CallAfter([e]()
-                        {
-                        wxMessageDialog dial(NULL,
-                            e, wxT("Error"), wxOK | wxICON_ERROR);
-                        dial.ShowModal(); });
+        gui->ShowErrorPopup(e);
         status = DISCONNECTED;
         return;
     }
@@ -169,16 +159,10 @@ void Connection::Connect()
 
     */
 
-
     const auto bindingsPath = std::filesystem::path("att_actions.json").root_path();
     if (!std::filesystem::exists(bindingsPath))
     {
-        perror("Could not find bindings");
-        gui->CallAfter([this]()
-                        {
-                        wxMessageDialog dial(NULL,
-                            lcl.CONNECT_BINDINGS_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-                        dial.ShowModal(); });
+        gui->ShowErrorPopup(lc.CONNECT_BINDINGS_ERROR);
         status = DISCONNECTED;
         return;
     }
@@ -197,11 +181,7 @@ void Connection::Connect()
     ret >> word;
     if (word != "numtrackers")
     {
-        gui->CallAfter([this]()
-                       {
-                       wxMessageDialog dial(NULL,
-                           lcl.CONNECT_DRIVER_ERROR, wxT("Error"), wxOK | wxICON_ERROR);
-                       dial.ShowModal(); });
+        gui->ShowErrorPopup(lc.CONNECT_DRIVER_ERROR);
         status = DISCONNECTED;
         return;
     }
@@ -211,14 +191,8 @@ void Connection::Connect()
     ret >> word;
     if (word != user_config.driver_version)
     {
-        gui->CallAfter([this, word]()
-            {
-                std::string e = "";
-                e += lcl.CONNECT_DRIVER_MISSMATCH_1 + word + lcl.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version;
-                wxMessageDialog dial(NULL,
-                    e, wxT("Warning"), wxOK | wxICON_WARNING);
-                dial.ShowModal();
-            });
+        wxString e = lc.CONNECT_DRIVER_MISSMATCH_1 + word + lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version;
+        gui->ShowErrorPopup(e);
     }
 
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
@@ -227,11 +201,7 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            gui->CallAfter([this]()
-                           {
-                           wxMessageDialog dial(NULL,
-                               lcl.CONNECT_SOMETHINGWRONG, wxT("Error"), wxOK | wxICON_ERROR);
-                           dial.ShowModal(); });
+            gui->ShowErrorPopup(lc.CONNECT_SOMETHINGWRONG);
             status = DISCONNECTED;
             return;
         }
@@ -241,7 +211,7 @@ void Connection::Connect()
 
     ret = Send("settings 120 " + std::to_string(user_config.smoothingFactor) + " " + std::to_string(user_config.additionalSmoothing));
 
-    //set that connection is established
+    // set that connection is established
     status = CONNECTED;
 }
 

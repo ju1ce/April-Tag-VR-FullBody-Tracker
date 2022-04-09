@@ -15,14 +15,4 @@ set(CMAKE_CXX_COMPILER "${CLANG_CL_CMD}" CACHE STRING "Set by toolchain" FORCE)
 
 set(CMAKE_LINKER "${LLD_LINK_CMD}" CACHE STRING "Set by toolchain" FORCE)
 
-add_compile_options(
-    -fuse-ld=lld-link
-
-    -fmsc-version=${MSVC_VERSION}
-    -mssse3
-    -msse4.1
-    -msse4.2)
-
-if(NOT(PROJECT_NAME STREQUAL "AprilTagTrackers"))
-    add_compile_options(/w -Wno-unknown-argument -Wno-unused-command-line-argument)
-endif()
+include("${CMAKE_CURRENT_LIST_DIR}/clang-cl.cmake")

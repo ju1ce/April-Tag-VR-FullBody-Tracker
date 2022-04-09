@@ -1,12 +1,15 @@
 #include "GUI.h"
 
+#include "Debug.h"
+#include "Localization.h"
+#include "license.h"
+
+#include <opencv2/highgui.hpp>
+#include <opencv2/videoio/registry.hpp>
+
 #include <algorithm>
 #include <sstream>
 #include <string>
-
-#include "Localization.h"
-#include "license.h"
-#include <opencv2/videoio/registry.hpp>
 
 // Application icon in special c code format
 #include "apriltag.xpm"
@@ -23,30 +26,44 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 
 } // namespace
 
-GUI::GUI(const wxString& title, Connection* conn, UserConfig& user_config, const Localization& lcl)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650))
+GUI::GUI(const wxString& title, Connection* conn, UserConfig& _userConfig, const Localization& lc)
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650)), userConfig(_userConfig)
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
-                                    wxSize(-1, -1), wxNB_TOP);
+        wxSize(-1, -1), wxNB_TOP);
 
-    CameraPage* panel = new CameraPage(nb, this, lcl);
-    ParamsPage* panel2 = new ParamsPage(nb, conn, user_config, lcl);
+    CameraPage* panel = new CameraPage(nb, this, lc);
+    ParamsPage* panel2 = new ParamsPage(nb, conn, _userConfig, lc);
     LicensePage* panel3 = new LicensePage(nb);
 
-    nb->AddPage(panel, lcl.TAB_CAMERA);
-    nb->AddPage(panel2, lcl.TAB_PARAMS);
-    nb->AddPage(panel3, lcl.TAB_LICENSE);
+    nb->AddPage(panel, lc.TAB_CAMERA);
+    nb->AddPage(panel2, lc.TAB_PARAMS);
+    nb->AddPage(panel3, lc.TAB_LICENSE);
 
     SetIcon(apriltag_xpm);
 
     Centre();
+
+    Show();
+}
+
+void GUI::QueuePopup(const wxString& content, const wxString& caption, long style)
+{
+    // Queues the lambda to be executed on the wx gui thread, *eventually*
+    // TODO: copy capture necessary?
+    QueueOnGUIThread([=]()
+        {
+            wxMessageDialog dial(nullptr, content, caption, style);
+            // ShowModal is blocking, until the user clicks ok
+            dial.ShowModal(); //
+        });
 }
 
 LicensePage::LicensePage(wxNotebook* parent)
     : wxPanel(parent)
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
-                                    wxSize(-1, -1), wxNB_TOP);
+        wxSize(-1, -1), wxNB_TOP);
 
     // Add 2 pages to the wxNotebook widget
     wxTextCtrl* textCtrl1 = new wxTextCtrl(nb, wxID_ANY, ATT_LICENSE, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
@@ -65,40 +82,36 @@ LicensePage::LicensePage(wxNotebook* parent)
     Centre();
 }
 
-CameraPage::CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& lcl)
+CameraPage::CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& lc)
     : wxPanel(parent)
 {
     wxBoxSizer* hbox = new wxBoxSizer(wxHORIZONTAL);
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(2, 20, 20);
 
-    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, lcl.CAMERA_START_CAMERA);
-    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, lcl.CAMERA_CALIBRATE_CAMERA);
-    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, lcl.CAMERA_CONNECT);
-    wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, lcl.CAMERA_CALIBRATE_TRACKERS);
-    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, lcl.CAMERA_START_DETECTION);
+    wxButton* btn1 = new wxButton(this, GUI::CAMERA_BUTTON, lc.CAMERA_START_CAMERA);
+    wxButton* btn2 = new wxButton(this, GUI::CAMERA_CALIB_BUTTON, lc.CAMERA_CALIBRATE_CAMERA);
+    wxButton* btn4 = new wxButton(this, GUI::CONNECT_BUTTON, lc.CAMERA_CONNECT);
+    wxButton* btn3 = new wxButton(this, GUI::TRACKER_CALIB_BUTTON, lc.CAMERA_CALIBRATE_TRACKERS);
+    wxButton* btn5 = new wxButton(this, GUI::START_BUTTON, lc.CAMERA_START_DETECTION);
 
-    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, lcl.CAMERA_PREVIEW_CAMERA,
-                                     wxPoint(20, 20));
-    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, lcl.CAMERA_PREVIEW_CALIBRATION,
-                                     wxPoint(20, 20));
-    wxCheckBox* cb6 = new wxCheckBox(this, GUI::DISABLE_OUT_CHECKBOX, lcl.CAMERA_DISABLE_OUT,
-                                     wxPoint(20, 20));
-    wxCheckBox* cb7 = new wxCheckBox(this, GUI::DISABLE_OPENVR_API_CHECKBOX, lcl.CAMERA_DISABLE_OPENVR_API,
-                                     wxPoint(20, 20));
+    wxCheckBox* cb1 = new wxCheckBox(this, GUI::CAMERA_CHECKBOX, lc.CAMERA_PREVIEW_CAMERA, wxPoint(20, 20));
+    wxCheckBox* cb2 = new wxCheckBox(this, GUI::CAMERA_CALIB_CHECKBOX, lc.CAMERA_PREVIEW_CALIBRATION, wxPoint(20, 20));
+    wxCheckBox* cb6 = new wxCheckBox(this, GUI::DISABLE_OUT_CHECKBOX, lc.CAMERA_DISABLE_OUT, wxPoint(20, 20));
+    wxCheckBox* cb7 = new wxCheckBox(this, GUI::DISABLE_OPENVR_API_CHECKBOX, lc.CAMERA_DISABLE_OPENVR_API, wxPoint(20, 20));
     // wxCheckBox* cb3 = new wxCheckBox(this, GUI::TIME_PROFILE_CHECKBOX, wxT("Show time profile"),
     //    wxPoint(20, 20));
     // parentGUI->cb2 = new wxCheckBox(this, GUI::SPACE_CALIB_CHECKBOX, wxT("Calibrate playspace"),
     //     wxPoint(20, 20));
-    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, lcl.CAMERA_CALIBRATION_MODE,
-                                    wxPoint(20, 20));
+    parentGUI->cb3 = new wxCheckBox(this, GUI::MANUAL_CALIB_CHECKBOX, lc.CAMERA_CALIBRATION_MODE,
+        wxPoint(20, 20));
     // parentGUI->cb2->SetValue(false);
 
-    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, lcl.CAMERA_MULTICAM_CALIB,
-                                    wxPoint(20, 20));
+    parentGUI->cb4 = new wxCheckBox(this, GUI::MULTICAM_AUTOCALIB_CHECKBOX, lc.CAMERA_MULTICAM_CALIB,
+        wxPoint(20, 20));
 
-    parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, lcl.CAMERA_LOCK_HEIGHT,
-                                    wxPoint(20, 20));
+    parentGUI->cb5 = new wxCheckBox(this, GUI::LOCK_HEIGHT_CHECKBOX, lc.CAMERA_LOCK_HEIGHT,
+        wxPoint(20, 20));
 
     cb7->SetValue(true);
 
@@ -108,7 +121,7 @@ CameraPage::CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& l
     fgs->Add(cb2);
     fgs->Add(btn3);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
-    fgs->Add(new wxStaticText(this, -1, lcl.CAMERA_START_STEAMVR), 0, wxEXPAND);
+    fgs->Add(new wxStaticText(this, -1, lc.CAMERA_START_STEAMVR), 0, wxEXPAND);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
     fgs->Add(btn4);
     fgs->Add(new wxStaticText(this, -1, wxT("")), 0, wxEXPAND);
@@ -133,7 +146,7 @@ CameraPage::CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& l
     parentGUI->manualCalibB = new ValueInput(this, wxString::FromUTF8("B(°):"), 0);
     parentGUI->manualCalibC = new ValueInput(this, wxString::FromUTF8("C(°):"), 0);
 
-    parentGUI->posHbox->Add(new wxStaticText(this, -1, lcl.CAMERA_CALIBRATION_INSTRUCTION), 0, wxEXPAND);
+    parentGUI->posHbox->Add(new wxStaticText(this, -1, lc.CAMERA_CALIBRATION_INSTRUCTION), 0, wxEXPAND);
     parentGUI->posHbox->Add(parentGUI->manualCalibX, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibY, 1, wxALL | wxEXPAND, 5);
     parentGUI->posHbox->Add(parentGUI->manualCalibZ, 1, wxALL | wxEXPAND, 5);
@@ -155,11 +168,11 @@ CameraPage::CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& l
     // parentGUI->rotHbox->Show(false);
 }
 
-ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_config, const Localization& lcl)
+ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_config, const Localization& _lc)
     : wxPanel(parent),
       connection(conn),
       user_config(user_config),
-      lcl(lcl),
+      lc(_lc),
       windowTitleField(new wxTextCtrl(this, -1, user_config.windowTitle)),
       cameraAddrField(new wxTextCtrl(this, -1, user_config.cameraAddr)),
       cameraApiField(new wxTextCtrl(this, -1, std::to_string(user_config.cameraApiPreference))),
@@ -211,7 +224,6 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     markerLibraryField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, markerLibraryValues);
     markerLibraryField->SetSelection(user_config.markerLibrary);
 
-
     wxArrayString languageValues{Localization::LANG_NAME_MAP.size(), Localization::LANG_NAME_MAP.data()};
 
     languageField = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, languageValues);
@@ -221,23 +233,23 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
 
     wxFlexGridSizer* fgs = new wxFlexGridSizer(4, 10, 10);
 
-    addTextWithTooltip(this, fgs, lcl.PARAMS_LANGUAGE, lcl.PARAMS_LANGUAGE);
+    addTextWithTooltip(this, fgs, lc.PARAMS_LANGUAGE, lc.PARAMS_LANGUAGE);
     fgs->Add(languageField);
-    addTextWithTooltip(this, fgs, lcl.WINDOW_TITLE, lcl.WINDOW_TITLE_TOOLTIP);
+    addTextWithTooltip(this, fgs, lc.WINDOW_TITLE, lc.WINDOW_TITLE_TOOLTIP);
     fgs->Add(windowTitleField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, lcl.PARAMS_CAMERA));
+    fgs->Add(new wxStaticText(this, -1, lc.PARAMS_CAMERA));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_ID, lcl.PARAMS_CAMERA_TOOLTIP_ID);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_ID, lc.PARAMS_CAMERA_TOOLTIP_ID);
     fgs->Add(cameraAddrField);
 
     std::stringstream cameraTooltipApi;
-    cameraTooltipApi << lcl.PARAMS_CAMERA_TOOLTIP_API_1;
+    cameraTooltipApi << lc.PARAMS_CAMERA_TOOLTIP_API_1;
     for (const auto& backend : cv::videoio_registry::getCameraBackends())
     {
         cameraTooltipApi << "\n"
@@ -245,7 +257,7 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
                          << ": " << cv::videoio_registry::getBackendName(backend);
     }
     cameraTooltipApi << "\n\n"
-                     << lcl.PARAMS_CAMERA_TOOLTIP_API_2;
+                     << lc.PARAMS_CAMERA_TOOLTIP_API_2;
     for (const auto& backend : cv::videoio_registry::getStreamBackends())
     {
         cameraTooltipApi << "\n"
@@ -253,65 +265,65 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
                          << ": " << cv::videoio_registry::getBackendName(backend);
     }
 
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_API, cameraTooltipApi.str());
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_API, cameraTooltipApi.str());
     fgs->Add(cameraApiField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lcl.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE);
     fgs->Add(rotateClField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_ROT_CCLOCKWISE, lcl.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_ROT_CCLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE);
     fgs->Add(rotateCounterClField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_WIDTH, lcl.PARAMS_CAMERA_TOOLTIP_WIDTH);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_WIDTH, lc.PARAMS_CAMERA_TOOLTIP_WIDTH);
     fgs->Add(camWidthField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_HEIGHT, lcl.PARAMS_CAMERA_TOOLTIP_HEIGHT);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_HEIGHT, lc.PARAMS_CAMERA_TOOLTIP_HEIGHT);
     fgs->Add(camHeightField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_FPS, lcl.PARAMS_CAMERA_TOOLTIP_FPS);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_FPS, lc.PARAMS_CAMERA_TOOLTIP_FPS);
     fgs->Add(camFpsField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_SETTINGS, lcl.PARAMS_CAMERA_TOOLTIP_SETTINGS);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_SETTINGS, lc.PARAMS_CAMERA_TOOLTIP_SETTINGS);
     fgs->Add(cameraSettingsField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_3_OPTIONS, lcl.PARAMS_CAMERA_TOOLTIP_3_OPTIONS);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_3_OPTIONS, lc.PARAMS_CAMERA_TOOLTIP_3_OPTIONS);
     fgs->Add(settingsParametersField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_AUTOEXP, lcl.PARAMS_CAMERA_TOOLTIP_AUTOEXP);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_AUTOEXP, lc.PARAMS_CAMERA_TOOLTIP_AUTOEXP);
     fgs->Add(cameraAutoexposureField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_EXP, lcl.PARAMS_CAMERA_TOOLTIP_EXP);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_EXP, lc.PARAMS_CAMERA_TOOLTIP_EXP);
     fgs->Add(cameraExposureField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_CAMERA_NAME_GAIN, lcl.PARAMS_CAMERA_TOOLTIP_GAIN);
+    addTextWithTooltip(this, fgs, lc.PARAMS_CAMERA_NAME_GAIN, lc.PARAMS_CAMERA_TOOLTIP_GAIN);
     fgs->Add(cameraGainField);
 
-    fgs->Add(new wxStaticText(this, -1, lcl.PARAMS_TRACKER));
+    fgs->Add(new wxStaticText(this, -1, lc.PARAMS_TRACKER));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_NUM_TRACKERS, lcl.PARAMS_TRACKER_TOOLTIP_NUM_TRACKERS);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_NUM_TRACKERS, lc.PARAMS_TRACKER_TOOLTIP_NUM_TRACKERS);
     fgs->Add(trackerNumField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_MARKER_SIZE, lcl.PARAMS_TRACKER_TOOLTIP_MARKER_SIZE);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_MARKER_SIZE, lc.PARAMS_TRACKER_TOOLTIP_MARKER_SIZE);
     fgs->Add(markerSizeField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_QUAD_DECIMATE, lcl.PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_QUAD_DECIMATE, lc.PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE);
     fgs->Add(quadDecimateField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_SEARCH_WINDOW, lcl.PARAMS_TRACKER_TOOLTIP_SEARCH_WINDOW);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_SEARCH_WINDOW, lc.PARAMS_TRACKER_TOOLTIP_SEARCH_WINDOW);
     fgs->Add(searchWindowField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_MARKER_LIBRARY, lcl.PARAMS_TRACKER_TOOLTIP_MARKER_LIBRARY);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_MARKER_LIBRARY, lc.PARAMS_TRACKER_TOOLTIP_MARKER_LIBRARY);
     fgs->Add(markerLibraryField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_USE_CENTERS, lcl.PARAMS_TRACKER_TOOLTIP_USE_CENTERS);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_USE_CENTERS, lc.PARAMS_TRACKER_TOOLTIP_USE_CENTERS);
     fgs->Add(trackerCalibCentersField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_TRACKER_NAME_IGNORE_0, lcl.PARAMS_TRACKER_TOOLTIP_IGNORE_0);
+    addTextWithTooltip(this, fgs, lc.PARAMS_TRACKER_NAME_IGNORE_0, lc.PARAMS_TRACKER_TOOLTIP_IGNORE_0);
     fgs->Add(ignoreTracker0Field);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
-    fgs->Add(new wxStaticText(this, -1, lcl.PARAMS_SMOOTHING));
+    fgs->Add(new wxStaticText(this, -1, lc.PARAMS_SMOOTHING));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
     // addTextWithTooltip(this, fgs, "Number of values for smoothing", "Used to remove pose outliers. Can usually be lowered to 3 to reduce latency.");
     // fgs->Add(prevValuesField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_SMOOTHING_NAME_WINDOW, lcl.PARAMS_SMOOTHING_TOOLTIP_WINDOW);
+    addTextWithTooltip(this, fgs, lc.PARAMS_SMOOTHING_NAME_WINDOW, lc.PARAMS_SMOOTHING_TOOLTIP_WINDOW);
     fgs->Add(smoothingField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_SMOOTHING_NAME_ADDITIONAL, lcl.PARAMS_SMOOTHING_TOOLTIP_ADDITIONAL);
+    addTextWithTooltip(this, fgs, lc.PARAMS_SMOOTHING_NAME_ADDITIONAL, lc.PARAMS_SMOOTHING_TOOLTIP_ADDITIONAL);
     fgs->Add(additionalSmoothingField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_SMOOTHING_NAME_DEPTH, lcl.PARAMS_SMOOTHING_TOOLTIP_DEPTH);
+    addTextWithTooltip(this, fgs, lc.PARAMS_SMOOTHING_NAME_DEPTH, lc.PARAMS_SMOOTHING_TOOLTIP_DEPTH);
     fgs->Add(depthSmoothingField);
-    addTextWithTooltip(this, fgs, lcl.PARAMS_SMOOTHING_NAME_CAM_LATENCY, lcl.PARAMS_SMOOTHING_TOOLTIP_CAM_LATENCY);
+    addTextWithTooltip(this, fgs, lc.PARAMS_SMOOTHING_NAME_CAM_LATENCY, lc.PARAMS_SMOOTHING_TOOLTIP_CAM_LATENCY);
     fgs->Add(camLatencyField);
 
     fgs->Add(new wxStaticText(this, -1, wxT("")));
@@ -320,8 +332,8 @@ ParamsPage::ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_co
     fgs->Add(new wxStaticText(this, -1, wxT("")));
     fgs->Add(new wxStaticText(this, -1, wxT("")));
 
-    fgs->Add(new wxStaticText(this, -1, lcl.PARAMS_HOVER_HELP));
-    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, lcl.PARAMS_SAVE);
+    fgs->Add(new wxStaticText(this, -1, lc.PARAMS_HOVER_HELP));
+    wxButton* btn1 = new wxButton(this, SAVE_BUTTON, lc.PARAMS_SAVE);
     // wxButton* btn2 = new wxButton(this, HELP_BUTTON, "Help");
     Connect(SAVE_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::SaveParams));
     // Connect(HELP_BUTTON, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(ParamsPage::ShowHelp));
@@ -381,54 +393,54 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
         if (user_config.langCode != prevLanguage)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_LANGUAGECHANGE, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_LANGUAGECHANGE, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (user_config.smoothingFactor < 0.2)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_LOW_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_LOW_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (user_config.quadDecimate != 1 && user_config.quadDecimate != 1.5 && user_config.quadDecimate != 2 && user_config.quadDecimate != 3 && user_config.quadDecimate != 4)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_QUAD_NONSTANDARD, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_QUAD_NONSTANDARD, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (user_config.cameraSettings && user_config.cameraApiPreference != 700)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_NO_DSHOW_CAMSETTINGS, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_NO_DSHOW_CAMSETTINGS, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (user_config.smoothingFactor <= user_config.camLatency)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_LATENCY_GREATER_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_LATENCY_GREATER_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (user_config.smoothingFactor > 1)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_HIGH_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_HIGH_SMOOTHING, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         if (ignoreTracker0Field->GetValue() && std::stoi(trackerNumField->GetValue().ToStdString()) == 2)
         {
             wxMessageDialog dial(NULL,
-                                 lcl.PARAMS_NOTE_2TRACKERS_IGNORE0, wxT("Warning"), wxOK | wxICON_WARNING);
+                lc.PARAMS_NOTE_2TRACKERS_IGNORE0, wxT("Warning"), wxOK | wxICON_WARNING);
             dial.ShowModal();
         }
 
         wxMessageDialog dial(NULL,
-                             lcl.PARAMS_SAVED_MSG, wxT("Info"), wxOK | wxICON_INFORMATION);
+            lc.PARAMS_SAVED_MSG, wxT("Info"), wxOK | wxICON_INFORMATION);
         dial.ShowModal();
 
         if (connection->status == connection->CONNECTED)
@@ -436,10 +448,11 @@ void ParamsPage::SaveParams(wxCommandEvent& event)
             connection->Send("settings 120 " + std::to_string(user_config.smoothingFactor) + " " + std::to_string(user_config.additionalSmoothing));
         }
     }
-    catch (std::exception&)
+    catch (const std::exception& e)
     {
+        ATERROR("Caught: " << e.what());
         wxMessageDialog dial(NULL,
-                             lcl.PARAMS_WRONG_VALUES, wxT("Error"), wxOK | wxICON_ERROR);
+            lc.PARAMS_WRONG_VALUES, wxT("Error"), wxOK | wxICON_ERROR);
         dial.ShowModal();
     }
 }
@@ -513,4 +526,77 @@ void ValueInput::ButtonPressed(wxCommandEvent& evt)
         return;
     }
     input->ChangeValue(std::to_string(value));
+}
+
+void PreviewWindow::Show()
+{
+    if (visible) return;
+    visible = true;
+
+    parentGUI.QueueOnGUIThread([&]()
+    {
+        // Create this instances window
+        cv::namedWindow(windowName);
+        // Update preview at 15fps.
+        // Interval that Notify() is called.
+        constexpr int milliseconds = 1000 / 15;
+        wxTimer::Start(milliseconds);
+    });
+}
+
+void PreviewWindow::Hide()
+{
+    if (!visible) return;
+    visible = false;
+
+    parentGUI.QueueOnGUIThread([&]()
+    {
+        // Does nothing if window dosnt exist
+        cv::destroyWindow(windowName);
+    });
+}
+
+PreviewWindow::~PreviewWindow()
+{
+    if (visible) return;
+    visible = false;
+    // Copy the windowName as it will be destroyed
+    parentGUI.QueueOnGUIThread([=]()
+    {
+        // Does nothing if window dosnt exist
+        cv::destroyWindow(windowName);
+    });
+}
+
+void PreviewWindow::CloneImage(const cv::Mat& newImage)
+{
+    if (!visible) return;
+    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    newImageReady = true;
+    newImage.copyTo(image);
+}
+
+void PreviewWindow::RefImage(cv::Mat &newImage)
+{
+    if (!visible) return;
+    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    newImageReady = true;
+    image = newImage;
+}
+
+void PreviewWindow::Notify()
+{
+    ATASSERT("Timer should only be running when window is shown.", isVisible);
+    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    // Process high gui window eventsd
+    // This only applies to the in focus high gui window, dosn't really matter
+    // Update frequency will increase depending on number of previews open
+    // If it is an issue, pollKey should be moved to its own timer
+    cv::pollKey();
+    // Don't try to show stale image
+    // If imshow dosn't copy the buffer then this dosn't provide much gain
+    if (!newImageReady) return;
+    newImageReady = false;
+
+    cv::imshow(windowName, image);
 }

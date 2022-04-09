@@ -4,10 +4,14 @@
 cmake_minimum_required(VERSION 3.15)
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
-# Options
+# AprilTagTrackers forwarded options
 option(USE_ASAN "Create an address sanitizer build." OFF)
-option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
+option(ENABLE_ASSERT "Enable assertions." OFF)
+set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
+
+# Build options
+option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
 
@@ -47,6 +51,8 @@ att_add_external_project(
     -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
     -DUSE_ASAN:BOOL=${USE_ASAN}
     -DENABLE_PS3EYE=${ENABLE_PS3EYE}
+    -DENABLE_ASSERT=${ENABLE_ASSERT}
+    -DLOG_LEVEL=${LOG_LEVEL}
 
     EXTRA_EP_ARGS
     INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"

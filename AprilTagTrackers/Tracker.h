@@ -32,14 +32,14 @@ public:
 
     bool mainThreadRunning = false;
     bool cameraRunning = false;
-    bool previewCamera = false;
+    //bool previewCamera = false;
     bool previewCameraCalibration = false;
     bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
-    bool disableOut = false;
+    //bool disableOut = false;
     int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
@@ -69,7 +69,7 @@ private:
 
     UserConfig& user_config;
     CalibrationConfig& calib_config;
-    const Localization& lcl;
+    const Localization& lc;
     const ArucoConfig& aruco_config;
 
     Connection* connection;

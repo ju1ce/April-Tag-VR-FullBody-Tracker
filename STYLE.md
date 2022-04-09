@@ -4,18 +4,36 @@
 BasedOnStyle: LLVM
 UseTab: Never
 IndentWidth: 4
-TabWidth: 4
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortBlocksOnASingleLine: Always
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
 BreakBeforeBraces: Allman
-AllowShortFunctionsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
 ColumnLimit: 0
 AccessModifierOffset: -4
 NamespaceIndentation: None
-FixNamespaceComments: false
 AlwaysBreakTemplateDeclarations: Yes
 PointerAlignment: Left
 ReferenceAlignment: Left
+AlignAfterOpenBracket: DontAlign
+ForEachMacros: ["TEST_CASE"]
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Headers in <> without extension.
+  - Regex:           '<([[:alnum:]\Q/-_\E])+>'
+    Priority:        4
+  # Headers in <> from specific external libraries.
+  - Regex:           '<(opencv2|wx|apriltag)\/'
+    Priority:        3
+  # Headers in <> with extension.
+  - Regex:           '<([[:alnum:].\Q/-_\E])+>'
+    Priority:        2
+  # Headers in "" with extension.
+  - Regex:           '"([[:alnum:].\Q/-_\E])+"'
+    Priority:        1
 ```
 
 options for clang-tidy

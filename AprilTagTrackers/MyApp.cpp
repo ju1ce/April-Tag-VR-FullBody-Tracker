@@ -27,11 +27,9 @@ bool MyApp::OnInit()
     conn = new Connection(user_config, lc);
     tracker = new Tracker(this, conn, user_config, calib_config, lc, aruco_config);
 
-    gui = new GUI(lc.APP_TITLE, conn, user_config, lc);
+    gui = new GUI(user_config.windowTitle.empty() ? lc.APP_TITLE : user_config.windowTitle, conn, user_config, lc);
 
     conn->gui = gui; // juice told me to write this, dont blame me
-
-    gui->Show(true);
 
     gui->posHbox->Show(false);
     gui->rotHbox->Show(false);
@@ -63,7 +61,10 @@ void MyApp::ButtonPressedCamera(wxCommandEvent& event)
 
 void MyApp::ButtonPressedCameraPreview(wxCommandEvent& event)
 {
-    tracker->previewCamera = event.IsChecked();
+    if (event.IsChecked())
+        gui->previewWindow.Show();
+    else
+        gui->previewWindow.Hide();
 }
 
 void MyApp::ButtonPressedCameraCalib(wxCommandEvent& event)
@@ -123,13 +124,9 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
 void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
 {
     if (event.IsChecked())
-    {
-        tracker->disableOut = true;
-    }
+        gui->outWindow.Show();
     else
-    {
-        tracker->disableOut = false;
-    }
+        gui->outWindow.Hide();
 }
 
 void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)

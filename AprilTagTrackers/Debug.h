@@ -3,22 +3,6 @@
 #include <cstdlib>
 #include <exception>
 
-#if defined(DEBUG) || defined(_DEBUG) || !defined(DNDEBUG)
-
-#define ATT_ENABLE_ASSERT
-
-#ifndef ATT_LOG_LEVEL
-#define ATT_LOG_LEVEL 2
-#endif
-
-#else
-
-#ifndef ATT_LOG_LEVEL
-#define ATT_LOG_LEVEL 0
-#endif
-
-#endif
-
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
 #include <iostream>
@@ -83,19 +67,10 @@
 #endif
 
 #if ATT_LOG_LEVEL >= 2
-#define ATTHROW(a_exceptionType, a_messageStream)               \
-    do {                                                        \
-        std::stringstream msgStream;                            \
-        msgStream << a_messageStream;                           \
-        ATT_LOG(#a_exceptionType << ": " << msgStream); \
-        throw a_exceptionType(msg_stream.str());                \
-    } while (0)
+#define ATERROR(a_messageStream) \
+    ATT_LOG("Error: " << a_messageStream);
 #else
-#define ATTHROW(a_exception_type, a_messageStream)       \
-    do {                                                 \
-        std::stringstream msgStream << a_messageStream; \
-        throw a_exceptionType(msgStream.str())         \
-    } while (0)
+#define ATERROR(a_messageStream) ((void)0)
 #endif
 
 #if ATT_LOG_LEVEL >= 3
@@ -106,15 +81,16 @@
 #endif
 
 #ifdef ATT_ENABLE_ASSERT
-#define ATASSERT(a_messageStream, a_expression)                                             \
-    do {                                                                                    \
-        if (!(a_expression))                                                                \
-            ATFATAL(a_messageStream << std::endl                                            \
-                                    << "    Assertion failure: ( " << #a_expression << " )" \
-                                    << " in " << ATT_PRETTY_FUNCTION);                      \
+#define ATASSERT(a_messageStream, a_trueExpression)                             \
+    do {                                                                        \
+        if (!(a_trueExpression))                                                \
+            ATFATAL(a_messageStream                                             \
+                    << std::endl                                                \
+                    << "    Assertion failure: ( " << #a_trueExpression << " )" \
+                    << " in " << ATT_PRETTY_FUNCTION);                          \
     } while (0)
 #else
-#define ATASSERT(a_messageStream, a_expression) ((void)0)
+#define ATASSERT(a_messageStream, a_trueExpression) ((void)0)
 #endif
 
 namespace Debug
@@ -126,4 +102,4 @@ inline void abort()
     std::abort();
 }
 
-}
+} // namespace Debug

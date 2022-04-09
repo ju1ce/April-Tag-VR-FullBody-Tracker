@@ -30,7 +30,7 @@ public:
         CONNECTED
     };
 
-    Connection(const UserConfig& user_config, const Localization& lcl);
+    Connection(const UserConfig& user_config, const Localization& lc);
     void StartConnection();
     std::istringstream Send(std::string buffer);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
@@ -47,7 +47,7 @@ private:
     void Connect();
 
     const UserConfig& user_config;
-    const Localization& lcl;
+    const Localization& lc;
     std::unique_ptr<IPC::IClient> bridge_driver;
 
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
