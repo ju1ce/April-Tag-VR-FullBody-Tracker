@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdlib>
-#include <exception>
 
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
@@ -27,7 +26,7 @@
 // Public Macros:
 //  ATASSERT(messageStream, condition)
 //  ATFATAL(messageStream)
-//  ATTHROW(exceptionType, messageStream)
+//  ATERROR(messageStream)
 //  ATTRACE(messageStream)
 // Internal:
 //  ATT_LOG(messageStream)

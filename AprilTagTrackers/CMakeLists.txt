@@ -86,6 +86,10 @@ endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC ATT_LOG_LEVEL=${LOG_LEVEL})
 
+if (MSVC)
+    target_compile_options(AprilTagTrackers PUBLIC $<$<CONFIG:Debug>:/Zi>)
+endif()
+
 # Set cross-platform defines in sources
 if(WIN32)
     target_compile_definitions(AprilTagTrackers PUBLIC "OS_WIN=1")

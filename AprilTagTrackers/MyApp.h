@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Config.h"
+#include "Localization.h"
+
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #include <wx/wx.h>
 #pragma warning(pop)
-
-#include "Config.h"
-#include "Localization.h"
 
 class Connection;
 class GUI;
