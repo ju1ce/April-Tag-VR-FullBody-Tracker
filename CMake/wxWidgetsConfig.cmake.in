@@ -17,21 +17,25 @@ function(wxf_windows_platform_dirname output_var)
         message(FATAL_ERROR "Unknown WIN32 compiler.")
     endif()
 
-    if(BUILD_SHARED_LIBS)
-        set(${output_var} "${wxf_compiler_id}${wxf_arch}_dll" PARENT_SCOPE)
-    else()
-        set(${output_var} "${wxf_compiler_id}${wxf_arch}_lib" PARENT_SCOPE)
-    endif()
+    # if(BUILD_SHARED_LIBS)
+    #     set(${output_var} "${wxf_compiler_id}${wxf_arch}_dll" PARENT_SCOPE)
+    # else()
+    #     set(${output_var} "${wxf_compiler_id}${wxf_arch}_lib" PARENT_SCOPE)
+    # endif()
+
+    set(${output_var} "${wxf_compiler_id}${wxf_arch}_lib" PARENT_SCOPE)
 endfunction()
 
 function(_wxWidgetsConfig_find_intercept)
     set(wxWidgets_DIR "${PACKAGE_PREFIX_DIR}" CACHE PATH "wxWidgets install dir.")
 
-    if(BUILD_SHARED_LIBS)
-        set(wxf_lib_dir "bin")
-    else()
-        set(wxf_lib_dir "lib")
-    endif()
+    # if(BUILD_SHARED_LIBS)
+    #     set(wxf_lib_dir "bin")
+    # else()
+    #     set(wxf_lib_dir "lib")
+    # endif()
+
+    set(wxf_lib_dir "lib")
 
     if(WIN32)
         # Subdir for platform specific builds on windows
@@ -40,7 +44,7 @@ function(_wxWidgetsConfig_find_intercept)
         message(STATUS "wxWidgets platform: ${wxf_platform}")
     endif()
 
-    message(STATUS "wxWidgets shared: ${BUILD_SHARED_LIBS}")
+    message(STATUS "wxWidgets shared: OFF")
 
     # Attempt to use wx-config command to find install
     find_program(wxWidgets_CONFIG_COMMAND wx-config PATHS "${wxWidgets_DIR}/bin" NO_DEFAULT_PATH)

@@ -551,19 +551,21 @@ void PreviewWindow::Hide()
 
     parentGUI.QueueOnGUIThread([&]()
     {
-        // Does nothing if window dosnt exist
+        // Stop the Notify() update loop
+        wxTimer::Stop();
+        // Turns out this errors if window doesnt exist
         cv::destroyWindow(windowName);
     });
 }
 
 PreviewWindow::~PreviewWindow()
 {
-    if (visible) return;
+    if (!visible) return;
     visible = false;
     // Copy the windowName as it will be destroyed
     parentGUI.QueueOnGUIThread([=]()
     {
-        // Does nothing if window dosnt exist
+        // Turns out this errors if window doesnt exist
         cv::destroyWindow(windowName);
     });
 }
@@ -586,7 +588,7 @@ void PreviewWindow::RefImage(cv::Mat &newImage)
 
 void PreviewWindow::Notify()
 {
-    ATASSERT("Timer should only be running when window is shown.", isVisible);
+    ATASSERT("Timer should only be running when window is shown.", visible);
     const std::lock_guard<std::mutex> lock_guard(imageMutex);
     // Process high gui window eventsd
     // This only applies to the in focus high gui window, dosn't really matter

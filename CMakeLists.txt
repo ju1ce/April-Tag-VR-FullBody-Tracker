@@ -11,6 +11,7 @@ option(ENABLE_ASSERT "Enable assertions." OFF)
 set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 
 # Build options
+option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
 option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
@@ -50,8 +51,9 @@ att_add_external_project(
     EXTRA_CMAKE_ARGS
     -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
     -DUSE_ASAN:BOOL=${USE_ASAN}
-    -DENABLE_PS3EYE=${ENABLE_PS3EYE}
-    -DENABLE_ASSERT=${ENABLE_ASSERT}
+    -DENABLE_LTO:BOOL=${ENABLE_LTO}
+    -DENABLE_PS3EYE:BOOL=${ENABLE_PS3EYE}
+    -DENABLE_ASSERT:BOOL=${ENABLE_ASSERT}
     -DLOG_LEVEL=${LOG_LEVEL}
 
     EXTRA_EP_ARGS

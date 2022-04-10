@@ -16,7 +16,8 @@ att_add_dep(
     wxWidgets
 
     EXTRA_CMAKE_ARGS
-    -DwxBUILD_OPTIMISE:BOOL=$<CONFIG:Release>
+    -DwxBUILD_SHARED:BOOL=OFF
+    -DwxBUILD_OPTIMISE:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DwxBUILD_USE_STATIC_RUNTIME:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
 )
 att_configure_package_config(wxWidgets)
@@ -33,7 +34,7 @@ att_add_dep(
     -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
     "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
-    -DENABLE_LTO:BOOL=$<CONFIG:Release>
+    -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DWITH_ITT=OFF
     -DBUILD_ITT=OFF
     -DINSTALL_CREATE_DISTRIB:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
@@ -65,6 +66,10 @@ att_add_dep(
 # --- libusb ---
 set(USB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled")
 set(USB_INSTALL "${DEPS_INSTALL_DIR}/libusb")
+
+# att_add_external_project(
+#     CONFIGURE_COMMAND
+# )
 
 if (MSVC_TOOLSET_VERSION GREATER_EQUAL 143)
     set(USB_VS_VERSION "2022")
