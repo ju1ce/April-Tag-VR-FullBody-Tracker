@@ -45,6 +45,8 @@ public:
     /// Locks imageMutex, and makes a deep copy of newImage.
     void CloneImage(const cv::Mat& newImage);
     /// Locks imageMutex, takes a reference of newImage.
+    // TODO: Race condition issue, don't use.
+    // Causes banding of the previous/next frame.
     void RefImage(cv::Mat& newImage);
     /// Is the window currently shown
     bool IsVisible() const { return visible; }

@@ -535,11 +535,12 @@ void PreviewWindow::Show()
 
     parentGUI.QueueOnGUIThread([&]()
     {
+
         // Create this instances window
         cv::namedWindow(windowName);
         // Update preview at 15fps.
         // Interval that Notify() is called.
-        constexpr int milliseconds = 1000 / 15;
+        constexpr int milliseconds = 1000 / 10;
         wxTimer::Start(milliseconds);
     });
 }
@@ -547,14 +548,17 @@ void PreviewWindow::Show()
 void PreviewWindow::Hide()
 {
     if (!visible) return;
-    visible = false;
 
+    image.release();
     parentGUI.QueueOnGUIThread([&]()
     {
         // Stop the Notify() update loop
         wxTimer::Stop();
         // Turns out this errors if window doesnt exist
         cv::destroyWindow(windowName);
+        // Set visible to false after timer has actually been stopped
+        // Otherwise Notify could be called
+        visible = false;
     });
 }
 
@@ -562,12 +566,7 @@ PreviewWindow::~PreviewWindow()
 {
     if (!visible) return;
     visible = false;
-    // Copy the windowName as it will be destroyed
-    parentGUI.QueueOnGUIThread([=]()
-    {
-        // Turns out this errors if window doesnt exist
-        cv::destroyWindow(windowName);
-    });
+    cv::destroyWindow(windowName);
 }
 
 void PreviewWindow::CloneImage(const cv::Mat& newImage)
@@ -590,15 +589,15 @@ void PreviewWindow::Notify()
 {
     ATASSERT("Timer should only be running when window is shown.", visible);
     const std::lock_guard<std::mutex> lock_guard(imageMutex);
-    // Process high gui window eventsd
+    // Don't try to show stale image
+    // If imshow dosn't copy the buffer then this dosn't provide much gain
+    if (newImageReady && !image.empty())
+    {
+        cv::imshow(windowName, image);
+    }
+    // Process high gui window events
     // This only applies to the in focus high gui window, dosn't really matter
     // Update frequency will increase depending on number of previews open
     // If it is an issue, pollKey should be moved to its own timer
     cv::pollKey();
-    // Don't try to show stale image
-    // If imshow dosn't copy the buffer then this dosn't provide much gain
-    if (!newImageReady) return;
-    newImageReady = false;
-
-    cv::imshow(windowName, image);
 }

@@ -124,9 +124,9 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
 void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
 {
     if (event.IsChecked())
-        gui->outWindow.Show();
-    else
         gui->outWindow.Hide();
+    else
+        gui->outWindow.Show();
 }
 
 void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)

@@ -15,12 +15,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <exception>
 #include <iostream>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <vector>
-
 
 #ifdef ENABLE_PS3EYE
 #include "PSEyeVideoCapture.h"
@@ -179,43 +179,54 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         return;
     }
-    if (id.length() <= 2) // if camera address is a single character, try to open webcam
+
+    cap.setExceptionMode(true);
+    try
     {
-        int i = std::stoi(id); // convert to int
-#if OS_LINUX
-        // On Linux cv::VideoCapture does not work when GStreamer backend is used and
-        // camera is set to MJPG pixel format. As a work around we manually setup the
-        // GStreamer pipeline with suitable decoding before feeding the stream into
-        // application.
-        if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
+        if (id.length() <= 2) // if camera address is a single character, try to open webcam
         {
-            std::stringstream ss;
-            ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
-            if (user_config.camWidth != 0)
-                ss << ",width=" << user_config.camWidth;
-            if (user_config.camHeight != 0)
-                ss << ",height=" << user_config.camHeight;
-            ss << ",framerate=" << user_config.camFps << "/1";
-            ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
-            cap = cv::VideoCapture(ss.str(), apiPreference);
-        }
-        else
+            int i = std::stoi(id); // convert to int
+#if OS_LINUX
+            // On Linux cv::VideoCapture does not work when GStreamer backend is used and
+            // camera is set to MJPG pixel format. As a work around we manually setup the
+            // GStreamer pipeline with suitable decoding before feeding the stream into
+            // application.
+            if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
+            {
+                std::stringstream ss;
+                ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
+                if (user_config.camWidth != 0)
+                    ss << ",width=" << user_config.camWidth;
+                if (user_config.camHeight != 0)
+                    ss << ",height=" << user_config.camHeight;
+                ss << ",framerate=" << user_config.camFps << "/1";
+                ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
+                cap = cv::VideoCapture(ss.str(), apiPreference);
+            }
+            else
 #endif
 #if ENABLE_PS3EYE
-            if (apiPreference == 2300)
-        {
-            cap = PSEyeVideoCapture(i);
+                if (apiPreference == 2300)
+            {
+                cap = PSEyeVideoCapture(i);
+            }
+            else
+#endif
+            {
+                cap = cv::VideoCapture(i, apiPreference);
+            }
         }
         else
-#endif
         {
-            cap = cv::VideoCapture(i, apiPreference);
+            // if address is longer, we try to open it as an ip address
+            cap = cv::VideoCapture(id, apiPreference);
         }
     }
-    else
+    catch (const std::exception& e)
     {
-        // if address is longer, we try to open it as an ip address
-        cap = cv::VideoCapture(id, apiPreference);
+        ATERROR("cv::VideoCapture() exception: " << e.what());
+        gui->ShowErrorPopup(lc.TRACKER_CAMERA_START_ERROR);
+        return;
     }
 
     if (!cap.isOpened())
@@ -223,7 +234,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         gui->ShowErrorPopup(lc.TRACKER_CAMERA_START_ERROR);
         return;
     }
-    // Sleep(1000);
+    cap.setExceptionMode(false);
 
     // On Linux and when GStreamer backend is used we already setup the camera pixel format,
     // width, height and FPS above when the GStreamer pipeline was created.
@@ -314,7 +325,7 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
                 if (previewCameraCalibration)
                     previewCalibration(drawImg, calib_config);
-                gui->previewWindow.RefImage(drawImg);
+                gui->previewWindow.CloneImage(drawImg);
             }
         }
         {
@@ -456,6 +467,8 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<int>> allCharucoIds;
     cv::Mat outImg;
 
+    gui->outWindow.Show();
+
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
@@ -472,7 +485,10 @@ void Tracker::CalibrateCameraCharuco()
             rows = image.rows * drawImgSize / image.cols;
         }
 
-        image.copyTo(drawImg);
+        //image.copyTo(drawImg);
+        if (drawImg.size() != image.size() || drawImg.type() != image.type())
+            drawImg.create(image.size(), image.type());
+        drawImg.setTo(cv::Scalar(0, 0, 0));
         cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
         previewCalibration(
@@ -571,7 +587,7 @@ void Tracker::CalibrateCameraCharuco()
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        gui->outWindow.RefImage(outImg);
+        gui->outWindow.CloneImage(outImg);
     }
 
     gui->outWindow.Hide();
@@ -734,7 +750,7 @@ void Tracker::CalibrateCamera()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        gui->outWindow.RefImage(outImg);
+        gui->outWindow.CloneImage(outImg);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -872,6 +888,8 @@ void Tracker::CalibrateTracker()
 
     // reset current tracker calibration data
     trackers.clear();
+
+    gui->outWindow.Show();
 
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
@@ -1012,7 +1030,7 @@ void Tracker::CalibrateTracker()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        gui->outWindow.RefImage(outImg);
+        gui->outWindow.CloneImage(outImg);
     }
 
     // when done calibrating, save the trackers to parameters
@@ -1678,7 +1696,7 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
             }
-            gui->outWindow.RefImage(outImg);
+            gui->outWindow.CloneImage(outImg);
         }
         // time of marker detection
     }
