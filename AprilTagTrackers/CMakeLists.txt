@@ -112,13 +112,14 @@ endif()
 # Install application to bin folder
 install(TARGETS AprilTagTrackers RUNTIME)
 
+# Find the resource file and icon
+target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+
 if(WIN32)
     # install pdb file for debugging
     install(FILES $<TARGET_PDB_FILE:AprilTagTrackers> DESTINATION "bin")
     # set as GUI application on windows
     set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE TRUE)
-    # Find the resource file and icon
-    target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/resources")
     # wxWidgets will compile a resource.rc file for us
     target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
 endif()
