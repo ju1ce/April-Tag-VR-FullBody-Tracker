@@ -117,7 +117,7 @@ target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/
 
 if(WIN32)
     # install pdb file for debugging
-    install(FILES $<TARGET_PDB_FILE:AprilTagTrackers> DESTINATION "bin")
+    install(FILES $<TARGET_PDB_FILE:AprilTagTrackers> DESTINATION "bin" OPTIONAL)
     # set as GUI application on windows
     set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE TRUE)
     # wxWidgets will compile a resource.rc file for us
