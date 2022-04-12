@@ -48,6 +48,7 @@ public:
     // TODO: Race condition issue, don't use.
     // Causes banding of the previous/next frame.
     // So at some point the old matrix data is getting overwritten in the camera thread.
+    void SwapImage(cv::Mat& newImage);
     /// Is the window currently shown
     bool IsVisible() const { return visible; }
 
