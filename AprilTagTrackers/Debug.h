@@ -4,8 +4,10 @@
 
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
-#include <sstream>
+#include <thread>
 #endif
 
 // Macros and functions for debugging and logging,
@@ -32,7 +34,8 @@
 //  but the expression can have side effects even when assert is disabled
 //   ATCHECK(messageStream, trueCondition)
 
-//  Logs a fatal error and calls abort, when LOG_LEVEL is 1
+//  Logs a fatal error, when LOG_LEVEL is 1.
+//  Calls abort().
 //   ATFATAL(messageStream)
 
 //  Logs an error, when LOG_LEVEL is 2
@@ -68,11 +71,9 @@
 
 #if ATT_LOG_LEVEL > 0
 /// messageStream is a sequence of strings and insertion operators, pasted into a std::cerr statement
-#define ATT_LOG(a_messageStream)                                                            \
-    std::cerr << "(" << std::chrono::system_clock::now().time_since_epoch().count() << ") " \
-              << "[" << __FILE__ << ":" ATT_STRINGIZE_ARG(__LINE__) "] "                    \
-              << a_messageStream                                                            \
-              << std::endl
+#define ATT_LOG(a_messageStream)       \
+    Debug::PreLog(__FILE__, __LINE__); \
+    std::cerr << a_messageStream << std::endl
 #else
 /// messageStream is a sequence of strings and insertion operators, pasted into a std::cerr statement
 #define ATT_LOG(a_messageStream) \
@@ -80,14 +81,16 @@
 #endif
 
 #if ATT_LOG_LEVEL >= 1
-/// Logs a fatal error and calls abort, when LOG_LEVEL is 1
+/// Logs a fatal error, when LOG_LEVEL is 1.
+/// Calls abort().
 #define ATFATAL(a_messageStream)                     \
     do {                                             \
         ATT_LOG("Fatal Error: " << a_messageStream); \
         Debug::abort();                              \
     } while (0)
 #else
-/// Logs a fatal error and calls abort, when LOG_LEVEL is 1
+/// Logs a fatal error, when LOG_LEVEL is 1.
+/// Calls abort().
 #define ATFATAL(a_messageStream) \
     Debug::abort()
 #endif
@@ -115,13 +118,13 @@
 #ifdef ATT_ENABLE_ASSERT
 
 /// Require an expression to be true
-#define ATASSERT(a_messageStream, a_trueExpression)                             \
-    do {                                                                        \
-        if (!(a_trueExpression))                                                \
-            ATFATAL(a_messageStream                                             \
-                    << std::endl                                                \
-                    << "    Assertion failure: ( " << #a_trueExpression << " )" \
-                    << " in " << ATT_PRETTY_FUNCTION);                          \
+#define ATASSERT(a_messageStream, a_trueExpression)                      \
+    do {                                                                 \
+        if (!(a_trueExpression))                                         \
+            ATFATAL(a_messageStream                                      \
+                    << std::endl                                         \
+                    << "    Assertion failure:  ( " << #a_trueExpression \
+                    << " )  in " << ATT_PRETTY_FUNCTION);                \
     } while (0)
 
 /// Require an expression to be true, like assert,
@@ -149,6 +152,21 @@ namespace Debug
 inline void abort()
 {
     std::abort();
+}
+
+const auto appStartTimePoint = std::chrono::system_clock::now();
+
+template <typename StrT>
+inline void PreLog(const StrT file, int line) noexcept
+{
+    const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
+    const auto stampSec = std::chrono::duration<float>(stamp).count();
+
+    std::cerr << "[" << std::fixed << stampSec
+              << std::defaultfloat // reset std::fixed
+              << "@" << std::this_thread::get_id() << "] "
+              << "(" << std::filesystem::path(file)
+              << ":" << line << ") ";
 }
 
 } // namespace Debug

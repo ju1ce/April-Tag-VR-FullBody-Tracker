@@ -55,7 +55,7 @@ void GUI::QueuePopup(const wxString& content, const wxString& caption, long styl
         {
             wxMessageDialog dial(nullptr, content, caption, style);
             // ShowModal is blocking, until the user clicks ok
-            dial.ShowModal(); //
+            dial.ShowModal();
         });
 }
 
@@ -535,7 +535,6 @@ void PreviewWindow::Show()
 
     parentGUI.QueueOnGUIThread([&]()
     {
-
         // Create this instances window
         cv::namedWindow(windowName);
         // Update preview at 15fps.
@@ -564,6 +563,7 @@ void PreviewWindow::Hide()
 
 PreviewWindow::~PreviewWindow()
 {
+    // Assume constructed on the GUI thread
     if (!visible) return;
     visible = false;
     cv::destroyWindow(windowName);
@@ -577,17 +577,17 @@ void PreviewWindow::CloneImage(const cv::Mat& newImage)
     newImage.copyTo(image);
 }
 
-void PreviewWindow::RefImage(cv::Mat &newImage)
+void PreviewWindow::SwapImage(cv::Mat &newImage)
 {
     if (!visible) return;
     const std::lock_guard<std::mutex> lock_guard(imageMutex);
     newImageReady = true;
-    image = newImage;
+    cv::swap(image, newImage);
 }
 
 void PreviewWindow::Notify()
 {
-    ATASSERT("Timer should only be running when window is shown.", visible);
+    ATASSERT("Timer should only be running when window is visible.", visible);
     const std::lock_guard<std::mutex> lock_guard(imageMutex);
     // Don't try to show stale image
     // If imshow dosn't copy the buffer then this dosn't provide much gain

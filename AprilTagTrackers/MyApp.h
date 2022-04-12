@@ -27,8 +27,15 @@ class MyApp : public wxApp
     Localization lc;
 
 public:
-    virtual int OnExit() wxOVERRIDE;
-    virtual bool OnInit() wxOVERRIDE;
+    int OnExit() override;
+    bool OnInit() override;
+
+#ifdef ATT_OVERRIDE_ERROR_HANDLERS
+    void OnFatalException() override;
+    void OnUnhandledException() override;
+    bool OnExceptionInMainLoop() override;
+#endif
+
     void ButtonPressedCamera(wxCommandEvent&);
     void ButtonPressedCameraPreview(wxCommandEvent&);
     void ButtonPressedCameraCalib(wxCommandEvent&);

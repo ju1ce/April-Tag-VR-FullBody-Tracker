@@ -84,11 +84,11 @@ if(ENABLE_ASSERT)
     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_ASSERT)
 endif()
 
-target_compile_definitions(AprilTagTrackers PUBLIC ATT_LOG_LEVEL=${LOG_LEVEL})
+target_compile_definitions(AprilTagTrackers PUBLIC
+    ATT_LOG_LEVEL=${LOG_LEVEL}
+    $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>)
 
-# if (MSVC)
-#     target_compile_options(AprilTagTrackers PUBLIC $<$<CONFIG:Debug>:/Zi>)
-# endif()
+
 
 # Set cross-platform defines in sources
 if(WIN32)

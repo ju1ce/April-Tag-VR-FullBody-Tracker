@@ -180,53 +180,43 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         return;
     }
 
-    cap.setExceptionMode(true);
-    try
+    if (id.length() <= 2) // if camera address is a single character, try to open webcam
     {
-        if (id.length() <= 2) // if camera address is a single character, try to open webcam
-        {
-            int i = std::stoi(id); // convert to int
+        int i = std::stoi(id); // convert to int
 #if OS_LINUX
-            // On Linux cv::VideoCapture does not work when GStreamer backend is used and
-            // camera is set to MJPG pixel format. As a work around we manually setup the
-            // GStreamer pipeline with suitable decoding before feeding the stream into
-            // application.
-            if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
-            {
-                std::stringstream ss;
-                ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
-                if (user_config.camWidth != 0)
-                    ss << ",width=" << user_config.camWidth;
-                if (user_config.camHeight != 0)
-                    ss << ",height=" << user_config.camHeight;
-                ss << ",framerate=" << user_config.camFps << "/1";
-                ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
-                cap = cv::VideoCapture(ss.str(), apiPreference);
-            }
-            else
-#endif
-#if ENABLE_PS3EYE
-                if (apiPreference == 2300)
-            {
-                cap = PSEyeVideoCapture(i);
-            }
-            else
-#endif
-            {
-                cap = cv::VideoCapture(i, apiPreference);
-            }
+        // On Linux cv::VideoCapture does not work when GStreamer backend is used and
+        // camera is set to MJPG pixel format. As a work around we manually setup the
+        // GStreamer pipeline with suitable decoding before feeding the stream into
+        // application.
+        if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
+        {
+            std::stringstream ss;
+            ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
+            if (user_config.camWidth != 0)
+                ss << ",width=" << user_config.camWidth;
+            if (user_config.camHeight != 0)
+                ss << ",height=" << user_config.camHeight;
+            ss << ",framerate=" << user_config.camFps << "/1";
+            ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
+            cap = cv::VideoCapture(ss.str(), apiPreference);
         }
         else
+#endif
+#if ENABLE_PS3EYE
+            if (apiPreference == 2300)
         {
-            // if address is longer, we try to open it as an ip address
-            cap = cv::VideoCapture(id, apiPreference);
+            cap = PSEyeVideoCapture(i);
+        }
+        else
+#endif
+        {
+            cap = cv::VideoCapture(i, apiPreference);
         }
     }
-    catch (const std::exception& e)
+    else
     {
-        ATERROR("cv::VideoCapture() exception: " << e.what());
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_START_ERROR);
-        return;
+        // if address is longer, we try to open it as an ip address
+        cap = cv::VideoCapture(id, apiPreference);
     }
 
     if (!cap.isOpened())
@@ -234,7 +224,6 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         gui->ShowErrorPopup(lc.TRACKER_CAMERA_START_ERROR);
         return;
     }
-    cap.setExceptionMode(false);
 
     // On Linux and when GStreamer backend is used we already setup the camera pixel format,
     // width, height and FPS above when the GStreamer pipeline was created.
@@ -425,10 +414,9 @@ void Tracker::StartCameraCalib()
     mainThread.detach();
 }
 
+/// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    // function to calibrate our camera
-
     cv::Mat image;
     cv::Mat gray;
     cv::Mat drawImg;
@@ -466,6 +454,10 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds;
     cv::Mat outImg;
+
+    std::vector<int> markerIds;
+    std::vector<std::vector<cv::Point2f>> markerCorners;
+    std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
     gui->outWindow.Show();
 
@@ -531,23 +523,18 @@ void Tracker::CalibrateCameraCharuco()
             }
         }
 
-        // TODO: There was a way to cancel this with key = -1?
+        cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+        cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
-        if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 1)
+        if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 2)
         {
             // framesSinceLast = 0;
             timeOfLast = std::chrono::steady_clock::now();
             // if any button was pressed
-            cvtColor(image, gray, cv::COLOR_BGR2GRAY);
-
-            std::vector<int> markerIds;
-            std::vector<std::vector<cv::Point2f>> markerCorners;
-            std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
             // detect our markers
-            cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
             cv::aruco::refineDetectedMarkers(gray, board, markerCorners, markerIds, rejectedCorners);
 
             if (markerIds.size() > 0)
@@ -560,7 +547,7 @@ void Tracker::CalibrateCameraCharuco()
                 if (charucoIds.size() > 15)
                 {
                     // if corners were found, we draw them
-                    cv::aruco::drawDetectedCornersCharuco(drawImg, charucoCorners, charucoIds);
+                    // cv::aruco::drawDetectedCornersCharuco(drawImg, charucoCorners, charucoIds);
                     // we then add our corners to the array
                     allCharucoCorners.push_back(charucoCorners);
                     allCharucoIds.push_back(charucoIds);
@@ -584,6 +571,11 @@ void Tracker::CalibrateCameraCharuco()
                     }
                 }
             }
+        }
+
+        for (const auto& corners : markerCorners)
+        {
+            // cv::fillPoly(drawImg, corners, cv::Scalar::all(255));
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
@@ -1158,7 +1150,8 @@ void Tracker::MainLoop()
     {
 
         CopyFreshCameraImageTo(image);
-        // shallow copy
+        // shallow copy, gray will be cloned from image and used for detection,
+        // so drawing can happen on color image without clone.
         drawImg = image;
         april.convertToSingleChannel(image, gray);
 

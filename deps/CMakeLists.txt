@@ -67,10 +67,6 @@ att_add_dep(
 set(USB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled")
 set(USB_INSTALL "${DEPS_INSTALL_DIR}/libusb")
 
-# att_add_external_project(
-#     CONFIGURE_COMMAND
-# )
-
 if (MSVC_TOOLSET_VERSION GREATER_EQUAL 143)
     set(USB_VS_VERSION "2022")
 elseif (MSVC_TOOLSET_VERSION GREATER_EQUAL 142)

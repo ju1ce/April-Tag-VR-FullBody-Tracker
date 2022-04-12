@@ -4,6 +4,7 @@
 #include "Connection.h"
 #include "Localization.h"
 
+// TODO: Don't include wx headers in our headers, except wxString
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #include <wx/notebook.h>
@@ -12,7 +13,6 @@
 
 #pragma warning(pop)
 
-#include <memory>
 #include <mutex>
 
 class ValueInput : public wxPanel
@@ -47,7 +47,7 @@ public:
     /// Locks imageMutex, takes a reference of newImage.
     // TODO: Race condition issue, don't use.
     // Causes banding of the previous/next frame.
-    void RefImage(cv::Mat& newImage);
+    // So at some point the old matrix data is getting overwritten in the camera thread.
     /// Is the window currently shown
     bool IsVisible() const { return visible; }
 
