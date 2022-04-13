@@ -151,23 +151,35 @@ namespace Debug
 /// Named the same so that 'abort' breakpoints will find it
 inline void abort()
 {
+// https://stackoverflow.com/a/4326567/18158409
+// NOLINTBEGIN
+#if defined(WIN32)
+    __debugbreak();
+    std::exit(3);
+#elif defined(__APPLE__)
+    *((int*)nullptr) = 0;
     std::abort();
+#else
+    std::abort();
+#endif
+// NOLINTEND
 }
 
 #if ATT_LOG_LEVEL > 0
 
 const auto appStartTimePoint = std::chrono::system_clock::now();
 
+// [ thread_id @ runtime_sec ] (file:line)
 template <typename StrT>
 inline void PreLog(const StrT file, int line) noexcept
 {
     const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
     const auto stampSec = std::chrono::duration<float>(stamp).count();
 
-    std::cerr << "[" << std::fixed << stampSec
+    std::cerr << "[ " << std::this_thread::get_id()
+              << " @ " << std::fixed << stampSec << " ] "
               << std::defaultfloat // reset std::fixed
-              << "@" << std::this_thread::get_id() << "] "
-              << "(" << std::filesystem::path(file)
+              << "(" << file
               << ":" << line << ") ";
 }
 
