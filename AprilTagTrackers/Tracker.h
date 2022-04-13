@@ -1,25 +1,14 @@
-﻿#pragma once
+#pragma once
 
-#include <iostream>
-#include <mutex>
-#include <thread>
-#include <vector>
-#include <math.h>
-#include <chrono>
-
-#include <opencv2/aruco.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
-#include "Parameters.h"
 #include "MyApp.h"
 
 #include "Quaternion.h"
-#include "Util.h"
-
-#if OS_LINUX
-#else
-#include "ps3eyed/PSEyeVideoCapture.h"
-#endif
+#include "Config.h"
+#include "Localization.h"
+#include <opencv2/videoio.hpp>
+#include <thread>
+#include <mutex>
+#include <chrono>
 
 struct TrackerStatus {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
@@ -35,7 +24,7 @@ class Parameters;
 class Tracker
 {
 public:
-    Tracker(Parameters*, Connection*, MyApp*);
+    Tracker(MyApp* myApp, Connection* connection, UserConfig& user_config, CalibrationConfig& calib_config, const Localization& lcl, const ArucoConfig& aruco_config);
     void StartCamera(std::string id, int apiPreference);
     void StartCameraCalib();
     void StartTrackerCalib();
@@ -43,15 +32,14 @@ public:
 
     bool mainThreadRunning = false;
     bool cameraRunning = false;
-    bool previewCamera = false;
+    //bool previewCamera = false;
     bool previewCameraCalibration = false;
     bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
-    bool disableOut = false;
-    bool disableOpenVrApi = true;
+    //bool disableOut = false;
     int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
@@ -62,7 +50,6 @@ public:
     double calibScale = 1;
 
 private:
-
     void CameraLoop();
     void CopyFreshCameraImageTo(cv::Mat& image);
     void CalibrateCamera();
@@ -79,11 +66,13 @@ private:
     std::mutex cameraImageMutex;
     cv::Mat cameraImage;
     bool imageReady = false;
-    
-    Parameters* parameters;
-    Connection* connection;
 
-    
+    UserConfig& user_config;
+    CalibrationConfig& calib_config;
+    const Localization& lc;
+    const ArucoConfig& aruco_config;
+
+    Connection* connection;
 
     std::thread cameraThread;
     std::thread mainThread;

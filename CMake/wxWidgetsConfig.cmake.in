@@ -1,0 +1,147 @@
+# @PACKAGE_INIT@
+
+function(wxf_windows_platform_dirname output_var)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "64")
+        set(wxf_arch "_x64")
+    else()
+        unset(wxf_arch)
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(wxf_compiler_id "vc")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(wxf_compiler_id "clang")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(wxf_compiler_id "gcc")
+    else()
+        message(FATAL_ERROR "Unknown WIN32 compiler.")
+    endif()
+
+    # if(BUILD_SHARED_LIBS)
+    #     set(${output_var} "${wxf_compiler_id}${wxf_arch}_dll" PARENT_SCOPE)
+    # else()
+    #     set(${output_var} "${wxf_compiler_id}${wxf_arch}_lib" PARENT_SCOPE)
+    # endif()
+
+    set(${output_var} "${wxf_compiler_id}${wxf_arch}_lib" PARENT_SCOPE)
+endfunction()
+
+function(_wxWidgetsConfig_find_intercept)
+    set(wxWidgets_DIR "${PACKAGE_PREFIX_DIR}" CACHE PATH "wxWidgets install dir.")
+
+    # if(BUILD_SHARED_LIBS)
+    #     set(wxf_lib_dir "bin")
+    # else()
+    #     set(wxf_lib_dir "lib")
+    # endif()
+
+    set(wxf_lib_dir "lib")
+
+    if(WIN32)
+        # Subdir for platform specific builds on windows
+        wxf_windows_platform_dirname(wxf_platform)
+        set(wxf_lib_dir "${wxf_lib_dir}/${wxf_platform}")
+        message(STATUS "wxWidgets platform: ${wxf_platform}")
+    endif()
+
+    message(STATUS "wxWidgets shared: OFF")
+
+    # Attempt to use wx-config command to find install
+    find_program(wxWidgets_CONFIG_COMMAND wx-config PATHS "${wxWidgets_DIR}/bin" NO_DEFAULT_PATH)
+
+    if(NOT wxWidgets_CONFIG_COMMAND)
+        # retry with global install
+        find_program(wxWidgets_CONFIG_COMMAND wx-config)
+    endif()
+
+    if(wxWidgets_CONFIG_COMMAND)
+        # set executable used by FindwxWidgets
+        set(ENV{WX_CONFIG} "${wxWidgets_CONFIG_COMMAND}")
+        message(STATUS "wxWidgets wx-config: ${wxWidgets_CONFIG_COMMAND}")
+    endif()
+
+    # Force install location
+    set(wxWidgets_ROOT_DIR "${wxWidgets_DIR}" CACHE INTERNAL "" FORCE)
+    set(WX_ROOT_DIR "${wxWidgets_ROOT_DIR}" CACHE INTERNAL "" FORCE)
+
+    set(wxWidgets_LIB_DIR "${wxWidgets_DIR}/${wxf_lib_dir}" CACHE INTERNAL "" FORCE)
+    set(WX_LIB_DIR "${wxWidgets_LIB_DIR}" CACHE INTERNAL "" FORCE)
+
+    # Force install location for wx-config, mainly used on linux
+    set(wxWidgets_CONFIG_OPTIONS "--prefix=${wxWidgets_DIR}")
+
+    find_package(wxWidgets QUIET COMPONENTS ${wxWidgets_FIND_COMPONENTS})
+
+    if(NOT wxWidgets_LIBRARIES)
+        set(wxWidgets_ROOT_DIR CACHE INTERNAL "" FORCE)
+        set(WX_ROOT_DIR CACHE INTERNAL "" FORCE)
+        set(wxWidgets_LIB_DIR CACHE INTERNAL "" FORCE)
+        set(WX_LIB_DIR CACHE INTERNAL "" FORCE)
+        unset(wxWidgets_CONFIG_OPTIONS)
+
+        # retry with global install, fail if not found this time
+        find_package(wxWidgets REQUIRED ${wxWidgets_FIND_COMPONENTS})
+    endif()
+
+    message(STATUS "Found wxWidgets ${wxWidgets_VERSION_STRING} in ${wxWidgets_DIR}")
+
+    # Forward the found variables
+    set(wxWidgets_FOUND TRUE PARENT_SCOPE)
+
+    foreach(wx_comp ${wxWidgets_FIND_COMPONENTS})
+        set(wxWidgets_${wx_comp}_FOUND ${wxWidgets_${wx_comp}_FOUND} PARENT_SCOPE)
+    endforeach()
+
+    # Separate the debug and release libs
+    unset(wxf_libs)
+    unset(wxf_dbg_libs)
+    unset(wxf_rel_libs)
+    unset(previous_item)
+
+    foreach(lib ${wxWidgets_LIBRARIES})
+        if(previous_item STREQUAL "debug")
+            list(APPEND wxf_dbg_libs "${lib}")
+        elseif(previous_item STREQUAL "optimized")
+            list(APPEND wxf_rel_libs "${lib}")
+        elseif(NOT(lib STREQUAL "debug") AND NOT(lib STREQUAL "optimized"))
+            list(APPEND wxf_libs "${lib}")
+        endif()
+
+        set(previous_item "${lib}")
+    endforeach(lib)
+
+    # Separate the setup include from the header include
+    # modify setup include dir for debug builds if it exists
+    list(GET wxWidgets_INCLUDE_DIRS 0 wxf_setup_include)
+    list(GET wxWidgets_INCLUDE_DIRS 1 wxf_header_include)
+
+    if(EXISTS "${wxf_setup_include}d" AND EXISTS "${wxf_setup_include}")
+        set(wxf_setup_include "${wxf_setup_include}$<$<CONFIG:Debug>:d>")
+    elseif(EXISTS "${wxf_setup_include}d")
+        set(wxf_setup_include "${wxf_setup_include}d")
+    elseif(EXISTS "${wxf_setup_include}")
+        set(wxf_setup_include "${wxf_setup_include}")
+    else()
+        message(FATAL_ERROR "Could not find wx/setup.h for any config.")
+    endif()
+
+    if(TARGET wx::wx)
+        return()
+    endif()
+
+    add_library(wx::wx INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(wx::wx INTERFACE
+        "${wxf_libs}"
+        "$<$<CONFIG:Release>:${wxf_rel_libs}>"
+        "$<$<CONFIG:Debug>:${wxf_dbg_libs}>")
+
+    target_compile_definitions(wx::wx INTERFACE
+        "${wxWidgets_DEFINITIONS}"
+        "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
+
+    target_include_directories(wx::wx INTERFACE
+        "${wxf_setup_include}"
+        "${wxf_header_include}")
+endfunction()
+
+_wxWidgetsConfig_find_intercept()

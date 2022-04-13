@@ -1,56 +1,57 @@
 #pragma once
 #pragma warning(push)
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #include <wx/wx.h>
 #pragma warning(pop)
 
-#include "Parameters.h"
-#include <openvr.h>
+#include "Config.h"
+#include "IPC/IPC.h"
+#include "Localization.h"
 #include <memory>
+#include <openvr.h>
 
-struct TrackerConnection {
+struct TrackerConnection
+{
     int TrackerId;
     int DriverId;
     std::string Name;
     std::string Role;
 };
 
-#include "Util.h"
-
-#if OS_WIN
-    #include "IPC/WindowsNamedPipe.h"
-#elif OS_LINUX
-    #include "IPC/UNIXSocket.h"
-#endif
-
 class GUI;
 
 class Connection
 {
 public:
-    const int DISCONNECTED = 0;
-    const int WAITING = 1;
-    const int CONNECTED = 2;
-    Connection(Parameters*);
-    ~Connection();
-    Parameters* parameters;
+    enum ConnectionStatus
+    {
+        DISCONNECTED,
+        WAITING,
+        CONNECTED
+    };
+
+    Connection(const UserConfig& user_config, const Localization& lc);
     void StartConnection();
     std::istringstream Send(std::string buffer);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
     void GetControllerPose(double outpose[]);
     int GetButtonStates();
-    int status = DISCONNECTED;
-    vr::IVRSystem* openvr_handle;
+
+    ConnectionStatus status = DISCONNECTED;
+    GUI* gui = nullptr;
+    vr::IVRSystem* openvr_handle = nullptr;
     std::vector<TrackerConnection> connectedTrackers;
-    bool disableOpenVrApi = true;
-    GUI* gui;
+
 private:
     void Connect();
+
+    const UserConfig& user_config;
+    const Localization& lc;
     std::unique_ptr<IPC::IClient> bridge_driver;
+
     vr::VRActionHandle_t m_actionCamera = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionsetDemo = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionTrackers = vr::k_ulInvalidActionHandle;
     vr::VRActionHandle_t m_actionHand = vr::k_ulInvalidActionHandle;
-    
 };

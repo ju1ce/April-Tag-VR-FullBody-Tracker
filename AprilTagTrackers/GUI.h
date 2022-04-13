@@ -1,15 +1,19 @@
 #pragma once
-#pragma warning(push)
-#pragma warning(disable:4996)
-#include <wx/wx.h>
-#include <wx/notebook.h>
-#include <wx/frame.h>
-#include <wx/icon.h>
-#pragma warning(pop)
-#include "Parameters.h"
+
+#include "Config.h"
 #include "Connection.h"
+#include "Localization.h"
 
+// TODO: Don't include wx headers in our headers, except wxString
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#include <wx/notebook.h>
+#include <wx/timer.h>
+#include <wx/wx.h>
 
+#pragma warning(pop)
+
+#include <mutex>
 
 class ValueInput : public wxPanel
 {
@@ -19,16 +23,107 @@ public:
     void SetValue(double val);
 
 private:
-    wxTextCtrl* input = 0;
+    wxTextCtrl* input = nullptr;
 
     void ButtonPressed(wxCommandEvent&);
     void MouseScroll(wxMouseEvent&);
 };
 
-class GUI : public wxFrame
+/// OpenCV high level gui window
+class PreviewWindow : protected wxTimer
 {
 public:
-    GUI(const wxString& title, Parameters* params, Connection* conn);
+    /// Create a high gui window to display a preview video
+    /// parentGUI is needed to start timer and create highgui window on gui thread
+    PreviewWindow(std::string _windowName, GUI& _parentGUI)
+        : wxTimer(), windowName(std::move(_windowName)), parentGUI(_parentGUI) {}
+    ~PreviewWindow() override;
+    /// Start timer and create high gui window
+    void Show();
+    /// Destroy the high gui window, and stop the update timer
+    void Hide();
+    /// Locks imageMutex, and makes a deep copy of newImage.
+    void CloneImage(const cv::Mat& newImage);
+    /// Locks imageMutex, takes a reference of newImage.
+    // TODO: Race condition issue, don't use.
+    // Causes banding of the previous/next frame.
+    // So at some point the old matrix data is getting overwritten in the camera thread.
+    void SwapImage(cv::Mat& newImage);
+    /// Is the window currently shown
+    bool IsVisible() const { return visible; }
+
+private:
+    /// Locks imageMutex, Applies the image to the window.
+    void UpdateWindow();
+    /// Called on each tick of the timer, from gui thread
+    void Notify() override;
+
+    /// Name of the window, aswell as the only way to reference it.
+    std::string windowName;
+    /// Matrix representing an image.
+    cv::Mat image;
+    std::mutex imageMutex;
+    /// Only show frame if image was updated
+    bool newImageReady = false;
+    /// track show and hide calls
+    bool visible = false;
+    /// GUI which handles the gui thread
+    GUI& parentGUI;
+};
+
+class GUI : protected wxFrame
+{
+public:
+    GUI(const wxString& title, Connection* conn, UserConfig& _userConfig, const Localization& lcl);
+
+    /// Queue a lambda to be run on the GUI thread, after other events have been processed.
+    /// On MSW the event will not be processed as soon as possible if a Modal is shown.
+    /// lambda capture references should point to the same memory, copies will be copied again.
+    /// From wx docs:
+    ///     these methods schedule the given method pointer
+    ///     for a later call (during the next idle event loop iteration)
+    template <typename T>
+    void QueueOnGUIThread(const T& func)
+    {
+        CallAfter(func);
+    }
+
+    // TODO: Ok to call from within another CallAfter?
+    /// Queue a popup to be shown by the GUI thread.
+    void QueuePopup(const wxString& content, const wxString& caption, long style);
+
+    void ShowErrorPopup(const wxString& content) { QueuePopup(content, wxT("Error"), wxOK | wxICON_ERROR); }
+    void ShowWarningPopup(const wxString& content) { QueuePopup(content, wxT("Warning"), wxOK | wxICON_WARNING); }
+    void ShowInfoPopup(const wxString& content) { QueuePopup(content, wxT("Info"), wxOK | wxICON_INFORMATION); }
+
+    /// Create a PreviewWindow on this GUIs thread
+    PreviewWindow CreatePreviewWindow(std::string&& windowName)
+    {
+        if (!userConfig.windowTitle.empty())
+            windowName += ": " + userConfig.windowTitle;
+        return {std::move(windowName), *this};
+    }
+
+    ValueInput* manualCalibX;
+    ValueInput* manualCalibY;
+    ValueInput* manualCalibZ;
+    ValueInput* manualCalibA;
+    ValueInput* manualCalibB;
+    ValueInput* manualCalibC;
+
+    wxBoxSizer* posHbox;
+    wxBoxSizer* rotHbox;
+
+    wxCheckBox* cb2;
+    wxCheckBox* cb3;
+    wxCheckBox* cb4;
+    wxCheckBox* cb5;
+
+    const UserConfig& userConfig;
+
+    PreviewWindow outWindow = CreatePreviewWindow("out");
+    PreviewWindow previewWindow = CreatePreviewWindow("Preview");
+
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CHECKBOX = 2;
     static const int CAMERA_CALIB_BUTTON = 3;
@@ -43,105 +138,35 @@ public:
     static const int LOCK_HEIGHT_CHECKBOX = 11;
     static const int DISABLE_OUT_CHECKBOX = 12;
     static const int DISABLE_OPENVR_API_CHECKBOX = 13;
-
-    ValueInput *manualCalibX;
-    ValueInput *manualCalibY;
-    ValueInput *manualCalibZ;
-    ValueInput *manualCalibA;
-    ValueInput *manualCalibB;
-    ValueInput *manualCalibC;
-
-    wxBoxSizer* posHbox;
-    wxBoxSizer* rotHbox;
-
-    wxCheckBox* cb2;
-    wxCheckBox* cb3;
-    wxCheckBox* cb4;
-    wxCheckBox* cb5;
 };
 
 class LicensePage : public wxPanel
 {
 public:
-    LicensePage(wxNotebook* parent);
-    std::string ATT_LICENSE = (
-
-        "MIT License \n\n"
-
-        "Copyright(c) 2021 https://github.com/ju1ce/ \n\n"
-
-        "Permission is hereby granted, free of charge, to any person obtaining a copy of this softwareand associated documentation files(the \"Software\"),"
-        " to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,"
-        "and /or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions : \n\n"
-
-        "The above copyright noticeand this permission notice shall be included in all copies or substantial portions of the Software. \n\n"
-
-        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES"
-        "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE"
-        "FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION"
-        "WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
-        );
-
-    std::string APRILTAG_LICENSE = (
-
-        "BSD 2 - Clause License\n\n"
-
-        "Copyright(C) 2013 - 2016, The Regents of The University of Michigan.All rights reserved.\n\n"
-
-        "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met :\n\n"
-
-        "Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n"
-
-        "Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer"
-        "in the documentation and /or other materials provided with the distribution.\n\n"
-
-        "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES,"
-        "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE"
-        "DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,"
-        "EXEMPLARY, OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,"
-        "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT "
-        "LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF"
-        "ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-
-        );
-
-    std::string OPENCV_LICENSE = (
-        "Copyright(c) 2021, OpenCV team \n\n"
-
-        "Licensed under the Apache License, Version 2.0 (the \"License\"); "
-        "you may not use this file except in compliance with the License. "
-        "You may obtain a copy of the License at \n\n"
-
-        "http ://www.apache.org/licenses/LICENSE-2.0 \n\n"
-
-        "Unless required by applicable law or agreed to in writing, software "
-        "distributed under the License is distributed on an \"AS IS\" BASIS, "
-        "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "
-        "See the License for the specific language governing permissionsand "
-        "limitations under the License."
-        );
-
+    explicit LicensePage(wxNotebook* parent);
 };
 
 class CameraPage : public wxPanel
 {
 public:
-    CameraPage(wxNotebook* parent, GUI* parentGUI, Parameters* params);
-
+    CameraPage(wxNotebook* parent, GUI* parentGUI, const Localization& lcl);
 };
 
 class ParamsPage : public wxPanel
 {
 public:
-    ParamsPage(wxNotebook* parent, Parameters* params, Connection* conn);
+    ParamsPage(wxNotebook* parent, Connection* conn, UserConfig& user_config, const Localization& lcl);
 
 private:
     const int SAVE_BUTTON = 2;
     const int HELP_BUTTON = 10;
-    Parameters* parameters;
+
+    UserConfig& user_config;
+    const Localization& lc;
+
     Connection* connection;
+    wxTextCtrl* windowTitleField;
     wxTextCtrl* cameraAddrField;
-    wxTextCtrl* octiuSahField;
     wxTextCtrl* cameraApiField;
     wxTextCtrl* camFpsField;
     wxTextCtrl* camWidthField;
@@ -176,7 +201,4 @@ private:
     wxChoice* languageField;
 
     void SaveParams(wxCommandEvent&);
-    void ShowHelp(wxCommandEvent&);
-
 };
-

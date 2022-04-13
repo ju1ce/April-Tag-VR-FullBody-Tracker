@@ -18,4 +18,3 @@ private:
     void OnOkHandler(wxCommandEvent & event);
     void OnCancelHandler(wxCommandEvent & event);
 };
-

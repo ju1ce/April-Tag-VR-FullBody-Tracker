@@ -1,13 +1,12 @@
 #pragma once
 
+#include "Config.h"
+
 #include <string>
 #include <vector>
 
-#include <opencv2/core.hpp>
 #include <opencv2/aruco.hpp>
-
-typedef struct apriltag_detector apriltag_detector_t;
-class Parameters;
+#include <opencv2/core.hpp>
 
 const int APRILTAG_STANDARD = 0;
 const int APRILTAG_CIRCULAR = 1;
@@ -17,7 +16,7 @@ const int APRILTAG_COLOR = 3;
 class AprilTagWrapper
 {
 public:
-    explicit AprilTagWrapper(const Parameters* parameters);
+    explicit AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config);
 
     ~AprilTagWrapper();
 
@@ -25,18 +24,17 @@ public:
 
     void detectMarkers(
         const cv::Mat& frame,
-        std::vector<std::vector<cv::Point2f> >* corners,
+        std::vector<std::vector<cv::Point2f>>* corners,
         std::vector<int>* ids,
         std::vector<cv::Point2f>* centers,
-        std::vector<cv::Ptr<cv::aruco::Board>> trackers
-    );
+        std::vector<cv::Ptr<cv::aruco::Board>> trackers);
 
     std::vector<std::string> getTimeProfile();
     void drawTimeProfile(cv::Mat& image, const cv::Point& textOrigin);
 
 private:
     cv::Ptr<cv::aruco::Dictionary> aruco_dictionary;
-    cv::Ptr<cv::aruco::DetectorParameters> aruco_params;
-    apriltag_detector_t*const td;
-    const Parameters*const parameters;
+    struct apriltag_detector* const td;
+    const UserConfig& user_config;
+    const ArucoConfig& aruco_config;
 };

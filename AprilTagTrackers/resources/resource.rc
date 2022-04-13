@@ -1,0 +1,18 @@
+// note that the icon used by the Explorer (i.e. the programs icon) is the
+// first icon in the executable and the icons are sorted both by their order
+// (Win9x) and by alphabetically (!) (NT), so put this icon first and give it
+// a name starting with "a"
+aaaaaaaa ICON "apriltag.ico"
+
+// this icon is used with wxFrame::SetIcon()
+// However we will instead be using the apriltag.xpm file for cross compatibility (linux dosnt have rc files)
+// ApplicationIcon ICON "apriltag.ico"
+
+// set this to 1 if you don't want to use manifest resource (manifest resource
+// is needed to enable visual styles on Windows XP - see docs/msw/winxp.txt
+// for more information)
+#define wxUSE_NO_MANIFEST 0
+
+// this is not always needed but doesn't hurt (except making the executable
+// very slightly larger): this file contains the standard icons, cursors, ...
+#include "wx/msw/wx.rc"

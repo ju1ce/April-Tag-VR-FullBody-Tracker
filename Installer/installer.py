@@ -28,7 +28,7 @@ def check_dir(directory):
 steam_root = (environ["ProgramFiles(x86)"] + "/Steam").replace("\\","/")
 
 #Check root dir
-if not check_dir(steam_root): 
+if not check_dir(steam_root):
     cprint(f"[R]Steam directory not found. Please locate the steam folder")
     steam_root = ask_folder()
     if not steam_root: error("Please locate the Steam folder.")
@@ -39,11 +39,11 @@ cprint(f"[GR]Steam directory found. [G]({steam_root})")
 steam_vr = steam_root+'/steamapps/common/SteamVR'
 if not check_dir(steam_vr):
     cprint(f"[R]SteamVR not found at [G]{steam_vr}[R].\n\n[Y]Is SteamVR installed?")
-    
+
     #Ask user if installed
     if not input('(Yes or No): ').lower() in ['y','yes','ye']:
         error(f"Please install SteamVR before running this.")
-    
+
     #Ask user for directory
     cprint(f"\n[Y]Please select the steamvr folder")
     steam_vr = ask_folder()
@@ -90,7 +90,7 @@ else:
 #Check if already activated
 if not 'activateMultipleDrivers' in config_data['steamvr'] or config_data['steamvr']['activateMultipleDrivers'] == False:
     write(f"[Y]Activating multiple drivers in SteamVR config...")
-    
+
     #change config
     config_data['steamvr']['activateMultipleDrivers'] = True
 

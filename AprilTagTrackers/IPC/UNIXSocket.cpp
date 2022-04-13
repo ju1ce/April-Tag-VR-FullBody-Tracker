@@ -1,6 +1,6 @@
-#include "UNIXSocket.h"
-
 #if OS_LINUX
+#include "IPC.h"
+
 #include <errno.h>
 #include <iostream>
 #include <sys/socket.h>

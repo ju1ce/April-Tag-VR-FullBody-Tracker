@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  BUILD_TYPE: Release
+  BINARY_DIR: build
+  INSTALL_DIR: install
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout project and recurse submodules.
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - name: If on Linux, Install GTK3 dev build.
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libgtk-3-dev
+
+      - name: Combine commit hash of submodules in deps.
+        id: deps-sha
+        shell: bash
+        run: |
+          echo "::set-output name=combined::$(for d in deps/*/.git;do echo -n -$(git -C ${d%/.git} rev-parse --short HEAD);done)"
+
+      - name: Check dep cache for matching OS and combined hash
+        id: deps-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.BINARY_DIR }}/deps/install
+          key: deps-${{ runner.os }}${{ steps.deps-sha.outputs.combined }}
+
+      - name: CMake configure, skip building deps if cached.
+        run: >-
+          cmake -B ${{ env.BINARY_DIR }}
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_DIR }}
+          -DEXPORT_COMPILE_COMMANDS=0
+          -DSKIP_BUILD_DEPS=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
+
+      - name: CMake build release.
+        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }}
+
+      - name: Upload install.
+        uses: actions/upload-artifact@v3
+        with:
+          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          retention-days: 7
+          path: |
+            ${{ env.INSTALL_DIR }}/
+
+      - name: Upload build logs.
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          retention-days: 14
+          path: |
+            ${{ env.BINARY_DIR }}/**/CMakeOutput.log
+            ${{ env.BINARY_DIR }}/**/CMakeError.log

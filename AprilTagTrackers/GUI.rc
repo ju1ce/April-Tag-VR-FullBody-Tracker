@@ -1,3 +1,0 @@
-#include <wx/msw/wx.rc>
-ApplicationIcon ICON "../images/april.ico"
-aaaaaaaaa ICON_MAIN "../images/april.ico"

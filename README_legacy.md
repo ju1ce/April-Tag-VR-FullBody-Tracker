@@ -216,7 +216,7 @@ Once that is set, there is one more parameter to look at - you can check the Rot
 
 ##### IP Webcam specific parameters
 
-For IP Webcam, you can set resolution in the app -  try to have a 4:3 aspect ratio, around 800x600 works best. Use portrait mode if you use all three trackers, and landscape 
+For IP Webcam, you can set resolution in the app -  try to have a 4:3 aspect ratio, around 800x600 works best. Use portrait mode if you use all three trackers, and landscape
 
 In the downloaded folder, in /utilities, there is a set_exposure.bat script. Edit it, writing in your cameras IP adress, and the desired exposure - test a few to find the one with the best brightness, but it should be under 10 ms, or 10000 ns.
 

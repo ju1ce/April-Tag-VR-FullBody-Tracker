@@ -1,0 +1,30 @@
+# Default behavior
+* text=auto
+
+# Normalize source files to native line endings on checkout
+*.c text
+*.cpp text
+*.h text
+*.hpp text
+*.json text
+*.yaml text
+*.yml text
+*.cmake text
+*.cmake.in text
+*.txt text
+*.md text
+*.py text
+*.rc text
+*.xpm text
+
+# Mark binary files
+*.png binary
+*.ico binary
+*.gif binary
+*.mkv binary
+*.jpg binary
+*.mp4 binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.pdb binary
