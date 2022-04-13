@@ -21,6 +21,7 @@
 #include <random>
 #include <sstream>
 #include <vector>
+#include <array>
 
 #ifdef ENABLE_PS3EYE
 #include "PSEyeVideoCapture.h"
@@ -109,7 +110,7 @@ void previewCalibration(
             {
                 const auto p1 = gridLineInImage[j - 1];
                 const auto p2 = gridLineInImage[j];
-                cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127));
+                cv::line(drawImg, p1, p2, cv::Scalar(127, 127, 127), 2, cv::LineTypes::LINE_AA);
             }
         }
     }
@@ -133,7 +134,7 @@ void previewCalibration(
             }
             for (const auto& point : charucoCorners)
             {
-                cv::circle(drawImg, point, 2, color, cv::FILLED);
+                cv::circle(drawImg, point, 4, color, cv::FILLED);
             }
         }
     }
@@ -149,6 +150,19 @@ inline void previewCalibration(cv::Mat& drawImg, const CalibrationConfig& calibC
         calibConfig.perViewErrors,
         calibConfig.allCharucoCorners,
         calibConfig.allCharucoIds);
+}
+
+template <typename InIterT, typename OutT>
+void pointPathToContours(InIterT inputFirst, InIterT inputLast, OutT& outputList, bool createLoop = true)
+{
+    for (auto it = inputFirst; it != inputLast - 1; it++)
+    {
+        outputList.push_back({ *it, *std::next(it) });
+    }
+    if (createLoop)
+    {
+        outputList.push_back({ *std::prev(inputLast), *inputFirst });
+    }
 }
 
 } // namespace
@@ -477,10 +491,7 @@ void Tracker::CalibrateCameraCharuco()
             rows = image.rows * drawImgSize / image.cols;
         }
 
-        //image.copyTo(drawImg);
-        if (drawImg.size() != image.size() || drawImg.type() != image.type())
-            drawImg.create(image.size(), image.type());
-        drawImg.setTo(cv::Scalar(0, 0, 0));
+        image.copyTo(drawImg);
         cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
         previewCalibration(
@@ -526,9 +537,23 @@ void Tracker::CalibrateCameraCharuco()
         cvtColor(image, gray, cv::COLOR_BGR2GRAY);
         cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
 
+        // TODO: If markers are detected, the image gets updated, and then the calibration timer below
+        // captures another image, in the time before the opencv loop updates the preview on screen,
+        // then the masked out tags will still be visible, it probably won't effect much though.
+        for (const auto& corners : markerCorners)
+        {
+            ATASSERT("A square has four corners.", corners.size() == 4);
+            const std::array<cv::Point, 4> points = { corners[0], corners[1], corners[2], corners[3] };
+            // much faster than fillPoly, and we know they will be convex
+            cv::fillConvexPoly(drawImg, points.data(), points.size(), cv::Scalar::all(255));
+        }
+
+        cv::resize(drawImg, outImg, cv::Size(cols, rows));
+        gui->outWindow.CloneImage(outImg);
+
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
-        if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 2)
+        if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 1)
         {
             // framesSinceLast = 0;
             timeOfLast = std::chrono::steady_clock::now();
@@ -572,14 +597,6 @@ void Tracker::CalibrateCameraCharuco()
                 }
             }
         }
-
-        for (const auto& corners : markerCorners)
-        {
-            // cv::fillPoly(drawImg, corners, cv::Scalar::all(255));
-        }
-
-        cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        gui->outWindow.CloneImage(outImg);
     }
 
     gui->outWindow.Hide();
@@ -879,6 +896,7 @@ void Tracker::CalibrateTracker()
     std::vector<std::vector<std::vector<cv::Point3f>>> cornersList;
 
     // reset current tracker calibration data
+    // TODO: Don't reset if user clicks cancel
     trackers.clear();
 
     gui->outWindow.Show();
