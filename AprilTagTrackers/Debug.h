@@ -154,6 +154,8 @@ inline void abort()
     std::abort();
 }
 
+#if ATT_LOG_LEVEL > 0
+
 const auto appStartTimePoint = std::chrono::system_clock::now();
 
 template <typename StrT>
@@ -168,5 +170,7 @@ inline void PreLog(const StrT file, int line) noexcept
               << "(" << std::filesystem::path(file)
               << ":" << line << ") ";
 }
+
+#endif
 
 } // namespace Debug
