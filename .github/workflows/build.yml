@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, windows-2019]
 
     steps:
       - name: Checkout project and recurse submodules.
@@ -59,7 +59,7 @@ jobs:
       - name: Upload install.
         uses: actions/upload-artifact@v3
         with:
-          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          name: Install-${{ env.BUILD_TYPE }}-${{ matrix.os }}
           retention-days: 7
           path: |
             ${{ env.INSTALL_DIR }}/
@@ -68,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          name: Logs-${{ env.BUILD_TYPE }}-${{ matrix.os }}
           retention-days: 14
           path: |
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
