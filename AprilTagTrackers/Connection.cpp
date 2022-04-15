@@ -158,7 +158,7 @@ void Connection::Connect()
     dial2.ShowModal();
 
     */
-
+    // TODO: Maybe move to bindings/att_actions.json
     const auto bindingsPath = std::filesystem::absolute("att_actions.json");
     if (!std::filesystem::exists(bindingsPath))
     {

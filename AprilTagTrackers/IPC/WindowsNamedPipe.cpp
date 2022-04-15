@@ -30,6 +30,8 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
         2 * SEC_TO_MS))) // timeout in ms
     {
         std::cerr << "Named pipe (" << this->pipe_name << ") send error: " << GetLastError() << std::endl;
+        //resp = "Named pipe (" + this->pipe_name + ") send error: " + std::to_string(GetLastError() ERROR_PIPE);
+        resp = std::string(response_buffer, response_length);
         return false;
     }
 
