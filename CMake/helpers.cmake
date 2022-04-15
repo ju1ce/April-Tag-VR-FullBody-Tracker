@@ -158,7 +158,7 @@ function(att_add_files_installer target_name install_prefix)
             get_filename_component(input_file_name "${elem}" NAME)
             set(output_file_path "${install_prefix}/${dest_dir}/${input_file_name}")
             list(APPEND output_files "${output_file_path}")
-            list(APPEND commands COMMAND "${CMAKE_COMMAND}" -E copy "${elem}" "${output_file_path}")
+            list(APPEND commands COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${elem}" "${output_file_path}")
         endif()
 
         # dest dir should be INSTALL_ENTRY or a directory by now
