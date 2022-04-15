@@ -27,17 +27,7 @@ find_package(OpenCV REQUIRED ${FIND_LOCAL})
 find_package(apriltag REQUIRED ${FIND_LOCAL})
 find_package(openvr REQUIRED ${FIND_LOCAL})
 find_package(wxWidgets REQUIRED core base ${FIND_LOCAL})
-set(PS3EYE_FILES
-    "${DEPS_INSTALL_DIR}/ps3eye/src/ps3eye.cpp"
-    "${DEPS_INSTALL_DIR}/ps3eye/include/ps3eye.h"
-    "${DEPS_INSTALL_DIR}/ps3eye/src/PSEyeVideoCapture.cpp"
-    "${DEPS_INSTALL_DIR}/ps3eye/include/PSEyeVideoCapture.h"
-    "${DEPS_INSTALL_DIR}/libusb/include/libusb.h")
-set(PS3EYE_INCLUDE_DIRS
-    "${DEPS_INSTALL_DIR}/ps3eye/include"
-    "${DEPS_INSTALL_DIR}/libusb/include")
-set(PS3EYE_LIBS
-    "${DEPS_INSTALL_DIR}/libusb/lib/$<CONFIG>/libusb-1.0.lib")
+find_package(ps3eye REQUIRED ${FIND_LOCAL})
 
 # Explicitly list source files as recommended by cmake
 set(ATT_SOURCE_FILES
@@ -66,12 +56,9 @@ add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Add the ps3eye driver, video capture, and its libusb dependency
+# Link to ps3eye target if enabled
 if(WIN32 AND ENABLE_PS3EYE)
-    target_compile_definitions(AprilTagTrackers PRIVATE ENABLE_PS3EYE)
-    target_link_libraries(AprilTagTrackers PRIVATE ${PS3EYE_LIBS})
-    target_include_directories(AprilTagTrackers SYSTEM PRIVATE ${PS3EYE_INCLUDE_DIRS})
-    target_sources(AprilTagTrackers PRIVATE ${PS3EYE_FILES})
+    target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
 
 # Link libraries defined as targets, includes are automatic

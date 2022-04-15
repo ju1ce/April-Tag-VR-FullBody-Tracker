@@ -91,6 +91,8 @@ set(PSD_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PS3EyeDriver")
 set(PSMS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PSMoveService")
 
 att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
+    INSTALL_ENTRY "."
+    "${PSD_PREFIX}/ps3eyeConfig.cmake"
     INSTALL_ENTRY "include"
     "${PSD_PREFIX}/ps3eye.h"
     "${PSMS_PREFIX}/PSEyeVideoCapture.h"
