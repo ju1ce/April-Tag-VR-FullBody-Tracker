@@ -5,7 +5,7 @@ add_library(ps3eye::libusb STATIC IMPORTED
     "${LIBUSB_ROOT}/include/libusb.h")
 set_target_properties(ps3eye::libusb PROPERTIES
     IMPORTED_LOCATION_DEBUG "${LIBUSB_ROOT}/lib/Debug/libusb-1.0.lib"
-    IMPORTER_LOCATION_RELEASE "${LIBUSB_ROOT}/lib/Release/libusb-1.0.lib")
+    IMPORTED_LOCATION_RELEASE "${LIBUSB_ROOT}/lib/Release/libusb-1.0.lib")
 target_include_directories(ps3eye::libusb SYSTEM INTERFACE
     "${LIBUSB_ROOT}/include")
 
