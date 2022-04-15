@@ -1,3 +1,5 @@
+project(deps)
+
 set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED TRUE)
 
 # --- AprilTag ---
