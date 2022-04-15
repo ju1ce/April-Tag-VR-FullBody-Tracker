@@ -159,7 +159,7 @@ void Connection::Connect()
 
     */
 
-    const auto bindingsPath = std::filesystem::path("att_actions.json").root_path();
+    const auto bindingsPath = std::filesystem::absolute("att_actions.json");
     if (!std::filesystem::exists(bindingsPath))
     {
         gui->ShowErrorPopup(lc.CONNECT_BINDINGS_ERROR);
