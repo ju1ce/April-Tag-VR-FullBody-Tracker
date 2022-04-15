@@ -54,3 +54,4 @@ att_add_external_project(
 )
 
 att_add_install_compile_commands_step(AprilTagTrackers "${CMAKE_CURRENT_SOURCE_DIR}/build")
+att_ep_create_config_stamp(AprilTagTrackers)

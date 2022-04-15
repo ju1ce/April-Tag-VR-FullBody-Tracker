@@ -175,3 +175,15 @@ function(att_add_files_installer target_name install_prefix)
     add_custom_command(OUTPUT ${output_files} DEPENDS ${input_files} ${commands} VERBATIM)
     add_custom_target(${target_name} DEPENDS ${output_files})
 endfunction()
+
+# Usage in subproject:
+# add_custom_target(config-stamp DEPENDS
+#    "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+# add_dependencies(<your target> config-stamp)
+function(att_ep_create_config_stamp project_name)
+    # Create a config stamp to allow subprojects to test which configuration they are allowed to build
+    set(CONFIG_STAMP_FILE "<BINARY_DIR>/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+    ExternalProject_Add_Step(${project_name} create-config-stamp
+        DEPENDERS build BYPRODUCTS "${CONFIG_STAMP_FILE}"
+        COMMAND "${CMAKE_COMMAND}" -E touch "${CONFIG_STAMP_FILE}")
+endfunction()

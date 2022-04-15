@@ -4,12 +4,13 @@
 cmake_minimum_required(VERSION 3.15)
 project("AprilTagTrackers" CXX)
 
-option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
-option(USE_ASAN "Create an address sanitizer build." OFF)
-option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
-option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
-option(ENABLE_ASSERT "Enable assertions." OFF)
-set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
+# Options set by superproject
+option(ENABLE_LTO "Enable link time optimizations for release builds")
+option(USE_ASAN "Create an address sanitizer build.")
+option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static.")
+option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now.")
+option(ENABLE_ASSERT "Enable assertions.")
+set(LOG_LEVEL "" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
 
 # If using a multi config generator, wxWidgets and opencv due to this random blog post
@@ -51,6 +52,11 @@ set(ATT_SOURCE_FILES
 
 # main build output
 add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
+
+# Test that this config is allowed
+add_custom_target(config-stamp DEPENDS
+    "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+add_dependencies(AprilTagTrackers config-stamp)
 
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -108,8 +114,10 @@ target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/
 if(WIN32)
     # install pdb file for debugging
     install(FILES $<TARGET_PDB_FILE:AprilTagTrackers> DESTINATION "bin" OPTIONAL)
+
     # set as GUI application on windows
     set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE TRUE)
+
     # wxWidgets will compile a resource.rc file for us
     target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
 endif()
