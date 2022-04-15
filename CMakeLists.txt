@@ -30,11 +30,11 @@ add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
 if(NOT SKIP_BUILD_DEPS)
     set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
-endif()
 
-# Move the ps3eye files to install, windows only for now
-if(WIN32 AND ENABLE_PS3EYE)
-    list(APPEND ATT_DEPS ps3eye-install)
+    # Move the ps3eye files to install, windows only for now
+    if(WIN32 AND ENABLE_PS3EYE)
+        list(APPEND ATT_DEPS ps3eye-install)
+    endif()
 endif()
 
 att_add_external_project(
