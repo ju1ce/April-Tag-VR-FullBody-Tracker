@@ -178,12 +178,10 @@ function(att_add_files_installer target_name install_prefix)
 endfunction()
 
 # Usage in subproject:
-
-# add_custom_target(test-config-stamp
-# COMMAND "${CMAKE_COMMAND}" -E cat
+# add_custom_command(TARGET YourTarget PRE_BUILD
+# COMMAND ${CMAKE_COMMAND} -E cat
 # "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>"
-# VERBATIM)
-# add_dependencies(<your target> test-config-stamp)
+# COMMENT "If this fails, build the config with the superproject first.")
 function(att_ep_create_config_stamp project_name)
     # Create a config stamp to allow subprojects to test which configuration they are allowed to build
     set(CONFIG_STAMP_FILE "<BINARY_DIR>/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")

@@ -53,12 +53,10 @@ set(ATT_SOURCE_FILES
 # main build output
 add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
-# Test that this config is allowed
-add_custom_target(test-config-stamp
-    COMMAND "${CMAKE_COMMAND}" -E cat
-    "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>"
-    VERBATIM)
-add_dependencies(AprilTagTrackers test-config-stamp)
+add_custom_command(TARGET AprilTagTrackers PRE_BUILD
+  COMMENT "If this fails, build the config with the superproject first."
+  COMMAND ${CMAKE_COMMAND} -E cat
+  "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
 
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
