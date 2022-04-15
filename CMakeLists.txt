@@ -16,15 +16,6 @@ option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
 
-# Fix default install path on windows
-# Noone wants to provide admin access and install to C:/Program Files (x86)/
-if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    message(FATAL_ERROR "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
-which requires admin rights and usually results in errors. \
-Explicitly set with -DCMAKE_INSTALL_PREFIX= to a relative or absolute path. \
-Rerun if you are sure about installing to this location.")
-endif()
-
 # Where to find, and where to install deps
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps")
 set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps install directory.")

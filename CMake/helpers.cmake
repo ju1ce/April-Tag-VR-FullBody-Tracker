@@ -1,6 +1,15 @@
 include(ExternalProject)
 include(CMakePackageConfigHelpers)
 
+# Fix default install path on windows
+# Noone wants to provide admin access and install to C:/Program Files (x86)/
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    message(FATAL_ERROR "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
+which requires admin rights and usually results in errors. \
+Explicitly set with -DCMAKE_INSTALL_PREFIX= to a relative or absolute path. \
+Rerun if you are sure about installing to this location.")
+endif()
+
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
 if(IS_MULTI_CONFIG)
