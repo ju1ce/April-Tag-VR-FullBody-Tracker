@@ -20,7 +20,7 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
     // Remove const-ness as callnamedpipe expects a void*, it will not change the inbuffer.
     auto msg_cstr = reinterpret_cast<LPVOID>(const_cast<char*>(msg.c_str()));
     // success will be zero if failed
-    if (SUCCEEDED(CallNamedPipeA(
+    if (FAILED(CallNamedPipeA(
         this->pipe_name.c_str(), // pipe name
         msg_cstr, // message
         msg.size(), // message size
