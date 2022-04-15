@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, windows-2019]
+        os: [windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout project and recurse submodules.
@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.BINARY_DIR }}/deps/install
-          key: deps-${{ matrix.os }}${{ steps.deps-sha.outputs.combined }}
+          key: deps-${{ runner.os }}${{ steps.deps-sha.outputs.combined }}-${{ hashFiles("./deps/install/ps3eye/**") }}
 
       - name: CMake configure, skip building deps if cached.
         run: >-
@@ -59,7 +59,7 @@ jobs:
       - name: Upload install.
         uses: actions/upload-artifact@v3
         with:
-          name: Install-${{ env.BUILD_TYPE }}-${{ matrix.os }}
+          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}
           retention-days: 7
           path: |
             ${{ env.INSTALL_DIR }}/
@@ -68,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Logs-${{ env.BUILD_TYPE }}-${{ matrix.os }}
+          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
           retention-days: 14
           path: |
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
