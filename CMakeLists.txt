@@ -6,7 +6,7 @@ project("April-Tag-VR-FullBody-Tracker" CXX)
 
 # AprilTagTrackers forwarded options
 option(USE_ASAN "Create an address sanitizer build." OFF)
-option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ON)
+option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ${WIN32})
 option(ENABLE_ASSERT "Enable assertions." OFF)
 set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 
@@ -37,15 +37,22 @@ if(NOT SKIP_BUILD_DEPS)
     endif()
 endif()
 
+# If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
+if (DEFINED LOG_LEVEL)
+    set(LOG_LEVEL_FLAG ${LOG_LEVEL})
+else()
+    set(LOG_LEVEL_FLAG $<IF:$<CONFIG:Debug>,3,2>)
+endif()
+
 att_add_external_project(
     AprilTagTrackers
     EXTRA_CMAKE_ARGS
-    -DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}
-    -DUSE_ASAN:BOOL=${USE_ASAN}
-    -DENABLE_LTO:BOOL=${ENABLE_LTO}
-    -DENABLE_PS3EYE:BOOL=${ENABLE_PS3EYE}
-    -DENABLE_ASSERT:BOOL=${ENABLE_ASSERT}
-    -DLOG_LEVEL=${LOG_LEVEL}
+    "-DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}"
+    -DUSE_ASAN:BOOL=$<BOOL:${USE_ASAN}>
+    -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
+    -DLOG_LEVEL=${LOG_LEVEL_FLAG}
+    -DENABLE_LTO:BOOL=$<AND:$<CONFIG:Release>,$<BOOL:${ENABLE_LTO}>> # (CONFIG == Release) and ENABLE_LTO
+    -DENABLE_ASSERT:BOOL=$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>> # (CONFIG == Debug) or ENABLE_ASSERT
 
     EXTRA_EP_ARGS
     INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"

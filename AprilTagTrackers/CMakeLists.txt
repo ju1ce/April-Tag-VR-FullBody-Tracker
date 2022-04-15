@@ -64,7 +64,7 @@ add_dependencies(AprilTagTrackers test-config-stamp)
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Link to ps3eye target if enabled
-if(WIN32 AND ENABLE_PS3EYE)
+if(ENABLE_PS3EYE)
     find_package(ps3eye REQUIRED ${FIND_LOCAL})
     target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
