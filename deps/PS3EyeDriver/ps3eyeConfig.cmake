@@ -1,7 +1,6 @@
 set(PS3EYE_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 set(LIBUSB_ROOT "${CMAKE_CURRENT_LIST_DIR}/../libusb")
 
-# local scope library, only included by ps3eye
 add_library(ps3eye::libusb STATIC IMPORTED
     "${LIBUSB_ROOT}/include/libusb.h")
 set_target_properties(ps3eye::libusb PROPERTIES
@@ -10,14 +9,13 @@ set_target_properties(ps3eye::libusb PROPERTIES
 target_include_directories(ps3eye::libusb SYSTEM INTERFACE
     "${LIBUSB_ROOT}/include")
 
-# interface library sources added here are private
-add_library(ps3eye::ps3eye INTERFACE)
-target_include_directories(ps3eye::ps3eye SYSTEM INTERFACE
-    "${PS3EYE_ROOT}/include")
-# instead make them interface sources
-target_sources(ps3eye::ps3eye INTERFACE
+add_library(ps3eye::ps3eye INTERFACE IMPORTED GLOBAL
     "${PS3EYE_ROOT}/src/ps3eye.cpp"
     "${PS3EYE_ROOT}/include/ps3eye.h"
 
     "${PS3EYE_ROOT}/src/PSEyeVideoCapture.cpp"
     "${PS3EYE_ROOT}/include/PSEyeVideoCapture.h")
+target_include_directories(ps3eye::ps3eye SYSTEM INTERFACE
+    "${PS3EYE_ROOT}/include")
+
+target_link_libraries(ps3eye::ps3eye INTERFACE ps3eye::libusb)
