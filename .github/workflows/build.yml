@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.BINARY_DIR }}/deps/install
-          key: deps-${{ runner.os }}${{ steps.deps-sha.outputs.combined }}-${{ hashFiles('./deps/install/ps3eye/**') }}
+          key: deps-${{ runner.os }}${{ steps.deps-sha.outputs.combined }}-${{ hashFiles('/${{ env.BINARY_DIR }}/deps/install/ps3eye/**') }}
 
       - name: CMake configure, skip building deps if cached.
         run: >-
