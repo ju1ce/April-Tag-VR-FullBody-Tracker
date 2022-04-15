@@ -16,6 +16,9 @@
 *.py text
 *.rc text
 *.xpm text
+.gitattributes text
+.gitignore text
+.gitmodules text
 
 # Mark binary files
 *.png binary
