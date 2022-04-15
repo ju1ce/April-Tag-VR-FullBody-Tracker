@@ -54,6 +54,7 @@ set(ATT_SOURCE_FILES
     Serializable.cpp Serializable.h
     Tracker.cpp Tracker.h
     MyApp.cpp MyApp.h
+    Debug.h
 
     IPC/IPC.h
     IPC/UNIXSocket.cpp
@@ -87,8 +88,6 @@ endif()
 target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>)
-
-
 
 # Set cross-platform defines in sources
 if(WIN32)
