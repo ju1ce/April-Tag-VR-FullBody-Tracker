@@ -45,6 +45,9 @@ The project is a CMake project. You should be able to build it either using CMak
 ```
 sudo apt install build-essentials libgtk-3-dev
 ```
+
+Note that since this project is mostly developed on widnows, some additions may occasionaly break linux compatibility. It can usualy be solved by commenting out the additions, or just rolling back a few commits.
+
 ### Windows prerequisites
 Open in Visual Studio, or use the Visual Studio Command Prompt.
 
@@ -58,6 +61,21 @@ cmake --build build --target install
 ```
 
 That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)
+
+### Visual studio 2022
+
+Visual studio is a bit picky about external projects, so some additional steps are necessary:
+
+1. Git clone with all submodules
+2. Generate Visual Studio solution files with CMake
+3. Open build/April-Tag-VR-FullBody-Tracker.sln in VS
+4. Build it, both in Debug and Release configurations. This will build and configure all dependencies. Note that you cannot run/debug ATT from here, so dont be alarmed if you get a file not found or access denied error when it attempts to do so.
+5. When done, close the solution, and open build/ApriltagTrackers/ApriltagTrackers.sln in VS
+6. The project is now configured! You should be able to change code, build, run and debug ATT from this solution.
+
+### Troubleshooting
+
+If anything goes wrong when building, please notify us in the discord/via a github issue!
 
 ## Sources
 Olson, Edwin. "AprilTag: A robust and flexible visual fiducial system." 2011 IEEE International Conference on Robotics and Automation. IEEE, 2011.
