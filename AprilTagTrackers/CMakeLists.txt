@@ -27,7 +27,6 @@ find_package(OpenCV REQUIRED ${FIND_LOCAL})
 find_package(apriltag REQUIRED ${FIND_LOCAL})
 find_package(openvr REQUIRED ${FIND_LOCAL})
 find_package(wxWidgets REQUIRED core base ${FIND_LOCAL})
-find_package(ps3eye REQUIRED ${FIND_LOCAL})
 
 # Explicitly list source files as recommended by cmake
 set(ATT_SOURCE_FILES
@@ -58,6 +57,7 @@ target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 
 # Link to ps3eye target if enabled
 if(WIN32 AND ENABLE_PS3EYE)
+    find_package(ps3eye REQUIRED ${FIND_LOCAL})
     target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
 
