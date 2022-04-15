@@ -141,9 +141,10 @@ function(att_add_files_installer target_name install_prefix)
         # Expect next elem to be the destination dir
         if(elem STREQUAL sep)
             # separator followed by separator
-            if (dest_dir STREQUAL sep)
+            if(dest_dir STREQUAL sep)
                 message(FATAL_ERROR "Empty install entry")
             endif()
+
             # set next loop to expect a directory
             set(dest_dir ${sep})
         elseif(dest_dir STREQUAL sep)
@@ -162,13 +163,13 @@ function(att_add_files_installer target_name install_prefix)
         endif()
 
         # dest dir should be INSTALL_ENTRY or a directory by now
-        if (NOT dest_dir)
+        if(NOT dest_dir)
             message(FATAL_ERROR "Separate each destination dir with INSTALL_ENTRY")
         endif()
     endforeach()
 
     # Last arg was separator
-    if (dest_dir STREQUAL sep)
+    if(dest_dir STREQUAL sep)
         message(FATAL_ERROR "Empty install entry.")
     endif()
 
@@ -177,9 +178,12 @@ function(att_add_files_installer target_name install_prefix)
 endfunction()
 
 # Usage in subproject:
-# add_custom_target(config-stamp DEPENDS
-#    "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
-# add_dependencies(<your target> config-stamp)
+
+# add_custom_target(test-config-stamp
+# COMMAND "${CMAKE_COMMAND}" -E cat
+# "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>"
+# VERBATIM)
+# add_dependencies(<your target> test-config-stamp)
 function(att_ep_create_config_stamp project_name)
     # Create a config stamp to allow subprojects to test which configuration they are allowed to build
     set(CONFIG_STAMP_FILE "<BINARY_DIR>/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
