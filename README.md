@@ -1,4 +1,4 @@
-## This guide is also availible in the folowing languages:
+## This guide is also available in the following languages:
 
 - ![汉语 (Simplified Chinese)](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87%E6%95%99%E7%A8%8B%EF%BC%88SimplifiedChineseTutorial%EF%BC%89.md)
 
@@ -20,7 +20,7 @@ This is my second attempt at creating a full-body tracking system using fiducial
 
 To use, you will have to make three trackers - one for each leg and one for hips. Using only leg trackers will not work in VRChat!
 
-This version uses the much more accurate AprilTag system and includes many improvements to make the system easier to use, such as a GUI interface and a more straight forward calibration.
+This version uses the much more accurate AprilTag system and includes many improvements to make the system easier to use, such as a GUI interface and a more straightforward  calibration.
 
 If you have any issues or encounter any bugs, feel free to open an issue on github or message me on discord: https://discord.gg/g2ctkXB4bb
 
@@ -31,7 +31,7 @@ The program can be downloaded from the [releases](https://github.com/ju1ce/April
 Beatsaber demo: https://youtu.be/Akps-dH0EeA
 
 ### Short setup video:
-I am too bad at making actual tutorials, but I did record a short video of me setting up everything. Its not a replacement for the tutorial bellow, but it may help you understand some of the steps better.
+I am too bad at making actual tutorials, but I did record a short video of me setting up everything. It's not a replacement for the tutorial below, but it may help you understand some of the steps better.
 
 https://youtu.be/ncN8Vw_0DrE
 
@@ -46,7 +46,7 @@ The project is a CMake project. You should be able to build it either using CMak
 sudo apt install build-essentials libgtk-3-dev
 ```
 
-Note that since this project is mostly developed on widnows, some additions may occasionaly break linux compatibility. It can usualy be solved by commenting out the additions, or just rolling back a few commits.
+Note that since this project is mostly developed on windows, some additions may occasionally break linux compatibility. It can usually be solved by commenting out the additions, or just rolling back a few commits.
 
 ### Windows prerequisites
 Open in Visual Studio, or use the Visual Studio Command Prompt.
@@ -69,7 +69,7 @@ Visual studio is a bit picky about external projects, so some additional steps a
 1. Git clone with all submodules
 2. Generate Visual Studio solution files with CMake
 3. Open build/April-Tag-VR-FullBody-Tracker.sln in VS
-4. Build it, both in Debug and Release configurations. This will build and configure all dependencies. Note that you cannot run/debug ATT from here, so dont be alarmed if you get a file not found or access denied error when it attempts to do so.
+4. Build it, both in Debug and Release configurations. This will build and configure all dependencies. Note that you cannot run/debug ATT from here, so don't be alarmed if you get a file not found or access denied error when it attempts to do so.
 5. When done, close the solution, and open build/ApriltagTrackers/ApriltagTrackers.sln in VS
 6. The project is now configured! You should be able to change code, build, run and debug ATT from this solution.
 
