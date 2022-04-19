@@ -534,6 +534,10 @@ void ValueInput::ButtonPressed(wxCommandEvent& evt)
     input->ChangeValue(std::to_string(value));
 }
 
+PreviewWindow PreviewWindow::Out{"Out"};
+PreviewWindow PreviewWindow::Camera{"Camera"};
+PreviewWindow::UpdateTimer PreviewWindow::Timer{};
+
 PreviewWindow::PreviewWindow(std::string _windowName)
     : windowName(std::move(_windowName))
 {
@@ -595,6 +599,10 @@ void PreviewWindow::UpdateWindow() const
 
 void PreviewWindow::UpdateTimer::AddWindow(const PreviewWindow& window)
 {
+    ATASSERT("One PreviewWindow per unique window name.",
+        std::find_if(windowList.begin(), windowList.end(),
+            [&](const auto& elem)
+            { return elem.get().windowName == window.windowName; }) == windowList.end());
     windowList.emplace_back(window);
 }
 
@@ -602,7 +610,8 @@ void PreviewWindow::UpdateTimer::RemoveWindow(const PreviewWindow& window)
 {
     // Should use the PreviewWindow comparison, which only compares windowName
     const auto itr = std::find_if(windowList.begin(), windowList.end(),
-        [&](const auto& elem) { return elem.get() == window; });
+        [&](const auto& elem)
+        { return elem.get().windowName == window.windowName; });
     ATASSERT("Window added by constructor, only removed by destructor.",
         itr != windowList.end());
     windowList.erase(itr);

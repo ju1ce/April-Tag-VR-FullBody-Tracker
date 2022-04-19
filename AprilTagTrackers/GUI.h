@@ -49,9 +49,6 @@ public:
     /// Locks imageMutex, cv::swap image with newImage.
     void SwapImage(cv::Mat& newImage);
 
-    bool operator==(const PreviewWindow& other) const { return windowName == other.windowName; }
-    bool operator!=(const PreviewWindow& other) const { return !(*this == other); }
-
 private:
     // Make constructor private, as instances should only be handled by this classes static fields
     PreviewWindow(std::string _windowName);
