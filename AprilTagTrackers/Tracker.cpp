@@ -328,7 +328,7 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
                 if (previewCameraCalibration)
                     previewCalibration(drawImg, calib_config);
-                PreviewWindow::Camera.SwapImage(drawImg);
+                gui->camWindow.UpdateImage(drawImg);
             }
         }
         {
@@ -547,7 +547,7 @@ void Tracker::CalibrateCameraCharuco()
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        PreviewWindow::Out.SwapImage(outImg);
+        gui->outWindow.UpdateImage(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
@@ -597,7 +597,7 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    PreviewWindow::Out.Close();
+    gui->outWindow.Close();
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
@@ -715,7 +715,7 @@ void Tracker::CalibrateCamera()
     {
         if (!mainThreadRunning || !cameraRunning)
         {
-            PreviewWindow::Out.Close();
+            gui->outWindow.Close();
             return;
         }
         CopyFreshCameraImageTo(image);
@@ -757,7 +757,7 @@ void Tracker::CalibrateCamera()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        PreviewWindow::Out.CloneImage(outImg);
+        gui->outWindow.UpdateImage(outImg);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -768,7 +768,7 @@ void Tracker::CalibrateCamera()
     calib_config.distCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
-    PreviewWindow::Out.Close();
+    gui->outWindow.Close();
     gui->ShowInfoPopup(wxT("Calibration complete."));
 }
 
@@ -1036,7 +1036,7 @@ void Tracker::CalibrateTracker()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-       PreviewWindow::Out.SwapImage(outImg);
+       gui->outWindow.UpdateImage(outImg);
     }
 
     // when done calibrating, save the trackers to parameters
@@ -1051,7 +1051,7 @@ void Tracker::CalibrateTracker()
     trackersCalibrated = true;
 
     // close preview window
-    PreviewWindow::Out.Close();
+    gui->outWindow.Close();
     mainThreadRunning = false;
 }
 
@@ -1501,7 +1501,7 @@ void Tracker::MainLoop()
                 // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
                 ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
                 gui->ShowErrorPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG);
-                PreviewWindow::Out.Close();
+                gui->outWindow.Close();
                 // apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
@@ -1700,9 +1700,9 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
             }
-            PreviewWindow::Out.SwapImage(outImg);
+            gui->outWindow.UpdateImage(outImg);
         }
         // time of marker detection
     }
-    PreviewWindow::Out.Close();
+    gui->outWindow.Close();
 }
