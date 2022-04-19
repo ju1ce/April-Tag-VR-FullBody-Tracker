@@ -46,8 +46,6 @@ public:
     void UpdateImage(cv::Mat& newImage);
 
 private:
-    /// Locks imageMutex, Applies the image to the window.
-    void UpdateWindow() const;
     /// Name of the window, aswell as the only way to reference it.
     std::string windowName;
 };
