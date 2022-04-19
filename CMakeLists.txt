@@ -8,6 +8,7 @@ project("April-Tag-VR-FullBody-Tracker" CXX)
 option(USE_ASAN "Create an address sanitizer build." OFF)
 option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ${WIN32})
 option(ENABLE_ASSERT "Enable assertions." OFF)
+option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
 set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 
 # Build options
@@ -53,6 +54,7 @@ att_add_external_project(
     -DLOG_LEVEL=${LOG_LEVEL_FLAG}
     -DENABLE_LTO:BOOL=$<AND:$<CONFIG:Release>,$<BOOL:${ENABLE_LTO}>> # (CONFIG == Release) and ENABLE_LTO
     -DENABLE_ASSERT:BOOL=$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>> # (CONFIG == Debug) or ENABLE_ASSERT
+    -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
     EXTRA_EP_ARGS
     INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
