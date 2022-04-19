@@ -44,7 +44,7 @@ set(ATT_SOURCE_FILES
     Serializable.cpp Serializable.h
     Tracker.cpp Tracker.h
     MyApp.cpp MyApp.h
-    Debug.h
+    Debug.cpp Debug.h
 
     IPC/IPC.h
     IPC/UNIXSocket.cpp
