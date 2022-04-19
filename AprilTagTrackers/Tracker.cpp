@@ -320,7 +320,7 @@ void Tracker::CameraLoop()
         double timeSinceLast = std::chrono::duration<double>(curtime - last_preview_time).count();
         if (timeSinceLast > 0.015)
         {
-            if (gui->previewWindow.IsVisible())
+            if (showCameraPreview)
             {
                 last_preview_time = std::chrono::steady_clock::now();
                 img.copyTo(drawImg);
@@ -328,7 +328,7 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
                 if (previewCameraCalibration)
                     previewCalibration(drawImg, calib_config);
-                gui->previewWindow.CloneImage(drawImg);
+                PreviewWindow::Camera.SwapImage(drawImg);
             }
         }
         {
@@ -473,8 +473,6 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> markerCorners;
     std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
-    gui->outWindow.Show();
-
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
@@ -549,7 +547,7 @@ void Tracker::CalibrateCameraCharuco()
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        gui->outWindow.CloneImage(outImg);
+        PreviewWindow::Out.SwapImage(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
@@ -599,7 +597,7 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    gui->outWindow.Hide();
+    PreviewWindow::Out.Close();
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
@@ -717,7 +715,7 @@ void Tracker::CalibrateCamera()
     {
         if (!mainThreadRunning || !cameraRunning)
         {
-            gui->outWindow.Hide();
+            PreviewWindow::Out.Close();
             return;
         }
         CopyFreshCameraImageTo(image);
@@ -759,7 +757,7 @@ void Tracker::CalibrateCamera()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        gui->outWindow.CloneImage(outImg);
+        PreviewWindow::Out.CloneImage(outImg);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -770,7 +768,7 @@ void Tracker::CalibrateCamera()
     calib_config.distCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
-    gui->outWindow.Hide();
+    PreviewWindow::Out.Close();
     gui->ShowInfoPopup(wxT("Calibration complete."));
 }
 
@@ -898,8 +896,6 @@ void Tracker::CalibrateTracker()
     // reset current tracker calibration data
     // TODO: Don't reset if user clicks cancel
     trackers.clear();
-
-    gui->outWindow.Show();
 
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
@@ -1040,7 +1036,7 @@ void Tracker::CalibrateTracker()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        gui->outWindow.CloneImage(outImg);
+       PreviewWindow::Out.SwapImage(outImg);
     }
 
     // when done calibrating, save the trackers to parameters
@@ -1055,7 +1051,7 @@ void Tracker::CalibrateTracker()
     trackersCalibrated = true;
 
     // close preview window
-    gui->outWindow.Hide();
+    PreviewWindow::Out.Close();
     mainThreadRunning = false;
 }
 
@@ -1160,9 +1156,6 @@ void Tracker::MainLoop()
     {
         trackers = this->trackers;
     }
-
-    // initialize CV out window
-    gui->outWindow.Show();
 
     while (mainThreadRunning && cameraRunning) // run detection until camera is stopped or the start/stop button is pressed again
     {
@@ -1508,7 +1501,7 @@ void Tracker::MainLoop()
                 // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
                 ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
                 gui->ShowErrorPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG);
-                gui->outWindow.Hide();
+                PreviewWindow::Out.Close();
                 // apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
@@ -1687,7 +1680,7 @@ void Tracker::MainLoop()
         end = std::chrono::steady_clock::now();
         double frameTime = std::chrono::duration<double>(end - start).count();
 
-        if (gui->outWindow.IsVisible())
+        if (showOutPreview)
         {
             int cols, rows;
             if (image.cols > image.rows)
@@ -1707,9 +1700,9 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
             }
-            gui->outWindow.CloneImage(outImg);
+            PreviewWindow::Out.SwapImage(outImg);
         }
         // time of marker detection
     }
-    gui->outWindow.Hide();
+    PreviewWindow::Out.Close();
 }

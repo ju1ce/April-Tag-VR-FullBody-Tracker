@@ -26,19 +26,25 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 
 } // namespace
 
-GUI::GUI(const wxString& title, Connection* conn, UserConfig& _userConfig, const Localization& lc)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650)), userConfig(_userConfig)
+GUI::GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const Localization& lc)
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650))
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
 
     CameraPage* panel = new CameraPage(nb, this, lc);
-    ParamsPage* panel2 = new ParamsPage(nb, conn, _userConfig, lc);
+    ParamsPage* panel2 = new ParamsPage(nb, conn, userConfig, lc);
     LicensePage* panel3 = new LicensePage(nb);
 
     nb->AddPage(panel, lc.TAB_CAMERA);
     nb->AddPage(panel2, lc.TAB_PARAMS);
     nb->AddPage(panel3, lc.TAB_LICENSE);
+
+    if (!userConfig.windowTitle.empty())
+    {
+        PreviewWindow::Out.SetWindowTitle("Out: " + userConfig.windowTitle);
+        PreviewWindow::Camera.SetWindowTitle("Camera: " + userConfig.windowTitle);
+    }
 
     SetIcon(apriltag_xpm);
 
@@ -55,7 +61,7 @@ void GUI::QueuePopup(const wxString& content, const wxString& caption, long styl
         {
             wxMessageDialog dial(nullptr, content, caption, style);
             // ShowModal is blocking, until the user clicks ok
-            dial.ShowModal();
+            dial.ShowModal(); //
         });
 }
 
@@ -528,76 +534,88 @@ void ValueInput::ButtonPressed(wxCommandEvent& evt)
     input->ChangeValue(std::to_string(value));
 }
 
-void PreviewWindow::Show()
+PreviewWindow::PreviewWindow(std::string _windowName)
+    : windowName(std::move(_windowName))
 {
-    if (visible) return;
-    visible = true;
-
-    parentGUI.QueueOnGUIThread([&]()
-    {
-        // Create this instances window
-        cv::namedWindow(windowName);
-        // Update preview at 15fps.
-        // Interval that Notify() is called.
-        constexpr int milliseconds = 1000 / 10;
-        wxTimer::Start(milliseconds);
-    });
-}
-
-void PreviewWindow::Hide()
-{
-    if (!visible) return;
-
-    image.release();
-    parentGUI.QueueOnGUIThread([&]()
-    {
-        // Stop the Notify() update loop
-        wxTimer::Stop();
-        // Turns out this errors if window doesnt exist
-        cv::destroyWindow(windowName);
-        // Set visible to false after timer has actually been stopped
-        // Otherwise Notify could be called
-        visible = false;
-    });
+    Timer.AddWindow(*this);
 }
 
 PreviewWindow::~PreviewWindow()
 {
-    // Assume constructed on the GUI thread
-    if (!visible) return;
-    visible = false;
-    cv::destroyWindow(windowName);
+    Timer.RemoveWindow(*this);
+}
+
+void PreviewWindow::Close()
+{
+    Timer.CallAfter(
+        [&]()
+        {
+            if (IsVisible())
+                cv::destroyWindow(windowName);
+        });
+}
+
+bool PreviewWindow::IsVisible() const
+{
+    // Returns a double? -1 if window not found, property should be a bool, so 1 or 0
+    // We never set the visible property, so it should always be true, seems like the default behaviour
+    // This isn't a settable property, so no way to "hide" a window
+    return cv::getWindowProperty(windowName, cv::WindowPropertyFlags::WND_PROP_VISIBLE) > 0;
+}
+
+void PreviewWindow::SetWindowTitle(const std::string& title)
+{
+    if (IsVisible())
+        cv::setWindowTitle(windowName, title);
 }
 
 void PreviewWindow::CloneImage(const cv::Mat& newImage)
 {
-    if (!visible) return;
-    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    const std::lock_guard<std::mutex> lock(imageMutex);
     newImageReady = true;
     newImage.copyTo(image);
 }
 
-void PreviewWindow::SwapImage(cv::Mat &newImage)
+void PreviewWindow::SwapImage(cv::Mat& newImage)
 {
-    if (!visible) return;
-    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    const std::lock_guard<std::mutex> lock(imageMutex);
     newImageReady = true;
     cv::swap(image, newImage);
 }
 
-void PreviewWindow::Notify()
+void PreviewWindow::UpdateWindow() const
 {
-    ATASSERT("Timer should only be running when window is visible.", visible);
-    const std::lock_guard<std::mutex> lock_guard(imageMutex);
+    const std::lock_guard<std::mutex> lock(imageMutex);
+    // newImageReady and image are locked behind mutex
     // Don't try to show stale image
     // If imshow dosn't copy the buffer then this dosn't provide much gain
-    if (newImageReady && !image.empty())
+    if (!newImageReady || image.empty()) return;
+    cv::imshow(windowName, image);
+}
+
+void PreviewWindow::UpdateTimer::AddWindow(const PreviewWindow& window)
+{
+    windowList.emplace_back(window);
+}
+
+void PreviewWindow::UpdateTimer::RemoveWindow(const PreviewWindow& window)
+{
+    // Should use the PreviewWindow comparison, which only compares windowName
+    const auto itr = std::find_if(windowList.begin(), windowList.end(),
+        [&](const auto& elem) { return elem.get() == window; });
+    ATASSERT("Window added by constructor, only removed by destructor.",
+        itr != windowList.end());
+    windowList.erase(itr);
+}
+
+void PreviewWindow::UpdateTimer::Notify()
+{
+    bool anyWindowVisible = false;
+    for (const PreviewWindow& window : windowList)
     {
-        cv::imshow(windowName, image);
+        window.UpdateWindow();
+        anyWindowVisible |= window.IsVisible();
     }
-    // Process high gui window events
-    // This only applies to the in focus high gui window, dosn't really matter
-    // Update frequency will increase depending on number of previews open
-    // If it is an issue, pollKey should be moved to its own timer
-    cv::pollKey();
+    if (anyWindowVisible)
+        cv::pollKey();
 }

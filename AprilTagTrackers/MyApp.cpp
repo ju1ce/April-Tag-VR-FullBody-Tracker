@@ -69,10 +69,7 @@ void MyApp::ButtonPressedCamera(wxCommandEvent& event)
 
 void MyApp::ButtonPressedCameraPreview(wxCommandEvent& event)
 {
-    if (event.IsChecked())
-        gui->previewWindow.Show();
-    else
-        gui->previewWindow.Hide();
+    tracker->showCameraPreview = event.IsChecked();
 }
 
 void MyApp::ButtonPressedCameraCalib(wxCommandEvent& event)
@@ -131,10 +128,7 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
 
 void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
 {
-    if (event.IsChecked())
-        gui->outWindow.Hide();
-    else
-        gui->outWindow.Show();
+    tracker->showOutPreview = event.IsChecked();
 }
 
 void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
