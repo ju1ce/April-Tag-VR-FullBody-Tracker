@@ -45,17 +45,6 @@ public:
     /// Call cv::imshow
     void UpdateImage(cv::Mat& newImage);
 
-    class UpdateTimer : public wxTimer
-    {
-    public:
-        UpdateTimer() : wxTimer()
-        {
-        }
-
-    private:
-        void Notify() override;
-    };
-
 private:
     /// Locks imageMutex, Applies the image to the window.
     void UpdateWindow() const;
@@ -120,9 +109,6 @@ public:
     static const int LOCK_HEIGHT_CHECKBOX = 11;
     static const int DISABLE_OUT_CHECKBOX = 12;
     static const int DISABLE_OPENVR_API_CHECKBOX = 13;
-
-private:
-    PreviewWindow::UpdateTimer previewUpdateTimer;
 };
 
 class LicensePage : public wxPanel

@@ -40,8 +40,6 @@ GUI::GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const 
     nb->AddPage(panel2, lc.TAB_PARAMS);
     nb->AddPage(panel3, lc.TAB_LICENSE);
 
-    constexpr int millis = 1000 / 30;
-    previewUpdateTimer.Start(millis);
     if (!userConfig.windowTitle.empty())
     {
         outWindow.SetWindowName("Out: " + userConfig.windowTitle);
@@ -565,9 +563,5 @@ void PreviewWindow::SetWindowName(std::string _windowName)
 void PreviewWindow::UpdateImage(cv::Mat& newImage)
 {
     cv::imshow(windowName, newImage);
-}
-
-void PreviewWindow::UpdateTimer::Notify()
-{
     cv::pollKey();
 }
