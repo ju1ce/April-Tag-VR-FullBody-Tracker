@@ -140,7 +140,7 @@
 
 namespace Debug
 {
-
+/// this_thread::get_id called during static initialization
 extern const std::thread::id mainThreadID;
 
 /// Test if calling thread is the main thread, (whatever static initialization set)
@@ -168,10 +168,10 @@ inline void abort()
 }
 
 #if ATT_LOG_LEVEL > 0
-
+/// system_clock::now() called at static initialization
 extern const std::chrono::system_clock::time_point appStartTimePoint;
 
-// [ thread_id @ runtime_sec ] (file:line)
+/// [ thread_id @ runtime_sec ] (file:line)
 template <typename StrT>
 inline void PreLog(const StrT file, int line) noexcept
 {
