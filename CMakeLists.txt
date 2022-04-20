@@ -13,12 +13,10 @@ set(CUSTOM_CMAKE_FILES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
 
 # Build options
-option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
 
-if (ATT_IS_MULTI_CONFIG)
-    set(EXPORT_COMPILE_COMMANDS OFF CACHE BOOL
-        "Export compile commands for language servers." FORCE)
+if(NOT ATT_IS_MULTI_CONFIG)
+    option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 endif()
 
 # Add deps sub-project
@@ -38,7 +36,7 @@ endif()
 AprilTagTrackers_options()
 
 # If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
-if (LOG_LEVEL STREQUAL "")
+if(LOG_LEVEL STREQUAL "")
     set(LOG_LEVEL_FLAG $<IF:$<CONFIG:Debug>,3,2>)
 else()
     set(LOG_LEVEL_FLAG ${LOG_LEVEL})

@@ -2,7 +2,7 @@ include(ExternalProject)
 include(CMakePackageConfigHelpers)
 
 # This file depends on many of these shared options
-include("${CMAKE_CURRENT_LIST_DIR}/shared.cmake")
+include("${CUSTOM_CMAKE_FILES_DIR}/shared.cmake")
 
 # Prefix every global define with ATT/att
 # Use functions instead of macros when using local variables to not polute the global scope
@@ -29,6 +29,14 @@ function(att_add_external_project project_name)
     cmake_parse_arguments(_arg "" ""
         "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND" ${ARGN})
 
+    if(ATT_IS_MULTI_CONFIG)
+        set(multi_config_flag "--config" "$(Configuration)")
+        unset(single_config_flag)
+    else()
+        set(single_config_flag "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+        unset(multi_config_flag)
+    endif()
+
     if(DEFINED _arg_BUILD_COMMAND)
         set(build_cmd_default ${_arg_BUILD_COMMAND})
     else()
@@ -39,14 +47,6 @@ function(att_add_external_project project_name)
         set(toolchain_file_flag "-DCMAKE_TOOLCHAIN_FILE=${ATT_TOOLCHAIN_FILE}")
     else()
         unset(toolchain_file_flag)
-    endif()
-
-    if (ATT_IS_MULTI_CONFIG)
-        set(multi_config_flag "--config" "$(Configuration)")
-        unset(single_config_flag)
-    else()
-        set(single_config_flag "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-        unset(multi_config_flag)
     endif()
 
     set(project_source "${CMAKE_CURRENT_SOURCE_DIR}/${project_name}")
@@ -65,7 +65,6 @@ function(att_add_external_project project_name)
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=$<BOOL:${BUILD_SHARED_LIBS}>
         -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
-        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
         ${toolchain_file_flag}
         ${single_config_flag}
@@ -96,6 +95,7 @@ function(att_add_dep project_name)
     att_add_external_project(
         ${project_name}
         EXTRA_CMAKE_ARGS -Wno-dev
+        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS
