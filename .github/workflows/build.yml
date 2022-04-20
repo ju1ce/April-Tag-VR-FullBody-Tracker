@@ -73,5 +73,6 @@ jobs:
           name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
           retention-days: 14
           path: |
+            ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log

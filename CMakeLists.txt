@@ -22,6 +22,9 @@ endif()
 # Add deps sub-project
 add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
 
+# AprilTagTrackers forwarded options
+AprilTagTrackers_options()
+
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
 if(NOT SKIP_BUILD_DEPS)
     set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
@@ -31,9 +34,6 @@ if(NOT SKIP_BUILD_DEPS)
         list(APPEND ATT_DEPS ps3eye-install)
     endif()
 endif()
-
-# AprilTagTrackers forwarded options
-AprilTagTrackers_options()
 
 # If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
 if(LOG_LEVEL STREQUAL "")
