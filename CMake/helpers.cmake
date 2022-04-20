@@ -1,6 +1,13 @@
 include(ExternalProject)
 include(CMakePackageConfigHelpers)
 
+# Prefix every global define with ATT/att
+# Use functions instead of macros when using local variables to not polute the global scope
+#
+
+# Useful variables that are also required by helper functions
+# These will always get defined, but they won't conflict,
+
 # Fix default install path on windows
 # Noone wants to provide admin access and install to C:/Program Files (x86)/
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -10,34 +17,28 @@ Explicitly set with -DCMAKE_INSTALL_PREFIX= to a relative or absolute path. \
 Rerun if you are sure about installing to this location.")
 endif()
 
-get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+# Alias the is multi config property, useful for fixing visual studio quirks
+get_property(ATT_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
-if(IS_MULTI_CONFIG)
+if(ATT_IS_MULTI_CONFIG)
     # If using a multi config generator, wxWidgets and opencv for some reason
     # remove the other build types and msbuild errors if we dont do the same.
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING
-        "Limited configuration types to fix dependencies." FORCE)
+        "Choose Debug or Release builds. Limited configuration types to fix dependencies." FORCE)
 
     # cmake can only create compile commands with single config generators
     # TODO: Try to generate our own for Visual Studio?
-    set(EXPORT_COMPILE_COMMANDS OFF)
-
-    # Only expands on multi config, single config generators are fine with default commands
-    set(MULTI_CONFIG_FLAG "--config" "$(Configuration)")
-    unset(SINGLE_CONFIG_FLAG)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS OFF CACHE BOOL "Generate compile_commands.json" FORCE)
 else()
-    # Set our default build type to release
+    # Set our default build type to release on single config
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Debug or Release.")
-
-    # Only expands on single config, not really needed, but multiconfig warns when its unused
-    set(SINGLE_CONFIG_FLAG "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-    unset(MULTI_CONFIG_FLAG)
 endif()
 
 # Toolchain path needs to be absolute for external projects
 if(CMAKE_TOOLCHAIN_FILE)
-    get_filename_component(toolchain_file_path "${CMAKE_TOOLCHAIN_FILE}" ABSOLUTE)
-    set(TOOLCHAIN_FLAG "-DCMAKE_TOOLCHAIN_FILE=${toolchain_file_path}")
+    get_filename_component(ATT_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_FILE}" ABSOLUTE)
+else()
+    unset(ATT_TOOLCHAIN_FILE)
 endif()
 
 # Wrapper for configure_package_config_file() with some default settings
@@ -65,7 +66,21 @@ function(att_add_external_project project_name)
     if(DEFINED _arg_BUILD_COMMAND)
         set(build_cmd_default ${_arg_BUILD_COMMAND})
     else()
-        set(build_cmd_default "${CMAKE_COMMAND}" --build <BINARY_DIR> --target install ${MULTI_CONFIG_FLAG})
+        set(build_cmd_default "${CMAKE_COMMAND}" --build <BINARY_DIR> --target install ${multi_config_flag})
+    endif()
+
+    if(ATT_TOOLCHAIN_FILE)
+        set(toolchain_file_flag "-DCMAKE_TOOLCHAIN_FILE=${ATT_TOOLCHAIN_FILE}")
+    else()
+        unset(toolchain_file_flag)
+    endif()
+
+    if (ATT_IS_MULTI_CONFIG)
+        set(multi_config_flag "--config" "$(Configuration)")
+        unset(single_config_flag)
+    else()
+        set(single_config_flag "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+        unset(multi_config_flag)
     endif()
 
     set(project_source "${CMAKE_CURRENT_SOURCE_DIR}/${project_name}")
@@ -86,8 +101,8 @@ function(att_add_external_project project_name)
         -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
-        ${TOOLCHAIN_FLAG}
-        ${SINGLE_CONFIG_FLAG}
+        ${toolchain_file_flag}
+        ${single_config_flag}
         ${_arg_EXTRA_CMAKE_ARGS}
 
         UPDATE_COMMAND ""
