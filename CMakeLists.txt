@@ -4,6 +4,8 @@
 cmake_minimum_required(VERSION 3.15)
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
+set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
 # Where to find, and where to install deps, define before helpers.cmake
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps")
 set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps install directory.")
@@ -52,5 +54,6 @@ att_add_project(
     -DENABLE_ASSERT:BOOL=$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>> # (CONFIG == Debug) or ENABLE_ASSERT
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
+    CHECKOUT_SUBMODULE OFF
     DEPENDS ${ATT_DEPS}
 )
