@@ -35,6 +35,7 @@ att_add_dep(
 
     EXTRA_CMAKE_ARGS
     -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
+    -DWITH_OPENGL:BOOL=ON
     "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
     -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
