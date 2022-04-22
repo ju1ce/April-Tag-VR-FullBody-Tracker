@@ -38,8 +38,8 @@ att_add_dep(
     "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
     -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
-    -DWITH_ITT=OFF
-    -DBUILD_ITT=OFF
+    -DWITH_ITT:BOOL=OFF
+    -DBUILD_ITT:BOOL=OFF
     -DINSTALL_CREATE_DISTRIB:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
     -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF # random file opencv creates that we dont use
     -DBUILD_PERF_TESTS:BOOL=OFF
