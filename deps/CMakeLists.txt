@@ -71,9 +71,9 @@ att_add_dep(
 set(USB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/libusb-compiled")
 set(USB_INSTALL "${DEPS_INSTALL_DIR}/libusb")
 
-if (MSVC_TOOLSET_VERSION GREATER_EQUAL 143)
+if(MSVC_TOOLSET_VERSION GREATER_EQUAL 143)
     set(USB_VS_VERSION "2022")
-elseif (MSVC_TOOLSET_VERSION GREATER_EQUAL 142)
+elseif(MSVC_TOOLSET_VERSION GREATER_EQUAL 142)
     set(USB_VS_VERSION "2019")
 endif()
 
@@ -81,7 +81,7 @@ add_custom_command(
     OUTPUT "${USB_INSTALL}/include/libusb.h" "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${USB_INSTALL}/include" "${USB_INSTALL}/lib/Release" "${USB_INSTALL}/lib/Debug"
     COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS${USB_VS_VERSION}/MS64/Release/lib/libusb-1.0.lib" "${USB_INSTALL}/lib/Release/libusb-1.0.lib"
-    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS${USB_VS_VERSION}/MS64/Debug/lib/libusb-1.0.lib"  "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
+    COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/VS${USB_VS_VERSION}/MS64/Debug/lib/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/include/libusb-1.0/libusb.h" "${USB_INSTALL}/include/libusb.h"
     VERBATIM
 )
