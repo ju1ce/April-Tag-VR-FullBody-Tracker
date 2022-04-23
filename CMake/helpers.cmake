@@ -28,7 +28,7 @@ endfunction()
 # CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
 # DISABLE_CMAKE Disable any step using cmake
 function(att_add_external_project project_name install_dir)
-    cmake_parse_arguments(PARSE_ARGV 1 _arg
+    cmake_parse_arguments(PARSE_ARGV 2 _arg
         "DISABLE_CMAKE" # option
         "CHECKOUT_SUBMODULE" # value
         "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND") # list
@@ -184,7 +184,7 @@ endfunction()
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
 # CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
 function(att_add_project project_name install_dir)
-    cmake_parse_arguments(PARSE_ARGV 1 _arg "" "CHECKOUT_SUBMODULE" "DEPENDS;EXTRA_CMAKE_ARGS;")
+    cmake_parse_arguments(PARSE_ARGV 2 _arg "" "CHECKOUT_SUBMODULE" "DEPENDS;EXTRA_CMAKE_ARGS;")
     att_add_external_project(
         ${project_name} "${install_dir}"
         EXTRA_CMAKE_ARGS
