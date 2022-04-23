@@ -42,7 +42,9 @@ jobs:
         id: deps-cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.BINARY_DIR }}/deps/install
+          path: |
+            ${{ env.BINARY_DIR }}/deps/install
+            !${{ env.BINARY_DIR }}/deps/install/opencv/etc
           key: deps-${{ runner.os }}${{ steps.deps-sha.outputs.combined }}-${{ hashFiles('deps/PS3EyeDriver/**', 'deps/PSMoveService/**') }}
 
       - name: CMake configure, skip building deps if cached.
@@ -71,5 +73,6 @@ jobs:
           name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
           retention-days: 14
           path: |
+            ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log

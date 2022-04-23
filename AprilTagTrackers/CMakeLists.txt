@@ -2,33 +2,19 @@
 # project specific logic here.
 
 cmake_minimum_required(VERSION 3.15)
-project("AprilTagTrackers" CXX)
+project(AprilTagTrackers CXX)
+
+# Fixes and wrapper functions
+include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
 
 # Options set by superproject
-option(ENABLE_LTO "Enable link time optimizations for release builds")
-option(USE_ASAN "Create an address sanitizer build.")
-option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static.")
-option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now.")
-option(ENABLE_ASSERT "Enable assertions.")
-option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
-set(LOG_LEVEL "" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
-set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
-
-# If using a multi config generator, wxWidgets and opencv due to this random blog post
-# remove the other build types and msbuild errors if we dont do the same.
-if(CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING
-        "Limited configuration types to fix dependencies." FORCE)
-endif()
-
-# Search our locally built deps only
-set(FIND_LOCAL PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
+AprilTagTrackers_options()
 
 # Find our dependencies
-find_package(OpenCV REQUIRED ${FIND_LOCAL})
-find_package(apriltag REQUIRED ${FIND_LOCAL})
-find_package(openvr REQUIRED ${FIND_LOCAL})
-find_package(wxWidgets REQUIRED core base ${FIND_LOCAL})
+att_find_dep(OpenCV REQUIRED)
+att_find_dep(apriltag REQUIRED)
+att_find_dep(openvr REQUIRED)
+att_find_dep(wxWidgets REQUIRED core base)
 
 # Explicitly list source files as recommended by cmake
 set(ATT_SOURCE_FILES
@@ -54,17 +40,14 @@ set(ATT_SOURCE_FILES
 # main build output
 add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
-add_custom_command(TARGET AprilTagTrackers PRE_BUILD
-  COMMENT "If this fails, build the config with the superproject first."
-  COMMAND ${CMAKE_COMMAND} -E cat
-  "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+att_check_config_stamp(AprilTagTrackers)
 
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Link to ps3eye target if enabled
 if(ENABLE_PS3EYE)
-    find_package(ps3eye REQUIRED ${FIND_LOCAL})
+    att_find_dep(ps3eye REQUIRED)
     target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
 

@@ -4,51 +4,47 @@
 cmake_minimum_required(VERSION 3.15)
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
-# AprilTagTrackers forwarded options
-option(USE_ASAN "Create an address sanitizer build." OFF)
-option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ${WIN32})
-option(ENABLE_ASSERT "Enable assertions." OFF)
-option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
-set(LOG_LEVEL 0 CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
-
-# Build options
-option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
-option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
-option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
-option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
-
-# Where to find, and where to install deps
+# Where to find, and where to install deps, define before helpers.cmake
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps")
 set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps install directory.")
 
-# Option fixes and wrapper functions
-set(CUSTOM_CMAKE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
-include("${CUSTOM_CMAKE_FILES}/helpers.cmake")
+# Fixes and wrapper functions
+set(CUSTOM_CMAKE_FILES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
+include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
+
+# Build options
+option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
+
+if(NOT ATT_IS_MULTI_CONFIG)
+    option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
+endif()
 
 # Add deps sub-project
 add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
+
+# AprilTagTrackers forwarded options
+AprilTagTrackers_options()
 
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
 if(NOT SKIP_BUILD_DEPS)
     set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
 
     # Move the ps3eye files to install, windows only for now
-    if(WIN32 AND ENABLE_PS3EYE)
+    if(ENABLE_PS3EYE)
         list(APPEND ATT_DEPS ps3eye-install)
     endif()
 endif()
 
 # If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
-if (DEFINED LOG_LEVEL)
-    set(LOG_LEVEL_FLAG ${LOG_LEVEL})
-else()
+if(LOG_LEVEL STREQUAL "")
     set(LOG_LEVEL_FLAG $<IF:$<CONFIG:Debug>,3,2>)
+else()
+    set(LOG_LEVEL_FLAG ${LOG_LEVEL})
 endif()
 
-att_add_external_project(
+att_add_project(
     AprilTagTrackers
     EXTRA_CMAKE_ARGS
-    "-DDEPS_INSTALL_DIR:PATH=${DEPS_INSTALL_DIR}"
     -DUSE_ASAN:BOOL=$<BOOL:${USE_ASAN}>
     -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
     -DLOG_LEVEL=${LOG_LEVEL_FLAG}
@@ -56,11 +52,5 @@ att_add_external_project(
     -DENABLE_ASSERT:BOOL=$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>> # (CONFIG == Debug) or ENABLE_ASSERT
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
-    EXTRA_EP_ARGS
-    INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
-    BUILD_ALWAYS 1
     DEPENDS ${ATT_DEPS}
 )
-
-att_add_install_compile_commands_step(AprilTagTrackers "${CMAKE_CURRENT_SOURCE_DIR}/build")
-att_ep_create_config_stamp(AprilTagTrackers)
