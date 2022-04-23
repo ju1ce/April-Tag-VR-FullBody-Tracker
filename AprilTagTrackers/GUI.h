@@ -14,6 +14,8 @@
 #pragma warning(pop)
 
 #include <mutex>
+#include <thread>
+#include <type_traits>
 
 class ValueInput : public wxPanel
 {
@@ -30,51 +32,28 @@ private:
 };
 
 /// OpenCV high level gui window
-class PreviewWindow : protected wxTimer
+class PreviewWindow
 {
 public:
-    /// Create a high gui window to display a preview video
-    /// parentGUI is needed to start timer and create highgui window on gui thread
-    PreviewWindow(std::string _windowName, GUI& _parentGUI)
-        : wxTimer(), windowName(std::move(_windowName)), parentGUI(_parentGUI) {}
-    ~PreviewWindow() override;
-    /// Start timer and create high gui window
-    void Show();
-    /// Destroy the high gui window, and stop the update timer
-    void Hide();
-    /// Locks imageMutex, and makes a deep copy of newImage.
-    void CloneImage(const cv::Mat& newImage);
-    /// Locks imageMutex, takes a reference of newImage.
-    // TODO: Race condition issue, don't use.
-    // Causes banding of the previous/next frame.
-    // So at some point the old matrix data is getting overwritten in the camera thread.
-    void SwapImage(cv::Mat& newImage);
-    /// Is the window currently shown
-    bool IsVisible() const { return visible; }
+    PreviewWindow(std::string _windowName);
+    /// Closes the high gui window.
+    void Close();
+    /// Checks if opencv internally has a window with windowName
+    bool IsVisible() const;
+    /// Set the window name/title, still must be unique
+    void SetWindowName(std::string _windowName);
+    /// Call cv::imshow
+    void UpdateImage(cv::Mat& newImage);
 
 private:
-    /// Locks imageMutex, Applies the image to the window.
-    void UpdateWindow();
-    /// Called on each tick of the timer, from gui thread
-    void Notify() override;
-
     /// Name of the window, aswell as the only way to reference it.
     std::string windowName;
-    /// Matrix representing an image.
-    cv::Mat image;
-    std::mutex imageMutex;
-    /// Only show frame if image was updated
-    bool newImageReady = false;
-    /// track show and hide calls
-    bool visible = false;
-    /// GUI which handles the gui thread
-    GUI& parentGUI;
 };
 
 class GUI : protected wxFrame
 {
 public:
-    GUI(const wxString& title, Connection* conn, UserConfig& _userConfig, const Localization& lcl);
+    GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const Localization& lcl);
 
     /// Queue a lambda to be run on the GUI thread, after other events have been processed.
     /// On MSW the event will not be processed as soon as possible if a Modal is shown.
@@ -96,13 +75,8 @@ public:
     void ShowWarningPopup(const wxString& content) { QueuePopup(content, wxT("Warning"), wxOK | wxICON_WARNING); }
     void ShowInfoPopup(const wxString& content) { QueuePopup(content, wxT("Info"), wxOK | wxICON_INFORMATION); }
 
-    /// Create a PreviewWindow on this GUIs thread
-    PreviewWindow CreatePreviewWindow(std::string&& windowName)
-    {
-        if (!userConfig.windowTitle.empty())
-            windowName += ": " + userConfig.windowTitle;
-        return {std::move(windowName), *this};
-    }
+    PreviewWindow outWindow{"Out"};
+    PreviewWindow camWindow{"Camera"};
 
     ValueInput* manualCalibX;
     ValueInput* manualCalibY;
@@ -118,11 +92,6 @@ public:
     wxCheckBox* cb3;
     wxCheckBox* cb4;
     wxCheckBox* cb5;
-
-    const UserConfig& userConfig;
-
-    PreviewWindow outWindow = CreatePreviewWindow("out");
-    PreviewWindow previewWindow = CreatePreviewWindow("Preview");
 
     static const int CAMERA_BUTTON = 1;
     static const int CAMERA_CHECKBOX = 2;

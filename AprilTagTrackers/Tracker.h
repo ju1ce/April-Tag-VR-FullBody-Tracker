@@ -32,14 +32,14 @@ public:
 
     bool mainThreadRunning = false;
     bool cameraRunning = false;
-    //bool previewCamera = false;
+    bool showCameraPreview = false;
+    bool showOutPreview = false;
     bool previewCameraCalibration = false;
     bool showTimeProfile = false;
     bool recalibrate = false;
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
-    //bool disableOut = false;
     int messageDialogResponse = wxID_CANCEL;
 
     GUI* gui;
