@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cstdlib>
+#include <thread>
 
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
-#include <thread>
 #endif
 
 // Macros and functions for debugging and logging,
@@ -48,15 +48,8 @@
 //  messageStream is a sequence of strings and insertion operators, pasted into a std::cerr statement
 //   ATT_LOG(messageStream)
 
-//  Necessary to expand the __LINE__ macro into a string
-//   ATT_STRINGIZE_ARG(arg)
-
 //  Prints the function the macro is used in
 //   ATT_PRETTY_FUNCTION
-
-/// Necessary to expand the __LINE__ macro into a string
-#define ATT_STRINGIZE_ARG_(arg) #arg
-#define ATT_STRINGIZE_ARG(arg) ATT_STRINGIZE_ARG_(arg)
 
 #if defined(__clang__) || defined(__GNUG__) || defined(__GNUC__)
 /// Prints the function the macro is used in
@@ -147,12 +140,21 @@
 
 namespace Debug
 {
+/// this_thread::get_id called during static initialization
+extern const std::thread::id mainThreadID;
+
+/// Test if calling thread is the main thread, (whatever static initialization set)
+inline bool IsMainThread()
+{
+    return std::this_thread::get_id() == mainThreadID;
+}
+
 /// Intercept abort calls for easier debugging
 /// Named the same so that 'abort' breakpoints will find it
 inline void abort()
 {
-// https://stackoverflow.com/a/4326567/18158409
-// NOLINTBEGIN
+    // https://stackoverflow.com/a/4326567/18158409
+    // NOLINTBEGIN
 #if defined(WIN32)
     __debugbreak();
     std::exit(3);
@@ -162,14 +164,14 @@ inline void abort()
 #else
     std::abort();
 #endif
-// NOLINTEND
+    // NOLINTEND
 }
 
 #if ATT_LOG_LEVEL > 0
+/// system_clock::now() called at static initialization
+extern const std::chrono::system_clock::time_point appStartTimePoint;
 
-const auto appStartTimePoint = std::chrono::system_clock::now();
-
-// [ thread_id @ runtime_sec ] (file:line)
+/// [ thread_id @ runtime_sec ] (file:line)
 template <typename StrT>
 inline void PreLog(const StrT file, int line) noexcept
 {
