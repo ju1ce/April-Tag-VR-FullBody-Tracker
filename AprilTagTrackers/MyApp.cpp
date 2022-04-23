@@ -7,8 +7,14 @@
 
 #ifdef ATT_OVERRIDE_ERROR_HANDLERS
 #include <opencv2/core/utils/logger.hpp>
+
 #include <exception>
 #include <stdexcept>
+#endif
+
+#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
+#include <fstream>
+#include <iostream>
 #endif
 
 wxIMPLEMENT_APP(MyApp);
@@ -219,6 +225,19 @@ void MyApp::ButtonPressedSpaceCalib(wxCommandEvent& event)
         }
     }
 }
+
+#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
+
+static std::ofstream outputLogFileWriter{"output.log"};
+
+static const bool consoleOutputRedirected = ([]()
+    {
+        std::cout.rdbuf(outputLogFileWriter.rdbuf());
+        std::cerr.rdbuf(outputLogFileWriter.rdbuf());
+        return true; //
+    })();
+
+#endif
 
 #ifdef ATT_OVERRIDE_ERROR_HANDLERS
 

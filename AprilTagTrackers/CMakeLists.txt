@@ -10,6 +10,7 @@ option(USE_ASAN "Create an address sanitizer build.")
 option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static.")
 option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now.")
 option(ENABLE_ASSERT "Enable assertions.")
+option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
 set(LOG_LEVEL "" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
 set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
 
@@ -76,6 +77,10 @@ target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
 
 if(ENABLE_ASSERT)
     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_ASSERT)
+endif()
+
+if(ENABLE_OUTPUT_LOG_FILE)
+    target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_OUTPUT_LOG_FILE)
 endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC
