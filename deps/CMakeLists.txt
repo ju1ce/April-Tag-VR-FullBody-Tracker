@@ -10,26 +10,31 @@ att_add_dep(
 )
 
 # --- wxWidgets ---
+if(MINIMAL_BUILD_DEPS)
+    set(WX_MINIMAL_BUILD_DEPS
+        -DwxUSE_WXHTML_HELP:BOOL=OFF
+        -DwxUSE_RICHTEXT:BOOL=OFF
+        -DwxUSE_HELP:BOOL=OFF
+        -DwxUSE_HTML:BOOL=OFF
+        -DwxUSE_XRC:BOOL=OFF
+        -DwxUSE_STC:BOOL=OFF
+        -DwxUSE_WEBVIEW:BOOL=OFF
+        -DwxUSE_SOCKETS:BOOL=OFF
+        -DwxUSE_URL:BOOL=OFF
+        -DwxUSE_PROTOCOL:BOOL=OFF
+        -DwxUSE_FS_INET:BOOL=OFF)
+endif()
+
 # TODO: Allow picking preinstalled on linux as its usually available
 # Should be compatible with version 3.1 and up
 att_add_dep(
     wxWidgets
 
     EXTRA_CMAKE_ARGS
-    -DwxUSE_WXHTML_HELP:BOOL=OFF
-    -DwxUSE_RICHTEXT:BOOL=OFF
-    -DwxUSE_HELP:BOOL=OFF
-    -DwxUSE_HTML:BOOL=OFF
-    -DwxUSE_XRC:BOOL=OFF
-    -DwxUSE_STC:BOOL=OFF
-    -DwxUSE_WEBVIEW:BOOL=OFF
-    -DwxUSE_SOCKETS:BOOL=OFF
-    -DwxUSE_URL:BOOL=OFF
-    -DwxUSE_PROTOCOL:BOOL=OFF
-    -DwxUSE_FS_INET:BOOL=OFF
     -DwxBUILD_SHARED:BOOL=OFF
     -DwxBUILD_OPTIMISE:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DwxBUILD_USE_STATIC_RUNTIME:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
+    ${WX_MINIMAL_BUILD_DEPS}
 )
 att_configure_package_config(wxWidgets)
 
@@ -48,6 +53,14 @@ ExternalProject_Get_Property(opencv_contrib BINARY_DIR)
 set(CVC_MODULES_DIR "${BINARY_DIR}/modules")
 
 # --- OpenCV ---
+if(MINIMAL_BUILD_DEPS)
+    set(CV_MINIMAL_BUILD_DEPS
+        -DBUILD_opencv_apps:BOOL=OFF
+        "-DBUILD_LIST:STRING=aruco,videoio,objdetect,highgui,calib3d"
+        -DWITH_ADE:BOOL=OFF
+        -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF)
+endif()
+
 att_add_dep(
     opencv
 
@@ -60,18 +73,12 @@ att_add_dep(
     -DWITH_ITT:BOOL=OFF
     -DBUILD_ITT:BOOL=OFF
     -DINSTALL_CREATE_DISTRIB:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
-    -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF # random file opencv creates that we dont use
     -DBUILD_PERF_TESTS:BOOL=OFF
     -DBUILD_TESTS:BOOL=OFF
     -DBUILD_JAVA:BOOL=OFF
     -DBUILD_DOCS:BOOL=OFF
     -DBUILD_EXAMPLES:BOOL=OFF
-    -DBUILD_opencv_photo:BOOL=OFF
-    -DBUILD_opencv_gapi:BOOL=OFF
-    -DBUILD_opencv_apps:BOOL=OFF
-    -DBUILD_opencv_python3:BOOL=OFF
-    -DBUILD_opencv_python_bindings_generator:BOOL=OFF
-    -DBUILD_opencv_js:BOOL=OFF
+    ${CV_MINIMAL_BUILD_DEPS}
 
     DEPENDS opencv_contrib-install
 )

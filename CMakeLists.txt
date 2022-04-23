@@ -16,6 +16,7 @@ include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
 
 # Build options
 option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
+option(MINIMAL_BUILD_DEPS "Remove some unused modules when building dependencies." ON)
 
 if(NOT ATT_IS_MULTI_CONFIG)
     option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
