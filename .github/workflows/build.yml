@@ -32,11 +32,12 @@ jobs:
           sudo apt-get install -y libgtk-3-dev
 
       - name: Generate deps hash file with submodule commit hashes and combined hash of loose files
+        id: deps-hash
         shell: bash
         run: |
           git submodule --cached status ./deps/ > ${{ env.DEPS_HASH_FILE }}
           echo "${{ hashFiles('deps/**') }}" >> ${{ env.DEPS_HASH_FILE }}
-          cat ${{ env.DEPS_HASH_FILE }}
+          echo "::set-output name=combined::$(sha256sum ${{ env.DEPS_HASH_FILE }} | cut -d ' ' -f 1)"
 
       - name: Check dep cache for matching OS and hash of deps hash file
         id: deps-cache
@@ -45,7 +46,7 @@ jobs:
           path: |
             ${{ env.BINARY_DIR }}/deps/install
             !${{ env.BINARY_DIR }}/deps/install/opencv/etc
-          key: deps-${{ runner.os }}-${{ hashFiles('${{ env.DEPS_HASH_FILE }}') }}
+          key: deps-${{ runner.os }}-${{ steps.deps-hash.outputs.combined }}
 
       - name: CMake configure, skip building deps if cached.
         run: >-
