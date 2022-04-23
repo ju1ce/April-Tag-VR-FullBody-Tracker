@@ -48,6 +48,7 @@ sudo apt install build-essentials libgtk-3-dev
 
 Note that since this project is mostly developed on windows, some additions may occasionally break linux compatibility. It can usually be solved by commenting out the additions, or just rolling back a few commits.
 
+
 ### Windows prerequisites
 Open in Visual Studio, or use the Visual Studio Command Prompt.
 
@@ -62,9 +63,9 @@ cmake --build build --target install
 
 That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)
 
-### Visual studio 2022
+### Visual Studio
 
-Visual studio is a bit picky about external projects, so some additional steps are necessary:
+Visual Studio is a bit picky about external projects, so some additional steps are necessary:
 
 1. Git clone with all submodules
 2. Generate Visual Studio solution files with CMake

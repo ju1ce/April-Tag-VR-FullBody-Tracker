@@ -1,6 +1,8 @@
 #if OS_WIN
 #include "IPC.h"
 
+#include "Debug.h"
+
 #include <Windows.h>
 #include <iostream>
 
@@ -11,7 +13,7 @@ constexpr int BUFFER_SIZE = 512;
 constexpr int SEC_TO_MS = 1000;
 
 WindowsNamedPipe::WindowsNamedPipe(const std::string& pipe_name) {
-    this->pipe_name = "\\\\.\\pipe\\" + pipe_name;
+    this->pipe_name = R"(\\.\pipe\)" + pipe_name;
 }
 
 bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
@@ -20,7 +22,7 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
     // Remove const-ness as callnamedpipe expects a void*, it will not change the inbuffer.
     auto msg_cstr = reinterpret_cast<LPVOID>(const_cast<char*>(msg.c_str()));
     // success will be zero if failed
-    if (!SUCCEEDED(CallNamedPipeA(
+    if (FAILED(CallNamedPipeA(
         this->pipe_name.c_str(), // pipe name
         msg_cstr, // message
         msg.size(), // message size
@@ -29,9 +31,7 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp) {
         &response_length, // response size
         2 * SEC_TO_MS))) // timeout in ms
     {
-        std::cerr << "Named pipe (" << this->pipe_name << ") send error: " << GetLastError() << std::endl;
-        //resp = "Named pipe (" + this->pipe_name + ") send error: " + std::to_string(GetLastError() ERROR_PIPE);
-        resp = std::string(response_buffer, response_length);
+        ATERROR("Named pipe (" << this->pipe_name << ") send error: " << GetLastError());
         return false;
     }
 

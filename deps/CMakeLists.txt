@@ -1,3 +1,5 @@
+project(deps)
+
 set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED TRUE)
 
 # --- AprilTag ---
@@ -89,16 +91,15 @@ add_custom_target(libusb-install
 # --- PS3EyeDriver + PS3EyeVideoCapture ---
 set(PSD_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PS3EyeDriver")
 set(PSMS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PSMoveService")
-set(PS_INSTALL "${DEPS_INSTALL_DIR}/ps3eye")
 
-add_custom_command(
-    OUTPUT "${PS_INSTALL}/include/ps3eye.h" "${PS_INSTALL}/src/ps3eye.cpp" "${PS_INSTALL}/include/PSEyeVideoCapture.h" "${PS_INSTALL}/src/PSEyeVideoCapture.cpp"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PS_INSTALL}/include" "${PS_INSTALL}/src"
-    COMMAND ${CMAKE_COMMAND} -E copy "${PSD_PREFIX}/ps3eye.h" "${PSMS_PREFIX}/PSEyeVideoCapture.h" "${PS_INSTALL}/include"
-    COMMAND ${CMAKE_COMMAND} -E copy "${PSD_PREFIX}/ps3eye.cpp" "${PSMS_PREFIX}/PSEyeVideoCapture.cpp" "${PS_INSTALL}/src"
-    VERBATIM
-)
-add_custom_target(ps3eye-install
-    DEPENDS "${PS_INSTALL}/include/ps3eye.h" "${PS_INSTALL}/src/ps3eye.cpp" "${PS_INSTALL}/include/PSEyeVideoCapture.h" "${PS_INSTALL}/src/PSEyeVideoCapture.cpp"
-    SOURCES "${PSD_PREFIX}/ps3eye.h" "${PSD_PREFIX}/ps3eye.cpp" "${PSMS_PREFIX}/PSEyeVideoCapture.h" "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
+att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
+    INSTALL_ENTRY "."
+    "${PSD_PREFIX}/ps3eyeConfig.cmake"
+    INSTALL_ENTRY "include"
+    "${PSD_PREFIX}/ps3eye.h"
+    "${PSMS_PREFIX}/PSEyeVideoCapture.h"
+    INSTALL_ENTRY "src"
+    "${PSD_PREFIX}/ps3eye.cpp"
+    "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
+
 add_dependencies(ps3eye-install libusb-install)
