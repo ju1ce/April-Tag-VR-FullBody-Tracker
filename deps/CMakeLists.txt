@@ -25,7 +25,7 @@ att_configure_package_config(wxWidgets)
 
 # --- OpenCV Contrib ---
 att_add_external_project(
-    opencv_contrib
+    opencv_contrib ""
 
     DISABLE_CMAKE
 
