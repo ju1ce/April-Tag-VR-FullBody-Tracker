@@ -66,7 +66,7 @@ function(att_add_external_project project_name install_dir)
         # update --init will checkout the submodule
         set(download_cmd_default
             "${GIT_CMD}" submodule --quiet sync --recursive "<SOURCE_DIR>"
-            COMMAND "${GIT_CMD}" submodule --quiet update --init --recursive "<SOURCE_DIR>"
+            COMMAND "${GIT_CMD}" submodule --quiet update --init --depth 1 --recursive "<SOURCE_DIR>"
             USES_TERMINAL_DOWNLOAD ON) # Fix Ninja trying to parallelize and erroring with the git lock file
     else()
         set(download_cmd_default "${NOOP_COMMAND}")
@@ -157,14 +157,13 @@ function(att_add_install_compile_commands_step target_name install_dir)
     endif()
 endfunction()
 
-# Add a dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
+# Add a submodule dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
 # Forwards DEPENDS arg, disables developer warnings
 # Adds compile commands install step to copy to install dir
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
 # DEPENDS <target...> Forwarded to external project DEPENDS
-# CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
 function(att_add_dep project_name)
-    cmake_parse_arguments(PARSE_ARGV 1 _arg "" "CHECKOUT_SUBMODULE" "DEPENDS;EXTRA_CMAKE_ARGS")
+    cmake_parse_arguments(PARSE_ARGV 1 _arg "" "" "DEPENDS;EXTRA_CMAKE_ARGS")
     att_add_external_project(
         ${project_name} "${DEPS_INSTALL_DIR}/${project_name}"
         EXTRA_CMAKE_ARGS -Wno-dev
@@ -172,9 +171,7 @@ function(att_add_dep project_name)
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS
-        DEPENDS ${_arg_DEPENDS}
-
-        CHECKOUT_SUBMODULE ${_arg_CHECKOUT_SUBMODULE})
+        DEPENDS ${_arg_DEPENDS})
     att_add_install_compile_commands_step(${project_name} "<INSTALL_DIR>")
 endfunction()
 
