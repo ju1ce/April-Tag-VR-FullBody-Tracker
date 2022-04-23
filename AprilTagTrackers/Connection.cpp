@@ -158,8 +158,8 @@ void Connection::Connect()
     dial2.ShowModal();
 
     */
-
-    const auto bindingsPath = std::filesystem::current_path() / std::filesystem::path("att_actions.json");      //maybe move to bindings/att_actions.json?
+    // TODO: Maybe move to bindings/att_actions.json
+    const auto bindingsPath = std::filesystem::absolute("att_actions.json");
     if (!std::filesystem::exists(bindingsPath))
     {
         gui->ShowErrorPopup(lc.CONNECT_BINDINGS_ERROR);

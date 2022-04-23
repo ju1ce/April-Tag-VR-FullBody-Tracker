@@ -1,6 +1,15 @@
 include(ExternalProject)
 include(CMakePackageConfigHelpers)
 
+# Fix default install path on windows
+# Noone wants to provide admin access and install to C:/Program Files (x86)/
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    message(FATAL_ERROR "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
+which requires admin rights and usually results in errors. \
+Explicitly set with -DCMAKE_INSTALL_PREFIX= to a relative or absolute path. \
+Rerun if you are sure about installing to this location.")
+endif()
+
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
 if(IS_MULTI_CONFIG)
@@ -112,4 +121,71 @@ function(att_add_dep project_name)
         INSTALL_DIR "${DEPS_INSTALL_DIR}/${project_name}"
         DEPENDS ${_arg_DEPENDS})
     att_add_install_compile_commands_step(${project_name} "<INSTALL_DIR>")
+endfunction()
+
+# Create a target to copy files
+# args after named should be one or more of this layout ( INSTALL_ENTRY <dest_dir> <list of input files> )
+# which will then install each entries list to
+# dest_dir will be appended to install_prefix, and the input list will be placed at the top level of this folder
+# input files must already exist at configure time
+function(att_add_files_installer target_name install_prefix)
+    set(input_files) # merged all entries input files
+    set(output_files) # merged the created output file
+    set(commands) # list of commands used by add_custom_command
+
+    set(dest_dir) # current destination dir the entry is using, relative to install_prefix
+
+    set(sep "INSTALL_ENTRY") # arg list separator
+
+    foreach(elem ${ARGN})
+        # Expect next elem to be the destination dir
+        if(elem STREQUAL sep)
+            # separator followed by separator
+            if(dest_dir STREQUAL sep)
+                message(FATAL_ERROR "Empty install entry")
+            endif()
+
+            # set next loop to expect a directory
+            set(dest_dir ${sep})
+        elseif(dest_dir STREQUAL sep)
+            # this entries destination
+            set(dest_dir "${elem}")
+            set(dest_dir_path "${install_prefix}/${dest_dir}")
+            list(APPEND output_dirs "${dest_dir_path}")
+            list(APPEND commands COMMAND "${CMAKE_COMMAND}" -E make_directory "${dest_dir_path}")
+        else()
+            # we should be in this entries list of input files
+            list(APPEND input_files "${elem}")
+            get_filename_component(input_file_name "${elem}" NAME)
+            set(output_file_path "${install_prefix}/${dest_dir}/${input_file_name}")
+            list(APPEND output_files "${output_file_path}")
+            list(APPEND commands COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${elem}" "${output_file_path}")
+        endif()
+
+        # dest dir should be INSTALL_ENTRY or a directory by now
+        if(NOT dest_dir)
+            message(FATAL_ERROR "Separate each destination dir with INSTALL_ENTRY")
+        endif()
+    endforeach()
+
+    # Last arg was separator
+    if(dest_dir STREQUAL sep)
+        message(FATAL_ERROR "Empty install entry.")
+    endif()
+
+    add_custom_command(OUTPUT ${output_files} DEPENDS ${input_files} ${commands} VERBATIM)
+    add_custom_target(${target_name} DEPENDS ${output_files})
+endfunction()
+
+# Usage in subproject:
+# add_custom_command(TARGET YourTarget PRE_BUILD
+# COMMAND ${CMAKE_COMMAND} -E cat
+# "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>"
+# COMMENT "If this fails, build the config with the superproject first.")
+function(att_ep_create_config_stamp project_name)
+    # Create a config stamp to allow subprojects to test which configuration they are allowed to build
+    set(CONFIG_STAMP_FILE "<BINARY_DIR>/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+    ExternalProject_Add_Step(${project_name} create-config-stamp
+        DEPENDERS build BYPRODUCTS "${CONFIG_STAMP_FILE}"
+        COMMAND "${CMAKE_COMMAND}" -E touch "${CONFIG_STAMP_FILE}")
 endfunction()
