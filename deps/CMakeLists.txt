@@ -1,7 +1,5 @@
 project(deps)
 
-set_directory_properties(PROPERTIES EP_UPDATE_DISCONNECTED TRUE)
-
 # --- AprilTag ---
 att_add_dep(
     apriltag
@@ -26,8 +24,18 @@ att_add_dep(
 att_configure_package_config(wxWidgets)
 
 # --- OpenCV Contrib ---
-set(CVC_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/opencv_contrib")
-set(CVC_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib")
+att_add_external_project(
+    opencv_contrib
+
+    DISABLE_CMAKE
+
+    # Create a modules folder in binary dir that only contains aruco, opencv will use this folder
+    BUILD_COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "<SOURCE_DIR>/modules/aruco" "<BINARY_DIR>/modules/aruco"
+)
+
+ExternalProject_Get_Property(opencv_contrib BINARY_DIR)
+set(CVC_MODULES_DIR "${BINARY_DIR}/modules")
 
 # --- OpenCV ---
 att_add_dep(
@@ -36,7 +44,7 @@ att_add_dep(
     EXTRA_CMAKE_ARGS
     -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
     -DWITH_OPENGL:BOOL=ON
-    "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_BIN_DIR}/modules" # The modules folder with aruco created by opencv_contrib
+    "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_MODULES_DIR}" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
     -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DWITH_ITT:BOOL=OFF
@@ -52,11 +60,9 @@ att_add_dep(
     -DBUILD_opencv_python3:BOOL=OFF
     -DBUILD_opencv_python_bindings_generator:BOOL=OFF
     -DBUILD_opencv_js:BOOL=OFF
-)
 
-ExternalProject_Add_Step(opencv aruco DEPENDERS configure
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CVC_PREFIX}/modules/aruco" "${CVC_BIN_DIR}/modules/aruco")
+    DEPENDS opencv_contrib-install
+)
 
 # --- OpenVR ---
 att_add_dep(

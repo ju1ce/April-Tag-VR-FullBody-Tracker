@@ -45,7 +45,7 @@ else()
 endif()
 
 att_add_project(
-    AprilTagTrackers
+    AprilTagTrackers "${CMAKE_INSTALL_PREFIX}"
     EXTRA_CMAKE_ARGS
     -DUSE_ASAN:BOOL=$<BOOL:${USE_ASAN}>
     -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
