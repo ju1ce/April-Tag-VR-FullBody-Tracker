@@ -39,6 +39,11 @@ function(att_add_external_project project_name)
     set(epw_files_dir "${CMAKE_CURRENT_BINARY_DIR}/${project_name}/ExternalProjectFiles")
 
     if(ATT_IS_MULTI_CONFIG)
+        # $(Configuration) is Visual Studios $<CONFIG>.
+        # generator expressions should work in BUILD_COMMAND, however,
+        # VS generates a very weird broken set of configs if using it.
+        # I believe this is a new bug in VS2022
+        # TODO: This will most likely break other multi config generators (Ninja Multi Config)
         set(multi_config_flag "--config" "$(Configuration)")
         unset(single_config_flag)
     else()
