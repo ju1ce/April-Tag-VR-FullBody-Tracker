@@ -42,8 +42,8 @@ GUI::GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const 
 
     if (!userConfig.windowTitle.empty())
     {
-        outWindow.SetWindowName("Out: " + userConfig.windowTitle);
-        camWindow.SetWindowName("Camera: " + userConfig.windowTitle);
+        PreviewWindow::Out.SetWindowTitle("Out: " + userConfig.windowTitle);
+        PreviewWindow::Camera.SetWindowTitle("Camera: " + userConfig.windowTitle);
     }
 
     SetIcon(apriltag_xpm);
@@ -534,18 +534,29 @@ void ValueInput::ButtonPressed(wxCommandEvent& evt)
     input->ChangeValue(std::to_string(value));
 }
 
+PreviewWindow PreviewWindow::Out{"Out"};
+PreviewWindow PreviewWindow::Camera{"Camera"};
+PreviewWindow::UpdateTimer PreviewWindow::Timer{};
+
 PreviewWindow::PreviewWindow(std::string _windowName)
     : windowName(std::move(_windowName))
 {
+    Timer.AddWindow(*this);
+}
+
+PreviewWindow::~PreviewWindow()
+{
+    Timer.RemoveWindow(*this);
 }
 
 void PreviewWindow::Close()
 {
-    if (IsVisible())
-    {
-        cv::destroyWindow(windowName);
-        cv::pollKey();
-    }
+    Timer.CallAfter(
+        [&]()
+        {
+            if (IsVisible())
+                cv::destroyWindow(windowName);
+        });
 }
 
 bool PreviewWindow::IsVisible() const
@@ -556,15 +567,64 @@ bool PreviewWindow::IsVisible() const
     return cv::getWindowProperty(windowName, cv::WindowPropertyFlags::WND_PROP_VISIBLE) > 0;
 }
 
-void PreviewWindow::SetWindowName(std::string _windowName)
+void PreviewWindow::SetWindowTitle(const std::string& title)
 {
-    // Another call to imshow will recreate it
-    Close();
-    windowName = std::move(_windowName);
+    if (IsVisible())
+        cv::setWindowTitle(windowName, title);
 }
 
-void PreviewWindow::UpdateImage(cv::Mat& newImage)
+void PreviewWindow::CloneImage(const cv::Mat& newImage)
 {
-    cv::imshow(windowName, newImage);
-    cv::pollKey();
+    const std::lock_guard<std::mutex> lock(imageMutex);
+    newImageReady = true;
+    newImage.copyTo(image);
+}
+
+void PreviewWindow::SwapImage(cv::Mat& newImage)
+{
+    const std::lock_guard<std::mutex> lock(imageMutex);
+    newImageReady = true;
+    cv::swap(image, newImage);
+}
+
+void PreviewWindow::UpdateWindow() const
+{
+    const std::lock_guard<std::mutex> lock(imageMutex);
+    // newImageReady and image are locked behind mutex
+    // Don't try to show stale image
+    // If imshow dosn't copy the buffer then this dosn't provide much gain
+    if (!newImageReady || image.empty()) return;
+    cv::imshow(windowName, image);
+}
+
+void PreviewWindow::UpdateTimer::AddWindow(const PreviewWindow& window)
+{
+    ATASSERT("One PreviewWindow per unique window name.",
+        std::find_if(windowList.begin(), windowList.end(),
+            [&](const auto& elem)
+            { return elem.get().windowName == window.windowName; }) == windowList.end());
+    windowList.emplace_back(window);
+}
+
+void PreviewWindow::UpdateTimer::RemoveWindow(const PreviewWindow& window)
+{
+    // Should use the PreviewWindow comparison, which only compares windowName
+    const auto itr = std::find_if(windowList.begin(), windowList.end(),
+        [&](const auto& elem)
+        { return elem.get().windowName == window.windowName; });
+    ATASSERT("Window added by constructor, only removed by destructor.",
+        itr != windowList.end());
+    windowList.erase(itr);
+}
+
+void PreviewWindow::UpdateTimer::Notify()
+{
+    bool anyWindowVisible = false;
+    for (const PreviewWindow& window : windowList)
+    {
+        window.UpdateWindow();
+        anyWindowVisible |= window.IsVisible();
+    }
+    if (anyWindowVisible)
+        cv::pollKey();
 }

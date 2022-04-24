@@ -35,19 +35,62 @@ private:
 class PreviewWindow
 {
 public:
-    PreviewWindow(std::string _windowName);
+    static PreviewWindow Camera;
+    static PreviewWindow Out;
+
     /// Closes the high gui window.
     void Close();
     /// Checks if opencv internally has a window with windowName
     bool IsVisible() const;
-    /// Set the window name/title, still must be unique
-    void SetWindowName(std::string _windowName);
-    /// Call cv::imshow
-    void UpdateImage(cv::Mat& newImage);
+    /// Set the window name/titlebar
+    void SetWindowTitle(const std::string& title);
+    /// Locks imageMutex, and makes a deep copy of newImage.
+    void CloneImage(const cv::Mat& newImage);
+    /// Locks imageMutex, cv::swap image with newImage.
+    void SwapImage(cv::Mat& newImage);
 
 private:
+    // Make constructor private, as instances should only be handled by this classes static fields
+    PreviewWindow(std::string _windowName);
+    // static destruction at application exit, so high gui windows will be cleaned up
+    // OpenCV docs say it's mostly unecessary to call cv::destroyWindow() at application exit
+    ~PreviewWindow();
+
+    /// Handles the update loop, drawing and events for opencv high gui
+    /// Only one instance needed, static field Timer
+    class UpdateTimer : public wxTimer
+    {
+    public:
+        UpdateTimer() : wxTimer()
+        {
+            constexpr int fps = 30;
+            constexpr int millis = 1000 / fps;
+            // Start the timer, it will be running for duration of application
+            wxTimer::Start(millis);
+        }
+
+        void AddWindow(const PreviewWindow& window);
+        void RemoveWindow(const PreviewWindow& window);
+
+    private:
+        /// Called on each tick of the timer, from gui thread
+        void Notify() override;
+        /// Windows to be updated
+        std::vector<std::reference_wrapper<const PreviewWindow>> windowList;
+    };
+    /// OpenCV update loop singleton
+    static UpdateTimer Timer;
+
+    /// Locks imageMutex, Applies the image to the window.
+    void UpdateWindow() const;
     /// Name of the window, aswell as the only way to reference it.
     std::string windowName;
+    /// Matrix representing an image.
+    cv::Mat image;
+    /// Only show frame if image was updated
+    bool newImageReady = false;
+    /// Locks image and newImageReady
+    mutable std::mutex imageMutex;
 };
 
 class GUI : protected wxFrame
@@ -74,9 +117,6 @@ public:
     void ShowErrorPopup(const wxString& content) { QueuePopup(content, wxT("Error"), wxOK | wxICON_ERROR); }
     void ShowWarningPopup(const wxString& content) { QueuePopup(content, wxT("Warning"), wxOK | wxICON_WARNING); }
     void ShowInfoPopup(const wxString& content) { QueuePopup(content, wxT("Info"), wxOK | wxICON_INFORMATION); }
-
-    PreviewWindow outWindow{"Out"};
-    PreviewWindow camWindow{"Camera"};
 
     ValueInput* manualCalibX;
     ValueInput* manualCalibY;
