@@ -542,7 +542,10 @@ PreviewWindow::PreviewWindow(std::string _windowName)
 void PreviewWindow::Close()
 {
     if (IsVisible())
+    {
         cv::destroyWindow(windowName);
+        cv::pollKey();
+    }
 }
 
 bool PreviewWindow::IsVisible() const
@@ -556,7 +559,7 @@ bool PreviewWindow::IsVisible() const
 void PreviewWindow::SetWindowName(std::string _windowName)
 {
     // Another call to imshow will recreate it
-    if (IsVisible()) cv::destroyWindow(windowName);
+    Close();
     windowName = std::move(_windowName);
 }
 
