@@ -14,6 +14,7 @@
 #pragma warning(pop)
 
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <type_traits>
 
@@ -35,62 +36,75 @@ private:
 class PreviewWindow
 {
 public:
-    static PreviewWindow Camera;
-    static PreviewWindow Out;
-
-    /// Closes the high gui window.
-    void Close();
-    /// Checks if opencv internally has a window with windowName
-    bool IsVisible() const;
-    /// Set the window name/titlebar
-    void SetWindowTitle(const std::string& title);
-    /// Locks imageMutex, and makes a deep copy of newImage.
-    void CloneImage(const cv::Mat& newImage);
-    /// Locks imageMutex, cv::swap image with newImage.
-    void SwapImage(cv::Mat& newImage);
-
-private:
-    // Make constructor private, as instances should only be handled by this classes static fields
-    PreviewWindow(std::string _windowName);
-    // static destruction at application exit, so high gui windows will be cleaned up
-    // OpenCV docs say it's mostly unecessary to call cv::destroyWindow() at application exit
+    friend class PreviewEventLoop;
     ~PreviewWindow();
 
-    /// Handles the update loop, drawing and events for opencv high gui
-    /// Only one instance needed, static field Timer
-    class UpdateTimer : public wxTimer
-    {
-    public:
-        UpdateTimer() : wxTimer()
-        {
-            constexpr int fps = 30;
-            constexpr int millis = 1000 / fps;
-            // Start the timer, it will be running for duration of application
-            wxTimer::Start(millis);
-        }
+    /// Closes the window, open again with SetImage
+    void Hide();
+    /// Checks if opencv internally has a window with id.
+    bool IsVisible() const;
+    /// Locks imageMutex, and makes a deep copy of newImage.
+    void CloneSetImage(const cv::Mat& newImage);
+    /// Locks imageMutex, cv::swap image with newImage.
+    void SwapSetImage(cv::Mat& newImage);
 
-        void AddWindow(const PreviewWindow& window);
-        void RemoveWindow(const PreviewWindow& window);
-
-    private:
-        /// Called on each tick of the timer, from gui thread
-        void Notify() override;
-        /// Windows to be updated
-        std::vector<std::reference_wrapper<const PreviewWindow>> windowList;
-    };
-    /// OpenCV update loop singleton
-    static UpdateTimer Timer;
+private:
+    PreviewWindow(std::string _id, std::string _title, PreviewEventLoop& _previewEventLoop);
 
     /// Locks imageMutex, Applies the image to the window.
-    void UpdateWindow() const;
-    /// Name of the window, aswell as the only way to reference it.
-    std::string windowName;
+    /// Only used by UpdateTimer::Notify.
+    void CreateOrUpdateWindow() const;
+
+    /// Name of the window in opencv, aswell as the only way to reference it.
+    std::string id;
+    /// The title displayed in the title bar of the window.
+    std::string title;
+
     /// Matrix representing an image.
     cv::Mat image;
-    /// Only show frame if image was updated
+    /// Only show frame if image was updated.
     bool newImageReady = false;
-    /// Locks image and newImageReady
+    /// Locks image and newImageReady.
     mutable std::mutex imageMutex;
+
+    PreviewEventLoop& parentEventLoop;
+};
+
+/// Handles the update loop, drawing, and events for opencv high gui
+class PreviewEventLoop : protected wxTimer
+{
+public:
+    /// wxTimer cannot be static initialized
+    PreviewEventLoop() : wxTimer()
+    {
+        constexpr int millis = 1000 / 30;
+        // Start the timer, it will be running for duration of application
+        wxTimer::Start(millis);
+    }
+
+    std::unique_ptr<PreviewWindow> CreateWindow(std::string id, std::string title);
+    void HideWindow(PreviewWindow& window);
+    void DestroyWindow(PreviewWindow& window);
+
+    /// Called on each tick of the timer, from gui thread.
+    void Notify() override;
+
+    /// Queue a lambda to be run on the GUI thread, after other events have been processed.
+    /// On MSW the event will not be processed as soon as possible if a shown window is modal.
+    template <typename T>
+    void QueueOnGUIThread(const T& func)
+    {
+        CallAfter(func);
+    }
+
+private:
+    auto FindWindowByID(const std::string& id);
+
+    /// Windows to be updated.
+    std::vector<std::reference_wrapper<PreviewWindow>> windowList;
+    std::mutex windowListMutex;
+
+    bool isRecursiveNotifyCall = false;
 };
 
 class GUI : protected wxFrame
@@ -99,11 +113,11 @@ public:
     GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const Localization& lcl);
 
     /// Queue a lambda to be run on the GUI thread, after other events have been processed.
-    /// On MSW the event will not be processed as soon as possible if a Modal is shown.
-    /// lambda capture references should point to the same memory, copies will be copied again.
+    /// On MSW the event will not be processed as soon as possible if a shown window is modal.
+    /// The lambda will be stored as a non-reference field, and called later.
     /// From wx docs:
     ///     these methods schedule the given method pointer
-    ///     for a later call (during the next idle event loop iteration)
+    ///     for a later call (during the next idle event loop iteration).
     template <typename T>
     void QueueOnGUIThread(const T& func)
     {
@@ -117,6 +131,8 @@ public:
     void ShowErrorPopup(const wxString& content) { QueuePopup(content, wxT("Error"), wxOK | wxICON_ERROR); }
     void ShowWarningPopup(const wxString& content) { QueuePopup(content, wxT("Warning"), wxOK | wxICON_WARNING); }
     void ShowInfoPopup(const wxString& content) { QueuePopup(content, wxT("Info"), wxOK | wxICON_INFORMATION); }
+
+    std::unique_ptr<PreviewWindow> CreatePreviewWindow(std::string title);
 
     ValueInput* manualCalibX;
     ValueInput* manualCalibY;
@@ -147,6 +163,10 @@ public:
     static const int LOCK_HEIGHT_CHECKBOX = 11;
     static const int DISABLE_OUT_CHECKBOX = 12;
     static const int DISABLE_OPENVR_API_CHECKBOX = 13;
+
+private:
+    const UserConfig& userConfig;
+    PreviewEventLoop previewEventLoop;
 };
 
 class LicensePage : public wxPanel

@@ -15,13 +15,13 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <array>
 #include <exception>
 #include <iostream>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <vector>
-#include <array>
 
 #ifdef ENABLE_PS3EYE
 #include "PSEyeVideoCapture.h"
@@ -152,19 +152,6 @@ inline void previewCalibration(cv::Mat& drawImg, const CalibrationConfig& calibC
         calibConfig.allCharucoIds);
 }
 
-template <typename InIterT, typename OutT>
-void pointPathToContours(InIterT inputFirst, InIterT inputLast, OutT& outputList, bool createLoop = true)
-{
-    for (auto it = inputFirst; it != inputLast - 1; it++)
-    {
-        outputList.push_back({ *it, *std::next(it) });
-    }
-    if (createLoop)
-    {
-        outputList.push_back({ *std::prev(inputLast), *inputFirst });
-    }
-}
-
 } // namespace
 
 Tracker::Tracker(MyApp* myApp, Connection* connection, UserConfig& user_config, CalibrationConfig& calib_config, const Localization& lc, const ArucoConfig& aruco_config)
@@ -216,7 +203,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         }
         else
 #endif
-#if ENABLE_PS3EYE
+#ifdef ENABLE_PS3EYE
             if (apiPreference == 2300)
         {
             cap = PSEyeVideoCapture(i);
@@ -298,6 +285,8 @@ void Tracker::CameraLoop()
     last_frame_time = std::chrono::steady_clock::now();
     bool frame_visible = false;
 
+    const auto preview = gui->CreatePreviewWindow("Camera Preview");
+
     while (cameraRunning)
     {
         if (!cap.read(img) || img.empty())
@@ -328,8 +317,9 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
                 if (previewCameraCalibration)
                     previewCalibration(drawImg, calib_config);
-                PreviewWindow::Camera.SwapImage(drawImg);
+                preview->SwapSetImage(drawImg);
             }
+            else preview->Hide();
         }
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
@@ -473,6 +463,8 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<std::vector<cv::Point2f>> markerCorners;
     std::vector<std::vector<cv::Point2f>> rejectedCorners;
 
+    const auto preview = gui->CreatePreviewWindow("Camera Calibration");
+
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
@@ -541,13 +533,13 @@ void Tracker::CalibrateCameraCharuco()
         for (const auto& corners : markerCorners)
         {
             ATASSERT("A square has four corners.", corners.size() == 4);
-            const std::array<cv::Point, 4> points = { corners[0], corners[1], corners[2], corners[3] };
+            const std::array<cv::Point, 4> points = {corners[0], corners[1], corners[2], corners[3]};
             // much faster than fillPoly, and we know they will be convex
             cv::fillConvexPoly(drawImg, points.data(), points.size(), cv::Scalar::all(255));
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        PreviewWindow::Out.SwapImage(outImg);
+        preview->SwapSetImage(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
@@ -597,7 +589,6 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    PreviewWindow::Out.Close();
     mainThreadRunning = false;
     if (messageDialogResponse == wxID_OK)
     {
@@ -711,11 +702,12 @@ void Tracker::CalibrateCamera()
 
     int picNum = user_config.cameraCalibSamples;
 
+    const auto preview = gui->CreatePreviewWindow("Camera Calibration");
+
     while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
-            PreviewWindow::Out.Close();
             return;
         }
         CopyFreshCameraImageTo(image);
@@ -757,7 +749,7 @@ void Tracker::CalibrateCamera()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        PreviewWindow::Out.CloneImage(outImg);
+        preview->SwapSetImage(outImg);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -768,7 +760,6 @@ void Tracker::CalibrateCamera()
     calib_config.distCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
-    PreviewWindow::Out.Close();
     gui->ShowInfoPopup(wxT("Calibration complete."));
 }
 
@@ -896,6 +887,8 @@ void Tracker::CalibrateTracker()
     // reset current tracker calibration data
     // TODO: Don't reset if user clicks cancel
     trackers.clear();
+
+    const auto preview = gui->CreatePreviewWindow("Tracker Calibration");
 
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
@@ -1036,7 +1029,7 @@ void Tracker::CalibrateTracker()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-       PreviewWindow::Out.SwapImage(outImg);
+        preview->SwapSetImage(outImg);
     }
 
     // when done calibrating, save the trackers to parameters
@@ -1051,7 +1044,6 @@ void Tracker::CalibrateTracker()
     trackersCalibrated = true;
 
     // close preview window
-    PreviewWindow::Out.Close();
     mainThreadRunning = false;
 }
 
@@ -1156,6 +1148,8 @@ void Tracker::MainLoop()
     {
         trackers = this->trackers;
     }
+
+    const auto preview = gui->CreatePreviewWindow("Preview");
 
     while (mainThreadRunning && cameraRunning) // run detection until camera is stopped or the start/stop button is pressed again
     {
@@ -1501,7 +1495,6 @@ void Tracker::MainLoop()
                 // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
                 ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
                 gui->ShowErrorPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG);
-                PreviewWindow::Out.Close();
                 // apriltag_detector_destroy(td);
                 mainThreadRunning = false;
                 return;
@@ -1700,9 +1693,8 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
             }
-            PreviewWindow::Out.SwapImage(outImg);
+            preview->SwapSetImage(outImg);
         }
         // time of marker detection
     }
-    PreviewWindow::Out.Close();
 }

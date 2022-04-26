@@ -8,6 +8,8 @@
 #include <opencv2/videoio/registry.hpp>
 
 #include <algorithm>
+#include <atomic>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -26,25 +28,21 @@ void addTextWithTooltip(wxWindow* parent, wxSizer* sizer, const wxString& label,
 
 } // namespace
 
-GUI::GUI(const wxString& title, Connection* conn, UserConfig& userConfig, const Localization& lc)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650))
+GUI::GUI(const wxString& title, Connection* conn, UserConfig& _userConfig, const Localization& lc)
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(650, 650)),
+      userConfig(_userConfig),
+      previewEventLoop()
 {
     wxNotebook* nb = new wxNotebook(this, -1, wxPoint(-1, -1),
         wxSize(-1, -1), wxNB_TOP);
 
     CameraPage* panel = new CameraPage(nb, this, lc);
-    ParamsPage* panel2 = new ParamsPage(nb, conn, userConfig, lc);
+    ParamsPage* panel2 = new ParamsPage(nb, conn, _userConfig, lc);
     LicensePage* panel3 = new LicensePage(nb);
 
     nb->AddPage(panel, lc.TAB_CAMERA);
     nb->AddPage(panel2, lc.TAB_PARAMS);
     nb->AddPage(panel3, lc.TAB_LICENSE);
-
-    if (!userConfig.windowTitle.empty())
-    {
-        PreviewWindow::Out.SetWindowTitle("Out: " + userConfig.windowTitle);
-        PreviewWindow::Camera.SetWindowTitle("Camera: " + userConfig.windowTitle);
-    }
 
     SetIcon(apriltag_xpm);
 
@@ -63,6 +61,18 @@ void GUI::QueuePopup(const wxString& content, const wxString& caption, long styl
             // ShowModal is blocking, until the user clicks ok
             dial.ShowModal(); //
         });
+}
+
+std::unique_ptr<PreviewWindow> GUI::CreatePreviewWindow(std::string title)
+{
+    static std::atomic_uint uniqueID = 0;
+    std::stringstream windowID;
+    windowID << "preview_gui_" << uniqueID++;
+
+    if (!userConfig.windowTitle.empty())
+        title += ": " + userConfig.windowTitle;
+
+    return previewEventLoop.CreateWindow(std::move(windowID.str()), std::move(title));
 }
 
 LicensePage::LicensePage(wxNotebook* parent)
@@ -534,97 +544,169 @@ void ValueInput::ButtonPressed(wxCommandEvent& evt)
     input->ChangeValue(std::to_string(value));
 }
 
-PreviewWindow PreviewWindow::Out{"Out"};
-PreviewWindow PreviewWindow::Camera{"Camera"};
-PreviewWindow::UpdateTimer PreviewWindow::Timer{};
-
-PreviewWindow::PreviewWindow(std::string _windowName)
-    : windowName(std::move(_windowName))
+namespace
 {
-    Timer.AddWindow(*this);
+
+/// Checks if opencv internally has a window with id.
+/// Can be called from any thread
+inline bool CVIsVisible(const std::string& id)
+{
+    ATASSERT("Non-empty window ID.", !id.empty());
+    // Returns a double, -1 if window not found, property always returns 1.
+    // We never set the visible property, so it should always be true, seems like the default behaviour
+    // This isn't a settable property, so no way to "hide" a window
+    return cv::getWindowProperty(id, cv::WindowPropertyFlags::WND_PROP_VISIBLE) > 0;
+}
+
+/// Create a window and update its title
+inline void CVCreateWindow(const std::string& id, const std::string& title = "")
+{
+    ATASSERT("Non-empty window ID.", !id.empty());
+    ATASSERT("Call GUI function on main thread.", Debug::IsMainThread());
+    ATASSERT("Window with unique ID does not exist.", !CVIsVisible(id));
+    ATTRACE("CVCreateWindow: " << id);
+    // create an empty named window instance
+    cv::namedWindow(id);
+    // Empty title, original title will be id instead
+    if (!title.empty())
+        cv::setWindowTitle(id, title);
+}
+
+inline void CVDestroyWindow(const std::string& id)
+{
+    ATASSERT("Non-empty window ID.", !id.empty());
+    ATASSERT("Call GUI function on main thread.", Debug::IsMainThread());
+    ATASSERT("destroyWindow will throw if window with ID does not exist.", CVIsVisible(id));
+    ATTRACE("CVDestroyWindow: " << id);
+    cv::destroyWindow(id);
+}
+
+inline void CVShowImage(const std::string& id, const cv::Mat& image)
+{
+    ATASSERT("Non-empty window ID.", !id.empty());
+    ATASSERT("Call GUI function on main thread.", Debug::IsMainThread());
+    ATASSERT("Window is created by namedWindow instead of imshow.", CVIsVisible(id));
+    cv::imshow(id, image);
+}
+
+} // namespace
+
+PreviewWindow::PreviewWindow(std::string _id, std::string _title, PreviewEventLoop& _parentEventLoop)
+    : id(std::move(_id)), title(std::move(_title)), parentEventLoop(_parentEventLoop)
+{
+    ATASSERT("Unique window id does not exist yet.", !IsVisible());
 }
 
 PreviewWindow::~PreviewWindow()
 {
-    Timer.RemoveWindow(*this);
-}
-
-void PreviewWindow::Close()
-{
-    Timer.CallAfter(
-        [&]()
-        {
-            if (IsVisible())
-                cv::destroyWindow(windowName);
-        });
+    parentEventLoop.DestroyWindow(*this);
 }
 
 bool PreviewWindow::IsVisible() const
 {
-    // Returns a double? -1 if window not found, property should be a bool, so 1 or 0
-    // We never set the visible property, so it should always be true, seems like the default behaviour
-    // This isn't a settable property, so no way to "hide" a window
-    return cv::getWindowProperty(windowName, cv::WindowPropertyFlags::WND_PROP_VISIBLE) > 0;
+    return CVIsVisible(this->id);
 }
 
-void PreviewWindow::SetWindowTitle(const std::string& title)
+void PreviewWindow::CloneSetImage(const cv::Mat& newImage)
 {
-    if (IsVisible())
-        cv::setWindowTitle(windowName, title);
-}
-
-void PreviewWindow::CloneImage(const cv::Mat& newImage)
-{
-    const std::lock_guard<std::mutex> lock(imageMutex);
+    const auto lock = std::lock_guard(imageMutex);
     newImageReady = true;
     newImage.copyTo(image);
 }
 
-void PreviewWindow::SwapImage(cv::Mat& newImage)
+void PreviewWindow::SwapSetImage(cv::Mat& newImage)
 {
-    const std::lock_guard<std::mutex> lock(imageMutex);
+    const auto lock = std::lock_guard(imageMutex);
     newImageReady = true;
     cv::swap(image, newImage);
 }
 
-void PreviewWindow::UpdateWindow() const
+void PreviewWindow::CreateOrUpdateWindow() const
 {
-    const std::lock_guard<std::mutex> lock(imageMutex);
-    // newImageReady and image are locked behind mutex
-    // Don't try to show stale image
-    // If imshow dosn't copy the buffer then this dosn't provide much gain
+    const auto lock = std::lock_guard(imageMutex);
+    // if SetImage has not been called yet
     if (!newImageReady || image.empty()) return;
-    cv::imshow(windowName, image);
+
+    if (!IsVisible())
+        CVCreateWindow(this->id, this->title);
+
+    CVShowImage(this->id, this->image);
 }
 
-void PreviewWindow::UpdateTimer::AddWindow(const PreviewWindow& window)
+void PreviewWindow::Hide()
 {
-    ATASSERT("One PreviewWindow per unique window name.",
-        std::find_if(windowList.begin(), windowList.end(),
-            [&](const auto& elem)
-            { return elem.get().windowName == window.windowName; }) == windowList.end());
-    windowList.emplace_back(window);
+    if (!IsVisible()) return;
+
+    parentEventLoop.QueueOnGUIThread(
+        [this]()
+        {
+            const auto lock = std::lock_guard(imageMutex);
+            newImageReady = false;
+            if (CVIsVisible(id)) CVDestroyWindow(id);
+        });
 }
 
-void PreviewWindow::UpdateTimer::RemoveWindow(const PreviewWindow& window)
+auto PreviewEventLoop::FindWindowByID(const std::string& id)
 {
-    // Should use the PreviewWindow comparison, which only compares windowName
-    const auto itr = std::find_if(windowList.begin(), windowList.end(),
+    return std::find_if(windowList.begin(), windowList.end(),
         [&](const auto& elem)
-        { return elem.get().windowName == window.windowName; });
-    ATASSERT("Window added by constructor, only removed by destructor.",
-        itr != windowList.end());
-    windowList.erase(itr);
+        {
+            return elem.get().id == id;
+        });
 }
 
-void PreviewWindow::UpdateTimer::Notify()
+std::unique_ptr<PreviewWindow> PreviewEventLoop::CreateWindow(std::string id, std::string title)
 {
+    const auto lock = std::lock_guard(windowListMutex);
+
+    ATASSERT("Window with ID " << id << " is destroyed before being created again.",
+        FindWindowByID(id) == windowList.end());
+
+    auto preview = std::unique_ptr<PreviewWindow>(new PreviewWindow(std::move(id), std::move(title), *this));
+    windowList.emplace_back(*preview.get());
+    return preview;
+}
+
+void PreviewEventLoop::DestroyWindow(PreviewWindow& window)
+{
+    {
+        const auto lock = std::lock_guard(windowListMutex);
+        const auto& itr = FindWindowByID(window.id);
+
+        ATASSERT("Window was created by this instance.",
+            itr != windowList.end());
+
+        windowList.erase(itr);
+    }
+
+    QueueOnGUIThread(
+        [windowID = window.id]()
+        {
+            if (CVIsVisible(windowID))
+                CVDestroyWindow(windowID);
+        });
+}
+
+// cv::pollKey some how processes the next timer event, causing Notify to be recursive
+// Can't call pollKey from within wxWidgets event handlers.
+void PreviewEventLoop::Notify()
+{
+    if (isRecursiveNotifyCall)
+    {
+        ATTRACE("Recursive notify call.");
+        return;
+    }
+    isRecursiveNotifyCall = true;
+
+    const auto lock = std::lock_guard(windowListMutex);
     bool anyWindowVisible = false;
     for (const PreviewWindow& window : windowList)
     {
-        window.UpdateWindow();
+        window.CreateOrUpdateWindow();
         anyWindowVisible |= window.IsVisible();
     }
     if (anyWindowVisible)
         cv::pollKey();
+
+    isRecursiveNotifyCall = false;
 }

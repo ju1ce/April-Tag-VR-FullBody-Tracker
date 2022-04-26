@@ -76,9 +76,6 @@ void MyApp::ButtonPressedCamera(wxCommandEvent& event)
 void MyApp::ButtonPressedCameraPreview(wxCommandEvent& event)
 {
     tracker->showCameraPreview = event.IsChecked();
-    // Window will be opened by imshow if enabled, only need to close
-    if (!tracker->showCameraPreview)
-        gui->camWindow.Close();
 }
 
 void MyApp::ButtonPressedCameraCalib(wxCommandEvent& event)
@@ -138,9 +135,6 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
 void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
 {
     tracker->showOutPreview = event.IsChecked();
-    // Window will be opened by imshow if enabled, only need to close
-    if (!tracker->showOutPreview)
-        gui->outWindow.Close();
 }
 
 void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
@@ -246,6 +240,7 @@ static const bool consoleOutputRedirected = ([]()
     const auto ePtr = std::current_exception();           \
     try                                                   \
     {                                                     \
+        RethrowStoredException();                         \
         if (ePtr) std::rethrow_exception(ePtr);           \
     }                                                     \
     catch (const std::exception& e)                       \
@@ -300,7 +295,7 @@ static void wxWidgetsAssertHandler(const wxString& file, int line, const wxStrin
 static const bool errorHandlersRedirected = ([]()
     {
         cv::redirectError(&OpenCVErrorHandler);
-        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_VERBOSE);
+        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
         wxSetAssertHandler(&wxWidgetsAssertHandler);
         return true; //
     })();
