@@ -6,6 +6,7 @@ out/
 
 .clangd
 .clang-format
+.clang-tidy
 .cache/
 
 /build2/
