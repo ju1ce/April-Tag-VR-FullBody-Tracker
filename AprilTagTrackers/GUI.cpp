@@ -72,7 +72,7 @@ std::unique_ptr<PreviewWindow> GUI::CreatePreviewWindow(std::string title)
     if (!userConfig.windowTitle.empty())
         title += ": " + userConfig.windowTitle;
 
-    return previewEventLoop.CreateWindow(std::move(windowID.str()), std::move(title));
+    return previewEventLoop.CreateWindow(windowID.str(), std::move(title));
 }
 
 LicensePage::LicensePage(wxNotebook* parent)
