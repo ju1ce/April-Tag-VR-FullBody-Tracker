@@ -32,6 +32,8 @@ private:
     void MouseScroll(wxMouseEvent&);
 };
 
+class PreviewEventLoop;
+
 /// OpenCV high level gui window
 class PreviewWindow
 {
