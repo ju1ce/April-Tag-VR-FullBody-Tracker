@@ -1695,6 +1695,7 @@ void Tracker::MainLoop()
             }
             preview->SwapSetImage(outImg);
         }
+        else preview->Hide();
         // time of marker detection
     }
 }
