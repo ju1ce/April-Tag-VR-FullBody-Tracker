@@ -33,7 +33,7 @@ public:
     bool mainThreadRunning = false;
     bool cameraRunning = false;
     bool showCameraPreview = false;
-    bool showOutPreview = false;
+    bool showOutPreview = true;
     bool previewCameraCalibration = false;
     bool showTimeProfile = false;
     bool recalibrate = false;

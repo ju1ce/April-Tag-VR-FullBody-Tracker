@@ -134,7 +134,7 @@ void MyApp::ButtonPressedLockHeight(wxCommandEvent& event)
 
 void MyApp::ButtonPressedDisableOut(wxCommandEvent& event)
 {
-    tracker->showOutPreview = event.IsChecked();
+    tracker->showOutPreview = !event.IsChecked();
 }
 
 void MyApp::ButtonPressedDisableOpenVrApi(wxCommandEvent& event)
