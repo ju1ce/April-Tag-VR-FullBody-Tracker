@@ -1,12 +1,11 @@
-build/
-install/
-out/
+# cmake build output
+build*/
+install*/
+out*/
+
+# ide config
 .vs/
 .vscode/
 
-.clangd
-.clang-format
-.cache/
-
-/build2/
-/build3/
+# .clangd, .clang-format, .clang-tidy
+.clang*
