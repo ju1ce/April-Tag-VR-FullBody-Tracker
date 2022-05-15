@@ -24,8 +24,6 @@ jobs:
     steps:
       - name: Checkout project.
         uses: actions/checkout@v3
-        with:
-          submodules: "recursive"
 
       - name: If on Linux, Install GTK3 dev build.
         if: ${{ matrix.os == 'ubuntu-latest'}}
