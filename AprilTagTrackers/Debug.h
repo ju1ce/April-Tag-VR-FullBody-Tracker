@@ -5,7 +5,6 @@
 
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
-#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #endif
@@ -111,13 +110,16 @@
 #ifdef ATT_ENABLE_ASSERT
 
 /// Require an expression to be true
-#define ATASSERT(a_messageStream, a_trueExpression)                      \
-    do {                                                                 \
-        if (!(a_trueExpression))                                         \
-            ATFATAL(a_messageStream                                      \
-                    << std::endl                                         \
-                    << "    Assertion failure:  ( " << #a_trueExpression \
-                    << " )  in " << ATT_PRETTY_FUNCTION);                \
+#define ATASSERT(a_messageStream, a_trueExpression) \
+    do {                                            \
+        if (!(a_trueExpression))                    \
+            ATFATAL("Assert: "                      \
+                    << a_messageStream              \
+                    << std::endl                    \
+                    << "    Assertion failure:  ( " \
+                    << #a_trueExpression            \
+                    << " )  in  "                   \
+                    << ATT_PRETTY_FUNCTION);        \
     } while (0)
 
 /// Require an expression to be true, like assert,
@@ -178,10 +180,12 @@ inline void PreLog(const StrT file, int line) noexcept
     const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
     const auto stampSec = std::chrono::duration<float>(stamp).count();
 
-    std::cerr << "[ " << std::this_thread::get_id()
-              << " @ " << std::fixed << stampSec << " ] "
-              << std::defaultfloat // reset std::fixed
-              << "(" << file
+    std::cerr << "[ "
+              << (Debug::IsMainThread() ? "M" : "")
+              << std::this_thread::get_id() << " @ "
+              << std::fixed << std::setprecision(4)
+              << stampSec << std::defaultfloat // reset std::fixed
+              << " ] (" << file
               << ":" << line << ") ";
 }
 
