@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <string_view>
 #include <thread>
 
 #if ATT_LOG_LEVEL > 0
@@ -52,13 +53,13 @@
 
 #if defined(__clang__) || defined(__GNUG__) || defined(__GNUC__)
 /// Prints the function the macro is used in
-#define ATT_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#define ATT_PRETTY_FUNCTION std::string_view(__PRETTY_FUNCTION__)
 #elif defined(_MSC_VER)
 /// Prints the function the macro is used in
-#define ATT_PRETTY_FUNCTION __FUNCSIG__
+#define ATT_PRETTY_FUNCTION std::string_view(__FUNCSIG__)
 #else
 /// Prints the function the macro is used in (fallback)
-#define ATT_PRETTY_FUNCTION ""
+#define ATT_PRETTY_FUNCTION std::string_view("")
 #endif
 
 #if ATT_LOG_LEVEL > 0
