@@ -2,11 +2,13 @@
 
 #include "Quaternion.h"
 #include "Reflectable.h"
-#include <filesystem>
+
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/persistence.hpp>
 #include <opencv2/core/quaternion.hpp>
 #include <wx/string.h>
+
+#include <filesystem>
 
 // clang-format off
 #define FILESTORAGE_COMMENT_WITH_ID(a_id, a_commentStr)   \
@@ -37,9 +39,6 @@ protected:
 
 private:
     Path filePath;
-
-    ST& derivedThis() { return static_cast<ST&>(*this); }
-    const ST& derivedThis() const { return static_cast<const ST&>(*this); }
 };
 
 template <typename T>
@@ -186,7 +185,7 @@ public:
     using Validator = void (*)(T& value);
 
     Valid(T _value, Validator _validator)
-        : value(std::move(_value)), validator(_validator) {}
+        : value(std::forward<T>(_value)), validator(_validator) {}
 
     Valid<T>& operator=(T&& rhs)
     {
@@ -201,7 +200,7 @@ public:
         return *this;
     }
 
-    operator const T&() { return value; }
+    operator const T&() const { return value; }
 
     friend inline void Write(cv::FileStorage& fs, const Valid<T>& field)
     {
@@ -223,7 +222,7 @@ inline bool Serializable<ST>::Save() const
 {
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
     if (!fs.isOpened()) return false;
-    WriteEach(fs, derivedThis());
+    WriteEach(fs, Reflect::DerivedThis<ST>(*this));
     fs.release();
     return true;
 }
@@ -234,7 +233,7 @@ inline bool Serializable<ST>::Load()
     if (!std::filesystem::exists(filePath)) return false;
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::READ};
     if (!fs.isOpened()) return false;
-    ReadEach(fs.root(), derivedThis());
+    ReadEach(fs.root(), Reflect::DerivedThis<ST>(*this));
     fs.release();
     return true;
 }
@@ -245,7 +244,9 @@ inline void WriteEach(cv::FileStorage& fs, const RT& reflType)
     Reflect::ForEach(
         reflType,
         [&](const char* name, const auto& field)
-        { WriteNode(fs, name, field); });
+        {
+            WriteNode(fs, name, field);
+        });
 }
 
 template <typename RT>
@@ -254,7 +255,9 @@ inline void ReadEach(const cv::FileNode& fn, RT& reflType)
     Reflect::ForEach(
         reflType,
         [&](const char* name, auto& field)
-        { ReadNode(fn, name, field); });
+        {
+            ReadNode(fn, name, field);
+        });
 }
 
-};
+}; // namespace FS
