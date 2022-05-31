@@ -77,7 +77,7 @@ inline void InputText<T>::Submit()
     GetWidget()->ChangeValue(ToWXString(backingValue));
 }
 
-constexpr auto InputNumber::CreateAdjustBackingFunc(int amount)
+inline auto InputNumber::CreateAdjustBackingFunc(int amount)
 {
     return [&val = backingValue, ctrl = GetWidget(), amount](wxCommandEvent&)
     {

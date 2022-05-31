@@ -128,8 +128,7 @@ public:
     template <typename EventTag, typename F>
     void Bind(const EventTag& eventType, const F& func);
 
-    RefPtr<WinT> GetWidget() { return widget; }
-    RefPtr<const WinT> GetWidget() const { return widget; }
+    RefPtr<WinT> GetWidget() const { return widget; }
 
 protected:
     template <typename... Args>
@@ -158,7 +157,7 @@ protected:
 class InputNumber : public Widget<wxTextCtrl>
 {
 private:
-    constexpr auto CreateAdjustBackingFunc(int amount);
+    auto CreateAdjustBackingFunc(int amount);
 
 public:
     InputNumber(double& _backingValue) : backingValue(_backingValue) {}
