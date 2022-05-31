@@ -35,19 +35,12 @@ if(NOT SKIP_BUILD_DEPS)
     endif()
 endif()
 
-# If log level isnt defined, default to 2.
-if(LOG_LEVEL STREQUAL "")
-    set(LOG_LEVEL_FLAG "2")
-else()
-    set(LOG_LEVEL_FLAG "${LOG_LEVEL}")
-endif()
-
 att_add_project(
     AprilTagTrackers
     EXTRA_CMAKE_ARGS
     -DENABLE_ASAN:BOOL=$<BOOL:${ENABLE_ASAN}>
     -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
-    -DLOG_LEVEL=${LOG_LEVEL_FLAG}
+    -DLOG_LEVEL=${LOG_LEVEL}
     -DENABLE_LTO:BOOL=$<BOOL:${ENABLE_LTO}>
     -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
