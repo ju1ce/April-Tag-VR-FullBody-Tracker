@@ -3,9 +3,7 @@
 #include "AprilTagWrapper.h"
 #include "Connection.h"
 #include "Debug.h"
-#include "GUI.h"
 #include "Helpers.h"
-#include "MessageDialog.h"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/charuco.hpp>
@@ -15,13 +13,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <algorithm>
+#include <array>
 #include <exception>
 #include <iostream>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <vector>
-#include <array>
 
 #ifdef ENABLE_PS3EYE
 #include "PSEyeVideoCapture.h"
@@ -152,35 +151,18 @@ inline void previewCalibration(cv::Mat& drawImg, const CalibrationConfig& calibC
         calibConfig.allCharucoIds);
 }
 
-template <typename InIterT, typename OutT>
-void pointPathToContours(InIterT inputFirst, InIterT inputLast, OutT& outputList, bool createLoop = true)
-{
-    for (auto it = inputFirst; it != inputLast - 1; it++)
-    {
-        outputList.push_back({ *it, *std::next(it) });
-    }
-    if (createLoop)
-    {
-        outputList.push_back({ *std::prev(inputLast), *inputFirst });
-    }
-}
-
 } // namespace
 
-Tracker::Tracker(MyApp* myApp, Connection* connection, UserConfig& user_config, CalibrationConfig& calib_config, const Localization& lc, const ArucoConfig& aruco_config)
-    : parentApp(myApp), connection(connection), user_config(user_config), calib_config(calib_config), lc(lc), aruco_config(aruco_config)
+Tracker::Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc)
+    : connection(std::make_unique<Connection>(_userConfig)),
+      user_config(_userConfig), calib_config(_calibConfig), aruco_config(_arucoConfig), lc(_lc)
 {
     if (!calib_config.trackers.empty())
     {
         trackers = calib_config.trackers;
         trackersCalibrated = true;
     }
-    if (!calib_config.wtranslation.empty())
-    {
-        wtranslation = calib_config.wtranslation;
-        wrotation = calib_config.wrotation;
-    }
-    calibScale = user_config.calibScale;
+    SetWorldTransform(user_config.manualCalib.GetAsReal());
 }
 
 void Tracker::StartCamera(std::string id, int apiPreference)
@@ -235,7 +217,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
 
     if (!cap.isOpened())
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_START_ERROR);
+        gui->ShowPopup(lc.TRACKER_CAMERA_START_ERROR, PopupStyle::Error);
         return;
     }
 
@@ -272,6 +254,11 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     cameraThread.detach();
 }
 
+void Tracker::StartCamera()
+{
+    StartCamera(user_config.cameraAddr, user_config.cameraApiPreference);
+}
+
 void Tracker::CameraLoop()
 {
     bool rotate = false;
@@ -297,12 +284,13 @@ void Tracker::CameraLoop()
     auto last_preview_time = std::chrono::steady_clock::now();
     last_frame_time = std::chrono::steady_clock::now();
     bool frame_visible = false;
+    gui->SetStatus(true, StatusItem::Camera);
 
     while (cameraRunning)
     {
         if (!cap.read(img) || img.empty())
         {
-            gui->ShowErrorPopup(lc.TRACKER_CAMERA_ERROR);
+            gui->ShowPopup(lc.TRACKER_CAMERA_ERROR, PopupStyle::Error);
             cameraRunning = false;
             break;
         }
@@ -313,22 +301,22 @@ void Tracker::CameraLoop()
         {
             cv::rotate(img, img, rotateFlag);
         }
-        std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
         // Ensure that preview isnt shown more than 60 times per second.
         // In some cases opencv will return a solid color image without any blocking delay (unlike a camera locked to a framerate),
         // and we would just be drawing fps text on nothing.
         double timeSinceLast = std::chrono::duration<double>(curtime - last_preview_time).count();
         if (timeSinceLast > 0.015)
         {
-            if (showCameraPreview)
+            if (gui->IsPreviewVisible(PreviewId::Camera))
             {
                 last_preview_time = std::chrono::steady_clock::now();
                 img.copyTo(drawImg);
-                cv::putText(drawImg, std::to_string((int)(fps + (0.5))), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
-                cv::putText(drawImg, resolution, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0));
+                cv::putText(drawImg, std::to_string(static_cast<int>(std::ceil(fps))), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
+                std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
+                cv::putText(drawImg, resolution, cv::Point(10, 120), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 if (previewCameraCalibration)
                     previewCalibration(drawImg, calib_config);
-                gui->camWindow.UpdateImage(drawImg);
+                gui->UpdatePreview(drawImg, PreviewId::Camera);
             }
         }
         {
@@ -365,6 +353,7 @@ void Tracker::CameraLoop()
         }
     }
     cap.release();
+    gui->SetStatus(false, StatusItem::Camera);
 }
 
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
@@ -388,20 +377,6 @@ void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
     }
 }
 
-void DialogOk(void* data)
-{
-    Tracker* tracker = static_cast<Tracker*>(data);
-    tracker->messageDialogResponse = wxID_OK;
-    tracker->mainThreadRunning = false;
-}
-
-void DialogCancel(void* data)
-{
-    Tracker* tracker = static_cast<Tracker*>(data);
-    tracker->messageDialogResponse = wxID_CANCEL;
-    tracker->mainThreadRunning = false;
-}
-
 void Tracker::StartCameraCalib()
 {
     if (mainThreadRunning)
@@ -411,7 +386,7 @@ void Tracker::StartCameraCalib()
     }
     if (!cameraRunning)
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_NOTRUNNING);
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
@@ -448,18 +423,12 @@ void Tracker::CalibrateCameraCharuco()
     // int framesSinceLast = -2 * user_config.camFps;
     auto timeOfLast = std::chrono::steady_clock::now();
 
-    // TODO: Modaless dialog, abstract this
-    int messageDialogResponse = wxID_CANCEL;
-    gui->QueueOnGUIThread([&content = lc.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS,
-                              &dialogResponse = messageDialogResponse,
-                              &threadRunning = mainThreadRunning]()
+    bool promptSaveCalib = false;
+    gui->ShowPrompt(lc.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS,
+        [&](bool pressedOk)
         {
-            wxMessageDialog dial(nullptr, content, wxT("Message"), wxOK | wxCANCEL);
-            // wx docs: Note that this function creates a temporary event loop which takes precedence over the application's main event loop (see wxEventLoopBase) and which is destroyed when the dialog is dismissed. This also results in a call to wxApp::ProcessPendingEvents().
-            // We can return to calling ShowModal in a CallAfter as cv::imshow() is no longer called from it
-            dialogResponse = dial.ShowModal();
-            // Once the user chooses an option, the program will continue here
-            threadRunning = false; //
+            promptSaveCalib = pressedOk;
+            mainThreadRunning = false;
         });
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -472,6 +441,8 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<int> markerIds;
     std::vector<std::vector<cv::Point2f>> markerCorners;
     std::vector<std::vector<cv::Point2f>> rejectedCorners;
+
+    auto preview = gui->CreatePreviewControl();
 
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
@@ -541,13 +512,13 @@ void Tracker::CalibrateCameraCharuco()
         for (const auto& corners : markerCorners)
         {
             ATASSERT("A square has four corners.", corners.size() == 4);
-            const std::array<cv::Point, 4> points = { corners[0], corners[1], corners[2], corners[3] };
+            const std::array<cv::Point, 4> points = {corners[0], corners[1], corners[2], corners[3]};
             // much faster than fillPoly, and we know they will be convex
             cv::fillConvexPoly(drawImg, points.data(), points.size(), cv::Scalar::all(255));
         }
 
         cv::resize(drawImg, outImg, cv::Size(cols, rows));
-        gui->outWindow.UpdateImage(outImg);
+        preview.Update(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
@@ -597,13 +568,12 @@ void Tracker::CalibrateCameraCharuco()
         }
     }
 
-    gui->outWindow.Close();
     mainThreadRunning = false;
-    if (messageDialogResponse == wxID_OK)
+    if (promptSaveCalib)
     {
         if (cameraMatrix.empty())
         {
-            gui->ShowWarningPopup(lc.TRACKER_CAMERA_CALIBRATION_NOTDONE);
+            gui->ShowPopup(lc.TRACKER_CAMERA_CALIBRATION_NOTDONE, PopupStyle::Warning);
         }
         else
         {
@@ -656,7 +626,7 @@ void Tracker::CalibrateCameraCharuco()
             calib_config.allCharucoCorners = allCharucoCorners;
             calib_config.allCharucoIds = allCharucoIds;
             calib_config.Save();
-            gui->ShowInfoPopup(lc.TRACKER_CAMERA_CALIBRATION_COMPLETE);
+            gui->ShowPopup(lc.TRACKER_CAMERA_CALIBRATION_COMPLETE, PopupStyle::Info);
         }
     }
 }
@@ -715,7 +685,6 @@ void Tracker::CalibrateCamera()
     {
         if (!mainThreadRunning || !cameraRunning)
         {
-            gui->outWindow.Close();
             return;
         }
         CopyFreshCameraImageTo(image);
@@ -757,7 +726,7 @@ void Tracker::CalibrateCamera()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-        gui->outWindow.UpdateImage(outImg);
+        gui->UpdatePreview(outImg);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
@@ -768,8 +737,7 @@ void Tracker::CalibrateCamera()
     calib_config.distCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
-    gui->outWindow.Close();
-    gui->ShowInfoPopup(wxT("Calibration complete."));
+    gui->ShowPopup("Calibration complete.", PopupStyle::Info);
 }
 
 void Tracker::StartTrackerCalib()
@@ -782,13 +750,13 @@ void Tracker::StartTrackerCalib()
     }
     if (!cameraRunning)
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_NOTRUNNING);
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
     if (calib_config.camMat.empty())
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_NOTCALIBRATED);
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
@@ -798,17 +766,49 @@ void Tracker::StartTrackerCalib()
     mainThread = std::thread(&Tracker::CalibrateTracker, this);
     mainThread.detach();
 
-    // TODO: Modaless dialog, abstract this
-    gui->QueueOnGUIThread([&content = lc.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS,
-                              &threadRunning = mainThreadRunning]()
+    gui->ShowPrompt(lc.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS,
+        [&](bool)
         {
-            wxMessageDialog dial(nullptr, content, wxT("Message"), wxOK | wxCANCEL);
-            // wx docs: Note that this function creates a temporary event loop which takes precedence over the application's main event loop (see wxEventLoopBase) and which is destroyed when the dialog is dismissed. This also results in a call to wxApp::ProcessPendingEvents().
-            // We can return to calling ShowModal in a CallAfter as cv::imshow() is no longer called from it
-            dial.ShowModal();
-            // Once the user chooses an option, the thread will continue here
-            threadRunning = false; //
+            mainThreadRunning = false;
         });
+}
+
+void Tracker::StartConnection()
+{
+    connection->StartConnection();
+    HandleConnectionErrors();
+}
+
+void Tracker::HandleConnectionErrors()
+{
+    using Code = Connection::ErrorCode;
+    Code code = connection->GetErrorCode();
+    if (code == Code::OK) return;
+
+    if (code == Code::ALREADY_WAITING)
+        gui->ShowPopup("Already waiting for a connection.", PopupStyle::Error);
+    else if (code == Code::ALREADY_CONNECTED)
+        gui->ShowPopup("Connection closed.", PopupStyle::Info);
+    else if (code == Code::CLIENT_ERROR)
+        gui->ShowPopup(lc.CONNECT_CLIENT_ERROR + connection->GetErrorMsg(), PopupStyle::Error);
+    else if (code == Code::BINDINGS_MISSING)
+        gui->ShowPopup(lc.CONNECT_BINDINGS_ERROR, PopupStyle::Error);
+    else if (code == Code::DRIVER_ERROR)
+        gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);
+    else if (code == Code::DRIVER_MISMATCH)
+        gui->ShowPopup(lc.CONNECT_DRIVER_MISSMATCH_1 + connection->GetErrorMsg() +
+                           lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version,
+            PopupStyle::Error);
+    else // if (code == Code::SOMETHING_WRONG)
+        gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);
+}
+
+void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
+{
+    cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
+    wtransform = cv::Affine3d(rmat, calib.posOffset);
+    wrotation = cv::Quatd::createFromRotMat(rmat);
+    wscale = calib.scale;
 }
 
 void Tracker::Start()
@@ -821,25 +821,25 @@ void Tracker::Start()
     }
     if (!cameraRunning)
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_NOTRUNNING);
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
     if (calib_config.camMat.empty())
     {
-        gui->ShowErrorPopup(lc.TRACKER_CAMERA_NOTCALIBRATED);
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
     if (!trackersCalibrated)
     {
-        gui->ShowErrorPopup(lc.TRACKER_TRACKER_NOTCALIBRATED);
+        gui->ShowPopup(lc.TRACKER_TRACKER_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
     if (connection->status != connection->CONNECTED)
     {
-        gui->ShowErrorPopup(lc.TRACKER_STEAMVR_NOTCONNECTED);
+        gui->ShowPopup(lc.TRACKER_STEAMVR_NOTCONNECTED, PopupStyle::Error);
         mainThreadRunning = false;
         return;
     }
@@ -848,6 +848,22 @@ void Tracker::Start()
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::MainLoop, this);
     mainThread.detach();
+}
+
+void Tracker::Stop()
+{
+    mainThreadRunning = false;
+    cameraRunning = false;
+    /// TODO: join threads instead of sleeping
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+void Tracker::UpdateConfig()
+{
+    if (connection->status == Connection::CONNECTED)
+    {
+        connection->Send("settings 120 " + std::to_string(user_config.smoothingFactor) + " " + std::to_string(user_config.additionalSmoothing));
+    }
 }
 
 void Tracker::CalibrateTracker()
@@ -897,6 +913,8 @@ void Tracker::CalibrateTracker()
     // TODO: Don't reset if user clicks cancel
     trackers.clear();
 
+    auto preview = gui->CreatePreviewControl();
+
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
     {
@@ -944,7 +962,7 @@ void Tracker::CalibrateTracker()
             catch (const std::exception& e) // on weird images or calibrations, we get an error. This should usualy only happen on bad camera calibrations, or in very rare cases
             {
                 ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
-                gui->ShowErrorPopup(lc.TRACKER_CALIBRATION_SOMETHINGWRONG);
+                gui->ShowPopup(lc.TRACKER_CALIBRATION_SOMETHINGWRONG, PopupStyle::Error);
                 mainThreadRunning = false;
                 return;
             }
@@ -1036,7 +1054,7 @@ void Tracker::CalibrateTracker()
         }
 
         cv::resize(image, outImg, cv::Size(cols, rows));
-       gui->outWindow.UpdateImage(outImg);
+        gui->UpdatePreview(outImg);
     }
 
     // when done calibrating, save the trackers to parameters
@@ -1050,8 +1068,6 @@ void Tracker::CalibrateTracker()
     calib_config.Save();
     trackersCalibrated = true;
 
-    // close preview window
-    gui->outWindow.Close();
     mainThreadRunning = false;
 }
 
@@ -1096,23 +1112,23 @@ void Tracker::MainLoop()
     int framesToCheckAll = 20;
 
     // calculate position of camera from calibration data and send its position to steamvr
-    cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
-    stationPos = wtranslation * stationPos;
+    cv::Vec3d stationPos{0, 0, 0};
+    stationPos = wtransform * stationPos;
+    CoordTransformOVR(stationPos);
 
-    Quaternion<double> stationQ = Quaternion<double>(0, 0, 1, 0) * (wrotation * Quaternion<double>(1, 0, 0, 0));
+    /// TODO: What is this?
+    cv::Quatd stationQ = cv::Quatd{0, 0, 1, 0} * wrotation;
 
-    double a = -stationPos.at<double>(0, 0);
-    double b = stationPos.at<double>(1, 0);
-    double c = -stationPos.at<double>(2, 0);
-
-    connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
+    connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ[0], stationQ[1], stationQ[2], stationQ[3]);
 
     // initialize variables for playspace calibration
     bool calibControllerPosActive = false;
     bool calibControllerAngleActive = false;
     auto calibControllerLastPress = std::chrono::steady_clock::now();
-    double calibControllerPosOffset[] = {0, 0, 0};
-    double calibControllerAngleOffset[] = {0, 0, 0};
+    /// offset of controller to virtual camera, set when button is pressed
+    cv::Vec3d calibControllerPosOffset = {0, 0, 0};
+    /// (pitch, yaw) in radians, 3rd component is distance
+    cv::Vec3d calibControllerAngleOffset = {0, 0, 0};
 
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     std::vector<std::vector<int>> boardIds;
@@ -1225,15 +1241,14 @@ void Tracker::MainLoop()
             ret >> qz;
             ret >> tracker_pose_valid;
 
-            cv::Mat rpos = (cv::Mat_<double>(4, 1) << -a, b, -c, 1);
+            cv::Vec3d rpos{a, b, c};
+            CoordTransformOVR(rpos);
 
             // transform boards position from steamvr space to camera space based on our calibration data
 
-            rpos.at<double>(3, 0) = 1;
-            rpos = wtranslation.inv() * rpos;
-
+            rpos = wtransform.inv() * rpos;
             std::vector<cv::Point3d> point;
-            point.push_back(cv::Point3d(rpos.at<double>(0, 0), rpos.at<double>(1, 0), rpos.at<double>(2, 0)));
+            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]));
             point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
 
             std::vector<cv::Point2d> projected;
@@ -1246,17 +1261,16 @@ void Tracker::MainLoop()
 
             if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
             {
+                cv::Quatd q{qw, qx, qy, qz};
 
-                Quaternion<double> q = Quaternion<double>(qw, qx, qy, qz);
-                q = q.UnitQuaternion();
+                // What is this?
+                q = wrotation.inv(cv::QUAT_ASSUME_UNIT) *
+                    cv::Quatd{0, 0, 1, 0}.inv(cv::QUAT_ASSUME_UNIT) *
+                    q.normalize() *
+                    cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
 
-                q = wrotation.inverse() * Quaternion<double>(0, 0, 1, 0).inverse() * q * Quaternion<double>(0, 0, 1, 0).inverse();
-
-                cv::Vec3d rvec = quat2rodr(q.w, q.x, q.y, q.z);
-                cv::Vec3d tvec;
-                tvec[0] = rpos.at<double>(0, 0);
-                tvec[1] = rpos.at<double>(1, 0);
-                tvec[2] = rpos.at<double>(2, 0);
+                cv::Vec3d rvec = q.toRotVec();
+                cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
 
                 cv::aruco::drawAxis(drawImg, calib_config.camMat, calib_config.distCoeffs, rvec, tvec, 0.10f);
 
@@ -1325,15 +1339,14 @@ void Tracker::MainLoop()
 
         if (manualRecalibrate) // playspace calibration loop
         {
-            int inputButton = 0;
-            inputButton = connection->GetButtonStates();
+            int inputButton = connection->GetButtonStates();
+
+            ManualCalib::Real calib = gui->GetManualCalib();
 
             double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
             if (timeSincePress > 60) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
             {
-                gui->cb3->SetValue(false);
-                wxCommandEvent event(wxEVT_COMMAND_CHECKBOX_CLICKED, gui->MANUAL_CALIB_CHECKBOX);
-                parentApp->ButtonPressedSpaceCalib(event);
+                gui->SetManualCalibVisible(false);
             }
 
             if (inputButton == 1) // logic for position button
@@ -1345,20 +1358,10 @@ void Tracker::MainLoop()
                     if (!calibControllerPosActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
                     {
                         calibControllerPosActive = true;
-                        double pose[7];
-                        connection->GetControllerPose(pose);
+                        Pose pose = connection->GetControllerPose();
+                        calibControllerPosOffset = pose.position - calib.posOffset;
 
-                        calibControllerPosOffset[0] = 100 * pose[0] - gui->manualCalibX->value;
-                        calibControllerPosOffset[1] = 100 * pose[1] - gui->manualCalibY->value;
-                        calibControllerPosOffset[2] = 100 * pose[2] - gui->manualCalibZ->value;
-
-                        Quaternion<double> quat(pose[3], pose[4], pose[5], pose[6]);
-                        quat.x = -quat.x;
-                        quat.z = -quat.z;
-
-                        quat.inverse().QuatRotation(calibControllerPosOffset);
-
-                        calibControllerLastPress = std::chrono::steady_clock::now();
+                        RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
                     }
                     else // else, deactivate it
                     {
@@ -1367,7 +1370,7 @@ void Tracker::MainLoop()
                 }
                 calibControllerLastPress = std::chrono::steady_clock::now();
             }
-            if (inputButton == 2) // logic for rotation button
+            else if (inputButton == 2) // logic for rotation button
             {
                 // to prevent accidental double presses, 0.2 seconds must pass between presses.
                 double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
@@ -1376,19 +1379,14 @@ void Tracker::MainLoop()
                     if (!calibControllerAngleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
                     {
                         calibControllerAngleActive = true;
-                        double pose[7];
-                        connection->GetControllerPose(pose);
+                        Pose pose = connection->GetControllerPose();
 
-                        double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
-                        double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
-                        double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
-                        double xyzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[1] - gui->manualCalibY->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
+                        cv::Vec2d angle = EulerAnglesFromPos(pose.position, calib.posOffset);
+                        double distance = Distance(pose.position, calib.posOffset);
 
-                        calibControllerAngleOffset[0] = angleA - gui->manualCalibA->value;
-                        calibControllerAngleOffset[1] = angleB - gui->manualCalibB->value;
-                        calibControllerAngleOffset[2] = xyzLen;
-
-                        calibControllerLastPress = std::chrono::steady_clock::now();
+                        calibControllerAngleOffset[0] = angle[0] - calib.angleOffset[0];
+                        calibControllerAngleOffset[1] = angle[1] - calib.angleOffset[1];
+                        calibControllerAngleOffset[2] = distance;
                     }
                     else // else, deactivate it
                     {
@@ -1400,75 +1398,51 @@ void Tracker::MainLoop()
 
             if (calibControllerPosActive) // while position calibration is active, apply the camera to controller offset to X, Y and Z values
             {
-                double pose[7];
-                connection->GetControllerPose(pose);
+                Pose pose = connection->GetControllerPose();
 
-                Quaternion<double> quat(pose[3], pose[4], pose[5], pose[6]);
-                quat.x = -quat.x;
-                quat.z = -quat.z;
-                quat.QuatRotation(calibControllerPosOffset);
+                RotateVecByQuat(calibControllerPosOffset, pose.rotation);
 
-                gui->manualCalibX->SetValue(100 * pose[0] - calibControllerPosOffset[0]);
-
-                if (!lockHeightCalib) // if height is locked, dont change it
+                calib.posOffset[0] = pose.position[0] - calibControllerPosOffset[0];
+                if (!lockHeightCalib)
                 {
-                    gui->manualCalibY->SetValue(100 * pose[1] - calibControllerPosOffset[1]);
+                    calib.posOffset[1] = pose.position[1] - calibControllerPosOffset[1];
                 }
+                calib.posOffset[2] = pose.position[2] - calibControllerPosOffset[2];
 
-                gui->manualCalibZ->SetValue(100 * pose[2] - calibControllerPosOffset[2]);
-
-                quat.inverse().QuatRotation(calibControllerPosOffset);
+                RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
             }
 
             if (calibControllerAngleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
             {
-                double pose[7];
-                connection->GetControllerPose(pose);
+                Pose pose = connection->GetControllerPose();
+                cv::Vec2d angle = EulerAnglesFromPos(pose.position, calib.posOffset);
+                double distance = Distance(pose.position, calib.posOffset);
 
-                double xzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
-                double angleA = atan2(100 * pose[1] - gui->manualCalibY->value, xzLen) * 57.3;
-                double angleB = atan2(100 * pose[0] - gui->manualCalibX->value, 100 * pose[2] - gui->manualCalibZ->value) * 57.3;
-                double xyzLen = sqrt(pow(100 * pose[0] - gui->manualCalibX->value, 2) + pow(100 * pose[1] - gui->manualCalibY->value, 2) + pow(100 * pose[2] - gui->manualCalibZ->value, 2));
-
-                gui->manualCalibB->SetValue(angleB - calibControllerAngleOffset[1]);
+                calib.angleOffset[1] = angle[1] - calibControllerAngleOffset[1];
                 if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale
                 {
-                    gui->manualCalibA->SetValue(angleA - calibControllerAngleOffset[0]);
-                    calibScale = xyzLen / calibControllerAngleOffset[2];
-                    if (calibScale > 1.2)
-                        calibScale = 1.2;
-                    else if (calibScale < 0.8)
-                        calibScale = 0.8;
+                    calib.angleOffset[0] = angle[0] - calibControllerAngleOffset[0];
+                    calib.scale = distance / calibControllerAngleOffset[2];
                 }
             }
 
             // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
-            if (gui->manualCalibA->value < 90)
-                gui->manualCalibA->SetValue(90);
-            else if (gui->manualCalibA->value > 270)
-                gui->manualCalibA->SetValue(270);
+            if (calib.angleOffset[0] < 90 * DEG_2_RAD)
+                calib.angleOffset[0] = 90 * DEG_2_RAD;
+            else if (calib.angleOffset[0] > 270 * DEG_2_RAD)
+                calib.angleOffset[0] = 270 * DEG_2_RAD;
 
-            // from the calculated position and angular values, calculate the playspace calibration transformation matrix and rotation quaternion
+            // update the calib in the gui as it wont be modified anymore
+            gui->SetManualCalib(calib);
+            // update the pre calculated calibration transformations
+            SetWorldTransform(calib);
 
-            cv::Vec3d calibRot(gui->manualCalibA->value * 0.01745, gui->manualCalibB->value * 0.01745, gui->manualCalibC->value * 0.01745);
-            cv::Vec3d calibPos(gui->manualCalibX->value / 100, gui->manualCalibY->value / 100, gui->manualCalibZ->value / 100);
-            cv::Vec3d calibRodr(cos(calibRot[0]) * cos(calibRot[1]) * 3.14, sin(calibRot[1]) * 3.14, sin(calibRot[0]) * cos(calibRot[1]) * 3.14);
-
-            wtranslation = getSpaceCalibEuler(calibRot, cv::Vec3d(0, 0, 0), calibPos(0), calibPos(1), calibPos(2));
-
-            wrotation = mRot2Quat(eulerAnglesToRotationMatrix(cv::Vec3f(calibRot)));
-
-            cv::Mat stationPos = (cv::Mat_<double>(4, 1) << 0, 0, 0, 1);
-            stationPos = wtranslation * stationPos;
-
-            Quaternion<double> stationQ = Quaternion<double>(0, 0, 1, 0) * (wrotation * Quaternion<double>(1, 0, 0, 0));
-
-            double a = -stationPos.at<double>(0, 0);
-            double b = stationPos.at<double>(1, 0);
-            double c = -stationPos.at<double>(2, 0);
+            cv::Vec3d stationPos = wtransform.translation();
+            CoordTransformOVR(stationPos);
+            cv::Quatd stationQ = cv::Quatd{0, 0, 1, 0} * wrotation;
 
             // move the camera in steamvr to new calibration
-            connection->SendStation(0, a, b, c, stationQ.w, stationQ.x, stationQ.y, stationQ.z);
+            connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);
         }
         else
         {
@@ -1482,7 +1456,7 @@ void Tracker::MainLoop()
 
             try
             {
-                trackerStatus[i].boardTvec /= calibScale;
+                trackerStatus[i].boardTvec /= wscale;
                 if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], calib_config.camMat, calib_config.distCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
@@ -1500,15 +1474,13 @@ void Tracker::MainLoop()
             {
                 // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
                 ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
-                gui->ShowErrorPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG);
-                gui->outWindow.Close();
-                // apriltag_detector_destroy(td);
+                gui->ShowPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG, PopupStyle::Error);
                 mainThreadRunning = false;
                 return;
             }
             trackerStatus[i].boardFound = true;
 
-            trackerStatus[i].boardTvec *= calibScale;
+            trackerStatus[i].boardTvec *= wscale;
 
             if (user_config.depthSmoothing > 0 && trackerStatus[i].boardFoundDriver && !manualRecalibrate)
             {
@@ -1517,13 +1489,13 @@ void Tracker::MainLoop()
                 // if error is big, take the calculated depth
                 // error threshold is defined in the params as depth smoothing
 
-                double distDriver = sqrt(pow(trackerStatus[i].boardTvecDriver[0], 2) + pow(trackerStatus[i].boardTvecDriver[1], 2) + pow(trackerStatus[i].boardTvecDriver[2], 2));
+                double distDriver = Length(trackerStatus[i].boardTvecDriver);
 
-                double distPredict = sqrt(pow(trackerStatus[i].boardTvec[0], 2) + pow(trackerStatus[i].boardTvec[1], 2) + pow(trackerStatus[i].boardTvec[2], 2));
+                double distPredict = Length(trackerStatus[i].boardTvec);
 
                 cv::Vec3d normPredict = trackerStatus[i].boardTvec / distPredict;
 
-                double dist = abs(distPredict - distDriver);
+                double dist = std::abs(distPredict - distDriver);
 
                 dist = dist / user_config.depthSmoothing + 0.1;
                 if (dist > 1)
@@ -1567,30 +1539,20 @@ void Tracker::MainLoop()
             trackerStatus[i].boardRvec[1] = posValues[4];
             trackerStatus[i].boardRvec[2] = posValues[5];
 
-            cv::Mat rpos = cv::Mat_<double>(4, 1);
+            cv::Vec3d rpos = trackerStatus[i].boardTvec;
 
             // transform boards position based on our calibration data
-
-            for (int x = 0; x < 3; x++)
-            {
-                rpos.at<double>(x, 0) = trackerStatus[i].boardTvec[x];
-            }
-            rpos.at<double>(3, 0) = 1;
-            rpos = wtranslation * rpos;
+            rpos = wtransform * rpos;
+            CoordTransformOVR(rpos);
 
             // convert rodriguez rotation to quaternion
-            Quaternion<double> q = rodr2quat(trackerStatus[i].boardRvec[0], trackerStatus[i].boardRvec[1], trackerStatus[i].boardRvec[2]);
+            cv::Quatd q = cv::Quatd::createFromRvec(trackerStatus[i].boardRvec);
 
             // cv::aruco::drawAxis(drawImg, user_config.camMat, user_config.distCoeffs, boardRvec[i], boardTvec[i], 0.05);
 
-            q = Quaternion<double>(0, 0, 1, 0) * (wrotation * q) * Quaternion<double>(0, 0, 1, 0);
+            q = cv::Quatd{0, 0, 1, 0} * (wrotation * q) * cv::Quatd{0, 0, 1, 0};
 
-            double a = -rpos.at<double>(0, 0);
-            double b = rpos.at<double>(1, 0);
-            double c = -rpos.at<double>(2, 0);
-
-            double factor;
-            factor = user_config.smoothingFactor;
+            double factor = user_config.smoothingFactor;
 
             if (factor < 0)
                 factor = 0;
@@ -1603,7 +1565,7 @@ void Tracker::MainLoop()
             // send all the values
             // frame time is how much time passed since frame was acquired.
             if (!multicamAutocalib)
-                connection->SendTracker(connection->connectedTrackers[i].DriverId, a, b, c, q.w, q.x, q.y, q.z, -frameTime - user_config.camLatency, factor);
+                connection->SendTracker(connection->connectedTrackers[i].DriverId, rpos[0], rpos[1], rpos[2], q.w, q.x, q.y, q.z, -frameTime - user_config.camLatency, factor);
             else if (trackerStatus[i].boardFoundDriver)
             {
                 // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
@@ -1613,43 +1575,23 @@ void Tracker::MainLoop()
                 // calibration values are then slightly changed in the estimated direction in order to reduce error.
                 // after a couple of seconds, the calibration data should converge
 
-                cv::Vec3d pose;
-                pose = trackerStatus[i].boardTvec;
-                double xzLen = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[2], 2));
-                double angleA = atan2(100 * pose[1], xzLen) * 57.3;
-                double angleB = atan2(100 * pose[0], 100 * pose[2]) * 57.3;
-                double xyzLen = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[1], 2) + pow(100 * pose[2], 2));
+                cv::Vec3d pos = trackerStatus[i].boardTvec;
+                cv::Vec2d angles = EulerAnglesFromPos(pos);
+                double length = Length(pos);
 
-                pose = trackerStatus[i].boardTvecDriver;
-                double xzLenDriver = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[2], 2));
-                double angleADriver = atan2(100 * pose[1], xzLenDriver) * 57.3;
-                double angleBDriver = atan2(100 * pose[0], 100 * pose[2]) * 57.3;
-                double xyzLenDriver = sqrt(pow(100 * pose[0], 2) + pow(100 * pose[1], 2) + pow(100 * pose[2], 2));
+                cv::Vec3d driverPos = trackerStatus[i].boardTvecDriver;
+                cv::Vec2d driverAngles = EulerAnglesFromPos(driverPos);
+                double driverLength = Length(driverPos);
 
-                cv::Mat rpos1 = cv::Mat_<double>(4, 1);
-                cv::Mat rpos2 = cv::Mat_<double>(4, 1);
+                pos = wtransform * pos;
+                driverPos = wtransform * driverPos;
 
-                for (int x = 0; x < 3; x++)
-                {
-                    rpos1.at<double>(x, 0) = trackerStatus[i].boardTvec[x];
-                }
-                rpos1.at<double>(3, 0) = 1;
-                rpos1 = wtranslation * rpos1;
-                rpos1.at<double>(0, 0) = -rpos1.at<double>(0, 0);
-                rpos1.at<double>(2, 0) = -rpos1.at<double>(2, 0);
+                CoordTransformOVR(pos);
+                CoordTransformOVR(driverPos);
 
-                for (int x = 0; x < 3; x++)
-                {
-                    rpos2.at<double>(x, 0) = trackerStatus[i].boardTvecDriver[x];
-                }
-                rpos2.at<double>(3, 0) = 1;
-                rpos2 = wtranslation * rpos2;
-                rpos2.at<double>(0, 0) = -rpos2.at<double>(0, 0);
-                rpos2.at<double>(2, 0) = -rpos2.at<double>(2, 0);
-
-                double dX = (rpos1.at<double>(0) - rpos2.at<double>(0)) * 0.1;
-                double dY = -(rpos1.at<double>(1) - rpos2.at<double>(1)) * 0.1;
-                double dZ = (rpos1.at<double>(2) - rpos2.at<double>(2)) * 0.1;
+                double dX = (pos[0] - driverPos[0]) * 0.1;
+                double dY = -(pos[1] - driverPos[1]) * 0.1;
+                double dZ = (pos[2] - driverPos[2]) * 0.1;
 
                 if (abs(dX) > 0.01)
                     dX = 0.1 * (dX / abs(dX));
@@ -1658,18 +1600,14 @@ void Tracker::MainLoop()
                 if (abs(dZ) > 0.1)
                     dZ = 0.1 * (dZ / abs(dZ));
 
-                gui->manualCalibX->SetValue(gui->manualCalibX->value + dX);
-                gui->manualCalibY->SetValue(gui->manualCalibY->value + dY);
-                gui->manualCalibZ->SetValue(gui->manualCalibZ->value + dZ);
+                ManualCalib::Real calib = gui->GetManualCalib();
 
-                gui->manualCalibA->SetValue(gui->manualCalibA->value + 0.1 * (angleA - angleADriver));
-                gui->manualCalibB->SetValue(gui->manualCalibB->value + 0.1 * (angleB - angleBDriver));
-                calibScale = calibScale - 0.1 * (1 - (xyzLenDriver / xyzLen));
+                calib.posOffset += cv::Vec3d(dX, dY, dZ);
+                calib.angleOffset += cv::Vec3d(angles[0] - driverAngles[0], angles[1] - driverAngles[1]) * 0.1;
+                calib.scale -= (1 - (driverLength / length)) * 0.1;
 
-                if (calibScale > 1.2)
-                    calibScale = 1.2;
-                else if (calibScale < 0.8)
-                    calibScale = 0.8;
+                gui->SetManualCalib(calib);
+                SetWorldTransform(calib);
             }
         }
 
@@ -1680,7 +1618,7 @@ void Tracker::MainLoop()
         end = std::chrono::steady_clock::now();
         double frameTime = std::chrono::duration<double>(end - start).count();
 
-        if (showOutPreview)
+        if (gui->IsPreviewVisible())
         {
             int cols, rows;
             if (image.cols > image.rows)
@@ -1700,9 +1638,8 @@ void Tracker::MainLoop()
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
             }
-            gui->outWindow.UpdateImage(outImg);
+            gui->UpdatePreview(outImg);
         }
         // time of marker detection
     }
-    gui->outWindow.Close();
 }

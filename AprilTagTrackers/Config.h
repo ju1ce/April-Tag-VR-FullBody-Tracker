@@ -3,10 +3,12 @@
 #define APP_VERSION "0.5.5"
 #define DRIVER_VERSION "0.5.5"
 
+#include "Helpers.h"
 #include "Quaternion.h"
 #include "Serializable.h"
 
 #include <opencv2/aruco.hpp>
+#include <opencv2/core.hpp>
 
 #include <algorithm>
 #include <string>
@@ -14,6 +16,50 @@
 // Temporary alias
 #define FIELD(a_type, a_name) \
     REFLECTABLE_FIELD(a_type, a_name)
+
+class ManualCalib
+{
+private:
+    /// Multiplier for posOffset when displayed in the gui
+    static constexpr double POS_OFFSET_MULTI = 100;
+
+public:
+    /// Real representation of calib values, rather than what is displayed in gui and config
+    struct Real
+    {
+        /// not multiplied by POS_OFFSET_MULTI
+        cv::Vec3d posOffset;
+        /// (pitch, yaw, roll) in radians;
+        cv::Vec3d angleOffset;
+        double scale;
+    };
+
+    Real GetAsReal()
+    {
+        return {
+            posOffset * (1 / POS_OFFSET_MULTI),
+            angleOffset * DEG_2_RAD,
+            scale};
+    }
+    void SetFromReal(const Real& real)
+    {
+        posOffset = real.posOffset * POS_OFFSET_MULTI;
+        angleOffset = real.angleOffset * RAD_2_DEG;
+        scale = real.scale;
+    }
+
+    REFLECTABLE_BEGIN;
+    /// stored multiplied by POS_OFFSET_MULTI
+    FIELD(cv::Vec3d, posOffset);
+    FS_COMMENT("(pitch, yaw, roll) in degrees.");
+    FIELD(cv::Vec3d, angleOffset);
+    FIELD(FS::Valid<double>, scale){
+        1.0, [](auto& value)
+        {
+            value = std::clamp(value, 0.8, 1.2);
+        }};
+    REFLECTABLE_END;
+};
 
 // Create definitions for each config file below
 
@@ -28,13 +74,18 @@ public:
     FIELD(std::string, driver_version) = DRIVER_VERSION;
 
     FIELD(std::string, windowTitle);
+    // Keep synced with Localization::LANG_CODE_MAP
+    FS_COMMENT("en, zh-CN");
     FIELD(std::string, langCode) = "en";
     FIELD(std::string, cameraAddr) = "0";
     FIELD(int, cameraApiPreference) = 0;
     FIELD(int, trackerNum) = 1;
     FIELD(FS::Valid<double>, markerSize){
-        0.05, [](auto& value)
-        { value = std::clamp(value, 0., 1.); }};
+        0.05,
+        [](auto& value)
+        {
+            if (value <= 0.) value = 0.001;
+        }};
     FIELD(int, numOfPrevValues) = 5;
     FIELD(double, quadDecimate) = 1;
     FIELD(double, searchWindow) = 0.25;
@@ -45,12 +96,7 @@ public:
     FIELD(bool, rotateCl) = false;
     FIELD(bool, rotateCounterCl) = false;
     FIELD(bool, coloredMarkers) = true;
-    FIELD(double, calibOffsetX) = 0;
-    FIELD(double, calibOffsetY) = 100;
-    FIELD(double, calibOffsetZ) = 100;
-    FIELD(double, calibOffsetA) = 100;
-    FIELD(double, calibOffsetB) = 0;
-    FIELD(double, calibOffsetC) = 0;
+    FIELD(ManualCalib, manualCalib);
     FIELD(bool, circularWindow) = true;
     FIELD(double, smoothingFactor) = 0.5;
     FIELD(int, camFps) = 30;
@@ -62,27 +108,34 @@ public:
     FIELD(FS::Valid<double>, trackerCalibDistance){
         0.5,
         [](auto& value)
-        { if (value < 0.5) value = 0.5; }};
+        {
+            if (value < 0.5) value = 0.5;
+        }};
     FIELD(FS::Valid<int>, cameraCalibSamples){
         15,
         [](auto& value)
-        { if (value < 15) value = 15; }};
+        {
+            if (value < 15) value = 15;
+        }};
     FIELD(bool, settingsParameters) = false;
     FIELD(double, cameraAutoexposure) = 0;
     FIELD(double, cameraExposure) = 0;
     FIELD(double, cameraGain) = 0;
     FIELD(bool, trackerCalibCenters) = false;
-    FIELD(float, depthSmoothing) = 0;
+    FIELD(FS::Valid<float>, depthSmoothing){
+        0,
+        [](auto& value)
+        {
+            value = std::clamp(value, 0.0f, 1.0f);
+        }};
     FIELD(float, additionalSmoothing) = 0;
     FIELD(int, markerLibrary) = 0;
     FIELD(FS::Valid<int>, markersPerTracker){
         45,
         [](auto& value)
-        { if (value <= 0) value = 45; }};
-    FIELD(FS::Valid<double>, calibScale){
-        1.0,
-        [](auto& value)
-        { if (value < 0.5) value = 1.0; }};
+        {
+            if (value <= 0) value = 45;
+        }};
     FIELD(bool, disableOpenVrApi) = false;
     REFLECTABLE_END;
 };
@@ -103,8 +156,6 @@ public:
     FIELD(std::vector<std::vector<cv::Point2f>>, allCharucoCorners);
     FIELD(std::vector<std::vector<int>>, allCharucoIds);
     FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers);
-    FIELD(cv::Mat, wtranslation);
-    FIELD(Quaternion<double>, wrotation);
     REFLECTABLE_END;
 };
 

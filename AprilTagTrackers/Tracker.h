@@ -1,16 +1,19 @@
 #pragma once
 
-#include "MyApp.h"
-
-#include "Quaternion.h"
 #include "Config.h"
-#include "Localization.h"
-#include <opencv2/videoio.hpp>
-#include <thread>
-#include <mutex>
-#include <chrono>
+#include "GUI.h"
+#include "Quaternion.h"
+#include "RefPtr.h"
 
-struct TrackerStatus {
+#include <opencv2/core/affine.hpp>
+#include <opencv2/videoio.hpp>
+
+#include <chrono>
+#include <mutex>
+#include <thread>
+
+struct TrackerStatus
+{
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
     bool boardFound, boardFoundDriver;
     std::vector<std::vector<double>> prevLocValues;
@@ -18,36 +21,26 @@ struct TrackerStatus {
 };
 
 class Connection;
-class GUI;
-class Parameters;
 
-class Tracker
+class Tracker : public ITrackerControl
 {
 public:
-    Tracker(MyApp* myApp, Connection* connection, UserConfig& user_config, CalibrationConfig& calib_config, const Localization& lcl, const ArucoConfig& aruco_config);
+    Tracker(const Tracker&) = delete;
+    Tracker(Tracker&&) = delete;
+    /// config and locale references are expected to exceed lifetime of this instance
+    Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc);
     void StartCamera(std::string id, int apiPreference);
-    void StartCameraCalib();
-    void StartTrackerCalib();
-    void Start();
+    void StartCamera() override;
+    void StartCameraCalib() override;
+    void StartTrackerCalib() override;
+    void StartConnection() override;
+    void Start() override;
+    void Stop() override;
+    void UpdateConfig() override;
 
     bool mainThreadRunning = false;
     bool cameraRunning = false;
-    bool showCameraPreview = false;
-    bool showOutPreview = false;
-    bool previewCameraCalibration = false;
     bool showTimeProfile = false;
-    bool recalibrate = false;
-    bool manualRecalibrate = false;
-    bool multicamAutocalib = false;
-    bool lockHeightCalib = false;
-    int messageDialogResponse = wxID_CANCEL;
-
-    GUI* gui;
-
-    cv::Mat wtranslation = (cv::Mat_<double>(4, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-    Quaternion<double> wrotation = Quaternion<double>(1, 0, 0, 0);
-
-    double calibScale = 1;
 
 private:
     void CameraLoop();
@@ -56,6 +49,16 @@ private:
     void CalibrateCameraCharuco();
     void CalibrateTracker();
     void MainLoop();
+
+    void HandleConnectionErrors();
+
+    /// Sets the wtransform, wrotation, and wscale
+    void SetWorldTransform(const ManualCalib::Real& calib);
+    /// Calibration transformation
+    cv::Affine3d wtransform;
+    /// wtransform rotation part as a quaternion
+    cv::Quatd wrotation;
+    double wscale = 1;
 
     int drawImgSize = 480;
 
@@ -67,12 +70,12 @@ private:
     cv::Mat cameraImage;
     bool imageReady = false;
 
+    std::unique_ptr<Connection> connection;
+
     UserConfig& user_config;
     CalibrationConfig& calib_config;
-    const Localization& lc;
     const ArucoConfig& aruco_config;
-
-    Connection* connection;
+    const Localization& lc;
 
     std::thread cameraThread;
     std::thread mainThread;
@@ -80,11 +83,5 @@ private:
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     bool trackersCalibrated = false;
 
-    //Quaternion
-
-    //Quaternion<double> q;
-
     std::chrono::steady_clock::time_point last_frame_time;
-
-    MyApp* parentApp;
 };

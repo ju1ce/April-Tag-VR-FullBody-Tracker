@@ -1,62 +1,116 @@
 #pragma once
 
+#include "Debug.h"
+#include "GUI/U8String.h"
 #include "Serializable.h"
+
+#include <algorithm>
 #include <filesystem>
 #include <iterator>
 #include <string_view>
 #include <vector>
-#include <wx/string.h>
-
-// This typedef hopefully makes it more obvious of the purpose of wxString,
-//  and it should only be used for frontend user facing strings.
-// On Windows this will be utf-16 and is essentially a typedef for std::wstring,
-//  other platforms this is an encoding aware utf-8 string.
-// Use std::filesystem::path for windows paths.
-// In general, all unicode string literals should be in the translation yaml files,
-//  and not in a source file.
-using UniStr = wxString;
 
 // temporary alias, undefined at end of file,
-#define T(key) REFLECTABLE_FIELD(UniStr, key)
+#define T(a_key) REFLECTABLE_FIELD(U8String, a_key)
 
 class Localization : public FS::Serializable<Localization>
 {
 public:
-    static inline const FS::Path localesDir{"locales"};
-
-    Localization()
-        : FS::Serializable<Localization>("locales/en.yaml") {}
-
-    bool LoadLang(const std::string& langCode)
-    {
-        SetPath(localesDir / (langCode + ".yaml"));
-        return Load();
-    }
-
-    // TODO: Add back find available langs with new lang code mapping implementation
+    static inline const FS::Path localesDir = std::filesystem::absolute("locales");
 
     // Keep synced
     static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
         "en",
         "zh-CN"};
-    static const inline std::array<UniStr, LANG_CODE_MAP.size()> LANG_NAME_MAP{
+    static constexpr std::array<U8StringView, LANG_CODE_MAP.size()> LANG_NAME_MAP{
         "English",
         "Chinese (PRC)"};
-    static size_t LangCodeToIndex(std::string_view langCode)
+
+    static FS::Path GetLangPath(const std::string& langCode)
     {
-        auto indexItr = std::find(LANG_CODE_MAP.cbegin(), LANG_CODE_MAP.cend(), langCode);
-        assert(indexItr != LANG_CODE_MAP.cend());
-        auto index = std::distance(LANG_CODE_MAP.cbegin(), indexItr);
-        assert(index >= 0);
-        return static_cast<size_t>(index);
+        return std::filesystem::absolute(localesDir) / (langCode + ".yaml");
     }
 
-    // TODO: Group names in structs, instead of long ids (stored in sub-objects in yaml)
+    Localization()
+        : FS::Serializable<Localization>()
+    {
+    }
 
+    bool LoadLang(const std::string& langCode)
+    {
+        // English is loaded by default
+        if (langCode == "en") return true;
+        SetPath(GetLangPath(langCode));
+        return Load();
+    }
+
+    // TODO: Make the github workflow create these "to be translated" localization files.
+    // Could create an automatic pr for them?
+
+    /// Save the updated localization, the default english will be stored in the new keys.
+    /// Some random language will be loaded after this is called, but its a developer function,
+    /// so don't really care, call LoadLang() afterwards to fix.
+    void UpdateAllLangs()
+    {
+        for (const auto& langCode : LANG_CODE_MAP)
+        {
+            if (langCode == "en") continue;
+            SetPath(GetLangPath(std::string(langCode)));
+            // Load existing translations if they exist
+            Load();
+            // Create or overwrite the language file, with new untranslated keys.
+            Save();
+        }
+    }
+
+    struct Word
+    {
+        REFLECTABLE_BEGIN;
+        T(Yes) = "Yes";
+        T(No) = "No";
+        T(On) = "On";
+        T(Off) = "Off";
+        T(Error) = "Error";
+        T(Warning) = "Warning";
+        T(Info) = "Info";
+        T(Connected) = "Connected";
+        T(Disconnected) = "Disconnected";
+        REFLECTABLE_END;
+    };
+
+    struct StatusBar
+    {
+        REFLECTABLE_BEGIN;
+        T(CAMERA) = "Camera: ";
+        T(DRIVER) = "SteamVR Driver: ";
+        T(TRACKER) = "Tracker Running: ";
+        REFLECTABLE_END;
+    };
+
+    struct Calib
+    {
+        REFLECTABLE_BEGIN;
+        T(X) = "X (cm):";
+        T(Y) = "Y (cm):";
+        T(Z) = "Z (cm):";
+        T(PITCH) = "Pitch (°):";
+        T(YAW) = "Yaw (°):";
+        T(ROLL) = "Roll (°):";
+        REFLECTABLE_END;
+    };
+
+    // !! Due to how reflection works, can't define a class within another reflection list,
+    // !! so define subclasses above this line, though using them as fields is fine.
     REFLECTABLE_BEGIN;
     FS_COMMENT("Put all strings in \"double quotes\".");
 
+    // TODO: Group names in structs, instead of long ids (stored in sub-objects in yaml)
+
     T(APP_TITLE) = "Juices VR Marker Tracking";
+
+    REFLECTABLE_FIELD(Word, word);
+    REFLECTABLE_FIELD(StatusBar, status);
+    REFLECTABLE_FIELD(Calib, calib);
 
     T(WINDOW_TITLE) = "Set title bar [requires app restart]";
     T(WINDOW_TITLE_TOOLTIP) = "Set a custom title name for the camera\n *requires restarting*";
@@ -78,7 +132,8 @@ public:
     T(CAMERA_LOCK_HEIGHT) = "Lock camera height";
     T(CAMERA_CALIBRATION_INSTRUCTION) =
         R"(Disable SteamVR home to see the camera.
-Use your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.
+Use your left trigger to grab the camera and move it into position,
+then use grip to grab trackers and move those into position.
 
 Uncheck Calibration mode when done!)";
     T(CAMERA_DISABLE_OUT) = "Disable out window";
@@ -93,9 +148,9 @@ Uncheck Calibration mode when done!)";
     T(PARAMS_CAMERA_TOOLTIP_ID) = "Will be a number 0-10 for USB cameras and\nhttp://<ip here>:8080/video for IP webcam)";
     T(PARAMS_CAMERA_NAME_API) = "Camera API preference";
     T(PARAMS_CAMERA_NAME_ROT_CLOCKWISE) = "Rotate camera clockwise";
-    T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = L"Rotate the camera 90°. Use both to rotate image 180°";
+    T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
     T(PARAMS_CAMERA_NAME_ROT_CCLOCKWISE) = "Rotate camera counterclockwise";
-    T(PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE) = L"Rotate the camera 90°. Use both to rotate image 180°";
+    T(PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
     T(PARAMS_CAMERA_NAME_WIDTH) = "Camera width in pixels";
     T(PARAMS_CAMERA_TOOLTIP_WIDTH) = "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.";
     T(PARAMS_CAMERA_NAME_HEIGHT) = "Camera height in pixels";

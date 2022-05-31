@@ -1,6 +1,8 @@
 #pragma once
 
-constexpr static const char* ATT_LICENSE =
+#include <string_view>
+
+static constexpr std::string_view ATT_LICENSE =
 R"(MIT License
 
 Copyright(c) 2021 https://github.com/ju1ce/
@@ -16,7 +18,7 @@ OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO E
 FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.)";
 
-constexpr static const char* APRILTAG_LICENSE =
+static constexpr std::string_view APRILTAG_LICENSE =
 R"(BSD 2 - Clause License
 
 Copyright(C) 2013 - 2016, The Regents of The University of Michigan.All rights reserved.
@@ -36,7 +38,7 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
 LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.)";
 
-constexpr static const char* OPENCV_LICENSE =
+static constexpr std::string_view OPENCV_LICENSE =
 R"(Copyright(c) 2021, OpenCV team
 
 Licensed under the Apache License, Version 2.0 (the "License");

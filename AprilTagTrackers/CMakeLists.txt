@@ -21,17 +21,24 @@ set(ATT_SOURCE_FILES
     AprilTagWrapper.cpp AprilTagWrapper.h
     Config.h
     Connection.cpp Connection.h
-    GUI.cpp GUI.h
     Helpers.cpp Helpers.h
     license.h
     Localization.h
-    MessageDialog.cpp MessageDialog.h
     Quaternion.cpp Quaternion.h
     Reflectable.h
     Serializable.cpp Serializable.h
+    ValidatorProxy.h
     Tracker.cpp Tracker.h
     MyApp.cpp MyApp.h
     Debug.cpp Debug.h
+    RefPtr.h
+
+    GUI.cpp GUI.h
+    GUI/MainFrame.cpp GUI/MainFrame.h
+    GUI/PreviewPane.cpp GUI/PreviewPane.h
+    GUI/FormBuilder.cpp GUI/FormBuilder.h GUI/FormBuilder.tpp
+    GUI/U8String.cpp GUI/U8String.h
+    GUI/wxHelpers.h
 
     IPC/IPC.h
     IPC/UNIXSocket.cpp
