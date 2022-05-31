@@ -1,19 +1,20 @@
 #pragma once
 
+#include "Debug.h"
 #include "Quaternion.h"
 #include "Reflectable.h"
+#include "ValidatorProxy.h"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/persistence.hpp>
 #include <opencv2/core/quaternion.hpp>
-#include <wx/string.h>
 
 #include <filesystem>
 
 // clang-format off
 #define FILESTORAGE_COMMENT_WITH_ID(a_id, a_commentStr)   \
-    REFLECTABLE_FIELD_DATA(const FS::Comment, _comment_##a_id); \
-    static constexpr const FS::Comment _comment_##a_id { a_commentStr }
+    REFLECTABLE_FIELD_DATA(const FS::Comment, REFLECTABLE_CONCAT(_comment_, a_id)); \
+    static constexpr const FS::Comment REFLECTABLE_CONCAT(_comment_, a_id) { a_commentStr }
 // clang-format on
 
 #define FS_COMMENT(a_commentStr) \
@@ -24,11 +25,14 @@ namespace FS
 {
 
 using Path = std::filesystem::path;
+template <typename T>
+using Valid = ValidatorProxy<T>;
 
 template <typename ST>
 class Serializable
 {
 public:
+    Serializable() {}
     Serializable(Path _filePath) : filePath(std::move(_filePath)) {}
 
     bool Save() const;
@@ -41,15 +45,24 @@ private:
     Path filePath;
 };
 
+template <typename RT>
+inline void WriteEach(cv::FileStorage& fs, const RT& reflType);
+template <typename RT>
+inline void ReadEach(const cv::FileNode& fn, RT& reflType);
+
+} // namespace FS
+
 template <typename T>
 inline std::enable_if_t<Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
 {
-    WriteEach(fs, field);
+    fs << "{";
+    FS::WriteEach(fs, field);
+    fs << "}";
 }
 template <typename T>
 inline std::enable_if_t<Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
 {
-    ReadEach(fn, field);
+    FS::ReadEach(fn, field);
 }
 
 template <typename T>
@@ -108,23 +121,13 @@ inline void Read(const cv::FileNode& fn, Quaternion<T>& q)
     Read(*(it++), q.z);
 }
 
-// On windows this converts from a widestring (utf16) to utf8, but on other platforms its free
-inline void Write(cv::FileStorage& fs, const wxString& str)
-{
-    cv::write(fs, str.utf8_str().data());
-}
-inline void Read(const cv::FileNode& fn, wxString& str)
-{
-    std::string buf;
-    fn >> buf;
-    // TODO: Replace with UniStr from gui.
-    str = wxString::FromUTF8Unchecked(buf.c_str());
-}
-
 template <typename T>
 inline void Write(cv::FileStorage& fs, const std::vector<T>& v)
 {
-    fs << "[";
+    if constexpr (std::is_integral_v<T>)
+        fs << "[:"; // condensed flow yaml structure
+    else
+        fs << "[";
     for (const auto& elem : v)
         Write(fs, elem);
     fs << "]";
@@ -139,6 +142,9 @@ inline void Read(const cv::FileNode& fn, std::vector<T>& v)
     for (size_t i = 0; i < length; i++)
         Read(*(it++), v[i]);
 }
+
+namespace FS
+{
 
 // -- Overloaded Write and Read with name --
 
@@ -177,49 +183,10 @@ inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::Det
     cv::aruco::DetectorParameters::readDetectorParameters(fn, field);
 }
 
-/// Controls access through setter and calls a validator on update.
-template <typename T>
-class Valid
-{
-public:
-    using Validator = void (*)(T& value);
-
-    Valid(T _value, Validator _validator)
-        : value(std::forward<T>(_value)), validator(_validator) {}
-
-    Valid<T>& operator=(T&& rhs)
-    {
-        value = std::move(rhs);
-        validator(value);
-        return *this;
-    }
-    Valid<T>& operator=(const T& rhs)
-    {
-        value = rhs;
-        validator(value);
-        return *this;
-    }
-
-    operator const T&() const { return value; }
-
-    friend inline void Write(cv::FileStorage& fs, const Valid<T>& field)
-    {
-        Write(fs, field.value);
-    }
-    friend inline void Read(const cv::FileNode& fn, Valid<T>& field)
-    {
-        Read(fn, field.value);
-        field.validator(field.value);
-    }
-
-private:
-    T value;
-    const Validator validator;
-};
-
 template <typename ST>
 inline bool Serializable<ST>::Save() const
 {
+    ATASSERT("filePath is not empty.", !filePath.empty());
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
     if (!fs.isOpened()) return false;
     WriteEach(fs, Reflect::DerivedThis<ST>(*this));
@@ -230,8 +197,20 @@ inline bool Serializable<ST>::Save() const
 template <typename ST>
 inline bool Serializable<ST>::Load()
 {
+    ATASSERT("filePath is not empty.", !filePath.empty());
     if (!std::filesystem::exists(filePath)) return false;
-    cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::READ};
+    if (std::filesystem::is_empty(filePath)) return false;
+    cv::FileStorage fs;
+    try
+    {
+        if (!fs.open(filePath.generic_string(), cv::FileStorage::READ))
+            return false;
+    }
+    catch (const std::exception& e)
+    {
+        ATERROR(e.what());
+        return false;
+    }
     if (!fs.isOpened()) return false;
     ReadEach(fs.root(), Reflect::DerivedThis<ST>(*this));
     fs.release();
