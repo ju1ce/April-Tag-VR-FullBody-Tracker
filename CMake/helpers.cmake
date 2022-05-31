@@ -30,7 +30,11 @@ function(att_add_external_project project_name)
         "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND" ${ARGN})
 
     if(ATT_IS_MULTI_CONFIG)
-        set(multi_config_flag "--config" "$(Configuration)")
+        if (CMAKE_GENERATOR MATCHES "Visual Studio")
+            set(multi_config_flag "--config" "$(Configuration)")
+        else()
+            set(multi_config_flag "--config" "$<CONFIG>")
+        endif()
         unset(single_config_flag)
     else()
         set(single_config_flag "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
@@ -65,7 +69,8 @@ function(att_add_external_project project_name)
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=$<BOOL:${BUILD_SHARED_LIBS}>
         -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
+        # because this gets applied to deps aswell, use > escaped to late evaluate the generator expression in the external project itself
+        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug$<ANGLE-R>:Debug$<ANGLE-R>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
         ${toolchain_file_flag}
         ${single_config_flag}
         ${_arg_EXTRA_CMAKE_ARGS}
@@ -95,7 +100,7 @@ function(att_add_dep project_name)
     att_add_external_project(
         ${project_name}
         EXTRA_CMAKE_ARGS -Wno-dev
-        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
+        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW # enable CMAKE_MSVC_RUNTIME_LIBRARY
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS
