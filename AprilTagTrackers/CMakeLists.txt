@@ -58,17 +58,14 @@ target_link_libraries(AprilTagTrackers PUBLIC
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
 
-# if debug build or ${ENABLE_ASSERT}
-target_compile_definitions(AprilTagTrackers PUBLIC
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)
-
 if(ENABLE_OUTPUT_LOG_FILE)
     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_OUTPUT_LOG_FILE)
 endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC
-    ATT_LOG_LEVEL=${LOG_LEVEL}
-    $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>)
+    ATT_LOG_LEVEL=$<{LOG_LEVEL}>
+    $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)
 
 # Set cross-platform defines in sources
 if(WIN32)

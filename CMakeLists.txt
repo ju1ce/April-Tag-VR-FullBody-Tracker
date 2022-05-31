@@ -35,11 +35,11 @@ if(NOT SKIP_BUILD_DEPS)
     endif()
 endif()
 
-# If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
+# If log level isnt defined, default to 2.
 if(LOG_LEVEL STREQUAL "")
-    set(LOG_LEVEL_FLAG $<IF:$<CONFIG:Debug>,3,2>)
+    set(LOG_LEVEL_FLAG "2")
 else()
-    set(LOG_LEVEL_FLAG ${LOG_LEVEL})
+    set(LOG_LEVEL_FLAG "${LOG_LEVEL}")
 endif()
 
 att_add_project(
