@@ -63,7 +63,7 @@ if(ENABLE_OUTPUT_LOG_FILE)
 endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC
-    ATT_LOG_LEVEL=$<{LOG_LEVEL}>
+    ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)
 
