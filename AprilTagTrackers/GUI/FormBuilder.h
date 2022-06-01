@@ -58,6 +58,7 @@ public:
 
     // Forwards to all interfaces in elements list.
     void Submit() override;
+    void Update() override;
     void SetVisible(bool visible = true) override;
     void SetEnabled(bool enabled = true) override;
     /// Calls ShowItems() on the top sizer
@@ -284,6 +285,7 @@ public:
     void Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSizerFlags flags = {}) override;
 
     void Submit() override { elem.Submit(); }
+    void Update() override { elem.Update(); }
     void SetVisible(bool visible = true) override;
     void SetEnabled(bool enabled = true) override;
 

@@ -8,6 +8,11 @@ void FormBuilder::Submit()
     for (auto& e : elements) e->Submit();
 }
 
+void FormBuilder::Update()
+{
+    for (auto& e : elements) e->Update();
+}
+
 void FormBuilder::SetVisible(bool visible)
 {
     for (auto& e : elements) e->SetVisible(visible);

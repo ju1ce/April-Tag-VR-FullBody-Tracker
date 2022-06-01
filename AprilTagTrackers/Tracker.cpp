@@ -332,25 +332,9 @@ void Tracker::CameraLoop()
             imageReady = true;
         }
 
-        if (!user_config.disableOpenVrApi)
-        {
-            // process events. BETA TEST ONLY, MOVE TO CONNECTION LATER
-            if (connection->status == connection->CONNECTED)
-            {
-                vr::VREvent_t event;
-                while (connection->openvr_handle->PollNextEvent(&event, sizeof(event)))
-                {
-                    if (event.eventType == vr::VREvent_Quit)
-                    {
-                        connection->openvr_handle->AcknowledgeQuit_Exiting(); // close connection to steamvr without closing att
-                        connection->status = connection->DISCONNECTED;
-                        vr::VR_Shutdown();
-                        mainThreadRunning = false;
-                        break;
-                    }
-                }
-            }
-        }
+        if (connection->PollQuitEvent())
+            mainThreadRunning = false;
+        HandleConnectionErrors();
     }
     cap.release();
     gui->SetStatus(false, StatusItem::Camera);
@@ -358,6 +342,7 @@ void Tracker::CameraLoop()
 
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
+    /// TODO: replace with std::condition_variable
     // Sleep happens between each iteration when the mutex is not locked.
     for (;; std::this_thread::sleep_for(std::chrono::milliseconds(1)))
     {
@@ -776,14 +761,16 @@ void Tracker::StartTrackerCalib()
 void Tracker::StartConnection()
 {
     connection->StartConnection();
-    HandleConnectionErrors();
+    gui->SetStatus(true, StatusItem::Driver);
 }
 
 void Tracker::HandleConnectionErrors()
 {
     using Code = Connection::ErrorCode;
-    Code code = connection->GetErrorCode();
+    Code code = connection->GetAndResetErrorState();
     if (code == Code::OK) return;
+
+    gui->SetStatus(false, StatusItem::Driver);
 
     if (code == Code::ALREADY_WAITING)
         gui->ShowPopup("Already waiting for a connection.", PopupStyle::Error);
@@ -817,6 +804,7 @@ void Tracker::Start()
     if (mainThreadRunning)
     {
         mainThreadRunning = false;
+        gui->SetStatus(false, StatusItem::Tracker);
         return;
     }
     if (!cameraRunning)
@@ -843,6 +831,8 @@ void Tracker::Start()
         mainThreadRunning = false;
         return;
     }
+
+    gui->SetStatus(true, StatusItem::Tracker);
 
     // start detection on another thread
     mainThreadRunning = true;
@@ -1355,6 +1345,7 @@ void Tracker::MainLoop()
                 double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
+                    ATTRACE("Toggle position calibration.");
                     if (!calibControllerPosActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
                     {
                         calibControllerPosActive = true;
@@ -1376,6 +1367,7 @@ void Tracker::MainLoop()
                 double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
+                    ATTRACE("Toggle angle calibration.");
                     if (!calibControllerAngleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
                     {
                         calibControllerAngleActive = true;

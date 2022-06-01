@@ -74,6 +74,7 @@ private:
 
     /// Reference to params sub form
     RefPtr<Form::FormBuilder> manualCalibForm;
+    RefPtr<wxCheckBox> manualCalibCheckBox;
     ManualCalib manualCalib;
 
     std::array<PreviewFrame, 2> previews;

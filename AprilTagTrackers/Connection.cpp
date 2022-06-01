@@ -23,7 +23,7 @@ Connection::Connection(const UserConfig& _user_config)
 
 void Connection::StartConnection()
 {
-    ResetErrorState();
+    GetAndResetErrorState();
 
     if (status == WAITING)
     {
@@ -221,7 +221,7 @@ void Connection::SetError(ErrorCode code, std::string msg)
     status = DISCONNECTED;
 }
 
-std::istringstream Connection::Send(std::string buffer)
+std::istringstream Connection::Send(const std::string& buffer)
 {
     std::string resp;
     this->bridge_driver->send(buffer, resp);
@@ -294,6 +294,25 @@ int Connection::GetButtonStates()
         return 2;
 
     return 0;
+}
+
+bool Connection::PollQuitEvent()
+{
+    if (user_config.disableOpenVrApi || status != CONNECTED)
+        return false;
+
+    vr::VREvent_t event;
+    while (openvr_handle->PollNextEvent(&event, sizeof(event)))
+    {
+        if (event.eventType == vr::VREvent_Quit)
+        {
+            openvr_handle->AcknowledgeQuit_Exiting(); // close connection to steamvr without closing att
+            status = DISCONNECTED;
+            vr::VR_Shutdown();
+            return true;
+        }
+    }
+    return false;
 }
 
 Pose Connection::GetControllerPose()

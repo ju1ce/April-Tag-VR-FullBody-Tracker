@@ -113,8 +113,14 @@ void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
 void GUI::MainFrame::SetManualCalibVisible(bool visible)
 {
     manualCalibForm->SetSizerVisible(visible);
+    manualCalibCheckBox->SetValue(visible);
     tracker->manualRecalibrate = visible;
-    Fit();
+    if (visible)
+    {
+        manualCalib = config.manualCalib;
+        manualCalibForm->Update();
+        Fit();
+    }
 }
 
 void GUI::MainFrame::SaveManualCalib()
@@ -226,20 +232,28 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
             {
                 tracker->Start();
             }})
-        .Add(StretchSpacer{})
-        .Add(CheckBoxButton{lc.CAMERA_CALIBRATION_MODE, [this](auto& evt)
+        .Add(Button{"Preview output", [this](auto& evt)
             {
-                bool checked = evt.IsChecked();
-                SetManualCalibVisible(checked);
-                if (!checked)
+                SetPreviewVisible(true);
+            }});
+
+    manualCalibCheckBox =
+        cam.AddGet(CheckBoxButton{lc.CAMERA_CALIBRATION_MODE,
+                       [this](auto& evt)
+                       {
+                           bool checked = evt.IsChecked();
+                           SetManualCalibVisible(checked);
+                           if (!checked)
+                           {
+                               SaveManualCalib();
+                           }
+                       }})
+            ->GetWidget();
+
+    cam.Add(CheckBoxButton{lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
                 {
-                    SaveManualCalib();
-                }
-            }})
-        .Add(CheckBoxButton{lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
-            {
-                tracker->multicamAutocalib = evt.IsChecked();
-            }})
+                    tracker->multicamAutocalib = evt.IsChecked();
+                }})
         .Add(CheckBoxButton{lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
             {
                 tracker->lockHeightCalib = evt.IsChecked();

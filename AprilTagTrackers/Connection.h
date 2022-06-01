@@ -18,8 +18,8 @@ struct TrackerConnection
 /// right handed system, -x right, +y up, +z forward
 struct Pose
 {
-    Pose(cv::Vec3d pos, cv::Quatd rot)
-        : position(std::move(pos)), rotation(std::move(rot))
+    Pose(const cv::Vec3d& pos, const cv::Quatd& rot)
+        : position(pos), rotation(rot)
     {
         ATASSERT("Pose rotation is a unit quaternion.", rotation.isNormal());
     }
@@ -56,26 +56,32 @@ public:
 
     Connection(const UserConfig& user_config);
     void StartConnection();
-    std::istringstream Send(std::string buffer);
+    std::istringstream Send(const std::string& buffer);
     std::istringstream SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing);
     std::istringstream SendStation(int id, double a, double b, double c, double qw, double qx, double qy, double qz);
     Pose GetControllerPose();
     /// Returns non-zero on the frame the button is pressed
     int GetButtonStates();
+    /// returns true if ovr quit
+    bool PollQuitEvent();
 
     ConnectionStatus status = DISCONNECTED;
     vr::IVRSystem* openvr_handle = nullptr;
     std::vector<TrackerConnection> connectedTrackers;
 
-    // Basic error handling across threads
-    ErrorCode GetErrorCode() { return errorCode; }
+    // Basic error handling across threads, not synchronized yet.
+    ErrorCode GetAndResetErrorState()
+    {
+        ErrorCode code = errorCode;
+        errorCode = ErrorCode::OK;
+        return code;
+    }
     const std::string& GetErrorMsg() { return errorMsg; }
 
 private:
     void Connect();
 
     void SetError(ErrorCode code, std::string msg = "");
-    void ResetErrorState() { errorCode = ErrorCode::OK; }
 
     ErrorCode errorCode = ErrorCode::OK;
     std::string errorMsg;
