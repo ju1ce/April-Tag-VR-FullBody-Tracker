@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace Form
@@ -50,9 +51,9 @@ public:
 
     /// Parents widgets to parent, and adds to sizer.
     FormBuilder(RefPtr<wxWindow> _parent, RefPtr<wxSizer> sizer)
-        : parent(_parent)
+        : parent(std::move(_parent))
     {
-        sizerStack.push(sizer);
+        sizerStack.push(std::move(sizer));
     }
 
     // Forwards to all interfaces in elements list.
@@ -136,7 +137,7 @@ protected:
 
 private:
     RefPtr<WinT> widget;
-    wxWindowID id;
+    wxWindowID id{};
 };
 
 /// Text box that sets a backed value with FromString/ToString.
@@ -149,7 +150,7 @@ public:
     void Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSizerFlags flags = {}) override;
     void Submit() override;
 
-protected:
+private:
     T& backingValue;
 };
 

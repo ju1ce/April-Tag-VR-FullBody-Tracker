@@ -1,6 +1,7 @@
 #include "MainFrame.h"
 
-#include "Helpers.h"
+#include "license.h"
+#include "wxHelpers.h"
 
 #include <functional>
 #include <sstream>
@@ -103,7 +104,7 @@ ManualCalib::Real GUI::MainFrame::GetManualCalib()
     return manualCalib.GetAsReal();
 }
 
-void GUI::MainFrame::SetManualCalib(ManualCalib::Real calib)
+void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
 {
     manualCalib.SetFromReal(calib);
     manualCalibForm->Update();

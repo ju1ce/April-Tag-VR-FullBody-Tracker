@@ -19,7 +19,7 @@ inline RefPtr<ElemT> FormBuilder::AddGet(ElemT&& elem, wxSizerFlags flags)
     static_assert(!std::is_same_v<FormBuilder, ElemT>, "Use FormBuilder::SubForm.");
 
     // Owns until the emplace_back, still need reference to derived ElemT.
-    auto* elemPtr = new ElemT(std::move(elem));
+    auto* elemPtr = new ElemT(std::forward<ElemT>(elem));
     elements.emplace_back(static_cast<IElement*>(elemPtr));
 
     elemPtr->Create(parent, GetSizer(), flags);
@@ -29,20 +29,20 @@ inline RefPtr<ElemT> FormBuilder::AddGet(ElemT&& elem, wxSizerFlags flags)
 template <typename ElemT>
 inline RefPtr<ElemT> FormBuilder::AddGet(ElemT&& elem)
 {
-    return AddGet(std::move(elem), sizerFlags);
+    return AddGet(std::forward<ElemT>(elem), sizerFlags);
 }
 
 template <typename ElemT>
 inline FormBuilder& FormBuilder::Add(ElemT&& elem, wxSizerFlags flags)
 {
-    AddGet(std::move(elem), flags);
+    AddGet(std::forward<ElemT>(elem), flags);
     return *this;
 }
 
 template <typename ElemT>
 inline FormBuilder& FormBuilder::Add(ElemT&& elem)
 {
-    AddGet(std::move(elem), sizerFlags);
+    AddGet(std::forward<ElemT>(elem), sizerFlags);
     return *this;
 }
 

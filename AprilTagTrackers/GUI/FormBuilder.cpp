@@ -47,10 +47,10 @@ FormBuilder& FormBuilder::PushStaticBoxSizer(const wxString& label, int orient)
 FormBuilder& FormBuilder::PopSizer()
 {
     auto staticSizer = GetSizer().DynamicCast<wxStaticBoxSizer>();
-    if (staticSizer)
+    if (staticSizer.NotNull())
     {
         ATASSERT("wxStaticBoxSizer requires the parent to be its static box.",
-            parent.DynamicCast<wxStaticBox>().has_value());
+            parent.DynamicCast<wxStaticBox>().NotNull());
         parent = parent->GetParent();
     }
     sizerStack.pop();
