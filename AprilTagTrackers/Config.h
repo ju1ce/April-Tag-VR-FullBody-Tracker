@@ -79,7 +79,7 @@ public:
     FIELD(std::string, langCode) = "en";
     FIELD(std::string, cameraAddr) = "0";
     FIELD(int, cameraApiPreference) = 0;
-    FIELD(int, trackerNum) = 1;
+    FIELD(int, trackerNum) = 3;
     FIELD(FS::Valid<double>, markerSize){
         0.05,
         [](auto& value)
