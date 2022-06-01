@@ -64,9 +64,8 @@
 
 #if ATT_LOG_LEVEL > 0
 /// messageStream is a sequence of strings and insertion operators, pasted into a std::cerr statement
-#define ATT_LOG(a_messageStream)       \
-    Debug::PreLog(__FILE__, __LINE__); \
-    std::cerr << a_messageStream << std::endl
+#define ATT_LOG(a_messageStream) \
+    Debug::PreLog(__FILE__, __LINE__) << a_messageStream << std::endl
 #else
 /// messageStream is a sequence of strings and insertion operators, pasted into a std::cerr statement
 #define ATT_LOG(a_messageStream) \
@@ -176,7 +175,7 @@ extern const std::chrono::system_clock::time_point appStartTimePoint;
 
 /// [ thread_id @ runtime_sec ] (file:line)
 template <typename StrT>
-inline void PreLog(const StrT file, int line) noexcept
+inline std::ostream& PreLog(const StrT file, int line) noexcept
 {
     const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
     const auto stampSec = std::chrono::duration<float>(stamp).count();
@@ -188,6 +187,7 @@ inline void PreLog(const StrT file, int line) noexcept
               << stampSec << std::defaultfloat // reset std::fixed
               << " ] (" << file
               << ":" << line << ") ";
+    return std::cerr;
 }
 
 #endif

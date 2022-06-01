@@ -84,9 +84,9 @@ bool MyApp::OnExceptionInMainLoop()
 static int OpenCVErrorHandler(int status, const char* funcName, const char* errMsg, const char* fileName, int line, void*)
 {
 #if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(fileName, line);
-    std::cerr << "OpenCV Error: " << errMsg << std::endl
-              << "    in: " << funcName << std::endl;
+    Debug::PreLog(fileName, line)
+        << "OpenCV Error: " << errMsg << std::endl
+        << "    in: " << funcName << std::endl;
 #endif
     Debug::abort();
     return status;
@@ -96,9 +96,9 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
 #if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(file.c_str().AsChar(), line);
-    std::cerr << "wxWidgets Error: " << msg << std::endl
-              << "    Assertion failure:  ( " << cond << " )  in: " << func << std::endl;
+    Debug::PreLog(file.c_str().AsChar(), line)
+        << "wxWidgets Error: " << msg << std::endl
+        << "    Assertion failure:  ( " << cond << " )  in: " << func << std::endl;
 #endif
 #ifdef ATT_ENABLE_ASSERT
     Debug::abort();
