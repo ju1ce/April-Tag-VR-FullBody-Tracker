@@ -133,10 +133,19 @@ inline cv::Affine3<T> GetSpaceCalibEuler(cv::Vec<T, 3> theta, cv::Vec<T, 3> pos)
 }
 
 /// Transform from/to ovr coordinate system
-/// by negating the [0]/x and [2]/z components
-template <typename T>
-inline void CoordTransformOVR(T& vec)
+/// by negating the [0]/x and [2]/z components.
+template <typename T, int N>
+inline void CoordTransformOVR(cv::Vec<T, N>& vec)
 {
     vec[0] = -vec[0];
-    vec[2] = -vec[2];
+    if constexpr (N >= 3)
+        vec[2] = -vec[2];
+}
+/// Transform from/to ovr coordinate system
+/// by negating the x and z components.
+template <typename T>
+inline void CoordTransformOVR(cv::Quat<T>& quat)
+{
+    quat.x = -quat.x;
+    quat.z = -quat.z;
 }

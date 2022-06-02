@@ -107,20 +107,30 @@ ManualCalib::Real GUI::MainFrame::GetManualCalib()
 void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
 {
     manualCalib.SetFromReal(calib);
-    manualCalibForm->Update();
+
+    using Clock = std::chrono::steady_clock;
+    static Clock::time_point lastUpdate = Clock::now();
+    if ((Clock::now() - lastUpdate) > std::chrono::milliseconds(500))
+    {
+        lastUpdate = Clock::now();
+        CallOnMainThread([this]
+            {
+                manualCalibForm->Update();
+            });
+    }
 }
 
 void GUI::MainFrame::SetManualCalibVisible(bool visible)
 {
     manualCalibForm->SetSizerVisible(visible);
     manualCalibCheckBox->SetValue(visible);
-    tracker->manualRecalibrate = visible;
     if (visible)
     {
         manualCalib = config.manualCalib;
         manualCalibForm->Update();
         Fit();
     }
+    tracker->manualRecalibrate = visible;
 }
 
 void GUI::MainFrame::SaveManualCalib()
@@ -194,7 +204,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
     auto boxSizer = NewSizer<wxBoxSizer>(panel, wxHORIZONTAL);
     cam = FormBuilder(panel, boxSizer);
 
-    cam.PushSizer<wxFlexGridSizer>(2, wxSize(20, 20))
+    cam.PushSizer<wxFlexGridSizer>(2, wxSize(20, 10))
         .Border(wxALL, 5)
         .Add(Button{lc.CAMERA_START_CAMERA, [this](auto&)
             {

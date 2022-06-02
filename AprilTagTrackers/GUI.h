@@ -96,7 +96,7 @@ public:
     /// Get the manual calibration currently shown in the UI
     ManualCalib::Real GetManualCalib();
     /// Set the manual calib currently shown in the UI
-    void SetManualCalib(ManualCalib::Real calib);
+    void SetManualCalib(const ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
     void SetManualCalibVisible(bool visible = true);
     /// Save manual calib to user config

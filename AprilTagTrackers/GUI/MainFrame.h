@@ -44,6 +44,7 @@ public:
     /// thread safe.
     /// Get the manual calibration currently shown in the UI.
     ManualCalib::Real GetManualCalib();
+    /// thread safe.
     /// Set the manual calib currently shown in the UI.
     void SetManualCalib(const ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
@@ -75,7 +76,7 @@ private:
     /// Reference to params sub form
     RefPtr<Form::FormBuilder> manualCalibForm;
     RefPtr<wxCheckBox> manualCalibCheckBox;
-    ManualCalib manualCalib;
+    ManualCalib manualCalib{};
 
     std::array<PreviewFrame, 2> previews;
 };

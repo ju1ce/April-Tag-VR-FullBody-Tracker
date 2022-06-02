@@ -79,9 +79,9 @@ ManualCalib::Real GUI::GetManualCalib()
     return impl->GetManualCalib();
 }
 
-void GUI::SetManualCalib(ManualCalib::Real calib)
+void GUI::SetManualCalib(const ManualCalib::Real& calib)
 {
-    ForwardToMainThread(impl, &MainFrame::SetManualCalib, std::move(calib));
+    impl->SetManualCalib(calib);
 }
 
 void GUI::SetManualCalibVisible(bool visible)

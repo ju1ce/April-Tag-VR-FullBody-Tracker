@@ -794,7 +794,9 @@ void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
 {
     cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
     wtransform = cv::Affine3d(rmat, calib.posOffset);
-    wrotation = cv::Quatd::createFromRotMat(rmat);
+    wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
+    /// TODO: Why
+    wrotation.z = -wrotation.z;
     wscale = calib.scale;
 }
 
@@ -1067,6 +1069,8 @@ void Tracker::MainLoop()
     size_t trackerNum = connection->connectedTrackers.size();
     int numOfPrevValues = user_config.numOfPrevValues;
 
+    SetWorldTransform(user_config.manualCalib.GetAsReal());
+
     // these variables are used to save detections of apriltags, so we dont define them every frame
 
     std::vector<int> ids;
@@ -1102,12 +1106,10 @@ void Tracker::MainLoop()
     int framesToCheckAll = 20;
 
     // calculate position of camera from calibration data and send its position to steamvr
-    cv::Vec3d stationPos{0, 0, 0};
-    stationPos = wtransform * stationPos;
+    cv::Vec3d stationPos = wtransform.translation();
     CoordTransformOVR(stationPos);
 
-    /// TODO: What is this?
-    cv::Quatd stationQ = cv::Quatd{0, 0, 1, 0} * wrotation;
+    cv::Quatd stationQ = wrotation;
 
     connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ[0], stationQ[1], stationQ[2], stationQ[3]);
 
@@ -1253,9 +1255,9 @@ void Tracker::MainLoop()
             {
                 cv::Quatd q{qw, qx, qy, qz};
 
-                // What is this?
+                /// TODO: What is this?
                 q = wrotation.inv(cv::QUAT_ASSUME_UNIT) *
-                    cv::Quatd{0, 0, 1, 0}.inv(cv::QUAT_ASSUME_UNIT) *
+                    cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT) *
                     q.normalize() *
                     cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
 
@@ -1330,7 +1332,6 @@ void Tracker::MainLoop()
         if (manualRecalibrate) // playspace calibration loop
         {
             int inputButton = connection->GetButtonStates();
-
             ManualCalib::Real calib = gui->GetManualCalib();
 
             double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
@@ -1345,7 +1346,6 @@ void Tracker::MainLoop()
                 double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
-                    ATTRACE("Toggle position calibration.");
                     if (!calibControllerPosActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
                     {
                         calibControllerPosActive = true;
@@ -1367,7 +1367,6 @@ void Tracker::MainLoop()
                 double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
                 if (timeSincePress >= 0.2)
                 {
-                    ATTRACE("Toggle angle calibration.");
                     if (!calibControllerAngleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
                     {
                         calibControllerAngleActive = true;
@@ -1419,19 +1418,22 @@ void Tracker::MainLoop()
             }
 
             // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
-            if (calib.angleOffset[0] < 90 * DEG_2_RAD)
-                calib.angleOffset[0] = 90 * DEG_2_RAD;
-            else if (calib.angleOffset[0] > 270 * DEG_2_RAD)
-                calib.angleOffset[0] = 270 * DEG_2_RAD;
+            if (calib.angleOffset[0] < 89 * DEG_2_RAD)
+                calib.angleOffset[0] = 89 * DEG_2_RAD;
+            else if (calib.angleOffset[0] > 269 * DEG_2_RAD)
+                calib.angleOffset[0] = 269 * DEG_2_RAD;
 
-            // update the calib in the gui as it wont be modified anymore
-            gui->SetManualCalib(calib);
+            if (calibControllerAngleActive || calibControllerPosActive)
+            {
+                // update the calib in the gui as it wont be modified anymore
+                gui->SetManualCalib(calib);
+            }
             // update the pre calculated calibration transformations
             SetWorldTransform(calib);
 
             cv::Vec3d stationPos = wtransform.translation();
             CoordTransformOVR(stationPos);
-            cv::Quatd stationQ = cv::Quatd{0, 0, 1, 0} * wrotation;
+            cv::Quatd stationQ = wrotation;
 
             // move the camera in steamvr to new calibration
             connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);

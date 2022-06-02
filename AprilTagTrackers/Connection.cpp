@@ -340,11 +340,11 @@ Pose Connection::GetControllerPose()
     // read to our variables
     // ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
 
-    vr::VRActiveActionSet_t actionSet;
+    vr::VRActiveActionSet_t actionSet{};
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
-    vr::InputPoseActionData_t poseData;
+    vr::InputPoseActionData_t poseData{};
     if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseRawAndUncalibrated, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None || !poseData.bActive || !poseData.pose.bPoseIsValid)
     {
         return Pose::Ident();

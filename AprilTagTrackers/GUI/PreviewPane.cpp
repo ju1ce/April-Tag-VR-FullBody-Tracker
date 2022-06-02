@@ -48,16 +48,18 @@ void PreviewPane::OnPaintEvent(wxPaintEvent& evt)
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage)
 {
-    const auto lock = std::lock_guard(imageMutex);
-    bool sizeChanged = image.cols != newImage.cols || image.rows != newImage.rows;
-    // OpenCV always outputs in BGR while wxImage only accepts RGB
-    cv::cvtColor(newImage, image, cv::COLOR_BGR2RGB);
-    newImageReady = true;
+    bool sizeChanged = false;
+    {
+        const auto lock = std::lock_guard(imageMutex);
+        sizeChanged = image.cols != newImage.cols || image.rows != newImage.rows;
+        // OpenCV always outputs in BGR while wxImage only accepts RGB
+        cv::cvtColor(newImage, image, cv::COLOR_BGR2RGB);
+        newImageReady = true;
 
-    ATASSERT("Matrix points to continuous memory.", image.isContinuous());
-    ATASSERT("Matrix is a non-empty or null, 2d image.",
-        !image.empty() && image.rows > 1 && image.cols > 1);
-
+        ATASSERT("Matrix points to continuous memory.", image.isContinuous());
+        ATASSERT("Matrix is a non-empty or null, 2d image.",
+            !image.empty() && image.rows > 1 && image.cols > 1);
+    }
     if (sizeChanged)
     {
         CallAfter([this, x = image.cols, y = image.rows]
