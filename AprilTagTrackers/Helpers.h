@@ -26,7 +26,6 @@ cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f theta);
 bool isRotationMatrix(cv::Mat& R);
 cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
 Quaternion<double> mRot2Quat(const cv::Mat& m);
-cv::Affine3d GetSpaceCalibEuler(cv::Vec3d euler, cv::Vec3d pos);
 cv::Vec3d quat2rodr(double qw, double qx, double qy, double qz);
 
 template <typename T>
@@ -123,13 +122,6 @@ inline cv::Matx<T, 3, 3> EulerAnglesToRotationMatrix(cv::Vec<T, 3> theta)
         0, 0, 1};
     // Combined rotation matrix
     return Rx * Ry * Rz;
-}
-
-/// theta is pitch, yaw, roll in radians
-template <typename T>
-inline cv::Affine3<T> GetSpaceCalibEuler(cv::Vec<T, 3> theta, cv::Vec<T, 3> pos)
-{
-    return cv::Affine3d{EulerAnglesToRotationMatrix(theta), pos};
 }
 
 /// Transform from/to ovr coordinate system

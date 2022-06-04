@@ -349,32 +349,36 @@ Pose Connection::GetControllerPose()
     {
         return Pose::Ident();
     }
-    else
-    {
-        vr::HmdMatrix34_t matrix = poseData.pose.mDeviceToAbsoluteTracking;
 
-        cv::Matx33d rotMat(
-            matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
-            matrix.m[1][0], matrix.m[1][1], matrix.m[1][2],
-            matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]);
-        cv::Quatd rot = cv::Quatd::createFromRotMat(rotMat).normalize();
+    vr::HmdMatrix34_t matrix = poseData.pose.mDeviceToAbsoluteTracking;
 
-        cv::Vec3d pos{matrix.m[0][3], matrix.m[1][3], matrix.m[2][3]};
+    // cv::Matx33d rotMat(
+    //     matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
+    //     matrix.m[1][0], matrix.m[1][1], matrix.m[1][2],
+    //     matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]);
+    // cv::Quatd rot = cv::Quatd::createFromRotMat(rotMat).normalize();
 
-        // openvr is +x right, +y up, -z forward
-        // opencv is +x right, -y up, +z forward
-        // So negate y and z of pos and rot to convert
-        // pos[1] = -pos[1];
-        // pos[2] = -pos[2];
-        // rot[1] = -rot[1];
-        // rot[2] = -rot[2];
+    cv::Vec3d pos{matrix.m[0][3], matrix.m[1][3], matrix.m[2][3]};
 
-        // Except thats not true?
-        // transform to -x right, +y up, +z forward
-        // which is apparently what ATT uses sometimes
-        CoordTransformOVR(pos);
-        CoordTransformOVR(rot);
+    double qw = sqrt(fmax(0, 1 + matrix.m[0][0] + matrix.m[1][1] + matrix.m[2][2])) / 2;
+    double qx = sqrt(fmax(0, 1 + matrix.m[0][0] - matrix.m[1][1] - matrix.m[2][2])) / 2;
+    double qy = sqrt(fmax(0, 1 - matrix.m[0][0] + matrix.m[1][1] - matrix.m[2][2])) / 2;
+    double qz = sqrt(fmax(0, 1 - matrix.m[0][0] - matrix.m[1][1] + matrix.m[2][2])) / 2;
+    qx = copysign(qx, matrix.m[2][1] - matrix.m[1][2]);
+    qy = copysign(qy, matrix.m[0][2] - matrix.m[2][0]);
+    qz = copysign(qz, matrix.m[1][0] - matrix.m[0][1]);
 
-        return Pose{pos, rot};
-    }
+    cv::Quatd rot{qw, qx, qy, qz};
+
+    // openvr is +x right, +y up, -z forward
+    // opencv is +x right, -y up, +z forward
+    // So negate y and z of pos and rot to convert
+
+    // Except thats not true?
+    // transform to -x right, +y up, +z forward
+    // which is apparently what ATT uses sometimes
+    CoordTransformOVR(pos);
+    // CoordTransformOVR(rot);
+
+    return Pose{pos, rot};
 }

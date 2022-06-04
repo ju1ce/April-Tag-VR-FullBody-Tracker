@@ -795,8 +795,6 @@ void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
     cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
     wtransform = cv::Affine3d(rmat, calib.posOffset);
     wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
-    /// TODO: Why
-    wrotation.z = -wrotation.z;
     wscale = calib.scale;
 }
 
@@ -1109,7 +1107,7 @@ void Tracker::MainLoop()
     cv::Vec3d stationPos = wtransform.translation();
     CoordTransformOVR(stationPos);
 
-    cv::Quatd stationQ = wrotation;
+    cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (wrotation * cv::Quatd(1, 0, 0, 0));
 
     connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ[0], stationQ[1], stationQ[2], stationQ[3]);
 
@@ -1418,8 +1416,8 @@ void Tracker::MainLoop()
             }
 
             // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
-            if (calib.angleOffset[0] < 89 * DEG_2_RAD)
-                calib.angleOffset[0] = 89 * DEG_2_RAD;
+            if (calib.angleOffset[0] < 91 * DEG_2_RAD)
+                calib.angleOffset[0] = 91 * DEG_2_RAD;
             else if (calib.angleOffset[0] > 269 * DEG_2_RAD)
                 calib.angleOffset[0] = 269 * DEG_2_RAD;
 
@@ -1433,7 +1431,7 @@ void Tracker::MainLoop()
 
             cv::Vec3d stationPos = wtransform.translation();
             CoordTransformOVR(stationPos);
-            cv::Quatd stationQ = wrotation;
+            cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (wrotation * cv::Quatd(1, 0, 0, 0));
 
             // move the camera in steamvr to new calibration
             connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);
@@ -1484,7 +1482,6 @@ void Tracker::MainLoop()
                 // error threshold is defined in the params as depth smoothing
 
                 double distDriver = Length(trackerStatus[i].boardTvecDriver);
-
                 double distPredict = Length(trackerStatus[i].boardTvec);
 
                 cv::Vec3d normPredict = trackerStatus[i].boardTvec / distPredict;
