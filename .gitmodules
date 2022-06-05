@@ -1,3 +1,10 @@
+# Our subprojects
+[submodule "BridgeDriver"]
+	path = BridgeDriver
+	url = https://github.com/funnbot/OpenVR-Bridge-Driver
+	branch = AprilTagTrackers
+
+# dependencies, shallow checkout and ignore = dirty means only changes to commit hash will be tracked
 [submodule "deps/apriltag"]
 	path = deps/apriltag
 	url = https://github.com/funnbot/apriltag
@@ -23,6 +30,3 @@
 	url = https://github.com/opencv/opencv_contrib
 	shallow = true
 	ignore = dirty
-[submodule "BridgeDriver"]
-	path = BridgeDriver
-	url = https://github.com/funnbot/OpenVR-Bridge-Driver
