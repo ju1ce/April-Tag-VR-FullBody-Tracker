@@ -48,6 +48,7 @@ target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 # Link to ps3eye target if enabled
 if(ENABLE_PS3EYE)
     att_find_dep(ps3eye REQUIRED)
+    target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_PS3EYE)
     target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
 
