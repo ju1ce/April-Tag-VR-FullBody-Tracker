@@ -23,3 +23,6 @@
 	url = https://github.com/opencv/opencv_contrib
 	shallow = true
 	ignore = dirty
+[submodule "BridgeDriver"]
+	path = BridgeDriver
+	url = https://github.com/funnbot/OpenVR-Bridge-Driver
