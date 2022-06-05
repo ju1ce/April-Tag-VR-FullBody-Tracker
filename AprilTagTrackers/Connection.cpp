@@ -360,13 +360,13 @@ Pose Connection::GetControllerPose()
 
     cv::Vec3d pos{matrix.m[0][3], matrix.m[1][3], matrix.m[2][3]};
 
-    double qw = sqrt(fmax(0, 1 + matrix.m[0][0] + matrix.m[1][1] + matrix.m[2][2])) / 2;
-    double qx = sqrt(fmax(0, 1 + matrix.m[0][0] - matrix.m[1][1] - matrix.m[2][2])) / 2;
-    double qy = sqrt(fmax(0, 1 - matrix.m[0][0] + matrix.m[1][1] - matrix.m[2][2])) / 2;
-    double qz = sqrt(fmax(0, 1 - matrix.m[0][0] - matrix.m[1][1] + matrix.m[2][2])) / 2;
-    qx = copysign(qx, matrix.m[2][1] - matrix.m[1][2]);
-    qy = copysign(qy, matrix.m[0][2] - matrix.m[2][0]);
-    qz = copysign(qz, matrix.m[1][0] - matrix.m[0][1]);
+    double qw = std::sqrt(std::fmax(0, 1 + matrix.m[0][0] + matrix.m[1][1] + matrix.m[2][2])) / 2;
+    double qx = std::sqrt(std::fmax(0, 1 + matrix.m[0][0] - matrix.m[1][1] - matrix.m[2][2])) / 2;
+    double qy = std::sqrt(std::fmax(0, 1 - matrix.m[0][0] + matrix.m[1][1] - matrix.m[2][2])) / 2;
+    double qz = std::sqrt(std::fmax(0, 1 - matrix.m[0][0] - matrix.m[1][1] + matrix.m[2][2])) / 2;
+    qx = std::copysign(qx, matrix.m[2][1] - matrix.m[1][2]);
+    qy = std::copysign(qy, matrix.m[0][2] - matrix.m[2][0]);
+    qz = std::copysign(qz, matrix.m[1][0] - matrix.m[0][1]);
 
     cv::Quatd rot{qw, qx, qy, qz};
 
@@ -378,7 +378,7 @@ Pose Connection::GetControllerPose()
     // transform to -x right, +y up, +z forward
     // which is apparently what ATT uses sometimes
     CoordTransformOVR(pos);
-    // CoordTransformOVR(rot);
+    CoordTransformOVR(rot);
 
     return Pose{pos, rot};
 }

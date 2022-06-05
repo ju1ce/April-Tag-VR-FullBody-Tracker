@@ -794,7 +794,8 @@ void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
 {
     cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
     wtransform = cv::Affine3d(rmat, calib.posOffset);
-    wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
+    wrotation = RotationMatrixToQuat(rmat);
+    // wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
     wscale = calib.scale;
 }
 
@@ -1427,7 +1428,7 @@ void Tracker::MainLoop()
                 gui->SetManualCalib(calib);
             }
             // update the pre calculated calibration transformations
-            SetWorldTransform(calib);
+            SetWorldTransform(gui->GetManualCalib());
 
             cv::Vec3d stationPos = wtransform.translation();
             CoordTransformOVR(stationPos);
