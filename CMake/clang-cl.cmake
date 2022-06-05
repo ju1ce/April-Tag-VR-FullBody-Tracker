@@ -17,7 +17,8 @@ if(PROJECT_NAME MATCHES "AprilTagTrackers")
         /W4
         -Wno-c++98-compat
         -Wno-c++98-compat-pedantic
-        /permissive-)
+        /permissive-
+        -fno-delayed-template-parsing)
 else()
     add_compile_options(
         -Wno-unused-variable
