@@ -102,26 +102,27 @@ inline cv::Vec<T, 2> EulerAnglesFromPos(cv::Vec<T, 3> pos, cv::Vec<T, 3> origin 
 }
 
 /// theta is pitch, yaw, roll in radians
+/// YXZ
 template <typename T>
 inline cv::Matx<T, 3, 3> EulerAnglesToRotationMatrix(cv::Vec<T, 3> theta)
 {
-    /// Calculate rotation about x axis
-    cv::Matx<T, 3, 3> Rx{
-        1, 0, 0,
-        0, std::cos(theta[0]), -std::sin(theta[0]),
-        0, std::sin(theta[0]), std::cos(theta[0])};
     /// Calculate rotation about y axis
     cv::Matx<T, 3, 3> Ry{
         std::cos(theta[1]), 0, std::sin(theta[1]),
         0, 1, 0,
         -std::sin(theta[1]), 0, std::cos(theta[1])};
+    /// Calculate rotation about x axis
+    cv::Matx<T, 3, 3> Rx{
+        1, 0, 0,
+        0, std::cos(theta[0]), -std::sin(theta[0]),
+        0, std::sin(theta[0]), std::cos(theta[0])};
     /// Calculate rotation about z axis
     cv::Matx<T, 3, 3> Rz{
         std::cos(theta[2]), -std::sin(theta[2]), 0,
         std::sin(theta[2]), std::cos(theta[2]), 0,
         0, 0, 1};
     // Combined rotation matrix
-    return Rx * Ry * Rz;
+    return Ry * Rx * Rz;
 }
 
 template <typename T>
