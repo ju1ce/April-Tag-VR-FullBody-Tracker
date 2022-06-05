@@ -1431,7 +1431,7 @@ void Tracker::MainLoop()
 
             cv::Vec3d stationPos = wtransform.translation();
             CoordTransformOVR(stationPos);
-            // rotate 180 degrees around y axis, aka, reflect across xz plane
+            // rotate y axis by 180 degrees, aka, reflect across xz plane
             cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * wrotation;
 
             // move the camera in steamvr to new calibration
