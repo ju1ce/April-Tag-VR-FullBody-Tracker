@@ -794,8 +794,7 @@ void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
 {
     cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
     wtransform = cv::Affine3d(rmat, calib.posOffset);
-    wrotation = RotationMatrixToQuat(rmat);
-    // wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
+    wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
     wscale = calib.scale;
 }
 
@@ -1432,7 +1431,8 @@ void Tracker::MainLoop()
 
             cv::Vec3d stationPos = wtransform.translation();
             CoordTransformOVR(stationPos);
-            cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (wrotation * cv::Quatd(1, 0, 0, 0));
+            // rotate 180 degrees around y axis, aka, reflect across xz plane
+            cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * wrotation;
 
             // move the camera in steamvr to new calibration
             connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);

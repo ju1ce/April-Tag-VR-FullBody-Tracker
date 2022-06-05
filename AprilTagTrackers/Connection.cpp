@@ -352,23 +352,13 @@ Pose Connection::GetControllerPose()
 
     vr::HmdMatrix34_t matrix = poseData.pose.mDeviceToAbsoluteTracking;
 
-    // cv::Matx33d rotMat(
-    //     matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
-    //     matrix.m[1][0], matrix.m[1][1], matrix.m[1][2],
-    //     matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]);
-    // cv::Quatd rot = cv::Quatd::createFromRotMat(rotMat).normalize();
+    cv::Matx33d rotMat(
+        matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
+        matrix.m[1][0], matrix.m[1][1], matrix.m[1][2],
+        matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]);
+    cv::Quatd rot = cv::Quatd::createFromRotMat(rotMat).normalize();
 
     cv::Vec3d pos{matrix.m[0][3], matrix.m[1][3], matrix.m[2][3]};
-
-    double qw = std::sqrt(std::fmax(0, 1 + matrix.m[0][0] + matrix.m[1][1] + matrix.m[2][2])) / 2;
-    double qx = std::sqrt(std::fmax(0, 1 + matrix.m[0][0] - matrix.m[1][1] - matrix.m[2][2])) / 2;
-    double qy = std::sqrt(std::fmax(0, 1 - matrix.m[0][0] + matrix.m[1][1] - matrix.m[2][2])) / 2;
-    double qz = std::sqrt(std::fmax(0, 1 - matrix.m[0][0] - matrix.m[1][1] + matrix.m[2][2])) / 2;
-    qx = std::copysign(qx, matrix.m[2][1] - matrix.m[1][2]);
-    qy = std::copysign(qy, matrix.m[0][2] - matrix.m[2][0]);
-    qz = std::copysign(qz, matrix.m[1][0] - matrix.m[0][1]);
-
-    cv::Quatd rot{qw, qx, qy, qz};
 
     // openvr is +x right, +y up, -z forward
     // opencv is +x right, -y up, +z forward
