@@ -25,37 +25,100 @@ endfunction()
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS, after some options like install dir, config, build shared, toolchain.
 # EXTRA_EP_ARGS <arg...> Forwarded to ExternalProject_Add.
 # BUILD_COMMAND <arg...> Forwarded to BUILD_COMMAND, has default if not provided.
-function(att_add_external_project project_name)
-    cmake_parse_arguments(_arg "" ""
-        "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND" ${ARGN})
+# CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
+# DISABLE_CMAKE Disable any step using cmake
+function(att_add_external_project project_name install_dir)
+    cmake_parse_arguments(PARSE_ARGV 2 _arg
+        "DISABLE_CMAKE" # option
+        "CHECKOUT_SUBMODULE" # value
+        "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND") # list
+
+    # Set some prefix dirs for this project
+    # Note that they all use current source/binary dir of callsite
+    set(project_source "${CMAKE_CURRENT_SOURCE_DIR}/${project_name}")
+    set(project_binary "${CMAKE_CURRENT_BINARY_DIR}/${project_name}")
+    set(epw_files_dir "${CMAKE_CURRENT_BINARY_DIR}/${project_name}/ExternalProjectFiles")
+
+    set(NOOP_COMMAND "${CMAKE_COMMAND}" "-E" "echo_append")
 
     if(ATT_IS_MULTI_CONFIG)
         if (CMAKE_GENERATOR MATCHES "Visual Studio")
+            # $(Configuration) is Visual Studios $<CONFIG>.
+            # generator expressions should work in BUILD_COMMAND, however,
+            # VS generates a very weird broken set of configs if using it.
+            # I believe this is a new bug in VS2022
             set(multi_config_flag "--config" "$(Configuration)")
         else()
             set(multi_config_flag "--config" "$<CONFIG>")
         endif()
         unset(single_config_flag)
     else()
-        set(single_config_flag "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+        set(single_config_flag "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
         unset(multi_config_flag)
     endif()
 
-    if(DEFINED _arg_BUILD_COMMAND)
-        set(build_cmd_default ${_arg_BUILD_COMMAND})
+    # CHECKOUT_SUBMODULE defaults to ON
+    if(NOT DEFINED _arg_CHECKOUT_SUBMODULE)
+        set(_arg_CHECKOUT_SUBMODULE ON)
+    endif()
+
+    if(_arg_CHECKOUT_SUBMODULE)
+        find_program(GIT_CMD git DOC "Checkout submodules." REQUIRED)
+
+        # sync updates the submodule with the .gitmodules config file
+        # update --init will checkout the submodule
+        set(download_cmd_default
+            "${GIT_CMD}" submodule --quiet sync --recursive "<SOURCE_DIR>"
+            COMMAND "${GIT_CMD}" submodule --quiet update --init --depth 1 --recursive "<SOURCE_DIR>"
+            USES_TERMINAL_DOWNLOAD ON) # Fix Ninja trying to parallelize and erroring with the git lock file
     else()
-        set(build_cmd_default "${CMAKE_COMMAND}" --build <BINARY_DIR> --target install ${multi_config_flag})
+        set(download_cmd_default "${NOOP_COMMAND}")
+    endif()
+
+    if(DEFINED _arg_BUILD_COMMAND)
+        # forward the user defined build command
+        set(build_cmd_default "${_arg_BUILD_COMMAND}")
+    elseif(NOT _arg_DISABLE_CMAKE)
+        # default build command
+        set(build_cmd_default "${CMAKE_COMMAND}" --build "<BINARY_DIR>" ${multi_config_flag})
+    else()
+        unset(build_cmd_default "${NOOP_COMMAND}")
+    endif()
+
+    if(NOT _arg_DISABLE_CMAKE)
+        # default install command
+        set(install_cmd_default "${CMAKE_COMMAND}" --build "<BINARY_DIR>" --target install ${multi_config_flag})
+    else()
+        set(install_cmd_default "${NOOP_COMMAND}")
+    endif()
+
+    if(_arg_DISABLE_CMAKE)
+        # Defining the CONFIGURE_COMMAND tells externalproject to not use cmake
+        set(configure_cmd_disable CONFIGURE_COMMAND "${NOOP_COMMAND}")
+    else()
+        unset(configure_cmd_disable)
     endif()
 
     if(ATT_TOOLCHAIN_FILE)
-        set(toolchain_file_flag "-DCMAKE_TOOLCHAIN_FILE=${ATT_TOOLCHAIN_FILE}")
+        set(toolchain_file_flag "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${ATT_TOOLCHAIN_FILE}")
     else()
         unset(toolchain_file_flag)
     endif()
 
-    set(project_source "${CMAKE_CURRENT_SOURCE_DIR}/${project_name}")
-    set(project_binary "${CMAKE_CURRENT_BINARY_DIR}/${project_name}")
-    set(epw_files_dir "${CMAKE_CURRENT_BINARY_DIR}/${project_name}/ExternalProjectFiles")
+    if(NOT _arg_DISABLE_CMAKE)
+        set(cmake_args_default
+            CMAKE_ARGS
+            "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
+            -DBUILD_SHARED_LIBS=$<BOOL:${BUILD_SHARED_LIBS}>
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
+            # because this gets applied to deps aswell, use > escaped to late evaluate the generator expression in the external project itself
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug$<ANGLE-R>:Debug$<ANGLE-R>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
+            ${toolchain_file_flag}
+            ${single_config_flag}
+            ${_arg_EXTRA_CMAKE_ARGS})
+    else()
+        unset(cmake_args_default)
+    endif()
 
     ExternalProject_Add(
         ${project_name}
@@ -65,21 +128,27 @@ function(att_add_external_project project_name)
         BINARY_DIR "${project_binary}"
         TMP_DIR "${epw_files_dir}/tmp"
         STAMP_DIR "${epw_files_dir}/stamp"
-        CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DBUILD_SHARED_LIBS=$<BOOL:${BUILD_SHARED_LIBS}>
-        -DCMAKE_EXPORT_COMPILE_COMMANDS=${EXPORT_COMPILE_COMMANDS}
-        # because this gets applied to deps aswell, use > escaped to late evaluate the generator expression in the external project itself
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug$<ANGLE-R>:Debug$<ANGLE-R>$<$<BOOL:${BUILD_SHARED_LIBS}>:DLL>
-        ${toolchain_file_flag}
-        ${single_config_flag}
-        ${_arg_EXTRA_CMAKE_ARGS}
+        INSTALL_DIR "${install_dir}"
 
-        UPDATE_COMMAND ""
+        ${configure_cmd_disable}
+
+        DOWNLOAD_COMMAND ${download_cmd_default}
         BUILD_COMMAND ${build_cmd_default}
-        INSTALL_COMMAND ""
+        INSTALL_COMMAND ${install_cmd_default}
+
+        ${cmake_args_default}
+
+        UPDATE_COMMAND "${NOOP_COMMAND}"
+        UPDATE_DISCONNECTED ON
+
         STEP_TARGETS install
+
         ${_arg_EXTRA_EP_ARGS})
+
+    if(_arg_CHECKOUT_SUBMODULE)
+        # If submodules change, update them, since we call sync first.
+        ExternalProject_Add_StepDependencies(${project_name} download "${SUPERPROJECT_SOURCE_DIR}/.gitmodules")
+    endif()
 endfunction()
 
 # Adds external project step to copy compile_commands.json to install_dir
@@ -92,19 +161,20 @@ function(att_add_install_compile_commands_step target_name install_dir)
     endif()
 endfunction()
 
-# Add a dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
+# Add a submodule dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
 # Forwards DEPENDS arg, disables developer warnings
 # Adds compile commands install step to copy to install dir
+# EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
+# DEPENDS <target...> Forwarded to external project DEPENDS
 function(att_add_dep project_name)
-    cmake_parse_arguments(_arg "" "" "DEPENDS;EXTRA_CMAKE_ARGS" ${ARGN})
+    cmake_parse_arguments(PARSE_ARGV 1 _arg "" "" "DEPENDS;EXTRA_CMAKE_ARGS")
     att_add_external_project(
-        ${project_name}
+        ${project_name} "${DEPS_INSTALL_DIR}/${project_name}"
         EXTRA_CMAKE_ARGS -Wno-dev
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW # enable CMAKE_MSVC_RUNTIME_LIBRARY
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS
-        INSTALL_DIR "${DEPS_INSTALL_DIR}/${project_name}"
         DEPENDS ${_arg_DEPENDS})
     att_add_install_compile_commands_step(${project_name} "<INSTALL_DIR>")
 endfunction()
@@ -112,19 +182,22 @@ endfunction()
 # Add one of our own projects, assumes <project_name> in current dir
 # Sets DEPS_INSTALL_DIR and CUSTOM_CMAKE_FILES_DIR
 # Creates a config stamp to prevent building configs that weren't setup
-function(att_add_project project_name)
-    cmake_parse_arguments(_arg "" "" "DEPENDS;EXTRA_CMAKE_ARGS" ${ARGN})
+# EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
+# CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
+function(att_add_project project_name install_dir)
+    cmake_parse_arguments(PARSE_ARGV 2 _arg "" "CHECKOUT_SUBMODULE" "DEPENDS;EXTRA_CMAKE_ARGS;")
     att_add_external_project(
-        ${project_name}
+        ${project_name} "${install_dir}"
         EXTRA_CMAKE_ARGS
         "-DDEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}"
         "-DCUSTOM_CMAKE_FILES_DIR=${CUSTOM_CMAKE_FILES_DIR}"
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS
-        INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
         BUILD_ALWAYS ON
-        DEPENDS ${_arg_DEPENDS})
+        DEPENDS ${_arg_DEPENDS}
+
+        CHECKOUT_SUBMODULE ${_arg_CHECKOUT_SUBMODULE})
     att_ep_create_config_stamp(${project_name})
 endfunction()
 
