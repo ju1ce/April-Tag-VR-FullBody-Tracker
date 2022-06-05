@@ -151,16 +151,6 @@ function(att_add_external_project project_name install_dir)
     endif()
 endfunction()
 
-# Adds external project step to copy compile_commands.json to install_dir
-function(att_add_install_compile_commands_step target_name install_dir)
-    if(EXPORT_COMPILE_COMMANDS)
-        ExternalProject_Add_Step(${target_name} install-compile-commands
-            DEPENDERS install DEPENDEES configure
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${install_dir}"
-            COMMAND ${CMAKE_COMMAND} -E copy "<BINARY_DIR>/compile_commands.json" "${install_dir}/compile_commands.json")
-    endif()
-endfunction()
-
 # Add a submodule dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
 # Forwards DEPENDS arg, disables developer warnings
 # Adds compile commands install step to copy to install dir
@@ -176,7 +166,6 @@ function(att_add_dep project_name)
 
         EXTRA_EP_ARGS
         DEPENDS ${_arg_DEPENDS})
-    att_add_install_compile_commands_step(${project_name} "<INSTALL_DIR>")
 endfunction()
 
 # Add one of our own projects, assumes <project_name> in current dir
