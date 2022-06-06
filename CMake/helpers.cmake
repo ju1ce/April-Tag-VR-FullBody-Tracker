@@ -180,6 +180,7 @@ function(att_add_project project_name install_dir)
         EXTRA_CMAKE_ARGS
         "-DDEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}"
         "-DCUSTOM_CMAKE_FILES_DIR=${CUSTOM_CMAKE_FILES_DIR}"
+        -DENABLE_LTO:BOOL=$<BOOL:${ENABLE_LTO}>
         ${_arg_EXTRA_CMAKE_ARGS}
 
         EXTRA_EP_ARGS

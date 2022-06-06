@@ -44,10 +44,16 @@ att_add_project(
     -DENABLE_ASAN:BOOL=$<BOOL:${ENABLE_ASAN}>
     -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
     -DLOG_LEVEL=${LOG_LEVEL}
-    -DENABLE_LTO:BOOL=$<BOOL:${ENABLE_LTO}>
     -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
     CHECKOUT_SUBMODULE OFF
     DEPENDS ${ATT_DEPS}
 )
+
+att_add_project(
+    BridgeDriver "${CMAKE_INSTALL_PREFIX}"
+)
+
+# bindings installed in place, locales to a subfolder
+install(DIRECTORY "bindings/" "locales" DESTINATION "bin")

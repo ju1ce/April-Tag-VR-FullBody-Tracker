@@ -130,8 +130,3 @@ att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
     "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
 
 add_dependencies(ps3eye-install libusb-install)
-
-# --- linalg ---
-# att_add_files_installer(linalg-install "${DEPS_INSTALL_DIR}/linalg"
-#     INSTALL_ENTRY "."
-#     "${CUSTOM_CMAKE_FILES_DIR}/linalgConfig.cmake")
