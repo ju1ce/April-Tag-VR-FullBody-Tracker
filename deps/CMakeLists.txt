@@ -58,7 +58,6 @@ if(DEPS_MINIMAL_BUILD)
         -DBUILD_opencv_apps:BOOL=OFF
         "-DBUILD_LIST:STRING=aruco,videoio,objdetect,highgui,calib3d"
         -DWITH_ADE:BOOL=OFF
-        -DWITH_EIGEN:BOOL=OFF
         -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF)
 endif()
 
@@ -73,6 +72,7 @@ att_add_dep(
     -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DWITH_ITT:BOOL=OFF
     -DBUILD_ITT:BOOL=OFF
+    -DWITH_EIGEN:BOOL=OFF
     -DINSTALL_CREATE_DISTRIB:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
     -DBUILD_PERF_TESTS:BOOL=OFF
     -DBUILD_TESTS:BOOL=OFF
@@ -130,3 +130,8 @@ att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
     "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
 
 add_dependencies(ps3eye-install libusb-install)
+
+# --- linalg ---
+# att_add_files_installer(linalg-install "${DEPS_INSTALL_DIR}/linalg"
+#     INSTALL_ENTRY "."
+#     "${CUSTOM_CMAKE_FILES_DIR}/linalgConfig.cmake")
