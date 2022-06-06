@@ -10,9 +10,6 @@ include("${SUPERPROJECT_SOURCE_DIR}/CMake/shared.cmake")
 # Options set by superproject
 AprilTagTrackers_options()
 
-# Options
-set(DRIVER_VERSION "0.0.0" CACHE STRING "BridgeDriver expected version.")
-
 # Find our dependencies
 att_find_dep(OpenCV REQUIRED)
 att_find_dep(apriltag REQUIRED)
@@ -92,6 +89,8 @@ else()
     target_compile_options(AprilTagTrackers PRIVATE
         $<$<CONFIG:Release>:-g>)
 endif()
+
+att_read_version_file(DRIVER_VERSION "${SUPERPROJECT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
 
 target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_DRIVER_VERSION=${DRIVER_VERSION}

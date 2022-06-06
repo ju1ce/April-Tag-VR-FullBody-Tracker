@@ -37,7 +37,9 @@ if(NOT DEPS_SKIP_BUILD)
     endif()
 endif()
 
-att_read_version_file(DRIVER_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
+att_add_project(
+    BridgeDriver "${CMAKE_INSTALL_PREFIX}"
+)
 
 att_add_project(
     AprilTagTrackers "${CMAKE_INSTALL_PREFIX}"
@@ -47,14 +49,9 @@ att_add_project(
     -DLOG_LEVEL=${LOG_LEVEL}
     -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
-    -DDRIVER_VERSION=${DRIVER_VERSION}
 
     CHECKOUT_SUBMODULE OFF
-    DEPENDS ${ATT_DEPS}
-)
-
-att_add_project(
-    BridgeDriver "${CMAKE_INSTALL_PREFIX}"
+    DEPENDS ${ATT_DEPS} BridgeDriver-install
 )
 
 # bindings installed in place, locales to a subfolder
