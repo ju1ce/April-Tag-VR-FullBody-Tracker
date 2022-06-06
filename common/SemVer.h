@@ -37,7 +37,9 @@ public:
 
     std::string ToString() const
     {
-        return (std::ostringstream() << major << '.' << minor << '.' << patch).str();
+        std::ostringstream ss;
+        ss << major << '.' << minor << '.' << patch;
+        return ss.str();
     }
 
     friend std::ostream& operator<<(std::ostream& os, const SemVer& ver)
