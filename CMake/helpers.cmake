@@ -252,16 +252,3 @@ function(att_ep_create_config_stamp project_name)
         DEPENDERS build BYPRODUCTS "${CONFIG_STAMP_FILE}"
         COMMAND "${CMAKE_COMMAND}" -E touch "${CONFIG_STAMP_FILE}")
 endfunction()
-
-# Checks whether the superproject has generated the requested config yet, error if not
-function(att_check_config_stamp target_name)
-    add_custom_command(TARGET ${target_name} PRE_BUILD
-        COMMENT "If this fails, build the config with the superproject first."
-        COMMAND ${CMAKE_COMMAND} -E cat
-        "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
-endfunction()
-
-# Find a <package_name>Config.cmake in DEPS_INSTALL_DIR
-macro(att_find_dep package_name)
-    find_package(${package_name} ${ARGN} PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
-endmacro()

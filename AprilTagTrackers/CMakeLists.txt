@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.15)
 project(AprilTagTrackers CXX)
 
 # Fixes and wrapper functions
-include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
+include("${CUSTOM_CMAKE_FILES_DIR}/shared.cmake")
 
 # Options set by superproject
 AprilTagTrackers_options()
@@ -83,8 +83,7 @@ if(MSVC)
     # Set file name and location
     set_target_properties(AprilTagTrackers PROPERTIES
         COMPILE_PDB_NAME AprilTagTrackers
-        COMPILE_PDB_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    )
+        COMPILE_PDB_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 else()
     target_compile_options(AprilTagTrackers PRIVATE
         $<$<CONFIG:Release>:-g>)
