@@ -58,6 +58,7 @@ if(DEPS_MINIMAL_BUILD)
         -DBUILD_opencv_apps:BOOL=OFF
         "-DBUILD_LIST:STRING=aruco,videoio,objdetect,highgui,calib3d"
         -DWITH_ADE:BOOL=OFF
+        -DWITH_EIGEN:BOOL=OFF
         -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF)
 endif()
 
