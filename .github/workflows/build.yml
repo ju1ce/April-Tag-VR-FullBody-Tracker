@@ -57,7 +57,7 @@ jobs:
           -DDEPS_SKIP_BUILD=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
 
       - name: CMake build release.
-        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }}
+        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }} --target install
 
       - name: Upload install.
         uses: actions/upload-artifact@v3
