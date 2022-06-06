@@ -30,3 +30,8 @@
 	url = https://github.com/opencv/opencv_contrib
 	shallow = true
 	ignore = dirty
+[submodule "deps/linalg"]
+	path = deps/linalg
+	url = https://github.com/sgorsten/linalg
+	shallow = true
+	ignore = dirty
