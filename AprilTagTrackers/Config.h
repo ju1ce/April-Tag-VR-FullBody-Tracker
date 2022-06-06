@@ -1,10 +1,8 @@
 #pragma once
 
-#define APP_VERSION "0.5.5"
-#define DRIVER_VERSION "0.5.5"
-
 #include "Helpers.h"
 #include "Quaternion.h"
+#include "SemVer.h"
 #include "Serializable.h"
 
 #include <opencv2/aruco.hpp>
@@ -70,8 +68,7 @@ public:
     UserConfig() : FS::Serializable<UserConfig>("config.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(std::string, version) = APP_VERSION;
-    FIELD(std::string, driver_version) = DRIVER_VERSION;
+    FIELD(SemVer, driver_version) = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));
 
     FIELD(std::string, windowTitle);
     // Keep synced with Localization::LANG_CODE_MAP

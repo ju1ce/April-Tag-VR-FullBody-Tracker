@@ -2,7 +2,7 @@ include(ExternalProject)
 include(CMakePackageConfigHelpers)
 
 # This file depends on many of these shared options
-include("${CUSTOM_CMAKE_FILES_DIR}/shared.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/shared.cmake")
 
 # Prefix every global define with ATT/att
 # Use functions instead of macros when using local variables to not polute the global scope
@@ -12,13 +12,13 @@ include("${CUSTOM_CMAKE_FILES_DIR}/shared.cmake")
 function(att_configure_package_config project_name)
     cmake_parse_arguments(_arg "" "" "PATH_VARS" ${ARGN})
     configure_package_config_file(
-        "${CUSTOM_CMAKE_FILES_DIR}/${project_name}Config.cmake.in"
+        "${SUPERPROJECT_SOURCE_DIR}/CMake/${project_name}Config.cmake.in"
         "${DEPS_INSTALL_DIR}/${project_name}/${project_name}Config.cmake"
         PATH_VARS ${_arg_PATH_VARS}
         INSTALL_DESTINATION "${DEPS_INSTALL_DIR}/${project_name}"
         INSTALL_PREFIX "${DEPS_INSTALL_DIR}/${project_name}")
     set_property(TARGET ${project_name}-install APPEND PROPERTY SOURCES
-        "${CUSTOM_CMAKE_FILES_DIR}/${project_name}Config.cmake.in")
+        "${SUPERPROJECT_SOURCE_DIR}/CMake/${project_name}Config.cmake.in")
 endfunction()
 
 # Wrapper for ExternalProject_Add() with some default settings, directory layout
@@ -169,7 +169,7 @@ function(att_add_dep project_name)
 endfunction()
 
 # Add one of our own projects, assumes <project_name> in current dir
-# Sets DEPS_INSTALL_DIR and CUSTOM_CMAKE_FILES_DIR
+# Sets DEPS_INSTALL_DIR and SUPERPROJECT_SOURCE_DIR
 # Creates a config stamp to prevent building configs that weren't setup
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
 # CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
@@ -179,7 +179,7 @@ function(att_add_project project_name install_dir)
         ${project_name} "${install_dir}"
         EXTRA_CMAKE_ARGS
         "-DDEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}"
-        "-DCUSTOM_CMAKE_FILES_DIR=${CUSTOM_CMAKE_FILES_DIR}"
+        "-DSUPERPROJECT_SOURCE_DIR=${SUPERPROJECT_SOURCE_DIR}"
         -DENABLE_LTO:BOOL=$<BOOL:${ENABLE_LTO}>
         ${_arg_EXTRA_CMAKE_ARGS}
 

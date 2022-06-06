@@ -87,3 +87,16 @@ endfunction()
 macro(att_find_dep package_name)
     find_package(${package_name} ${ARGN} PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
 endmacro()
+
+function(att_read_version_file output_var file_path)
+    file(READ "${file_path}" version_text)
+    string(REGEX REPLACE "[ \t\r\n]" "" version_text "${version_text}")
+    if (NOT (version_text MATCHES "^[0-9](\\.[0-9])?(\\.[0-9])?(\\.[0-9])?$"))
+        message(FATAL_ERROR "${file_path} invalid semantic version: \"${version_text}\"")
+    endif()
+    set(${output_var} "${version_text}" PARENT_SCOPE)
+endfunction()
+
+# include libs in common/ for every project
+# they can use att_find_dep if necessary
+add_subdirectory("${SUPERPROJECT_SOURCE_DIR}/common" "${CMAKE_CURRENT_BINARY_DIR}/common" EXCLUDE_FROM_ALL)

@@ -5,10 +5,13 @@ cmake_minimum_required(VERSION 3.15)
 project(AprilTagTrackers CXX)
 
 # Fixes and wrapper functions
-include("${CUSTOM_CMAKE_FILES_DIR}/shared.cmake")
+include("${SUPERPROJECT_SOURCE_DIR}/CMake/shared.cmake")
 
 # Options set by superproject
 AprilTagTrackers_options()
+
+# Options
+set(DRIVER_VERSION "0.0.0" CACHE STRING "BridgeDriver expected version.")
 
 # Find our dependencies
 att_find_dep(OpenCV REQUIRED)
@@ -60,7 +63,8 @@ endif()
 
 # Link libraries defined as targets, includes are automatic
 target_link_libraries(AprilTagTrackers PUBLIC
-    ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag)
+    ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag
+    common::semver)
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
@@ -90,6 +94,7 @@ else()
 endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC
+    ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)

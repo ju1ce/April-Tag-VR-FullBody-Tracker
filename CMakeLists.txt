@@ -11,8 +11,7 @@ set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps")
 set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps install directory.")
 
 # Fixes and wrapper functions
-set(CUSTOM_CMAKE_FILES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
-include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
+include("${SUPERPROJECT_SOURCE_DIR}/CMake/helpers.cmake")
 
 # Build options
 option(DEPS_SKIP_BUILD "Skip building deps and use a prebuilt install folder." OFF)
@@ -38,6 +37,8 @@ if(NOT DEPS_SKIP_BUILD)
     endif()
 endif()
 
+att_read_version_file(DRIVER_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
+
 att_add_project(
     AprilTagTrackers "${CMAKE_INSTALL_PREFIX}"
     EXTRA_CMAKE_ARGS
@@ -46,6 +47,7 @@ att_add_project(
     -DLOG_LEVEL=${LOG_LEVEL}
     -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
+    -DDRIVER_VERSION=${DRIVER_VERSION}
 
     CHECKOUT_SUBMODULE OFF
     DEPENDS ${ATT_DEPS}
