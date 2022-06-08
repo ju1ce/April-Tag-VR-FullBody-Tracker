@@ -7,7 +7,6 @@ on:
     branches: [master]
 
 env:
-  BUILD_TYPE: Release
   BINARY_DIR: build
   INSTALL_DIR: install
   DEPS_HASH_FILE: deps-hash.txt
@@ -20,6 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        build_type: [Release, Debug]
 
     steps:
       - name: Checkout project.
@@ -46,23 +46,23 @@ jobs:
           path: |
             ${{ env.BINARY_DIR }}/deps/install
             !${{ env.BINARY_DIR }}/deps/install/opencv/etc
-          key: deps-${{ runner.os }}-${{ steps.deps-hash.outputs.combined }}
+          key: deps-${{ runner.os }}-${{ matrix.build_type }}-${{ steps.deps-hash.outputs.combined }}
 
       - name: CMake configure, skip building deps if cached.
         run: >-
           cmake -B ${{ env.BINARY_DIR }}
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_DIR }}
           -DEXPORT_COMPILE_COMMANDS=0
           -DDEPS_SKIP_BUILD=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
 
-      - name: CMake build release.
-        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }} --target install
+      - name: CMake build.
+        run: cmake --build ${{ env.BINARY_DIR }} --config ${{ matrix.build_type }} --target install
 
       - name: Upload install.
         uses: actions/upload-artifact@v3
         with:
-          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          name: Install-${{ matrix.build_type }}-${{ runner.os }}
           retention-days: 7
           path: |
             ${{ env.INSTALL_DIR }}/
@@ -71,7 +71,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          name: Logs-${{ matrix.build_type }}-${{ runner.os }}
           retention-days: 14
           path: |
             ${{ env.BINARY_DIR }}/**/CMakeCache.txt
