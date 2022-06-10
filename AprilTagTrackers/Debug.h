@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cstdlib>
+#include <string_view>
 #include <thread>
 
 #if ATT_LOG_LEVEL > 0
 #include <chrono>
-#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #endif
@@ -53,13 +53,13 @@
 
 #if defined(__clang__) || defined(__GNUG__) || defined(__GNUC__)
 /// Prints the function the macro is used in
-#define ATT_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#define ATT_PRETTY_FUNCTION std::string_view(__PRETTY_FUNCTION__)
 #elif defined(_MSC_VER)
 /// Prints the function the macro is used in
-#define ATT_PRETTY_FUNCTION __FUNCSIG__
+#define ATT_PRETTY_FUNCTION std::string_view(__FUNCSIG__)
 #else
 /// Prints the function the macro is used in (fallback)
-#define ATT_PRETTY_FUNCTION ""
+#define ATT_PRETTY_FUNCTION std::string_view("")
 #endif
 
 #if ATT_LOG_LEVEL > 0
@@ -111,13 +111,16 @@
 #ifdef ATT_ENABLE_ASSERT
 
 /// Require an expression to be true
-#define ATASSERT(a_messageStream, a_trueExpression)                      \
-    do {                                                                 \
-        if (!(a_trueExpression))                                         \
-            ATFATAL(a_messageStream                                      \
-                    << std::endl                                         \
-                    << "    Assertion failure:  ( " << #a_trueExpression \
-                    << " )  in " << ATT_PRETTY_FUNCTION);                \
+#define ATASSERT(a_messageStream, a_trueExpression) \
+    do {                                            \
+        if (!(a_trueExpression))                    \
+            ATFATAL("Assert: "                      \
+                    << a_messageStream              \
+                    << std::endl                    \
+                    << "    Assertion failure:  ( " \
+                    << #a_trueExpression            \
+                    << " )  in  "                   \
+                    << ATT_PRETTY_FUNCTION);        \
     } while (0)
 
 /// Require an expression to be true, like assert,
@@ -178,10 +181,12 @@ inline void PreLog(const StrT file, int line) noexcept
     const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
     const auto stampSec = std::chrono::duration<float>(stamp).count();
 
-    std::cerr << "[ " << std::this_thread::get_id()
-              << " @ " << std::fixed << stampSec << " ] "
-              << std::defaultfloat // reset std::fixed
-              << "(" << file
+    std::cerr << "[ "
+              << (Debug::IsMainThread() ? "M" : "")
+              << std::this_thread::get_id() << " @ "
+              << std::fixed << std::setprecision(4)
+              << stampSec << std::defaultfloat // reset std::fixed
+              << " ] (" << file
               << ":" << line << ") ";
 }
 
