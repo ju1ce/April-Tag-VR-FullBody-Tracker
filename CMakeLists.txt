@@ -35,21 +35,14 @@ if(NOT SKIP_BUILD_DEPS)
     endif()
 endif()
 
-# If log level isnt defined, default to 3 (trace) in debug, and 2 (error) in release
-if(LOG_LEVEL STREQUAL "")
-    set(LOG_LEVEL_FLAG $<IF:$<CONFIG:Debug>,3,2>)
-else()
-    set(LOG_LEVEL_FLAG ${LOG_LEVEL})
-endif()
-
 att_add_project(
     AprilTagTrackers
     EXTRA_CMAKE_ARGS
-    -DUSE_ASAN:BOOL=$<BOOL:${USE_ASAN}>
+    -DENABLE_ASAN:BOOL=$<BOOL:${ENABLE_ASAN}>
     -DENABLE_PS3EYE:BOOL=$<BOOL:${ENABLE_PS3EYE}>
-    -DLOG_LEVEL=${LOG_LEVEL_FLAG}
-    -DENABLE_LTO:BOOL=$<AND:$<CONFIG:Release>,$<BOOL:${ENABLE_LTO}>> # (CONFIG == Release) and ENABLE_LTO
-    -DENABLE_ASSERT:BOOL=$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>> # (CONFIG == Debug) or ENABLE_ASSERT
+    -DLOG_LEVEL=${LOG_LEVEL}
+    -DENABLE_LTO:BOOL=$<BOOL:${ENABLE_LTO}>
+    -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
     DEPENDS ${ATT_DEPS}

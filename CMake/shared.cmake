@@ -12,11 +12,11 @@ option(BUILD_SHARED_LIBS "Attempt to link libraries as shared or static." OFF)
 set(DEPS_INSTALL_DIR "" CACHE PATH "Deps install directory.")
 
 macro(AprilTagTrackers_options)
-    option(USE_ASAN "Create an address sanitizer build." OFF)
+    option(ENABLE_ASAN "Create an address sanitizer build." OFF)
     option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ${WIN32})
-    option(ENABLE_ASSERT "Enable assertions." OFF)
+    option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
     option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
-    set(LOG_LEVEL "" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Throw, 3 - Trace")
+    set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
 endmacro()
 
 # Fix default install path on windows
