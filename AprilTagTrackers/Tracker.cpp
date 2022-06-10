@@ -23,7 +23,7 @@
 #include <vector>
 #include <array>
 
-#ifdef ENABLE_PS3EYE
+#ifdef ATT_ENABLE_PS3EYE
 #include "PSEyeVideoCapture.h"
 #endif
 
@@ -216,7 +216,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         }
         else
 #endif
-#if ENABLE_PS3EYE
+#if ATT_ENABLE_PS3EYE
             if (apiPreference == 2300)
         {
             cap = PSEyeVideoCapture(i);

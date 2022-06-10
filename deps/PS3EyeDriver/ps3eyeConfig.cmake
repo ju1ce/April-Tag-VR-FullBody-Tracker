@@ -9,13 +9,15 @@ set_target_properties(ps3eye::libusb PROPERTIES
 target_include_directories(ps3eye::libusb SYSTEM INTERFACE
     "${LIBUSB_ROOT}/include")
 
-add_library(ps3eye::ps3eye INTERFACE IMPORTED GLOBAL
+add_library(ps3eye OBJECT
     "${PS3EYE_ROOT}/src/ps3eye.cpp"
     "${PS3EYE_ROOT}/include/ps3eye.h"
 
     "${PS3EYE_ROOT}/src/PSEyeVideoCapture.cpp"
     "${PS3EYE_ROOT}/include/PSEyeVideoCapture.h")
-target_include_directories(ps3eye::ps3eye SYSTEM INTERFACE
+target_include_directories(ps3eye SYSTEM PUBLIC
     "${PS3EYE_ROOT}/include")
+target_link_libraries(ps3eye PUBLIC ps3eye::libusb)
+target_link_libraries(ps3eye PUBLIC ${OpenCV_LIBS})
 
-target_link_libraries(ps3eye::ps3eye INTERFACE ps3eye::libusb)
+add_library(ps3eye::ps3eye ALIAS ps3eye)
