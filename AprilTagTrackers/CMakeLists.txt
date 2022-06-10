@@ -21,17 +21,24 @@ set(ATT_SOURCE_FILES
     AprilTagWrapper.cpp AprilTagWrapper.h
     Config.h
     Connection.cpp Connection.h
-    GUI.cpp GUI.h
     Helpers.cpp Helpers.h
     license.h
     Localization.h
-    MessageDialog.cpp MessageDialog.h
     Quaternion.cpp Quaternion.h
     Reflectable.h
     Serializable.cpp Serializable.h
+    ValidatorProxy.h
     Tracker.cpp Tracker.h
     MyApp.cpp MyApp.h
     Debug.cpp Debug.h
+    RefPtr.h
+
+    GUI.cpp GUI.h
+    GUI/MainFrame.cpp GUI/MainFrame.h
+    GUI/PreviewPane.cpp GUI/PreviewPane.h
+    GUI/FormBuilder.cpp GUI/FormBuilder.h GUI/FormBuilder.tpp
+    GUI/U8String.cpp GUI/U8String.h
+    GUI/wxHelpers.h
 
     IPC/IPC.h
     IPC/UNIXSocket.cpp
@@ -61,6 +68,27 @@ target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
 
 if(ENABLE_OUTPUT_LOG_FILE)
     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_OUTPUT_LOG_FILE)
+endif()
+
+# Create debug symbols for release builds, msvc will generate a pdb,
+# while gcc-like will have embedded symbols.
+if(MSVC)
+    # Generates debug symbols in a PDB
+    target_compile_options(AprilTagTrackers PRIVATE
+        "$<$<CONFIG:Release>:/Zi>")
+    # enable debug and re-enable optimizations that it disables
+    target_link_options(AprilTagTrackers PRIVATE
+        "$<$<CONFIG:Release>:/DEBUG>"
+        "$<$<CONFIG:Release>:/OPT:REF>"
+        "$<$<CONFIG:Release>:/OPT:ICF>")
+    # Set file name and location
+    set_target_properties(AprilTagTrackers PROPERTIES
+        COMPILE_PDB_NAME AprilTagTrackers
+        COMPILE_PDB_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
+else()
+    target_compile_options(AprilTagTrackers PRIVATE
+        $<$<CONFIG:Release>:-g>)
 endif()
 
 target_compile_definitions(AprilTagTrackers PUBLIC

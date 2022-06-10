@@ -1,14 +1,15 @@
 #include "Connection.h"
 
 #include "Debug.h"
-#include "GUI.h"
+
+#include <opencv2/core.hpp>
+#include <opencv2/core/affine.hpp>
 
 #include <filesystem>
 #include <thread>
 
-
-Connection::Connection(const UserConfig& user_config, const Localization& lc)
-    : user_config(user_config), lc(lc)
+Connection::Connection(const UserConfig& _user_config)
+    : user_config(_user_config)
 {
 // TODO: Pass the IPC client* in as an argument
 #if OS_WIN
@@ -22,16 +23,17 @@ Connection::Connection(const UserConfig& user_config, const Localization& lc)
 
 void Connection::StartConnection()
 {
+    GetAndResetErrorState();
+
     if (status == WAITING)
     {
-        gui->ShowErrorPopup(wxT("Already waiting for a connection"));
+        SetError(ErrorCode::ALREADY_WAITING);
         return;
     }
     if (status == CONNECTED)
     {
-        gui->QueuePopup(lc.CONNECT_ALREADYCONNECTED, wxT("Question"), wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        status = DISCONNECTED;
+        SetError(ErrorCode::ALREADY_CONNECTED);
+        return;
     }
     std::thread connectThread(&Connection::Connect, this);
     connectThread.detach();
@@ -119,10 +121,8 @@ void Connection::Connect()
 
     if (error != vr::VRInitError_None)
     {
-        wxString e = lc.CONNECT_CLIENT_ERROR;
-        e += vr::VR_GetVRInitErrorAsEnglishDescription(error);
-        gui->ShowErrorPopup(e);
-        status = DISCONNECTED;
+        std::string ovrErr = vr::VR_GetVRInitErrorAsEnglishDescription(error);
+        SetError(ErrorCode::CLIENT_ERROR, std::move(ovrErr));
         return;
     }
 
@@ -162,8 +162,7 @@ void Connection::Connect()
     const auto bindingsPath = std::filesystem::absolute("att_actions.json");
     if (!std::filesystem::exists(bindingsPath))
     {
-        gui->ShowErrorPopup(lc.CONNECT_BINDINGS_ERROR);
-        status = DISCONNECTED;
+        SetError(ErrorCode::BINDINGS_MISSING);
         return;
     }
     vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
@@ -181,8 +180,7 @@ void Connection::Connect()
     ret >> word;
     if (word != "numtrackers")
     {
-        gui->ShowErrorPopup(lc.CONNECT_DRIVER_ERROR);
-        status = DISCONNECTED;
+        SetError(ErrorCode::DRIVER_ERROR);
         return;
     }
     int connected_trackers;
@@ -191,8 +189,8 @@ void Connection::Connect()
     ret >> word;
     if (word != user_config.driver_version)
     {
-        wxString e = lc.CONNECT_DRIVER_MISSMATCH_1 + word + lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version;
-        gui->ShowErrorPopup(e);
+        SetError(ErrorCode::DRIVER_MISMATCH, word);
+        return;
     }
 
     for (int i = connected_trackers; i < connectedTrackers.size(); i++)
@@ -201,8 +199,7 @@ void Connection::Connect()
         ret >> word;
         if (word != "added")
         {
-            gui->ShowErrorPopup(lc.CONNECT_SOMETHINGWRONG);
-            status = DISCONNECTED;
+            SetError(ErrorCode::SOMETHING_WRONG);
             return;
         }
     }
@@ -215,7 +212,16 @@ void Connection::Connect()
     status = CONNECTED;
 }
 
-std::istringstream Connection::Send(std::string buffer)
+void Connection::SetError(ErrorCode code, std::string msg)
+{
+    ATASSERT("Set to a valid error code.", code != ErrorCode::OK);
+    errorCode = code;
+    errorMsg = std::move(msg);
+
+    status = DISCONNECTED;
+}
+
+std::istringstream Connection::Send(const std::string& buffer)
 {
     std::string resp;
     this->bridge_driver->send(buffer, resp);
@@ -276,7 +282,7 @@ int Connection::GetButtonStates()
         return 0;
     }
 
-    vr::VRActiveActionSet_t actionSet = {0};
+    vr::VRActiveActionSet_t actionSet{};
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
@@ -290,63 +296,79 @@ int Connection::GetButtonStates()
     return 0;
 }
 
-void Connection::GetControllerPose(double outpose[])
+bool Connection::PollQuitEvent()
 {
-    if (user_config.disableOpenVrApi)
-        return;
+    if (user_config.disableOpenVrApi || status != CONNECTED)
+        return false;
+
+    vr::VREvent_t event;
+    while (openvr_handle->PollNextEvent(&event, sizeof(event)))
+    {
+        if (event.eventType == vr::VREvent_Quit)
+        {
+            openvr_handle->AcknowledgeQuit_Exiting(); // close connection to steamvr without closing att
+            status = DISCONNECTED;
+            vr::VR_Shutdown();
+            return true;
+        }
+    }
+    return false;
+}
+
+Pose Connection::GetControllerPose()
+{
+    if (status == DISCONNECTED || user_config.disableOpenVrApi)
+    {
+        return Pose::Ident();
+    }
 
     // std::istringstream ret = Send("getdevicepose 1");
     // std::string word;
 
     // first three variables are a position vector
     // int idx;
-    double a;
-    double b;
-    double c;
+    // double a;
+    // double b;
+    // double c;
 
     // second four are rotation quaternion
-    double qw;
-    double qx;
-    double qy;
-    double qz;
+    // double qw;
+    // double qx;
+    // double qy;
+    // double qz;
 
     // read to our variables
     // ret >> word; ret >> idx; ret >> a; ret >> b; ret >> c; ret >> qw; ret >> qx; ret >> qy; ret >> qz;
 
-    vr::VRActiveActionSet_t actionSet = {0};
+    vr::VRActiveActionSet_t actionSet{};
     actionSet.ulActionSet = m_actionsetDemo;
     vr::VRInput()->UpdateActionState(&actionSet, sizeof(actionSet), 1);
 
-    vr::InputPoseActionData_t poseData;
+    vr::InputPoseActionData_t poseData{};
     if (vr::VRInput()->GetPoseActionDataForNextFrame(m_actionHand, vr::TrackingUniverseRawAndUncalibrated, &poseData, sizeof(poseData), vr::k_ulInvalidInputValueHandle) != vr::VRInputError_None || !poseData.bActive || !poseData.pose.bPoseIsValid)
     {
-        return;
-    }
-    else
-    {
-        vr::HmdMatrix34_t matrix = poseData.pose.mDeviceToAbsoluteTracking;
-
-        qw = sqrt(fmax(0, 1 + matrix.m[0][0] + matrix.m[1][1] + matrix.m[2][2])) / 2;
-        qx = sqrt(fmax(0, 1 + matrix.m[0][0] - matrix.m[1][1] - matrix.m[2][2])) / 2;
-        qy = sqrt(fmax(0, 1 - matrix.m[0][0] + matrix.m[1][1] - matrix.m[2][2])) / 2;
-        qz = sqrt(fmax(0, 1 - matrix.m[0][0] - matrix.m[1][1] + matrix.m[2][2])) / 2;
-        qx = copysign(qx, matrix.m[2][1] - matrix.m[1][2]);
-        qy = copysign(qy, matrix.m[0][2] - matrix.m[2][0]);
-        qz = copysign(qz, matrix.m[1][0] - matrix.m[0][1]);
-
-        a = matrix.m[0][3];
-        b = matrix.m[1][3];
-        c = matrix.m[2][3];
+        return Pose::Ident();
     }
 
-    a = -a;
-    c = -c;
+    vr::HmdMatrix34_t matrix = poseData.pose.mDeviceToAbsoluteTracking;
 
-    outpose[0] = a;
-    outpose[1] = b;
-    outpose[2] = c;
-    outpose[3] = qw;
-    outpose[4] = qx;
-    outpose[5] = qy;
-    outpose[6] = qz;
+    cv::Matx33d rotMat(
+        matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
+        matrix.m[1][0], matrix.m[1][1], matrix.m[1][2],
+        matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]);
+    cv::Quatd rot = cv::Quatd::createFromRotMat(rotMat).normalize();
+
+    cv::Vec3d pos{matrix.m[0][3], matrix.m[1][3], matrix.m[2][3]};
+
+    // openvr is +x right, +y up, -z forward
+    // opencv is +x right, -y up, +z forward
+    // So negate y and z of pos and rot to convert
+
+    // Except thats not true?
+    // transform to -x right, +y up, +z forward
+    // which is apparently what ATT uses sometimes
+    CoordTransformOVR(pos);
+    CoordTransformOVR(rot);
+
+    return Pose{pos, rot};
 }
