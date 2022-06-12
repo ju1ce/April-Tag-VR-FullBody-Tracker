@@ -64,7 +64,11 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
     {
         CallAfter([this, x = image.cols, y = image.rows]
             {
-                SetMinSize(wxSize(x, y));
+                OptRefPtr<wxSizerItem> item = GetContainingSizer()->GetItem(this);
+                if (item.NotNull())
+                {
+                    item->SetRatio(x, y);
+                }
             });
     }
 }
