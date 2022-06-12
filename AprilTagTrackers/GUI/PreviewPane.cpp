@@ -69,6 +69,7 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
                 {
                     item->SetRatio(x, y);
                 }
+                SendSizeEventToParent();
             });
     }
 }
