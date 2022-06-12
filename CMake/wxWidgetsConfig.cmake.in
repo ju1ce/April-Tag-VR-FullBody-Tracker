@@ -67,6 +67,9 @@ function(_wxWidgetsConfig_find_intercept)
     set(wxWidgets_LIB_DIR "${wxWidgets_DIR}/${wxf_lib_dir}" CACHE INTERNAL "" FORCE)
     set(WX_LIB_DIR "${wxWidgets_LIB_DIR}" CACHE INTERNAL "" FORCE)
 
+    # Clear the configuration set previously, because if multiconfig this will be wrong
+    set(wxWidgets_CONFIGURATION "" CACHE STRING "Cleared" FORCE)
+
     # Force install location for wx-config, mainly used on linux
     set(wxWidgets_CONFIG_OPTIONS "--prefix=${wxWidgets_DIR}")
 
