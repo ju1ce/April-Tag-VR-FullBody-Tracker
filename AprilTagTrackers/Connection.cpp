@@ -1,6 +1,7 @@
 #include "Connection.h"
 
 #include "Debug.h"
+#include "SemVer.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
@@ -187,7 +188,8 @@ void Connection::Connect()
     ret >> connected_trackers;
 
     ret >> word;
-    if (word != user_config.driver_version)
+    SemVer reportedVersion = SemVer::Parse(word);
+    if (!SemVer::Compatible(reportedVersion, user_config.driver_version))
     {
         SetError(ErrorCode::DRIVER_MISMATCH, word);
         return;

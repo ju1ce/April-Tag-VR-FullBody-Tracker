@@ -61,7 +61,8 @@ endif()
 
 # Link libraries defined as targets, includes are automatic
 target_link_libraries(AprilTagTrackers PUBLIC
-    ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag)
+    ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag
+    common::semver)
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
@@ -91,7 +92,10 @@ else()
         $<$<CONFIG:Release>:-g>)
 endif()
 
+att_read_version_file(DRIVER_VERSION "${SUPERPROJECT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
+
 target_compile_definitions(AprilTagTrackers PUBLIC
+    ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)

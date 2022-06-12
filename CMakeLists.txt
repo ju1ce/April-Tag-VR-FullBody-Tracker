@@ -38,6 +38,10 @@ if(NOT DEPS_SKIP_BUILD)
 endif()
 
 att_add_project(
+    BridgeDriver "${CMAKE_INSTALL_PREFIX}"
+)
+
+att_add_project(
     AprilTagTrackers "${CMAKE_INSTALL_PREFIX}"
     EXTRA_CMAKE_ARGS
     -DENABLE_ASAN:BOOL=$<BOOL:${ENABLE_ASAN}>
@@ -48,5 +52,5 @@ att_add_project(
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
     CHECKOUT_SUBMODULE OFF
-    DEPENDS ${ATT_DEPS}
+    DEPENDS ${ATT_DEPS} BridgeDriver-install
 )
