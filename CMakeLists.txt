@@ -14,6 +14,7 @@ set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps
 include("${SUPERPROJECT_SOURCE_DIR}/CMake/helpers.cmake")
 
 # Build options
+option(DEPS_SKIP_BUILD "Skip building deps and use a prebuilt install folder." OFF)
 option(DEPS_MINIMAL_BUILD "Remove some unused modules when building dependencies." ON)
 
 if(NOT ATT_IS_MULTI_CONFIG)
@@ -27,7 +28,7 @@ add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
 AprilTagTrackers_options()
 
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
-if(NOT SKIP_BUILD_DEPS)
+if(NOT DEPS_SKIP_BUILD)
     set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
 
     # Move the ps3eye files to install, windows only for now
