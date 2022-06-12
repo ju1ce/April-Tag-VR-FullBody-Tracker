@@ -3,6 +3,7 @@
 #include "Debug.h"
 #include "Quaternion.h"
 #include "Reflectable.h"
+#include "SemVer.h"
 #include "ValidatorProxy.h"
 
 #include <opencv2/aruco.hpp>
@@ -82,11 +83,22 @@ inline void WriteNode(cv::FileStorage& fs, const char* name, const FieldType& fi
 inline void ReadNode(const cv::FileNode& fn, const char* name, FieldType& field) {}
 
 // Called second, to write to named node
-inline void Write(cv::FileStorage&, const FieldType& field) {}
-inline void Read(const cv::FileNode&, FieldType&) {}
+inline void Write(cv::FileStorage& fs, const FieldType& field) {}
+inline void Read(const cv::FileNode& fn, FieldType& field) {}
 */
 
 // -- Overloaded Write and Read without name --
+
+inline void Write(cv::FileStorage& fs, const SemVer& field)
+{
+    fs << field.ToString();
+}
+inline void Read(const cv::FileNode& fn, SemVer& field)
+{
+    std::string temp;
+    fn >> temp;
+    field = SemVer::Parse(temp);
+}
 
 inline void Write(cv::FileStorage& fs, const cv::Ptr<cv::aruco::Board>& board)
 {

@@ -55,10 +55,10 @@ Open in Visual Studio, or use the Visual Studio Command Prompt.
 
 ### Clone and build
 ```
-git clone --recurse-submodules https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker
+git clone https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker
 cd April-Tag-VR-FullBody-Tracker
 cmake -B build
-cmake --build build --target install
+cmake --build build --config Release --target install
 ```
 
 That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)

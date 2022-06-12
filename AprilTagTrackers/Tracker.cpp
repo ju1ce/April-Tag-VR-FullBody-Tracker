@@ -784,7 +784,7 @@ void Tracker::HandleConnectionErrors()
         gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);
     else if (code == Code::DRIVER_MISMATCH)
         gui->ShowPopup(lc.CONNECT_DRIVER_MISSMATCH_1 + connection->GetErrorMsg() +
-                           lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version,
+                           lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version.ToString(),
             PopupStyle::Error);
     else // if (code == Code::SOMETHING_WRONG)
         gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);

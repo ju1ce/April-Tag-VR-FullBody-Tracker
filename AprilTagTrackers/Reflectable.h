@@ -35,6 +35,9 @@
 #define REFLECTABLE_CONCAT_(a, b) a##b
 #define REFLECTABLE_CONCAT(a, b) REFLECTABLE_CONCAT_(a, b)
 
+#define REFLECTABLE_STRINGIZE_(a) #a
+#define REFLECTABLE_STRINGIZE(a) REFLECTABLE_STRINGIZE_(a)
+
 #define REFLECTABLE_FIELD_NONAME_COUNTER_(a_type, a_fieldNamePrefix, a_counter)                           \
     REFLECTABLE_FIELD_DATA_COUNTER_(a_type, REFLECTABLE_CONCAT(a_fieldNamePrefix, a_counter), a_counter); \
     a_type REFLECTABLE_CONCAT(a_fieldNamePrefix, a_counter)
