@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.15)
 project(AprilTagTrackers CXX)
 
 # Fixes and wrapper functions
-include("${CUSTOM_CMAKE_FILES_DIR}/helpers.cmake")
+include("${SUPERPROJECT_SOURCE_DIR}/CMake/shared.cmake")
 
 # Options set by superproject
 AprilTagTrackers_options()

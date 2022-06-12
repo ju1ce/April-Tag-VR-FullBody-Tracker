@@ -51,3 +51,52 @@ if(CMAKE_TOOLCHAIN_FILE)
 else()
     unset(ATT_TOOLCHAIN_FILE)
 endif()
+
+# Set var_name to TRUE_VALUE if IF_EXPR evaluates to true, otherwise,
+# FALSE_VALUE, or unset if FALSE_VALUE is not provided.
+# var_name variable name.
+# IF_EXPR <arg...> pasted into if() command.
+# TRUE_VALUE <arg...> set the variable <var_name> to value if expression is true, or unset if arg is not provided.
+# FALSE_VALUE <arg...> set if expression is false, or unset if arg is not provided.
+function(set_if var_name)
+    cmake_parse_arguments(PARSE_ARGV 1 _arg "" "" "IF_EXPR;TRUE_VALUE;FALSE_VALUE")
+    if(${_arg_IF_EXPR})
+        if (DEFINED _arg_TRUE_VALUE)
+            set(${var_name} ${_arg_TRUE_VALUE})
+        else()
+            unset(${var_name})
+        endif()
+    else()
+        if (DEFINED _arg_FALSE_VALUE)
+            set(${var_name} ${_arg_FALSE_VALUE})
+        else()
+            unset(${var_name})
+        endif()
+    endif()
+endfunction()
+
+# Checks whether the superproject has generated the requested config yet, error if not
+function(att_check_config_stamp target_name)
+    add_custom_command(TARGET ${target_name} PRE_BUILD
+        COMMENT "If this fails, build the config with the superproject first."
+        COMMAND ${CMAKE_COMMAND} -E cat
+        "${CMAKE_CURRENT_BINARY_DIR}/ExternalProjectFiles/stamp/config-$<LOWER_CASE:$<CONFIG>>")
+endfunction()
+
+# Find a <package_name>Config.cmake in DEPS_INSTALL_DIR
+macro(att_find_dep package_name)
+    find_package(${package_name} ${ARGN} PATHS "${DEPS_INSTALL_DIR}" NO_DEFAULT_PATH)
+endmacro()
+
+function(att_read_version_file output_var file_path)
+    file(READ "${file_path}" version_text)
+    string(REGEX REPLACE "[ \t\r\n]" "" version_text "${version_text}")
+    if (NOT (version_text MATCHES "^[0-9](\\.[0-9])?(\\.[0-9])?(\\.[0-9])?$"))
+        message(FATAL_ERROR "${file_path} invalid semantic version: \"${version_text}\"")
+    endif()
+    set(${output_var} "${version_text}" PARENT_SCOPE)
+endfunction()
+
+# include libs in common/ for every project
+# they can use att_find_dep if necessary
+add_subdirectory("${SUPERPROJECT_SOURCE_DIR}/common" "${CMAKE_CURRENT_BINARY_DIR}/common" EXCLUDE_FROM_ALL)
