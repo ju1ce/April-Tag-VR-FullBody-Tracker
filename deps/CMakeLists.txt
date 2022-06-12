@@ -89,7 +89,6 @@ att_add_dep(
 
     EXTRA_CMAKE_ARGS
     -DBUILD_SHARED:BOOL=$<BOOL:${BUILD_SHARED_LIBS}>
-    -DUSE_LIBCXX:BOOL=OFF
 )
 
 # --- libusb ---
