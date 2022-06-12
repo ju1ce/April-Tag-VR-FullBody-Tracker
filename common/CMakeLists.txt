@@ -17,3 +17,5 @@ function(add_common target_name)
     target_include_directories(common_${target_name} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
     add_library(common::${target_name} ALIAS common_${target_name})
 endfunction()
+
+add_common_header(semver "SemVer.h")
