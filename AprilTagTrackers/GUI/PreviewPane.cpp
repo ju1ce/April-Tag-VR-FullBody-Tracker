@@ -12,7 +12,7 @@
 #include <wx/sizer.h>
 
 PreviewPane::PreviewPane(RefPtr<wxWindow> parent, wxWindowID _id)
-    : wxPanel(parent, _id, wxDefaultPosition, wxSize(360, 640)), id(_id),
+    : wxPanel(parent, _id, wxDefaultPosition, wxSize(640, 480)), id(_id),
       renderLoop(std::make_unique<PreviewRenderLoop>(*this))
 {
     Hide();
