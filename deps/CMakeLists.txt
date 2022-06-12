@@ -83,10 +83,6 @@ att_add_dep(
      DEPENDS opencv_contrib-install
 )
 
-ExternalProject_Add_Step(opencv aruco DEPENDERS configure
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CVC_PREFIX}/modules/aruco" "${CVC_BIN_DIR}/modules/aruco")
-
 # --- OpenVR ---
 att_add_dep(
     openvr
