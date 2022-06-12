@@ -80,7 +80,7 @@ att_add_dep(
     -DBUILD_EXAMPLES:BOOL=OFF
     ${CV_MINIMAL_BUILD_DEPS}
 
-     DEPENDS opencv_contrib-install
+    DEPENDS opencv_contrib-install
 )
 
 # --- OpenVR ---
