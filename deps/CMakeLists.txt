@@ -10,6 +10,21 @@ att_add_dep(
 )
 
 # --- wxWidgets ---
+if(DEPS_MINIMAL_BUILD)
+    set(WX_MINIMAL_BUILD_DEPS
+        -DwxUSE_WXHTML_HELP:BOOL=OFF
+        -DwxUSE_RICHTEXT:BOOL=OFF
+        -DwxUSE_HELP:BOOL=OFF
+        -DwxUSE_HTML:BOOL=OFF
+        -DwxUSE_XRC:BOOL=OFF
+        -DwxUSE_STC:BOOL=OFF
+        -DwxUSE_WEBVIEW:BOOL=OFF
+        -DwxUSE_SOCKETS:BOOL=OFF
+        -DwxUSE_URL:BOOL=OFF
+        -DwxUSE_PROTOCOL:BOOL=OFF
+        -DwxUSE_FS_INET:BOOL=OFF)
+endif()
+
 # TODO: Allow picking preinstalled on linux as its usually available
 # Should be compatible with version 3.1 and up
 att_add_dep(
@@ -19,6 +34,7 @@ att_add_dep(
     -DwxBUILD_SHARED:BOOL=OFF
     -DwxBUILD_OPTIMISE:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
     -DwxBUILD_USE_STATIC_RUNTIME:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
+    ${WX_MINIMAL_BUILD_DEPS}
 )
 att_configure_package_config(wxWidgets)
 
@@ -37,11 +53,20 @@ ExternalProject_Get_Property(opencv_contrib BINARY_DIR)
 set(CVC_MODULES_DIR "${BINARY_DIR}/modules")
 
 # --- OpenCV ---
+if(DEPS_MINIMAL_BUILD)
+    set(CV_MINIMAL_BUILD_DEPS
+        -DBUILD_opencv_apps:BOOL=OFF
+        "-DBUILD_LIST:STRING=aruco,videoio,objdetect,highgui,calib3d"
+        -DWITH_ADE:BOOL=OFF
+        -DOPENCV_GENERATE_SETUPVARS:BOOL=OFF)
+endif()
+
 att_add_dep(
     opencv
 
     EXTRA_CMAKE_ARGS
     -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
+    -DWITH_OPENGL:BOOL=ON
     "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_MODULES_DIR}" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
     -DENABLE_LTO:BOOL=$<AND:$<BOOL:${ENABLE_LTO}>,$<CONFIG:Release>>
@@ -54,10 +79,8 @@ att_add_dep(
     -DBUILD_JAVA:BOOL=OFF
     -DBUILD_DOCS:BOOL=OFF
     -DBUILD_EXAMPLES:BOOL=OFF
-    -DBUILD_opencv_apps:BOOL=OFF
-    -DBUILD_opencv_python3:BOOL=OFF
-    -DBUILD_opencv_python_bindings_generator:BOOL=OFF
-    -DBUILD_opencv_js:BOOL=OFF
+    ${CV_MINIMAL_BUILD_DEPS}
+
      DEPENDS opencv_contrib-install
 )
 

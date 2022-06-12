@@ -14,7 +14,7 @@ set(DEPS_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/deps/install" CACHE PATH "Deps
 include("${SUPERPROJECT_SOURCE_DIR}/CMake/helpers.cmake")
 
 # Build options
-option(SKIP_BUILD_DEPS "Skip building deps and use a prebuilt install folder." OFF)
+option(DEPS_MINIMAL_BUILD "Remove some unused modules when building dependencies." ON)
 
 if(NOT ATT_IS_MULTI_CONFIG)
     option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
