@@ -53,3 +53,6 @@ att_add_project(
     CHECKOUT_SUBMODULE OFF
     DEPENDS ${ATT_DEPS} BridgeDriver-install
 )
+
+# bindings installed in place, locales to a subfolder
+install(DIRECTORY "bindings/" "locales" DESTINATION "bin")
