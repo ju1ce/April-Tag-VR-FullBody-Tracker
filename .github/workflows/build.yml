@@ -78,3 +78,99 @@ jobs:
             ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log
+
+  send_discord_nightly_webhook:
+    name: Send Discord Nightly Webhook
+    needs: build
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'push'
+    steps:
+      - name: Install Deps
+        run: |
+          npm install node-fetch@2
+
+      - name: Send Discord Nightly Webhook
+        uses: actions/github-script@v6
+        env:
+          RUN_STATUS: ${{ needs.build.result }}
+          REPO_NAME: ${{ github.repository }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          NIGHTLY_URL: https://nightly.link
+        with:
+          script: |
+            const fetch = require("node-fetch");
+            const NIGHTLY_ARTIFACTS = [
+              "AprilTagTrackers-Windows",
+              "AprilTagTrackers-Linux"
+            ];
+            const MAX_COMMITS = 10;
+            const { RUN_STATUS,
+                    REPO_NAME, REPO_URL,
+                    NIGHTLY_URL } = process.env;
+            const RUN_URL = `${REPO_URL}/actions/runs/${context.runId}`;
+            const ARTIF_URL = `${NIGHTLY_URL}/actions/runs/${context.runId}`;
+
+            const MSG_LEN = 100;
+            const cutStr = s => (s.length > MSG_LEN) ?
+              s.trim().substring(0, MSG_LEN - 3) + "..." : s;
+
+            const SHA_LEN = 6;
+            const fmtSha = s => s.substring(0, 6);
+
+            let embed = {
+              type: "rich",
+              title: `[${REPO_NAME}] `,
+              description: "",
+              url: RUN_URL,
+              color: 0x00FF00,
+              fields: [],
+            };
+
+            const buildStatus = RUN_STATUS;
+            if (buildStatus === "success") {
+              embed.color = 0x0DFF35;
+              embed.title += "Build Succeeded";
+            } else if (buildStatus === "cancelled") {
+              embed.color = 0xE0C434;
+              embed.title += "Build Cancelled"
+            } else if (buildStatus === "failure") {
+              embed.color = 0xFF1717;
+              embed.title += "Build Failed";
+            } else { // if build was skipped
+              embed.color = 0x808080;
+              embed.title += "Build Skipped";
+            }
+
+            const commits = context.payload.commits;
+            if (commits && commits.length >= 1) {
+              let count = 0;
+              for (const cmt of commits) {
+                if (!cmt.distinct) continue;
+                if (count++ === MAX_COMMITS) {
+                  embed.description += `*${commits.length - COMMIT_COUNT} more* ...\n`;
+                  break;
+                }
+                embed.description += `[\` ${fmtSha(cmt.id)} \`](<${cmt.url}>) **${cmt.author.name}:** *${cutStr(cmt.message)}*\n`
+              }
+              embed.description += `\nSee what's changed: [\`${fmtSha(context.payload.before)} -> ${fmtSha(context.payload.after)}\`](<${context.payload.compare}>)`;
+            }
+
+            if (buildStatus === "success") {
+              let field = { name: "Downloads", value: "" };
+              for (const artif_name of NIGHTLY_ARTIFACTS) {
+                const [ artif_app, artif_os ] = artif_name.split("-");
+                if (!artif_os) continue;
+                const artif_url = `${ARTIF_URL}/${artif_name}.zip`
+                field.value += `[**\`   ${artif_os}   \`**](<${artif_url}>) `;
+              }
+              embed.fields.push(field);
+            }
+
+            await fetch("${{ secrets.DISCORD_NIGHTLY_WEBHOOK }}", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({
+                embeds: [embed],
+                allowed_mentions: { parse: [] }
+              })
+            });
