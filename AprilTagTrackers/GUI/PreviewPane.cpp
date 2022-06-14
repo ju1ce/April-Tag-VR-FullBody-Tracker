@@ -105,7 +105,6 @@ void PreviewRenderLoop::StartLoop(int updatesPerSecond)
 void PreviewRenderLoop::Notify()
 {
     pane.Refresh(false);
-    pane.Update();
 }
 
 PreviewFrame::PreviewFrame(const wxString& _title)
@@ -137,6 +136,8 @@ void PreviewFrame::SetVisible(bool visible, bool userCanDestroy)
         if (!userCanDestroy) style &= ~wxCLOSE_BOX;
         /// Frees itself in the close window event
         RefPtr<wxFrame> newFrame = new wxFrame(nullptr, id, title, wxDefaultPosition, wxDefaultSize, style);
+        // do nothing in erase event to prevent flickering
+        newFrame->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
 
         pane = NewWindow<PreviewPane>(newFrame, wxWindow::NewControlId());
         newFrame->SetClientSize(pane->GetSize());
@@ -154,6 +155,17 @@ void PreviewFrame::SetVisible(bool visible, bool userCanDestroy)
             wxEVT_CLOSE_WINDOW, [this](auto&)
             {
                 SetVisible(false);
+            },
+            id);
+        // Need a different method to remove the old image when resized,
+        // as it isnt erased every frame anymore.
+        newFrame->Bind(
+            wxEVT_SIZE, [this](auto& evt)
+            {
+                const auto lock = std::lock_guard{frameLock};
+                if (!frame.has_value()) return;
+                frame.value()->ClearBackground();
+                evt.Skip();
             },
             id);
 
