@@ -42,8 +42,8 @@ void PreviewPane::OnPaintEvent(wxPaintEvent& evt)
 
     // gc->SetInterpolationQuality(wxInterpolationQuality::wxINTERPOLATION_FAST);
     gc->DrawBitmap(bitmap, 0, 0, drawArea.x, drawArea.y);
-
-    evt.Skip();
+    // maybe its clearing the background here?
+    // evt.Skip();
 }
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage)
