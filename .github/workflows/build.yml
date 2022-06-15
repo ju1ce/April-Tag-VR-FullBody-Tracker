@@ -104,8 +104,7 @@ jobs:
             ];
             const MAX_COMMITS = 10;
             const { RUN_STATUS,
-                    REPO_NAME, REPO_URL,
-                    NIGHTLY_URL } = process.env;
+                    REPO_NAME, REPO_URL } = process.env;
             const RUN_URL = `${REPO_URL}/actions/runs/${context.runId}`;
             const ARTIF_URL = `https://nightly.link/${REPO_NAME}/actions/runs/${context.runId}`;
 
