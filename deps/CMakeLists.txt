@@ -65,7 +65,7 @@ att_add_dep(
     opencv
 
     EXTRA_CMAKE_ARGS
-    -DVIDEOIO_PLUGIN_LIST:STRING=ffmpeg
+    -DVIDEOIO_PLUGIN_LIST:STRING="ffmpeg,gstreamer"
     -DWITH_OPENGL:BOOL=ON
     "-DOPENCV_EXTRA_MODULES_PATH:PATH=${CVC_MODULES_DIR}" # The modules folder with aruco created by opencv_contrib
     -DBUILD_WITH_STATIC_CRT:BOOL=$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>
