@@ -4,6 +4,7 @@
 
 #include <opencv2/core.hpp>
 #include <wx/frame.h>
+#include <wx/graphics.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/timer.h>
@@ -38,6 +39,9 @@ private:
     cv::Mat image, swapImage;
     bool newImageReady = false;
     std::mutex imageMutex;
+
+    wxGraphicsBitmap bitmap = wxNullGraphicsBitmap;
+    wxGraphicsBrush backgroundBrush = wxNullGraphicsBrush;
 };
 
 class PreviewRenderLoop : private wxTimer

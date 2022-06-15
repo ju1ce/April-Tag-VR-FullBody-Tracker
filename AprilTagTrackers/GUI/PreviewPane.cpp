@@ -6,7 +6,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <wx/dcclient.h>
-#include <wx/graphics.h>
 #include <wx/image.h>
 #include <wx/rawbmp.h>
 #include <wx/sizer.h>
@@ -20,30 +19,49 @@ PreviewPane::PreviewPane(RefPtr<wxWindow> parent, wxWindowID _id)
     Bind(wxEVT_PAINT, &PreviewPane::OnPaintEvent, this, id);
 }
 
-void PreviewPane::OnPaintEvent(wxPaintEvent& evt)
+void PreviewPane::OnPaintEvent(wxPaintEvent&)
 {
-    {
-        const auto lock = std::lock_guard(imageMutex);
-        if (!newImageReady || image.empty()) return;
-        newImageReady = false;
-        cv::swap(image, swapImage);
-    }
-    wxSize drawArea = GetSize();
-    if (drawArea.x < 10 || drawArea.y < 10) return;
-    // Sets up a reference to the pixel buffer that wxBitmap can use
-    constexpr bool isStaticData = true;
-    // expects data to be RGB 8U
-    wxImage imageRef(swapImage.cols, swapImage.rows, swapImage.data, isStaticData);
     wxPaintDC dc(this);
     // Uses a more efficient backend for drawing
     const auto gc = std::unique_ptr<wxGraphicsContext>(wxGraphicsContext::Create(dc));
-    // This copies the wxImage data to some native format
-    auto bitmap = gc->CreateBitmapFromImage(imageRef);
+    gc->SetInterpolationQuality(wxINTERPOLATION_FAST);
+    gc->SetCompositionMode(wxCOMPOSITION_SOURCE);
+    gc->SetAntialiasMode(wxANTIALIAS_NONE);
 
-    // gc->SetInterpolationQuality(wxInterpolationQuality::wxINTERPOLATION_FAST);
+    bool rebuildBitmap = false;
+    {
+        const auto lock = std::lock_guard(imageMutex);
+        if (newImageReady && !image.empty())
+        {
+            newImageReady = false;
+            rebuildBitmap = true;
+            cv::swap(image, swapImage);
+        }
+    }
+
+    wxSize drawArea = GetSize();
+    if (swapImage.empty() || drawArea.x < 10 || drawArea.y < 10)
+    {
+        if (backgroundBrush.IsNull())
+        {
+            backgroundBrush = gc->CreateBrush(*wxGREY_BRUSH);
+        }
+        gc->SetBrush(backgroundBrush);
+        gc->DrawRectangle(0, 0, drawArea.x, drawArea.y);
+        return;
+    }
+
+    if (rebuildBitmap || bitmap.IsNull())
+    {
+        // Sets up a reference to the pixel buffer that wxBitmap can use
+        constexpr bool isStaticData = true;
+        // expects data to be RGB 8U
+        wxImage imageRef(swapImage.cols, swapImage.rows, swapImage.data, isStaticData);
+        // copies the wxImage data to some native format
+        bitmap = gc->CreateBitmapFromImage(imageRef);
+    }
+
     gc->DrawBitmap(bitmap, 0, 0, drawArea.x, drawArea.y);
-    // maybe its clearing the background here?
-    // evt.Skip();
 }
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage)
@@ -132,8 +150,6 @@ void PreviewFrame::Show(CloseButton closeButton)
     if (closeButton == CloseButton::Hide)
         style &= ~wxCLOSE_BOX;
     frame.reset(new wxFrame(nullptr, id, title, wxDefaultPosition, wxDefaultSize, style));
-    // do nothing in erase event to prevent flickering
-    frame->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
 
     pane = NewWindow<PreviewPane>(frame.get(), wxWindow::NewControlId());
     pane->ShowPane();
@@ -151,17 +167,6 @@ void PreviewFrame::Show(CloseButton closeButton)
         wxEVT_CLOSE_WINDOW, [this](auto&)
         {
             Hide();
-        },
-        id);
-    // Need a different method to remove the old image when resized,
-    // as it isnt erased every frame anymore.
-    frame->Bind(
-        wxEVT_SIZE, [this](auto& evt)
-        {
-            const auto lock = std::lock_guard{frameLock};
-            if (!frame) return;
-            frame->ClearBackground();
-            evt.Skip();
         },
         id);
 }
