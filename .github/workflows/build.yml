@@ -3,8 +3,10 @@ name: Build
 on:
   push:
     branches: [master]
+    paths-ignore: ["**.md"]
   pull_request:
     branches: [master]
+    paths-ignore: ["**.md"]
 
 env:
   BUILD_TYPE: Release
@@ -14,10 +16,11 @@ env:
 
 jobs:
   build:
+    name: CMake Build
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [windows-latest, ubuntu-latest]
 
@@ -25,30 +28,30 @@ jobs:
       - name: Checkout project.
         uses: actions/checkout@v3
 
-      - name: If on Linux, Install GTK3 dev build.
+      - name: Install Linux Dependencies
         if: ${{ matrix.os == 'ubuntu-latest'}}
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libgtk-3-dev ffmpeg libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
 
-      - name: Generate deps hash file with submodule commit hashes and combined hash of loose files
-        id: deps-hash
+      - name: Generate Deps Hash
+        id: hash
         shell: bash
         run: |
           git submodule --cached status ./deps/ > ${{ env.DEPS_HASH_FILE }}
           echo "${{ hashFiles('deps/**') }}" >> ${{ env.DEPS_HASH_FILE }}
-          echo "::set-output name=combined::$(sha256sum ${{ env.DEPS_HASH_FILE }} | cut -d ' ' -f 1)"
+          echo "::set-output name=deps::$(sha256sum ${{ env.DEPS_HASH_FILE }} | cut -d ' ' -f 1)"
 
-      - name: Check dep cache for matching OS and hash of deps hash file
+      - name: Check Deps Cache
         id: deps-cache
         uses: actions/cache@v3
         with:
           path: |
             ${{ env.BINARY_DIR }}/deps/install
             !${{ env.BINARY_DIR }}/deps/install/opencv/etc
-          key: deps-${{ runner.os }}-${{ steps.deps-hash.outputs.combined }}
+          key: deps-${{ runner.os }}-${{ steps.hash.outputs.deps }}
 
-      - name: CMake configure, skip building deps if cached.
+      - name: CMake Configure
         run: >-
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -56,24 +59,118 @@ jobs:
           -DEXPORT_COMPILE_COMMANDS=0
           -DDEPS_SKIP_BUILD=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
 
-      - name: CMake build release.
+      - name: CMake Build
         run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }} --target install
 
-      - name: Upload install.
+      - name: Upload Build
         uses: actions/upload-artifact@v3
         with:
-          name: Install-${{ env.BUILD_TYPE }}-${{ runner.os }}
-          retention-days: 7
+          name: AprilTagTrackers-${{ runner.os }}
           path: |
             ${{ env.INSTALL_DIR }}/
 
-      - name: Upload build logs.
+      - name: Upload CMake Logs
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Logs-${{ env.BUILD_TYPE }}-${{ runner.os }}
-          retention-days: 14
+          name: CMakeLogs-${{ runner.os }}
           path: |
             ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log
+
+  send_discord_nightly_webhook:
+    name: Send Discord Nightly Webhook
+    needs: build
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'push'
+    steps:
+      - name: Install Deps
+        run: |
+          npm install node-fetch@2
+
+      - name: Send Discord Nightly Webhook
+        uses: actions/github-script@v6
+        env:
+          RUN_STATUS: ${{ needs.build.result }}
+          REPO_NAME: ${{ github.repository }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          NIGHTLY_URL: https://nightly.link
+        with:
+          script: |
+            const fetch = require("node-fetch");
+            const NIGHTLY_ARTIFACTS = [
+              "AprilTagTrackers-Windows",
+              "AprilTagTrackers-Linux"
+            ];
+            const MAX_COMMITS = 10;
+            const { RUN_STATUS,
+                    REPO_NAME, REPO_URL,
+                    NIGHTLY_URL } = process.env;
+            const RUN_URL = `${REPO_URL}/actions/runs/${context.runId}`;
+            const ARTIF_URL = `${NIGHTLY_URL}/actions/runs/${context.runId}`;
+
+            const MSG_LEN = 100;
+            const cutStr = s => (s.length > MSG_LEN) ?
+              s.trim().substring(0, MSG_LEN - 3) + "..." : s;
+
+            const SHA_LEN = 6;
+            const fmtSha = s => s.substring(0, 6);
+
+            let embed = {
+              type: "rich",
+              title: `[${REPO_NAME}] `,
+              description: "",
+              url: RUN_URL,
+              color: 0x00FF00,
+              fields: [],
+            };
+
+            const buildStatus = RUN_STATUS;
+            if (buildStatus === "success") {
+              embed.color = 0x0DFF35;
+              embed.title += "Build Succeeded";
+            } else if (buildStatus === "cancelled") {
+              embed.color = 0xE0C434;
+              embed.title += "Build Cancelled"
+            } else if (buildStatus === "failure") {
+              embed.color = 0xFF1717;
+              embed.title += "Build Failed";
+            } else { // if build was skipped
+              embed.color = 0x808080;
+              embed.title += "Build Skipped";
+            }
+
+            const commits = context.payload.commits;
+            if (commits && commits.length >= 1) {
+              let count = 0;
+              for (const cmt of commits) {
+                if (!cmt.distinct) continue;
+                if (count++ === MAX_COMMITS) {
+                  embed.description += `*${commits.length - COMMIT_COUNT} more* ...\n`;
+                  break;
+                }
+                embed.description += `[\` ${fmtSha(cmt.id)} \`](<${cmt.url}>) **${cmt.author.name}:** *${cutStr(cmt.message)}*\n`
+              }
+              embed.description += `\nSee what's changed: [\`${fmtSha(context.payload.before)} -> ${fmtSha(context.payload.after)}\`](<${context.payload.compare}>)`;
+            }
+
+            if (buildStatus === "success") {
+              let field = { name: "Downloads", value: "" };
+              for (const artif_name of NIGHTLY_ARTIFACTS) {
+                const [ artif_app, artif_os ] = artif_name.split("-");
+                if (!artif_os) continue;
+                const artif_url = `${ARTIF_URL}/${artif_name}.zip`
+                field.value += `[**\`   ${artif_os}   \`**](<${artif_url}>) `;
+              }
+              embed.fields.push(field);
+            }
+
+            await fetch("${{ secrets.DISCORD_NIGHTLY_WEBHOOK }}", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({
+                embeds: [embed],
+                allowed_mentions: { parse: [] }
+              })
+            });
