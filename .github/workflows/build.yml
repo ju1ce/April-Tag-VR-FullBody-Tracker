@@ -110,7 +110,9 @@ jobs:
 
             const MSG_LEN = 100;
             const cutStr = s => (s.length > MSG_LEN) ?
-              s.trim().substring(0, MSG_LEN - 3) + "..." : s;
+              s.split("\n")[0]
+               .trim()
+               .substring(0, MSG_LEN - 3) + "..." : s;
 
             const SHA_LEN = 6;
             const fmtSha = s => s.substring(0, 6);
