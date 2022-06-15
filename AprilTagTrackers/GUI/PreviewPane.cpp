@@ -64,6 +64,7 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
     {
         CallAfter([this, x = image.cols, y = image.rows]
             {
+                // Update wxSHAPED sizing
                 OptRefPtr<wxSizerItem> item = GetContainingSizer()->GetItem(this);
                 if (item.NotNull())
                 {
@@ -74,24 +75,21 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
     }
 }
 
-void PreviewPane::SetVisible(bool visible)
+void PreviewPane::ShowPane()
 {
-    Show(visible);
-    if (visible)
-    {
-        renderLoop->StartLoop(RENDER_UPS);
-    }
-    else
-    {
-        renderLoop->StopLoop();
-    }
+    Show();
+    renderLoop->StartLoop(RENDER_UPS);
 }
 
-PreviewRenderLoop::PreviewRenderLoop(PreviewPane& _pane, int updatesPerSecond)
+void PreviewPane::HidePane()
+{
+    Hide();
+    renderLoop->StopLoop();
+}
+
+PreviewRenderLoop::PreviewRenderLoop(PreviewPane& _pane)
     : wxTimer(), pane(_pane)
 {
-    if (updatesPerSecond > 0)
-        Start(updatesPerSecond);
 }
 
 void PreviewRenderLoop::StartLoop(int updatesPerSecond)
@@ -113,78 +111,71 @@ void PreviewRenderLoop::Notify()
 }
 
 PreviewFrame::PreviewFrame(const wxString& _title)
-    : title(_title), id(wxWindow::NewControlId())
+    : title(_title), id(wxWindow::NewControlId()), frame(nullptr, FrameDestroyer)
 {
-}
-
-PreviewFrame::~PreviewFrame()
-{
-    SetVisible(false);
 }
 
 void PreviewFrame::UpdateImage(const cv::Mat& image)
 {
     const auto lock = std::lock_guard{frameLock};
-    if (!frame.has_value()) return;
+    if (!frame) return;
     pane->UpdateImage(image);
 }
 
-void PreviewFrame::SetVisible(bool visible, bool userCanDestroy)
+void PreviewFrame::Show(CloseButton closeButton)
 {
     const auto lock = std::lock_guard{frameLock};
-    if (visible)
-    {
-        // already visible
-        if (frame.has_value()) return;
+    // already visible
+    if (frame) return;
 
-        int style = wxDEFAULT_FRAME_STYLE;
-        if (!userCanDestroy) style &= ~wxCLOSE_BOX;
-        /// Frees itself in the close window event
-        RefPtr<wxFrame> newFrame = new wxFrame(nullptr, id, title, wxDefaultPosition, wxDefaultSize, style);
-        // do nothing in erase event to prevent flickering
-        newFrame->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
+    int style = wxDEFAULT_FRAME_STYLE;
+    if (closeButton == CloseButton::Hide)
+        style &= ~wxCLOSE_BOX;
+    frame.reset(new wxFrame(nullptr, id, title, wxDefaultPosition, wxDefaultSize, style));
+    // do nothing in erase event to prevent flickering
+    frame->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
 
-        pane = NewWindow<PreviewPane>(newFrame, wxWindow::NewControlId());
-        newFrame->SetClientSize(pane->GetSize());
-        pane->SetVisible(true);
+    pane = NewWindow<PreviewPane>(frame.get(), wxWindow::NewControlId());
+    pane->ShowPane();
 
-        auto horiz = NewSizer<wxBoxSizer>(newFrame, wxHORIZONTAL);
+    auto horiz = NewSizer<wxBoxSizer>(frame.get(), wxHORIZONTAL);
 
-        horiz->AddStretchSpacer();
-        horiz->Add(pane, wxSizerFlags().Expand().Shaped());
-        horiz->AddStretchSpacer();
+    horiz->AddStretchSpacer();
+    horiz->Add(pane, wxSizerFlags().Expand().Shaped());
+    horiz->AddStretchSpacer();
 
-        newFrame->Show();
+    frame->Fit();
+    frame->Show();
 
-        newFrame->Bind(
-            wxEVT_CLOSE_WINDOW, [this](auto&)
-            {
-                SetVisible(false);
-            },
-            id);
-        // Need a different method to remove the old image when resized,
-        // as it isnt erased every frame anymore.
-        newFrame->Bind(
-            wxEVT_SIZE, [this](auto& evt)
-            {
-                const auto lock = std::lock_guard{frameLock};
-                if (!frame.has_value()) return;
-                frame.value()->ClearBackground();
-                evt.Skip();
-            },
-            id);
+    frame->Bind(
+        wxEVT_CLOSE_WINDOW, [this](auto&)
+        {
+            Hide();
+        },
+        id);
+    // Need a different method to remove the old image when resized,
+    // as it isnt erased every frame anymore.
+    frame->Bind(
+        wxEVT_SIZE, [this](auto& evt)
+        {
+            const auto lock = std::lock_guard{frameLock};
+            if (!frame) return;
+            frame->ClearBackground();
+            evt.Skip();
+        },
+        id);
+}
 
-        frame = newFrame;
-    }
-    else if (frame.has_value())
-    {
-        frame.value()->Destroy();
-        frame = std::nullopt;
-    }
+void PreviewFrame::Hide()
+{
+    const auto lock = std::lock_guard{frameLock};
+    // already destroyed
+    if (!frame) return;
+    frame.reset();
 }
 
 bool PreviewFrame::IsVisible()
 {
     const auto lock = std::lock_guard{frameLock};
-    return frame.has_value();
+    return static_cast<bool>(frame);
 }

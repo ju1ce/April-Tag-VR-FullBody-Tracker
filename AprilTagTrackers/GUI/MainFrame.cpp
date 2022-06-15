@@ -152,7 +152,17 @@ void GUI::MainFrame::OnNotebookPageChanged(wxBookCtrlEvent& evt)
 void GUI::MainFrame::SetPreviewVisible(bool visible, PreviewId id, bool userCanDestroy)
 {
     int idx = static_cast<int>(id);
-    previews[idx].SetVisible(visible, userCanDestroy);
+    if (visible)
+    {
+        if (userCanDestroy)
+            previews[idx].Show(PreviewFrame::CloseButton::Show);
+        else
+            previews[idx].Show(PreviewFrame::CloseButton::Hide);
+    }
+    else
+    {
+        previews[idx].Hide();
+    }
 }
 
 void GUI::MainFrame::SaveParams()
@@ -212,7 +222,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
             }})
         .Add(Button{lc.CAMERA_PREVIEW_CAMERA, [this](auto&)
             {
-                previews[static_cast<int>(PreviewId::Camera)].SetVisible(true);
+                previews[static_cast<int>(PreviewId::Camera)].Show();
             }})
         .Add(Button{lc.CAMERA_CALIBRATE_CAMERA, [this](auto&)
             {

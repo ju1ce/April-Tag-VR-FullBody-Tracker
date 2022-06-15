@@ -10,6 +10,7 @@
 #include <wx/window.h>
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 
 class PreviewRenderLoop;
@@ -22,8 +23,8 @@ public:
 
     /// thread safe
     void UpdateImage(const cv::Mat& image);
-
-    void SetVisible(bool visible = true);
+    void ShowPane();
+    void HidePane();
 
 private:
     /// render loop updates per second
@@ -42,8 +43,7 @@ private:
 class PreviewRenderLoop : private wxTimer
 {
 public:
-    /// if updatesPerSecond > 0 it will start the render loop immediately
-    PreviewRenderLoop(PreviewPane& pane, int updatesPerSecond = 0);
+    PreviewRenderLoop(PreviewPane& pane);
 
     /// If updatesPerSecond is positive it starts the render loop with that update speed,
     /// if its -1 it starts the loop with the previously set update speed.
@@ -60,17 +60,28 @@ class PreviewFrame
 {
 public:
     PreviewFrame(const wxString& _title);
-    ~PreviewFrame();
+
+    enum class CloseButton
+    {
+        Show,
+        Hide,
+    };
 
     void UpdateImage(const cv::Mat& image);
-    void SetVisible(bool visible, bool userCanDestroy = true);
+    void Show(CloseButton closeButton = CloseButton::Show);
+    void Hide();
     bool IsVisible();
 
 private:
-    std::mutex frameLock;
     wxString title;
     wxWindowIDRef id;
-    std::optional<RefPtr<wxFrame>> frame;
+
+    static constexpr auto FrameDestroyer = [](wxFrame* f)
+    {
+        f->Destroy();
+    };
+    std::unique_ptr<wxFrame, decltype(FrameDestroyer)> frame;
+    std::mutex frameLock;
     /// owned by frame, so exists if frame is not null
     RefPtr<PreviewPane> pane;
 };
