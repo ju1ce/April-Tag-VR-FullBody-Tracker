@@ -95,7 +95,6 @@ jobs:
           RUN_STATUS: ${{ needs.build.result }}
           REPO_NAME: ${{ github.repository }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
-          NIGHTLY_URL: https://nightly.link
         with:
           script: |
             const fetch = require("node-fetch");
@@ -108,7 +107,7 @@ jobs:
                     REPO_NAME, REPO_URL,
                     NIGHTLY_URL } = process.env;
             const RUN_URL = `${REPO_URL}/actions/runs/${context.runId}`;
-            const ARTIF_URL = `${NIGHTLY_URL}/actions/runs/${context.runId}`;
+            const ARTIF_URL = `https://nightly.link/${REPO_NAME}/actions/runs/${context.runId}`;
 
             const MSG_LEN = 100;
             const cutStr = s => (s.length > MSG_LEN) ?
