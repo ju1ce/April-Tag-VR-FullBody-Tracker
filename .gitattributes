@@ -1,33 +1,230 @@
-# Default behavior
+# From https://github.com/alexkaratarakis/gitattributes
+
+# 'export-ignore' prevents the file from being added to a git archive.
+
+#####################################################
+# Auto detect text files and perform LF normalization
 * text=auto
+# The above will handle all files NOT found below
+#####################################################
+# CMake
+CMakeLists.txt text
+*.cmake        text
+# Template files to use for generation during builds
+*.cmake.in     text
 
-# Normalize source files to native line endings on checkout
-*.c text
-*.cpp text
-*.h text
-*.hpp text
-*.json text
-*.yaml text
-*.yml text
-*.cmake text
-*.cmake.in text
-*.txt text
-*.md text
-*.py text
-*.rc text
-*.xpm text
-.gitattributes text
-.gitignore text
-.gitmodules text
+# Make
+Makefile text
 
-# Mark binary files
-*.png binary
-*.ico binary
-*.gif binary
-*.mkv binary
-*.jpg binary
-*.mp4 binary
-*.exe binary
-*.dll binary
-*.lib binary
+# Visual Studio
+# treat these files as binary and thus will always conflict and require user
+# intervention with every merge.
+*.sln       merge=binary
+*.csproj    merge=binary
+*.vbproj    merge=binary
+*.vcxproj   merge=binary
+*.vcproj    merge=binary
+*.dbproj    merge=binary
+*.fsproj    merge=binary
+*.lsproj    merge=binary
+*.wixproj   merge=binary
+*.modelproj merge=binary
+*.sqlproj   merge=binary
+*.wwaproj   merge=binary
+*.xproj     merge=binary
+*.props     merge=binary
+*.filters   merge=binary
+*.vcxitems  merge=binary
+
+# JavaScript Sources
+*.js text
+
+# Python Sources
+*.pxd    text diff=python
+*.py     text diff=python
+*.py3    text diff=python
+*.pyw    text diff=python
+*.pyx    text diff=python
+*.pyz    text diff=python
+*.pyi    text diff=python
+
+# Python Binaries
+*.pyc    binary export-ignore
+*.pyo    binary export-ignore
+*.pyd    binary
+
+# CSharp Sources
+*.cs     text diff=csharp
+*.cshtml text diff=html
+*.csx    text diff=csharp
+
+# Windows Resource Sources
+*.rc text eol=crlf diff=cpp
+
+# Windows Debug Symbols
 *.pdb binary
+
+# C++ Sources
+*.c   text diff=cpp
+*.cc  text diff=cpp
+*.cxx text diff=cpp
+*.cpp text diff=cpp
+*.c++ text diff=cpp
+*.hpp text diff=cpp
+*.h   text diff=cpp
+*.h++ text diff=cpp
+*.hh  text diff=cpp
+*.tpp text diff=cpp
+*.ipp text diff=cpp
+
+# Compiled Object files
+*.slo binary
+*.lo  binary
+*.o   binary
+*.obj binary
+
+# Precompiled Headers
+*.gch binary
+*.pch binary
+
+# Compiled Dynamic libraries
+*.so    binary
+*.dylib binary
+*.dll   binary
+
+# Compiled Static libraries
+*.lai binary
+*.la  binary
+*.a   binary
+*.lib binary
+
+# Executables
+*.exe binary
+*.out binary
+*.app binary
+
+# Documents
+*.bibtex   text diff=bibtex
+*.doc      diff=astextplain
+*.docx     diff=astextplain
+*.dot      diff=astextplain
+*.pdf      diff=astextplain
+*.rtf      diff=astextplain
+*.md       text diff=markdown
+*.mdx      text diff=markdown
+*.tex      text diff=tex
+*.adoc     text
+*.textile  text
+*.mustache text
+*.csv      text
+*.tab      text
+*.tsv      text
+*.txt      text
+*.sql      text
+
+# 3D Objects
+*.fbx binary
+*.mtl binary
+*.obj binary
+
+# Graphics
+*.ai   binary
+*.bmp  binary
+*.eps  binary
+*.gif  binary
+*.gifv binary
+*.ico  binary
+*.jng  binary
+*.jp2  binary
+*.jpg  binary
+*.jpeg binary
+*.jpx  binary
+*.jxr  binary
+*.png  binary
+*.psb  binary
+*.psd  binary
+*.svgz binary
+*.tif  binary
+*.tiff binary
+*.wbmp binary
+*.webp binary
+# SVG is an XML file
+*.svg  text
+# XPM is a c/c++ file
+*.xpm  text
+
+# Audio
+*.kar  binary
+*.m4a  binary
+*.mid  binary
+*.midi binary
+*.mp3  binary
+*.ogg  binary
+*.ra   binary
+
+# Video
+*.3gpp binary
+*.3gp  binary
+*.as   binary
+*.asf  binary
+*.asx  binary
+*.avi  binary
+*.fla  binary
+*.flv  binary
+*.m4v  binary
+*.mkv  binary
+*.mng  binary
+*.mov  binary
+*.mp4  binary
+*.mpeg binary
+*.mpg  binary
+*.ogv  binary
+*.swc  binary
+*.swf  binary
+*.webm binary
+
+# Scripts
+# Force batch scripts to use CRLF, and bash scripts to use LF, so that if a repo is accessed from
+# the other operating system via a file share, the scripts still work.
+# Unix only files
+*.bash text eol=lf
+*.fish text eol=lf
+*.sh   text eol=lf
+*.zsh  text eol=lf
+# Windows only files
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Serialisation
+*.json text
+*.toml text
+*.xml  text
+*.yaml text
+*.yml  text
+
+# Archives
+*.7z  binary
+*.gz  binary
+*.tar binary
+*.tgz binary
+*.zip binary
+
+# Editor Configs
+.clang-format text
+.clang-tidy   text
+
+# Other Configs
+*.vrdrivermanifest text
+
+# Text files where line endings should be preserved
+*.patch -text
+
+# Git config
+.gitattributes text export-ignore
+.gitignore     text export-ignore
+.gitkeep       text export-ignore
+.gitmodules    text export-ignore
+
+# GitHub actions and config
+.github/ export-ignore
