@@ -109,10 +109,12 @@ jobs:
             const ARTIF_URL = `https://nightly.link/${REPO_NAME}/actions/runs/${context.runId}`;
 
             const MSG_LEN = 100;
-            const cutStr = s => (s.length > MSG_LEN) ?
-              s.split("\n")[0]
-               .trim()
-               .substring(0, MSG_LEN - 3) + "..." : s;
+            function cutStr(s) {
+              s = s.split("\n")[0].trim();
+              if (s.length > MSG_LEN)
+                s = s.substring(0, MSG_LEN - 3) + "...";
+              return s;
+            }
 
             const SHA_LEN = 6;
             const fmtSha = s => s.substring(0, 6);
