@@ -21,25 +21,30 @@ if(NOT ATT_IS_MULTI_CONFIG)
     option(EXPORT_COMPILE_COMMANDS "Export compile commands for language servers." ON)
 endif()
 
-# Add deps sub-project
-add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
-
 # AprilTagTrackers forwarded options
 AprilTagTrackers_options()
 
 # If not linked to ATT external project, since they are excluded from all, they wont get built.
 if(NOT DEPS_SKIP_BUILD)
-    set(ATT_DEPS opencv-install wxWidgets-install apriltag-install openvr-install)
+    # Add deps sub-project
+    add_subdirectory("${DEPS_PREFIX}" EXCLUDE_FROM_ALL)
+    att_clone_submodule("deps/apriltag")
+    att_clone_submodule("deps/opencv")
+    att_clone_submodule("deps/opencv_contrib")
+    att_clone_submodule("deps/openvr")
+    att_clone_submodule("deps/wxWidgets")
 
+    set(ATT_DEPS opencv wxWidgets apriltag openvr)
     # Move the ps3eye files to install, windows only for now
     if(ENABLE_PS3EYE)
-        list(APPEND ATT_DEPS ps3eye-install)
+        list(APPEND ATT_DEPS ps3eye)
     endif()
 endif()
 
 att_add_project(
     BridgeDriver "${CMAKE_INSTALL_PREFIX}"
 )
+att_clone_submodule("BridgeDriver")
 
 att_add_project(
     AprilTagTrackers "${CMAKE_INSTALL_PREFIX}"
@@ -50,8 +55,7 @@ att_add_project(
     -DENABLE_ASSERT:BOOL=$<BOOL:${ENABLE_ASSERT}>
     -DENABLE_OUTPUT_LOG_FILE:BOOL=$<BOOL:${ENABLE_OUTPUT_LOG_FILE}>
 
-    CHECKOUT_SUBMODULE OFF
-    DEPENDS ${ATT_DEPS} BridgeDriver-install
+    DEPENDS ${ATT_DEPS}
 )
 
 # bindings installed in place, locales to a subfolder
