@@ -270,15 +270,6 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
                        }})
             ->GetWidget();
 
-    cam.Add(CheckBoxButton{lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
-                {
-                    tracker->multicamAutocalib = evt.IsChecked();
-                }})
-        .Add(CheckBoxButton{lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
-            {
-                tracker->lockHeightCalib = evt.IsChecked();
-            }});
-
     manualCalibForm = cam.PopSizer().SubForm();
 
     manualCalibForm->PushSizer<wxBoxSizer>(wxVERTICAL)
@@ -288,7 +279,15 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.calib.Z, InputNumber{manualCalib.posOffset[2]}})
         .Add(Labeled{lc.calib.PITCH, InputNumber{manualCalib.angleOffset[0]}})
         .Add(Labeled{lc.calib.YAW, InputNumber{manualCalib.angleOffset[1]}})
-        .Add(Labeled{lc.calib.ROLL, InputNumber{manualCalib.angleOffset[2]}});
+        .Add(Labeled{lc.calib.ROLL, InputNumber{manualCalib.angleOffset[2]}})
+        .Add(CheckBoxButton{ lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
+            {
+                tracker->multicamAutocalib = evt.IsChecked();
+            } })
+        .Add(CheckBoxButton{ lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
+            {
+                tracker->lockHeightCalib = evt.IsChecked();
+            } });
 
     manualCalibForm->SetSizerVisible(false);
 }
