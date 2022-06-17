@@ -80,7 +80,7 @@ att_add_dep(
     -DBUILD_EXAMPLES:BOOL=OFF
     ${CV_MINIMAL_BUILD_DEPS}
 
-    DEPENDS opencv_contrib-install
+    DEPENDS opencv_contrib
 )
 
 # --- OpenVR ---
@@ -109,7 +109,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy "${USB_PREFIX}/include/libusb-1.0/libusb.h" "${USB_INSTALL}/include/libusb.h"
     VERBATIM
 )
-add_custom_target(libusb-install
+add_custom_target(libusb
     DEPENDS "${USB_INSTALL}/include/libusb.h" "${USB_INSTALL}/lib/Release/libusb-1.0.lib" "${USB_INSTALL}/lib/Debug/libusb-1.0.lib"
     SOURCES "${USB_PREFIX}/include/libusb-1.0/libusb.h"
 )
@@ -118,7 +118,7 @@ add_custom_target(libusb-install
 set(PSD_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PS3EyeDriver")
 set(PSMS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/PSMoveService")
 
-att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
+att_add_files_installer(ps3eye "${DEPS_INSTALL_DIR}/ps3eye"
     INSTALL_ENTRY "."
     "${PSD_PREFIX}/ps3eyeConfig.cmake"
     INSTALL_ENTRY "include"
@@ -128,4 +128,4 @@ att_add_files_installer(ps3eye-install "${DEPS_INSTALL_DIR}/ps3eye"
     "${PSD_PREFIX}/ps3eye.cpp"
     "${PSMS_PREFIX}/PSEyeVideoCapture.cpp")
 
-add_dependencies(ps3eye-install libusb-install)
+add_dependencies(ps3eye libusb)

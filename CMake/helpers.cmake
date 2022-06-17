@@ -21,16 +21,33 @@ function(att_configure_package_config project_name)
         "${SUPERPROJECT_SOURCE_DIR}/CMake/${project_name}Config.cmake.in")
 endfunction()
 
+# clone a git submodule at a path relative to superproject source dir
+function(att_clone_submodule module_dir)
+    find_program(GIT_CMD git DOC "Clone submodules." REQUIRED)
+    set(abs_module_dir "${SUPERPROJECT_SOURCE_DIR}/${module_dir}")
+    if (NOT EXISTS "${abs_module_dir}")
+        message(FATAL_ERROR "Submodule ${abs_module_dir} not found.")
+    endif()
+    if (NOT EXISTS "${abs_module_dir}/.git")
+        message(STATUS "Cloning submodule '${module_dir}'")
+        execute_process(
+            COMMAND "${GIT_CMD}" submodule --quiet update --init --depth 1 --recursive "${abs_module_dir}"
+            WORKING_DIRECTORY "${SUPERPROJECT_SOURCE_DIR}")
+        if (NOT EXISTS "${abs_module_dir}/.git")
+            message(FATAL_ERROR "Submodule ${abs_module_dir} failed to clone.")
+        endif()
+    endif()
+endfunction()
+
 # Wrapper for ExternalProject_Add() with some default settings, directory layout
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS, after some options like install dir, config, build shared, toolchain.
 # EXTRA_EP_ARGS <arg...> Forwarded to ExternalProject_Add.
 # BUILD_COMMAND <arg...> Forwarded to BUILD_COMMAND, has default if not provided.
-# CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
 # DISABLE_CMAKE Disable any step using cmake
 function(att_add_external_project project_name install_dir)
     cmake_parse_arguments(PARSE_ARGV 2 _arg
         "DISABLE_CMAKE" # option
-        "CHECKOUT_SUBMODULE" # value
+        "" # value
         "EXTRA_CMAKE_ARGS;EXTRA_EP_ARGS;BUILD_COMMAND") # list
 
     # Set some prefix dirs for this project
@@ -57,39 +74,14 @@ function(att_add_external_project project_name install_dir)
         unset(multi_config_flag)
     endif()
 
-    # CHECKOUT_SUBMODULE defaults to ON
-    if(NOT DEFINED _arg_CHECKOUT_SUBMODULE)
-        set(_arg_CHECKOUT_SUBMODULE ON)
-    endif()
-
-    if(_arg_CHECKOUT_SUBMODULE)
-        find_program(GIT_CMD git DOC "Checkout submodules." REQUIRED)
-
-        # sync updates the submodule with the .gitmodules config file
-        # update --init will checkout the submodule
-        set(download_cmd_default
-            "${GIT_CMD}" submodule --quiet sync --recursive "<SOURCE_DIR>"
-            COMMAND "${GIT_CMD}" submodule --quiet update --init --depth 1 --recursive "<SOURCE_DIR>"
-            USES_TERMINAL_DOWNLOAD ON) # Fix Ninja trying to parallelize and erroring with the git lock file
-    else()
-        set(download_cmd_default "${NOOP_COMMAND}")
-    endif()
-
     if(DEFINED _arg_BUILD_COMMAND)
         # forward the user defined build command
         set(build_cmd_default "${_arg_BUILD_COMMAND}")
     elseif(NOT _arg_DISABLE_CMAKE)
         # default build command
-        set(build_cmd_default "${CMAKE_COMMAND}" --build "<BINARY_DIR>" ${multi_config_flag})
+        set(build_cmd_default "${CMAKE_COMMAND}" --build "<BINARY_DIR>" --target install ${multi_config_flag})
     else()
         unset(build_cmd_default "${NOOP_COMMAND}")
-    endif()
-
-    if(NOT _arg_DISABLE_CMAKE)
-        # default install command
-        set(install_cmd_default "${CMAKE_COMMAND}" --build "<BINARY_DIR>" --target install ${multi_config_flag})
-    else()
-        set(install_cmd_default "${NOOP_COMMAND}")
     endif()
 
     if(_arg_DISABLE_CMAKE)
@@ -130,28 +122,21 @@ function(att_add_external_project project_name install_dir)
         STAMP_DIR "${epw_files_dir}/stamp"
         INSTALL_DIR "${install_dir}"
 
+        UPDATE_COMMAND ""
+        UPDATE_DISCONNECTED ON
         ${configure_cmd_disable}
-
-        DOWNLOAD_COMMAND ${download_cmd_default}
+        DOWNLOAD_COMMAND ""
         BUILD_COMMAND ${build_cmd_default}
-        INSTALL_COMMAND ${install_cmd_default}
+        INSTALL_COMMAND ""
 
         ${cmake_args_default}
-
-        UPDATE_COMMAND "${NOOP_COMMAND}"
-        UPDATE_DISCONNECTED ON
 
         STEP_TARGETS install
 
         ${_arg_EXTRA_EP_ARGS})
-
-    if(_arg_CHECKOUT_SUBMODULE)
-        # If submodules change, update them, since we call sync first.
-        ExternalProject_Add_StepDependencies(${project_name} download "${SUPERPROJECT_SOURCE_DIR}/.gitmodules")
-    endif()
 endfunction()
 
-# Add a submodule dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
+# Add a dependency deps/<project_name> and installs to <DEPS_INSTALL_DIR>/<project_name>
 # Forwards DEPENDS arg, disables developer warnings
 # Adds compile commands install step to copy to install dir
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
@@ -172,9 +157,8 @@ endfunction()
 # Sets DEPS_INSTALL_DIR and SUPERPROJECT_SOURCE_DIR
 # Creates a config stamp to prevent building configs that weren't setup
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS
-# CHECKOUT_SUBMODULE <bool> Checkout git submodule as download step, default on.
 function(att_add_project project_name install_dir)
-    cmake_parse_arguments(PARSE_ARGV 2 _arg "" "CHECKOUT_SUBMODULE" "DEPENDS;EXTRA_CMAKE_ARGS;")
+    cmake_parse_arguments(PARSE_ARGV 2 _arg "" "" "DEPENDS;EXTRA_CMAKE_ARGS;")
     att_add_external_project(
         ${project_name} "${install_dir}"
         EXTRA_CMAKE_ARGS
@@ -186,8 +170,7 @@ function(att_add_project project_name install_dir)
         EXTRA_EP_ARGS
         BUILD_ALWAYS ON
         DEPENDS ${_arg_DEPENDS}
-
-        CHECKOUT_SUBMODULE ${_arg_CHECKOUT_SUBMODULE})
+    )
     att_ep_create_config_stamp(${project_name})
 endfunction()
 
