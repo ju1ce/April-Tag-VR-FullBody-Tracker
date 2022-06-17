@@ -78,10 +78,10 @@ public:
     FIELD(int, cameraApiPreference) = 0;
     FIELD(int, trackerNum) = 3;
     FIELD(FS::Valid<double>, markerSize){
-        0.05,
+        5.0,
         [](auto& value)
         {
-            if (value <= 0.) value = 0.001;
+            if (value <= 0.) value = 0.1;
         }};
     FIELD(int, numOfPrevValues) = 5;
     FIELD(double, quadDecimate) = 1;

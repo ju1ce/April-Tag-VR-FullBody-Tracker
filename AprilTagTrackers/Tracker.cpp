@@ -866,7 +866,7 @@ void Tracker::CalibrateTracker()
 
     // making a marker model of our markersize for later use
     std::vector<cv::Point3f> modelMarker;
-    double markerSize = user_config.markerSize;
+    double markerSize = user_config.markerSize*0.01;                                 //markerSize is in centimeters, but we need it in meters
     modelMarker.push_back(cv::Point3f(-markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));
