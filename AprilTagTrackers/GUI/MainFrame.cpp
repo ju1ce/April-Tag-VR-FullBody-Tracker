@@ -303,6 +303,12 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
     static constexpr std::array<int, 4> camRotCodes =
     { -1, cv::ROTATE_90_CLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_COUNTERCLOCKWISE };
 
+    static constexpr std::array<U8StringView, 6> quadDecimateOptions =
+    { "1", "1.5", "2", "3", "4", "5" };
+
+    static constexpr std::array<double, 6> quadDecimateValues =
+    { 1, 1.5, 2, 3, 4, 5 };
+
     params.Border(wxALL, 5)
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10))
         .Add(Labeled{lc.PARAMS_LANGUAGE,
@@ -363,7 +369,7 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_MARKER_SIZE, lc.PARAMS_TRACKER_TOOLTIP_MARKER_SIZE,
             InputText{config.markerSize}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_QUAD_DECIMATE, lc.PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE,
-            InputText{config.quadDecimate}})
+            Choice{config.quadDecimate, quadDecimateOptions, quadDecimateValues}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_SEARCH_WINDOW, lc.PARAMS_TRACKER_TOOLTIP_SEARCH_WINDOW,
             InputText{config.searchWindow}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_MARKER_LIBRARY, lc.PARAMS_TRACKER_TOOLTIP_MARKER_LIBRARY,
