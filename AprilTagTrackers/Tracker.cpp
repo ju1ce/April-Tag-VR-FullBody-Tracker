@@ -263,20 +263,10 @@ void Tracker::CameraLoop()
 {
     bool rotate = false;
     int rotateFlag = -1;
-    if (user_config.rotateCl && user_config.rotateCounterCl)
+    if (user_config.rotateCl >= 0)
     {
         rotate = true;
-        rotateFlag = cv::ROTATE_180;
-    }
-    else if (user_config.rotateCl)
-    {
-        rotate = true;
-        rotateFlag = cv::ROTATE_90_CLOCKWISE;
-    }
-    else if (user_config.rotateCounterCl)
-    {
-        rotate = true;
-        rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
+        rotateFlag = user_config.rotateCl;
     }
     cv::Mat img;
     cv::Mat drawImg;

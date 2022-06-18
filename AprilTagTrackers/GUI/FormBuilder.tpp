@@ -97,14 +97,15 @@ inline void CheckBoxButton<F>::Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> s
 template <typename T>
 template <typename StrList>
 inline Choice<T>::Choice(T& _backingValue, const StrList& _options)
-    : backingValue(_backingValue), mappings(_options.size())
+    : backingValue(_backingValue), mappings()
 {
     int index = 0;
     options.Alloc(_options.size());
+    mappings.reserve(_options.size());
     for (const auto& str : _options)
     {
         options.Add(str);
-        mappings.push_back(index++);
+        mappings.emplace_back(index++);
     }
 
     ATASSERT("Options is not empty.",
