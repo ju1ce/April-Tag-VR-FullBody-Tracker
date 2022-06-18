@@ -263,11 +263,20 @@ void Tracker::CameraLoop()
 {
     bool rotate = false;
     int rotateFlag = -1;
+
+    bool mirror = false;
+
     if (user_config.rotateCl >= 0)
     {
         rotate = true;
         rotateFlag = user_config.rotateCl;
     }
+
+    if (user_config.mirrorCam)
+    {
+        mirror = true;
+    }
+
     cv::Mat img;
     cv::Mat drawImg;
     double fps = 0;
@@ -290,6 +299,10 @@ void Tracker::CameraLoop()
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
+        }
+        if (mirror)
+        {
+            cv::flip(img, img, 1);
         }
         // Ensure that preview isnt shown more than 60 times per second.
         // In some cases opencv will return a solid color image without any blocking delay (unlike a camera locked to a framerate),

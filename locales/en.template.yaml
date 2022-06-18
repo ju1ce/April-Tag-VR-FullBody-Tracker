@@ -28,8 +28,8 @@ PARAMS_CAMERA_TOOLTIP_ID: "Will be a number 0-10 for USB cameras and\nhttp://<ip
 PARAMS_CAMERA_NAME_API: Camera API preference
 PARAMS_CAMERA_NAME_ROT_CLOCKWISE: Rotate camera clockwise
 PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "Rotate the camera 90Â°. Use both to rotate image 180Â°"
-PARAMS_CAMERA_NAME_ROT_CCLOCKWISE: Rotate camera counterclockwise
-PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE: "Rotate the camera 90Â°. Use both to rotate image 180Â°"
+PARAMS_CAMERA_NAME_MIRROR = "Mirror camera";
+PARAMS_CAMERA_TOOLTIP_MIRROR = "Mirror the camera horizontaly";
 PARAMS_CAMERA_NAME_WIDTH: Camera width in pixels
 PARAMS_CAMERA_TOOLTIP_WIDTH: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly."
 PARAMS_CAMERA_NAME_HEIGHT: Camera height in pixels

@@ -318,8 +318,8 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
             InputText{config.cameraApiPreference}})
         .Add(Labeled{ lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
             Choice{config.rotateCl, camRotOptions, camRotCodes} })
-        .Add(Labeled{lc.PARAMS_CAMERA_NAME_ROT_CCLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE,
-            CheckBox{config.rotateCounterCl}})
+        .Add(Labeled{lc.PARAMS_CAMERA_NAME_MIRROR, lc.PARAMS_CAMERA_TOOLTIP_MIRROR,
+            CheckBox{config.mirrorCam}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_WIDTH, lc.PARAMS_CAMERA_TOOLTIP_WIDTH,
             InputText{config.camWidth}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_HEIGHT, lc.PARAMS_CAMERA_TOOLTIP_HEIGHT,
