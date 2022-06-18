@@ -132,8 +132,7 @@ public:
     T(CAMERA_LOCK_HEIGHT) = "Lock camera height";
     T(CAMERA_CALIBRATION_INSTRUCTION) =
         R"(Disable SteamVR home to see the camera.
-Use your left trigger to grab the camera and move it into position,
-then use grip to grab trackers and move those into position.
+Use your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.
 
 Uncheck Calibration mode when done!)";
     T(CAMERA_DISABLE_OUT) = "Disable out window";
