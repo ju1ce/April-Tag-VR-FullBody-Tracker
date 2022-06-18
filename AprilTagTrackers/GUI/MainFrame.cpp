@@ -179,10 +179,6 @@ void GUI::MainFrame::ValidateParams()
 {
     if (config.smoothingFactor < 0.2)
         ShowPopup(lc.PARAMS_NOTE_LOW_SMOOTHING, PopupStyle::Warning);
-    if (config.quadDecimate != 1 && config.quadDecimate != 1.5 &&
-        config.quadDecimate != 2 && config.quadDecimate != 3 &&
-        config.quadDecimate != 4)
-        ShowPopup(lc.PARAMS_NOTE_QUAD_NONSTANDARD, PopupStyle::Warning);
     if (config.cameraSettings && config.cameraApiPreference != 700)
         ShowPopup(lc.PARAMS_NOTE_NO_DSHOW_CAMSETTINGS, PopupStyle::Warning);
     if (config.smoothingFactor <= config.camLatency)
