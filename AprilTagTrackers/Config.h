@@ -90,7 +90,7 @@ public:
     FIELD(int, calibrationTracker) = 0;
     FIELD(bool, chessboardCalib) = false;
     FIELD(bool, ignoreTracker0) = false;
-    FIELD(int, rotateCl) = 0;
+    FIELD(int, rotateCl) = -1;
     FIELD(bool, mirrorCam) = false;
     FIELD(bool, coloredMarkers) = true;
     FIELD(ManualCalib, manualCalib);
