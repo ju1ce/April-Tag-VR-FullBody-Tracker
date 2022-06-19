@@ -427,7 +427,7 @@ U8String GUI::MainFrame::CreateCVCaptureAPIToolTip(const Localization& lc)
                          << cv::videoio_registry::getBackendName(backend);
     }
 #ifdef ATT_ENABLE_PS3EYE
-    cameraTooltipApi << "\n2300: PS3EYE";
+    cameraTooltipApi << "\n9100: PS3EYE";
 #endif
     cameraTooltipApi << "\n\n"
                      << lc.PARAMS_CAMERA_TOOLTIP_API_2;

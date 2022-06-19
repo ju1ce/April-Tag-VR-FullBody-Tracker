@@ -199,7 +199,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         else
 #endif
 #if ATT_ENABLE_PS3EYE
-            if (apiPreference == 2300)
+            if (apiPreference == 9100)
         {
             cap = PSEyeVideoCapture(i);
         }
