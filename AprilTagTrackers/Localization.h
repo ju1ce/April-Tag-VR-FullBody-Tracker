@@ -132,8 +132,7 @@ public:
     T(CAMERA_LOCK_HEIGHT) = "Lock camera height";
     T(CAMERA_CALIBRATION_INSTRUCTION) =
         R"(Disable SteamVR home to see the camera.
-Use your left trigger to grab the camera and move it into position,
-then use grip to grab trackers and move those into position.
+Use your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.
 
 Uncheck Calibration mode when done!)";
     T(CAMERA_DISABLE_OUT) = "Disable out window";
@@ -149,8 +148,8 @@ Uncheck Calibration mode when done!)";
     T(PARAMS_CAMERA_NAME_API) = "Camera API preference";
     T(PARAMS_CAMERA_NAME_ROT_CLOCKWISE) = "Rotate camera clockwise";
     T(PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
-    T(PARAMS_CAMERA_NAME_ROT_CCLOCKWISE) = "Rotate camera counterclockwise";
-    T(PARAMS_CAMERA_TOOLTIP_ROT_CCLOCKWISE) = "Rotate the camera 90°. Use both to rotate image 180°";
+    T(PARAMS_CAMERA_NAME_MIRROR) = "Mirror camera";
+    T(PARAMS_CAMERA_TOOLTIP_MIRROR) = "Mirror the camera horizontaly";
     T(PARAMS_CAMERA_NAME_WIDTH) = "Camera width in pixels";
     T(PARAMS_CAMERA_TOOLTIP_WIDTH) = "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly.";
     T(PARAMS_CAMERA_NAME_HEIGHT) = "Camera height in pixels";

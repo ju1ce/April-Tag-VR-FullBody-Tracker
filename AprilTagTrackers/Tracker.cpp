@@ -199,7 +199,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         else
 #endif
 #if ATT_ENABLE_PS3EYE
-            if (apiPreference == 2300)
+            if (apiPreference == 9100)
         {
             cap = PSEyeVideoCapture(i);
         }
@@ -263,21 +263,20 @@ void Tracker::CameraLoop()
 {
     bool rotate = false;
     int rotateFlag = -1;
-    if (user_config.rotateCl && user_config.rotateCounterCl)
+
+    bool mirror = false;
+
+    if (user_config.rotateCl >= 0)
     {
         rotate = true;
-        rotateFlag = cv::ROTATE_180;
+        rotateFlag = user_config.rotateCl;
     }
-    else if (user_config.rotateCl)
+
+    if (user_config.mirrorCam)
     {
-        rotate = true;
-        rotateFlag = cv::ROTATE_90_CLOCKWISE;
+        mirror = true;
     }
-    else if (user_config.rotateCounterCl)
-    {
-        rotate = true;
-        rotateFlag = cv::ROTATE_90_COUNTERCLOCKWISE;
-    }
+
     cv::Mat img;
     cv::Mat drawImg;
     double fps = 0;
@@ -300,6 +299,10 @@ void Tracker::CameraLoop()
         if (rotate)
         {
             cv::rotate(img, img, rotateFlag);
+        }
+        if (mirror)
+        {
+            cv::flip(img, img, 1);
         }
         // Ensure that preview isnt shown more than 60 times per second.
         // In some cases opencv will return a solid color image without any blocking delay (unlike a camera locked to a framerate),
@@ -866,7 +869,7 @@ void Tracker::CalibrateTracker()
 
     // making a marker model of our markersize for later use
     std::vector<cv::Point3f> modelMarker;
-    double markerSize = user_config.markerSize;
+    double markerSize = user_config.markerSize*0.01;                                 //markerSize is in centimeters, but we need it in meters
     modelMarker.push_back(cv::Point3f(-markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));

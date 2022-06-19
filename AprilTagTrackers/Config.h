@@ -78,10 +78,10 @@ public:
     FIELD(int, cameraApiPreference) = 0;
     FIELD(int, trackerNum) = 3;
     FIELD(FS::Valid<double>, markerSize){
-        0.05,
+        5.0,
         [](auto& value)
         {
-            if (value <= 0.) value = 0.001;
+            if (value <= 0.) value = 0.1;
         }};
     FIELD(int, numOfPrevValues) = 5;
     FIELD(double, quadDecimate) = 1;
@@ -90,8 +90,8 @@ public:
     FIELD(int, calibrationTracker) = 0;
     FIELD(bool, chessboardCalib) = false;
     FIELD(bool, ignoreTracker0) = false;
-    FIELD(bool, rotateCl) = false;
-    FIELD(bool, rotateCounterCl) = false;
+    FIELD(int, rotateCl) = 0;
+    FIELD(bool, mirrorCam) = false;
     FIELD(bool, coloredMarkers) = true;
     FIELD(ManualCalib, manualCalib);
     FIELD(bool, circularWindow) = true;
