@@ -2,9 +2,18 @@
 # and include sub-projects here.
 
 cmake_minimum_required(VERSION 3.15)
-project("April-Tag-VR-FullBody-Tracker" CXX)
 
 set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "Delete build folder if changed.")
+endif()
+set(VCPKG_OVERLAY_PORTS "${SUPERPROJECT_SOURCE_DIR}/vcpkg-ports")
+set(VCPKG_OVERLAY_TRIPLETS "${SUPERPROJECT_SOURCE_DIR}/triplets")
+include("${SUPERPROJECT_SOURCE_DIR}/CMake/automate-vcpkg.cmake")
+vcpkg_bootstrap()
+
+project("April-Tag-VR-FullBody-Tracker" CXX)
 
 # Where to find, and where to install deps, define before helpers.cmake
 set(DEPS_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/deps")

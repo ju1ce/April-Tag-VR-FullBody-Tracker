@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "apriltagtrackers",
+    "version": "0.6.0",
+    "dependencies": [
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": [
+                "contrib",
+                "ffmpeg"
+            ]
+        },
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": [
+                "gstreamer"
+            ],
+            "platform": "linux"
+        },
+        {
+            "name": "wxwidgets",
+            "default-features": false
+        },
+        {
+            "name": "libusb",
+            "platform": "windows"
+        },
+        "openvr"
+    ]
+}
