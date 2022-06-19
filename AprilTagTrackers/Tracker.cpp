@@ -1445,7 +1445,7 @@ void Tracker::MainLoop()
             calibControllerLastPress = std::chrono::steady_clock::now();
         }
         april.detectMarkers(gray, &corners, &ids, &centers, trackers);
-        for (int i = 0; i < trackerNum; ++i)
+        for (int i = 0; i < trackerNum-2; ++i)
         {
 
             // estimate the pose of current board
@@ -1560,7 +1560,14 @@ void Tracker::MainLoop()
             // send all the values
             // frame time is how much time passed since frame was acquired.
             if (!multicamAutocalib)
+            {
                 connection->SendTracker(connection->connectedTrackers[i].DriverId, rpos[0], rpos[1], rpos[2], q.w, q.x, q.y, q.z, -frameTime - user_config.camLatency, factor);
+
+                cv::Vec3d rpos_knee = rpos + q.toRotMat3x3() * cv::Vec3d(0, -0.3, 0);
+
+                connection->SendTracker(connection->connectedTrackers[i+2].DriverId, rpos_knee[0], rpos_knee[1], rpos_knee[2], q.w, q.x, q.y, q.z, -frameTime - user_config.camLatency, factor);
+
+            }
             else if (trackerStatus[i].boardFoundDriver)
             {
                 // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
