@@ -58,13 +58,9 @@ att_add_project(
     DEPENDS ${ATT_DEPS}
 )
 
+# bindings and locales installed to a subfolder
+install(DIRECTORY "bindings" "locales" DESTINATION ".")
+
 # create empty config directory
-# install(DIRECTORY DESTINATION "config")
-
-# bindings installed to a subfolder
-install(DIRECTORY "bindings" DESTINATION ".")
-
-# locales installed to a subfolder in config
-install(DIRECTORY "locales" DESTINATION "config")
-
+install(DIRECTORY DESTINATION "config")
 
