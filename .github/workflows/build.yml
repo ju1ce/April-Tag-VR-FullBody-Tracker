@@ -149,7 +149,7 @@ jobs:
               for (const cmt of commits) {
                 if (!cmt.distinct) continue;
                 if (count++ === MAX_COMMITS) {
-                  embed.description += `*${commits.length - COMMIT_COUNT} more* ...\n`;
+                  embed.description += `*${commits.length - MAX_COMMITS} more* ...\n`;
                   break;
                 }
                 embed.description += `[\` ${fmtSha(cmt.id)} \`](<${cmt.url}>) **${cmt.author.name}:** *${cutStr(cmt.message)}*\n`
