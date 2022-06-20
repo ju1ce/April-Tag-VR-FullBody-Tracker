@@ -61,6 +61,4 @@ att_add_project(
 # bindings and locales installed to a subfolder
 install(DIRECTORY "bindings" "locales" DESTINATION ".")
 
-# create empty config directory
-install(DIRECTORY DESTINATION "config")
 
