@@ -16,7 +16,7 @@
 class Localization : public FS::Serializable<Localization>
 {
 public:
-    static inline const FS::Path localesDir = std::filesystem::absolute("locales");
+    static inline const FS::Path localesDir = std::filesystem::absolute("config/locales");
 
     // Keep synced
     static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
