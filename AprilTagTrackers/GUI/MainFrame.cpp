@@ -268,6 +268,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.calib.PITCH, InputNumber{manualCalib.angleOffset[0]}})
         .Add(Labeled{lc.calib.YAW, InputNumber{manualCalib.angleOffset[1]}})
         .Add(Labeled{lc.calib.ROLL, InputNumber{manualCalib.angleOffset[2]}})
+        .Add(Labeled{lc.calib.SCALE, InputNumber{manualCalib.scale}})
         .Add(CheckBoxButton{ lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
             {
                 tracker->multicamAutocalib = evt.IsChecked();

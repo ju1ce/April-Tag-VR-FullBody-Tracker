@@ -1378,7 +1378,7 @@ void Tracker::MainLoop()
 
                         calibControllerAngleOffset[0] = angle[0] - calib.angleOffset[0];
                         calibControllerAngleOffset[1] = angle[1] - calib.angleOffset[1];
-                        calibControllerAngleOffset[2] = distance;
+                        calibControllerAngleOffset[2] = distance/calib.scale;
                     }
                     else // else, deactivate it
                     {
