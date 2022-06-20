@@ -96,6 +96,7 @@ public:
         T(PITCH) = "Pitch (°):";
         T(YAW) = "Yaw (°):";
         T(ROLL) = "Roll (°):";
+        T(SCALE) = "Scale (%):";
         REFLECTABLE_END;
     };
 

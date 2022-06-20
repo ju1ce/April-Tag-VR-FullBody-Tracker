@@ -103,36 +103,4 @@ void StretchSpacer::Create(RefPtr<wxWindow>, RefPtr<wxSizer> sizer, wxSizerFlags
 {
     sizer->AddStretchSpacer(proportion);
 }
-
-void InputNumber::Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSizerFlags flags)
-{
-    wxSize buttonSize{25, 25};
-    auto subSizer = NewSizer<wxBoxSizer>(sizer, flags, wxHORIZONTAL);
-    CreateWidget(parent, ToWXString(backingValue));
-
-    subSizer->Add(NewButton(parent, "<<", buttonSize, CreateAdjustBackingFunc(-10)));
-    subSizer->Add(NewButton(parent, "<", buttonSize, CreateAdjustBackingFunc(-1)));
-    subSizer->Add(GetWidget());
-    subSizer->Add(NewButton(parent, ">", buttonSize, CreateAdjustBackingFunc(1)));
-    subSizer->Add(NewButton(parent, ">>", buttonSize, CreateAdjustBackingFunc(10)));
-
-    Bind(wxEVT_MOUSEWHEEL,
-        [&val = backingValue, ctrl = GetWidget()](wxMouseEvent& evt)
-        {
-            val += evt.GetWheelRotation() > 0 ? 1 : -1;
-            ctrl->ChangeValue(ToWXString(val));
-        });
-
-    Bind(wxEVT_TEXT,
-        [&val = backingValue, ctrl = GetWidget()](wxCommandEvent&)
-        {
-            FromWXString(ctrl->GetValue(), val);
-        });
-}
-
-void InputNumber::Update()
-{
-    GetWidget()->ChangeValue(ToWXString(backingValue));
-}
-
 } // namespace Form
