@@ -65,7 +65,7 @@ public:
 class UserConfig : public FS::Serializable<UserConfig>
 {
 public:
-    UserConfig() : FS::Serializable<UserConfig>("config.yaml") {}
+    UserConfig() : FS::Serializable<UserConfig>("config/config.yaml") {}
 
     REFLECTABLE_BEGIN;
     FIELD(SemVer, driver_version) = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));
@@ -143,7 +143,7 @@ public:
 class CalibrationConfig : public FS::Serializable<CalibrationConfig>
 {
 public:
-    CalibrationConfig() : FS::Serializable<CalibrationConfig>("calib.yaml") {}
+    CalibrationConfig() : FS::Serializable<CalibrationConfig>("config/calib.yaml") {}
 
     REFLECTABLE_BEGIN;
     FIELD(cv::Mat, camMat);
@@ -159,7 +159,7 @@ public:
 class ArucoConfig : public FS::Serializable<ArucoConfig>
 {
 public:
-    ArucoConfig() : FS::Serializable<ArucoConfig>("aruco.yaml")
+    ArucoConfig() : FS::Serializable<ArucoConfig>("config/aruco.yaml")
     {
         auto p = cv::aruco::DetectorParameters::create();
         p->detectInvertedMarker = true;

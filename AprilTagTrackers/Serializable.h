@@ -200,6 +200,11 @@ inline bool Serializable<ST>::Save() const
 {
     ATASSERT("filePath is not empty.", !filePath.empty());
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
+    if (!fs.isOpened())
+    {
+        std::filesystem::create_directories(filePath.parent_path());
+        fs.open(filePath.generic_string(), cv::FileStorage::WRITE);
+    }
     if (!fs.isOpened()) return false;
     WriteEach(fs, Reflect::DerivedThis<ST>(*this));
     fs.release();

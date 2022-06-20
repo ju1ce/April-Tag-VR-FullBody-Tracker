@@ -58,5 +58,7 @@ att_add_project(
     DEPENDS ${ATT_DEPS}
 )
 
-# bindings installed in place, locales to a subfolder
-install(DIRECTORY "bindings/" "locales" DESTINATION "bin")
+# bindings and locales installed to a subfolder
+install(DIRECTORY "bindings" "locales" DESTINATION ".")
+
+
