@@ -51,7 +51,12 @@ public:
     FIELD(cv::Vec3d, posOffset);
     FS_COMMENT("(pitch, yaw, roll) in degrees.");
     FIELD(cv::Vec3d, angleOffset);
-    FIELD(double, scale) = 100;     //TODO: change back into a validator
+    FIELD(FS::Valid<double>, scale) {
+        100.0, [](auto& value)
+        {
+            value = std::clamp(value,80.0, 120.0);
+        }
+    };
     REFLECTABLE_END;
 };
 

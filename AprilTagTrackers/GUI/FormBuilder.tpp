@@ -77,11 +77,46 @@ inline void InputText<T>::Submit()
     GetWidget()->ChangeValue(ToWXString(backingValue));
 }
 
-inline auto InputNumber::CreateAdjustBackingFunc(int amount)
+template <typename T>
+void InputNumber<T>::Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSizerFlags flags)
+{
+    wxSize buttonSize{25, 25};
+    auto subSizer = NewSizer<wxBoxSizer>(sizer, flags, wxHORIZONTAL);
+    CreateWidget(parent, ToWXString(backingValue));
+
+    subSizer->Add(NewButton(parent, "<<", buttonSize, CreateAdjustBackingFunc(-10)));
+    subSizer->Add(NewButton(parent, "<", buttonSize, CreateAdjustBackingFunc(-1)));
+    subSizer->Add(GetWidget());
+    subSizer->Add(NewButton(parent, ">", buttonSize, CreateAdjustBackingFunc(1)));
+    subSizer->Add(NewButton(parent, ">>", buttonSize, CreateAdjustBackingFunc(10)));
+
+    Bind(wxEVT_MOUSEWHEEL,
+        [&val = backingValue, ctrl = GetWidget()](wxMouseEvent& evt)
+        {
+            val = static_cast<double>(val)+(evt.GetWheelRotation() > 0 ? 1 : -1);
+            ctrl->ChangeValue(ToWXString(val));
+        });
+
+    Bind(wxEVT_TEXT,
+        [&val = backingValue, ctrl = GetWidget()](wxCommandEvent&)
+        {
+            FromWXString(ctrl->GetValue(), val);
+        });
+}
+
+template <typename T>
+void InputNumber<T>::Update()
+{
+    GetWidget()->ChangeValue(ToWXString(backingValue));
+}
+
+
+template <typename T>
+inline auto InputNumber<T>::CreateAdjustBackingFunc(int amount)
 {
     return [&val = backingValue, ctrl = GetWidget(), amount](wxCommandEvent&)
     {
-        val += amount;
+        val = static_cast<double>(val)+amount;
         ctrl->ChangeValue(ToWXString(val));
     };
 }

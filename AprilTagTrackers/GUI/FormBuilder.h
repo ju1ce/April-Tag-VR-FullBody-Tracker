@@ -156,19 +156,20 @@ private:
 };
 
 /// Advanced number input with multiple step buttons and scroll wheel input.
+template <typename T>
 class InputNumber : public Widget<wxTextCtrl>
 {
 private:
     auto CreateAdjustBackingFunc(int amount);
 
 public:
-    InputNumber(double& _backingValue) : backingValue(_backingValue) {}
+    InputNumber(T& _backingValue) : backingValue(_backingValue) {}
 
     void Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSizerFlags flags = {}) override;
     void Update() override;
 
 private:
-    double& backingValue;
+    T& backingValue;
     std::vector<RefPtr<wxWindow>> buttons;
 };
 
