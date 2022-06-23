@@ -1,0 +1,21 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "apriltag",
+    "version": "3.2.0",
+    "homepage": "https://april.eecs.umich.edu/software/apriltag",
+    "supports": "!(windows & !static)",
+    "features": {
+        "examples": {
+            "description": "Example program with opencv",
+            "dependencies": [
+                "opencv4"
+            ]
+        },
+        "python-bindings": {
+            "description": "Build python bindings",
+            "dependencies": [
+                "python3"
+            ]
+        }
+    }
+}
