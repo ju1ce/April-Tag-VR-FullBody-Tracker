@@ -59,6 +59,6 @@ att_add_project(
 )
 
 # bindings and locales installed to a subfolder
-install(DIRECTORY "bindings" "locales" DESTINATION ".")
+install(DIRECTORY "bindings" "locales" "images-to-print" DESTINATION ".")
 
 
