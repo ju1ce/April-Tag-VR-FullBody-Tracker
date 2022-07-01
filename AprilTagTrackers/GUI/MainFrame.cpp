@@ -9,7 +9,7 @@
 GUI::MainFrame::MainFrame(RefPtr<ITrackerControl> _tracker, const Localization& _lc, UserConfig& _config)
     : wxFrame(nullptr, wxID_ANY, _lc.APP_TITLE),
       tracker(_tracker), lc(_lc), config(_config),
-      previews{PreviewFrame{"Preview"}, PreviewFrame{"Camera Preview"}}
+      previews{PreviewFrame{"Preview [" + _config.windowTitle + "]"}, PreviewFrame{"Camera Preview [" + _config.windowTitle + "]"}}
 {
     SetIcon(apriltag_xpm);
     if (!config.windowTitle.empty()) SetTitle(config.windowTitle);
