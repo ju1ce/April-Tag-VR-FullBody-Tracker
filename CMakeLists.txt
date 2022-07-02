@@ -61,4 +61,7 @@ att_add_project(
 # bindings and locales installed to a subfolder
 install(DIRECTORY "bindings" "locales" "images-to-print" DESTINATION ".")
 
+if(WIN32)
+	install(DIRECTORY "${CMAKE_BINARY_DIR}/deps/opencv/bin/Release/" DESTINATION "." FILES_MATCHING PATTERN "*.dll")
+endif()
 
