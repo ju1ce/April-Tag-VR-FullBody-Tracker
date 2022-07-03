@@ -4,15 +4,19 @@
     "version": "3.2.0",
     "homepage": "https://april.eecs.umich.edu/software/apriltag",
     "supports": "!(windows & !static)",
-    "features": {
-        "examples": {
-            "description": "Example program with opencv",
-            "dependencies": [
-                "opencv4"
-            ]
+    "dependencies": [
+        {
+            "name": "vcpkg-cmake",
+            "host": true
         },
-        "python-bindings": {
-            "description": "Build python bindings",
+        {
+            "name": "vcpkg-cmake-config",
+            "host": true
+        }
+    ],
+    "features": {
+        "python-wrapper": {
+            "description": "Build python wrapper",
             "dependencies": [
                 "python3"
             ]
