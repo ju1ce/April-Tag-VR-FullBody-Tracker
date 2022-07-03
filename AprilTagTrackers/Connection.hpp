@@ -1,6 +1,6 @@
-#include "Config.h"
-#include "Helpers.h"
-#include "IPC/IPC.h"
+#include "Config.hpp"
+#include "Helpers.hpp"
+#include "IPC/IPC.hpp"
 
 #include <openvr.h>
 

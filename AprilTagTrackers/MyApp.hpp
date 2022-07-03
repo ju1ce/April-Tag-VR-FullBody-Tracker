@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Config.h"
-#include "Connection.h"
-#include "Debug.h"
-#include "GUI.h"
-#include "Localization.h"
-#include "Tracker.h"
+#include "Config.hpp"
+#include "Connection.hpp"
+#include "Debug.hpp"
+#include "GUI.hpp"
+#include "Localization.hpp"
+#include "Tracker.hpp"
 
 #include <wx/app.h>
 

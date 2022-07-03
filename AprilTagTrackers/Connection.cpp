@@ -1,6 +1,6 @@
-#include "Connection.h"
+#include "Connection.hpp"
 
-#include "Debug.h"
+#include "Debug.hpp"
 #include "SemVer.h"
 
 #include <opencv2/core.hpp>

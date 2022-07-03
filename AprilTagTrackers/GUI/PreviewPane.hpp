@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RefPtr.h"
+#include "RefPtr.hpp"
 
 #include <opencv2/core.hpp>
 #include <wx/frame.h>

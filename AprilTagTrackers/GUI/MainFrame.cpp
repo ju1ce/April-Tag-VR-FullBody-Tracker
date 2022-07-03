@@ -1,7 +1,7 @@
-#include "MainFrame.h"
+#include "MainFrame.hpp"
 
-#include "license.h"
-#include "wxHelpers.h"
+#include "license.hpp"
+#include "wxHelpers.hpp"
 
 #include <functional>
 #include <sstream>

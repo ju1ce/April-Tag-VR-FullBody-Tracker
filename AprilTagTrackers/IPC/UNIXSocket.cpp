@@ -1,5 +1,5 @@
 #if OS_LINUX
-#include "IPC.h"
+#include "IPC.hpp"
 
 #include <errno.h>
 #include <iostream>

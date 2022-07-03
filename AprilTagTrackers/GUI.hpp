@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Config.h"
-#include "Localization.h"
-#include "RefPtr.h"
+#include "Config.hpp"
+#include "Localization.hpp"
+#include "RefPtr.hpp"
 
 #include <opencv2/core.hpp>
 

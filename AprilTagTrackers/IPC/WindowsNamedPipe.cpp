@@ -1,7 +1,7 @@
 #if OS_WIN
-#include "IPC.h"
+#include "IPC.hpp"
 
-#include "Debug.h"
+#include "Debug.hpp"
 
 #include <Windows.h>
 #include <iostream>

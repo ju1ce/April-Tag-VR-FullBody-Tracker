@@ -1,4 +1,4 @@
-#include "U8String.h"
+#include "U8String.hpp"
 
 #include <wx/string.h>
 

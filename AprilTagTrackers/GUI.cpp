@@ -1,7 +1,7 @@
-#include "GUI.h"
+#include "GUI.hpp"
 
-#include "Debug.h"
-#include "GUI/MainFrame.h"
+#include "Debug.hpp"
+#include "GUI/MainFrame.hpp"
 
 namespace
 {
