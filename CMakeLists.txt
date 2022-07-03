@@ -27,7 +27,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 # include libs in common/ for every project
 add_subdirectory("common" EXCLUDE_FROM_ALL)
 
-att_checkout_submodule("BrigeDriver")
+att_clone_submodule("BridgeDriver")
 att_read_version_file(DRIVER_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
 
 add_subdirectory("AprilTagTrackers")
