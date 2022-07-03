@@ -19,6 +19,14 @@
             "platform": "linux"
         },
         {
+            "name": "opencv4",
+            "default-features": false,
+            "features": [
+                "world"
+            ],
+            "platform": "!static"
+        },
+        {
             "name": "wxwidgets",
             "default-features": false
         },
