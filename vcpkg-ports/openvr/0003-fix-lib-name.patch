@@ -1,0 +1,20 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index ffdb312..e2adf8f 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -18,7 +18,6 @@ if(APPLE)
+ elseif(WIN32)
+   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+     add_definitions( -DWIN64 )
+-    set( LIBNAME "openvr_api64" )
+   endif()
+ endif()
+ 
+@@ -69,7 +68,6 @@ source_group("VRCommon" FILES
+ if(BUILD_SHARED)
+ 	add_library(${LIBNAME} SHARED ${SOURCE_FILES})
+ elseif(BUILD_FRAMEWORK)
+-	set( LIBNAME "OpenVR" )
+ 	add_library( ${LIBNAME} 
+             SHARED ${SOURCE_FILES}
+             ${CMAKE_SOURCE_DIR}/headers/openvr.h
