@@ -12,7 +12,8 @@ env:
   BUILD_TYPE: Release
   BINARY_DIR: build
   INSTALL_DIR: install
-  VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+  # read only permission if pull request
+  VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,read${{ github.event_name == 'push' && 'write' || '' }}"
 
 jobs:
   build:
@@ -25,18 +26,29 @@ jobs:
         os: [windows-latest, ubuntu-latest]
         include:
           - os: "windows-latest"
+            triplet: x64-windows-static
             mono: ""
           - os: "ubuntu-latest"
+            triplet: x64-linux
             mono: "mono"
 
     steps:
       - name: Checkout project
         uses: actions/checkout@v3
 
-      - name: Clone vcpkg
+      - name: Setup vcpkg (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg
-          ./vcpkg/bootstrap-vcpkg
+          ./vcpkg/bootstrap-vcpkg.bat
+
+      - name: Setup vcpkg (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg
+          ./vcpkg/bootstrap-vcpkg.sh
 
       - name: Setup NuGet Credentials
         shell: bash
@@ -54,6 +66,7 @@ jobs:
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE:STRING=${{ env.BUILD_TYPE }}
           -DCMAKE_INSTALL_PREFIX:PATH=${{ env.INSTALL_DIR }}
+          -DVCPKG_TARGET_TRIPLET:STRING=${{ matrix.triplet }}
           -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: CMake Build
