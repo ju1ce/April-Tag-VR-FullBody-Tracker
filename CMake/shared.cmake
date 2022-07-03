@@ -96,7 +96,3 @@ function(att_read_version_file output_var file_path)
     endif()
     set(${output_var} "${version_text}" PARENT_SCOPE)
 endfunction()
-
-# include libs in common/ for every project
-# they can use att_find_dep if necessary
-add_subdirectory("${SUPERPROJECT_SOURCE_DIR}/common" "${CMAKE_CURRENT_BINARY_DIR}/common" EXCLUDE_FROM_ALL)
