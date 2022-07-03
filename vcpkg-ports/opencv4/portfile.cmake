@@ -186,6 +186,7 @@ if("contrib" IN_LIST FEATURES)
   )
   set(BUILD_WITH_CONTRIB_FLAG "-DOPENCV_EXTRA_MODULES_PATH=${CONTRIB_SOURCE_PATH}/modules")
 
+  # MODIFIED: remove unused contrib modules
   set(CONTRIB_FILTER_LIST aruco)
 
   file(GLOB CONTRIB_MODULES RELATIVE "${CONTRIB_SOURCE_PATH}/modules" "${CONTRIB_SOURCE_PATH}/modules/*")
@@ -196,6 +197,7 @@ if("contrib" IN_LIST FEATURES)
       file(REMOVE_RECURSE "${CONTRIB_MODULE_DIR}")
     endif()
   endforeach()
+  # MODIFIED
 
   # MODIFIED: non of these downloads are necessary for aruco
   if (FALSE)
