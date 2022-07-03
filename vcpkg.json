@@ -14,14 +14,6 @@
             "name": "opencv4",
             "default-features": false,
             "features": [
-                "gstreamer"
-            ],
-            "platform": "linux"
-        },
-        {
-            "name": "opencv4",
-            "default-features": false,
-            "features": [
                 "world"
             ],
             "platform": "!static"
