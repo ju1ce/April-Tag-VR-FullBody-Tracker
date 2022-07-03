@@ -22,6 +22,7 @@ Explicitly set with -DCMAKE_INSTALL_PREFIX= to install there.")
     message(STATUS "Installing to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
+set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 
 # include libs in common/ for every project
