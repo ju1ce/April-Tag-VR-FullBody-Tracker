@@ -93,7 +93,6 @@ endif()
 macro(vcpkg_bootstrap)
     _install_or_update_vcpkg()
 
-    set(ENV{VCPKG_DISABLE_METRICS} 1)
     set(VCPKG_INSTALL_OPTIONS "--clean-after-build")
 
     # Find out whether the user supplied their own VCPKG toolchain file
@@ -136,10 +135,10 @@ macro(_install_or_update_vcpkg)
 
     if(WIN32)
         set(VCPKG_EXEC ${VCPKG_ROOT}/vcpkg.exe)
-        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.bat)
+        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.bat -disableMetrics)
     else()
         set(VCPKG_EXEC ${VCPKG_ROOT}/vcpkg)
-        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.sh)
+        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.sh -disableMetrics)
     endif()
 
     if(NOT EXISTS ${VCPKG_EXEC})
