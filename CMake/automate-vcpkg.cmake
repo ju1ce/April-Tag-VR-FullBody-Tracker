@@ -93,8 +93,6 @@ endif()
 macro(vcpkg_bootstrap)
     _install_or_update_vcpkg()
 
-    set(VCPKG_INSTALL_OPTIONS "--clean-after-build")
-
     # Find out whether the user supplied their own VCPKG toolchain file
     if(NOT DEFINED ${CMAKE_TOOLCHAIN_FILE})
         # We know this wasn't set before so we need point the toolchain file to the newly found VCPKG_ROOT

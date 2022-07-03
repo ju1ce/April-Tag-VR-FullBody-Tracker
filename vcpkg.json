@@ -34,6 +34,7 @@
             "name": "libusb",
             "platform": "windows"
         },
+        "apriltag",
         "openvr"
     ]
 }
