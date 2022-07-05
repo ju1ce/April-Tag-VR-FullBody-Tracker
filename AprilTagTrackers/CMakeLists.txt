@@ -99,7 +99,8 @@ target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
+    wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>)
 
 # Set cross-platform defines in sources
 if(WIN32)
