@@ -1,7 +1,7 @@
 if (WIN32)
     option(ATT_DEPS_BUILD_SHARED "Build dependencies shared" OFF)
 else()
-    option(ATT_DEPS_BUILD_SHARED "Build dependencies shared" ON)
+    option(ATT_DEPS_BUILD_SHARED "Build dependencies shared" OFF)
 endif()
 
 if (WIN32)
