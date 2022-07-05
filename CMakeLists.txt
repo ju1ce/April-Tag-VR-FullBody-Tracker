@@ -20,7 +20,7 @@ endif()
 
 set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-ports")
 set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_CURRENT_SOURCE_DIR}/triplets")
-set(VCPKG_INSTALL_OPTIONS "--clean-after-build")
+set(VCPKG_INSTALL_OPTIONS "--clean-after-build" CACHE STRING "")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/automate-vcpkg.cmake")
 vcpkg_bootstrap()
