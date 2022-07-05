@@ -91,6 +91,7 @@ jobs:
             ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log
+            vcpkg/buildtrees/**/*.log
 
   send_discord_nightly_webhook:
     name: Send Discord Nightly Webhook
