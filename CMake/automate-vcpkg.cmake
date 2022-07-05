@@ -115,15 +115,17 @@ macro(_install_or_update_vcpkg)
 
     if(WIN32)
         set(VCPKG_EXEC ${VCPKG_ROOT}/vcpkg.exe)
-        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.bat -disableMetrics)
+        set(VCPKG_BOOTSTRAP "${VCPKG_ROOT}/bootstrap-vcpkg.bat")
     else()
         set(VCPKG_EXEC ${VCPKG_ROOT}/vcpkg)
-        set(VCPKG_BOOTSTRAP ${VCPKG_ROOT}/bootstrap-vcpkg.sh -disableMetrics)
+        set(VCPKG_BOOTSTRAP "${VCPKG_ROOT}/bootstrap-vcpkg.sh")
     endif()
 
     if(NOT EXISTS ${VCPKG_EXEC})
         message("Bootstrapping vcpkg in ${VCPKG_ROOT}")
-        execute_process(COMMAND ${VCPKG_BOOTSTRAP} WORKING_DIRECTORY ${VCPKG_ROOT})
+        execute_process(
+            COMMAND ${VCPKG_BOOTSTRAP} -disableMetrics
+            WORKING_DIRECTORY ${VCPKG_ROOT})
     endif()
 
     if(NOT EXISTS ${VCPKG_EXEC})
