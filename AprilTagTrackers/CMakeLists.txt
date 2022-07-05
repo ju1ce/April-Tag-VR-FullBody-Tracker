@@ -6,7 +6,7 @@ project(AprilTagTrackers CXX)
 
 option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
 option(ENABLE_ASAN "Create an address sanitizer build." OFF)
-option(ENABLE_PS3EYE "Enable ps3eye camera support, Windows only for now." ${WIN32})
+option(ENABLE_PS3EYE "Enable ps3eye camera support." ON)
 option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
 option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
 set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
@@ -45,7 +45,7 @@ add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 # find and link dependencies
 find_package(OpenCV CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)
-find_package(wxWidgets REQUIRED core base)
+find_package(wxWidgets REQUIRED)
 find_package(openvr CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
@@ -58,12 +58,16 @@ target_compile_definitions(AprilTagTrackers PRIVATE
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Link to ps3eye target if enabled
-# if(ENABLE_PS3EYE)
-#     att_find_dep(ps3eye REQUIRED)
-#     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_PS3EYE)
-#     target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
-# endif()
+if(ENABLE_PS3EYE)
+    find_package(libusb CONFIG REQUIRED)
+    target_link_libraries(AprilTagTrackers PRIVATE ${LIBUSB_LIBRARIES})
+    target_include_directories(AprilTagTrackers PRIVATE ${LIBUSB_INCLUDE_DIRS} ps3eye)
+    target_sources(AprilTagTrackers PRIVATE
+        ps3eye/ps3eye.cpp
+        ps3eye/PSEyeVideoCapture.cpp)
+
+    target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_PS3EYE)
+endif()
 
 target_link_libraries(AprilTagTrackers PUBLIC common::semver)
 

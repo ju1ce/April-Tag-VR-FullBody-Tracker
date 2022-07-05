@@ -22,10 +22,7 @@
             "name": "wxwidgets",
             "default-features": false
         },
-        {
-            "name": "libusb",
-            "platform": "windows"
-        },
+        "libusb",
         "apriltag",
         "openvr"
     ]
