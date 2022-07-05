@@ -67,9 +67,9 @@ jobs:
       - name: CMake Configure
         run: >-
           cmake -B ${{ env.BINARY_DIR }}
-          -DCMAKE_BUILD_TYPE:STRING=${{ env.BUILD_TYPE }}
-          -DCMAKE_INSTALL_PREFIX:STRING=${{ env.INSTALL_DIR }}
-          -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_DIR }}
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: CMake Build
         run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }} --target install
