@@ -4,6 +4,27 @@ include(CMakePackageConfigHelpers)
 # Prefix every global define with ATT/att
 # Use functions instead of macros when using local variables to not polute the global scope
 
+# Set the CRT linkage on windows, by setting CMAKE_MSVC_RUNTIME_LIBRARY
+# set SHARED true or false
+function(att_crt_linkage)
+    cmake_parse_arguments(PARSE_ARGV 0 _arg "" "SHARED" "")
+    if (NOT DEFINED _arg_SHARED)
+        message(FATAL_ERROR "Argument SHARED required")
+    endif()
+    if (CMAKE_VERSION VERSION_LESS "3.15.5")
+        message(FATAL_ERROR "This method of setting the CRT requires cmake >=3.15.5")
+    endif()
+    if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+        message(FATAL_ERROR "Must be called before project()")
+    endif()
+
+    if (_arg_SHARED)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "CRT Linkage" FORCE)
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "CRT Linkage" FORCE)
+    endif()
+endfunction()
+
 # Wrapper for configure_package_config_file() with some default settings
 # Adds the template file as a SOURCE property to <project_name>-install target
 function(att_configure_package_config project_name)

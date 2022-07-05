@@ -1,7 +1,7 @@
 # CMakeList.txt : CMake project for AprilTagTrackers, include source and define
 # project specific logic here.
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
 
 option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
@@ -44,9 +44,9 @@ add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
 # find and link dependencies
 find_package(OpenCV CONFIG REQUIRED)
-find_package(apriltag REQUIRED)
+find_package(apriltag CONFIG REQUIRED)
 find_package(wxWidgets REQUIRED core base)
-find_package(openvr REQUIRED)
+find_package(openvr CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
     ${OpenCV_LIBRARIES} apriltag::apriltag ${wxWidgets_LIBRARIES} openvr::openvr_api)

@@ -26,10 +26,8 @@ jobs:
         os: [windows-latest, ubuntu-latest]
         include:
           - os: "windows-latest"
-            triplet: x64-windows-static
             mono: ""
           - os: "ubuntu-latest"
-            triplet: x64-linux
             mono: "mono"
 
     steps:
@@ -72,7 +70,6 @@ jobs:
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE:STRING=${{ env.BUILD_TYPE }}
           -DCMAKE_INSTALL_PREFIX:PATH=${{ env.INSTALL_DIR }}
-          -DVCPKG_TARGET_TRIPLET:STRING=${{ matrix.triplet }}
           -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: CMake Build

@@ -1,8 +1,23 @@
-cmake_minimum_required(VERSION 3.15)
-
-if(WIN32)
-    set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "Delete build folder if changed.")
+if (WIN32)
+    option(ATT_DEPS_BUILD_SHARED "Build dependencies shared" OFF)
+else()
+    option(ATT_DEPS_BUILD_SHARED "Build dependencies shared" ON)
 endif()
+
+if (WIN32)
+    set(ATT_TARGET_PLATFORM "windows")
+elseif(APPLE)
+    set(ATT_TARGET_PLATFORM "osx")
+elseif(UNIX)
+    set(ATT_TARGET_PLATFORM "linux")
+endif()
+
+if (ATT_DEPS_BUILD_SHARED)
+    set(VCPKG_TARGET_TRIPLET "x64-${ATT_TARGET_PLATFORM}" CACHE STRING "" FORCE)
+else()
+    set(VCPKG_TARGET_TRIPLET "x64-${ATT_TARGET_PLATFORM}-static" CACHE STRING "" FORCE)
+endif()
+
 set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-ports")
 set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_CURRENT_SOURCE_DIR}/triplets")
 set(VCPKG_INSTALL_OPTIONS "--clean-after-build")
@@ -10,6 +25,7 @@ set(VCPKG_INSTALL_OPTIONS "--clean-after-build")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/automate-vcpkg.cmake")
 vcpkg_bootstrap()
 
+cmake_minimum_required(VERSION 3.16)
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
 # Fix default install path on windows
@@ -24,6 +40,10 @@ endif()
 
 set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
+
+if (MSVC)
+    att_crt_linkage(SHARED ${ATT_DEPS_BUILD_SHARED})
+endif()
 
 # include libs in common/ for every project
 add_subdirectory("common" EXCLUDE_FROM_ALL)
