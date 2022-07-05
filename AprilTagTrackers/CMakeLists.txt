@@ -45,7 +45,7 @@ add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 # find and link dependencies
 find_package(OpenCV CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)
-find_package(wxWidgets REQUIRED)
+find_package(wxWidgets REQUIRED core base)
 find_package(openvr CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
