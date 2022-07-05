@@ -30,15 +30,9 @@ project("April-Tag-VR-FullBody-Tracker" CXX)
 
 # Fix default install path on windows
 # Noone wants to provide admin access and install to C:/Program Files (x86)/
-if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    message(WARNING "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
-which requires admin rights and usually results in errors. \
-Explicitly set with -DCMAKE_INSTALL_PREFIX= to install there.")
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install directory." FORCE)
-    message(STATUS "Installing to ${CMAKE_INSTALL_PREFIX}")
-endif()
 
 set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 
 if (MSVC)

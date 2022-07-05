@@ -257,12 +257,3 @@ function(att_ep_create_config_stamp project_name)
         DEPENDERS build BYPRODUCTS "${CONFIG_STAMP_FILE}"
         COMMAND "${CMAKE_COMMAND}" -E touch "${CONFIG_STAMP_FILE}")
 endfunction()
-
-function(att_read_version_file output_var file_path)
-    file(READ "${file_path}" version_text)
-    string(REGEX REPLACE "[ \t\r\n]" "" version_text "${version_text}")
-    if (NOT (version_text MATCHES "^[0-9](\\.[0-9])?(\\.[0-9])?(\\.[0-9])?$"))
-        message(FATAL_ERROR "${file_path} invalid semantic version: \"${version_text}\"")
-    endif()
-    set(${output_var} "${version_text}" PARENT_SCOPE)
-endfunction()
