@@ -56,14 +56,13 @@ jobs:
 
       - name: Setup NuGet Credentials
         shell: bash
-        run: >
-          ${{ matrix.mono }} `./vcpkg/vcpkg fetch nuget | tail -n 1`
-          sources add
-          -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-          -storepasswordincleartext
-          -name "GitHub"
-          -username "${{ github.repository_owner }}"
-          -password "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          NUGET_EXE="`./vcpkg/vcpkg fetch nuget | tail -n 1`"
+          NUGET_OWNER="${{ github.repository_owner }}"
+          NUGET_URL="https://nuget.pkg.github.com/${NUGET_OWNER}/index.json"
+          ${{ matrix.mono }} "${NUGET_EXE}" sources add \
+            -source "${NUGET_URL}" -storepasswordincleartext -name "GitHub" -username "${NUGET_OWNER}" -password "${{ secrets.GITHUB_TOKEN }}"
+          ${{ matrix.mono }} "${NUGET_EXE}" setapikey "${{ secrets.GITHUB_TOKEN }}" -source "${NUGET_URL}"
 
       - name: CMake Configure
         run: >-
