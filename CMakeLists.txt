@@ -46,6 +46,7 @@ att_clone_submodule("BridgeDriver")
 att_read_version_file(DRIVER_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
 
 add_subdirectory("AprilTagTrackers")
+add_subdirectory("BridgeDriver")
 
 # folder layout maintained
 install(DIRECTORY "bindings" "locales" "images-to-print" DESTINATION ".")
