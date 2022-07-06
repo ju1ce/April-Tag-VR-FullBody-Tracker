@@ -4,24 +4,113 @@ include(CMakePackageConfigHelpers)
 # Prefix every global define with ATT/att
 # Use functions instead of macros when using local variables to not polute the global scope
 
+# clone a local vcpkg install if user doesn't already have
+# set the toolchain file to vcpkg.cmake
+function(att_bootstrap_vcpkg)
+    # custom toolchain and first run
+    if (DEFINED CMAKE_TOOLCHAIN_FILE AND NOT DEFINED VCPKG_ROOT)
+        message(STATUS "using custom toolchain, include vcpkg to build dependencies.")
+        return()
+    endif()
+
+    if (DEFINED ENV{VCPKG_ROOT})
+        set(vcpkg_default_root "$ENV{VCPKG_ROOT}")
+    elseif (WIN32)
+        set(vcpkg_default_root "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
+    else()
+        set(vcpkg_default_root "${CMAKE_CURRENT_SOURCE_DIR}/.vcpkg")
+    endif()
+
+    # not first run and vcpkg_root has not changed since first run
+    if (DEFINED VCPKG_ROOT AND VCPKG_ROOT STREQUAL vcpkg_default_root)
+        message(STATUS "vcpkg root: ${VCPKG_ROOT}")
+        return()
+    endif()
+
+    set(VCPKG_ROOT "${vcpkg_default_root}" CACHE PATH "vcpkg root directory")
+    message(STATUS "vcpkg root: ${VCPKG_ROOT}")
+
+    if (NOT EXISTS "${VCPKG_ROOT}/.vcpkg-root")
+        find_program(GIT_CMD git REQUIRED)
+        execute_process(COMMAND "${GIT_CMD}" clone --depth 1 "https://github.com/Microsoft/vcpkg.git" "${VCPKG_ROOT}")
+
+        if (NOT EXISTS "${VCPKG_ROOT}/.vcpkg-root")
+            message(FATAL_ERROR "failed to clone vcpkg")
+        endif()
+    endif()
+
+    if (WIN32)
+        set(vcpkg_cmd "${VCPKG_ROOT}/${vcpkg_cmd}")
+        set(vcpkg_bootstrap_cmd "${VCPKG_ROOT}/bootstrap-vcpkg.bat")
+    else()
+        set(vcpkg_cmd "${VCPKG_ROOT}/${vcpkg_cmd}")
+        set(vcpkg_bootstrap_cmd "${VCPKG_ROOT}/bootstrap-vcpkg.sh")
+    endif()
+
+    if (NOT EXISTS "${vcpkg_cmd}")
+        execute_process(COMMAND "${vcpkg_bootstrap_cmd}" -disableMetrics
+            WORKING_DIRECTORY "${VCPKG_ROOT}")
+
+        if (NOT EXISTS "${vcpkg_cmd}")
+            message(FATAL_ERROR "failed to bootstrap vcpkg")
+        endif()
+    endif()
+
+    if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+        set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+    endif()
+endfunction()
+
+function(att_default_triplet out_triplet)
+    set(target_system_name "unknown_system")
+    if (WIN32)
+        set(target_system_name "windows")
+    elseif(APPLE)
+        set(target_system_name "osx")
+    elseif(UNIX)
+        set(target_system_name "linux")
+    endif()
+
+    set(library_build_type "all")
+    get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if (NOT is_multi_config)
+        string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type_lower)
+        if (NOT build_type_lower STREQUAL "debug")
+            set(library_build_type "release")
+        endif()
+    endif()
+
+    option(BUILD_SHARED_LIBS "" FALSE)
+    if (BUILD_SHARED_LIBS)
+        set(library_linkage "dynamic")
+    else()
+        set(library_linkage "static")
+    endif()
+
+    set(target_arch "x64")
+
+    set(${out_triplet} "${target_arch}-${target_system_name}-${library_linkage}-${library_build_type}" PARENT_SCOPE)
+endfunction()
+
 # Set the CRT linkage on windows, by setting CMAKE_MSVC_RUNTIME_LIBRARY
 # set SHARED true or false
 function(att_crt_linkage)
-    cmake_parse_arguments(PARSE_ARGV 0 _arg "" "SHARED" "")
-    if (NOT DEFINED _arg_SHARED)
-        message(FATAL_ERROR "Argument SHARED required")
-    endif()
-    if (CMAKE_VERSION VERSION_LESS "3.15.5")
+    cmake_parse_arguments(PARSE_ARGV 0 _arg "STATIC;SHARED" "" "")
+    if (POLICY CMP0091)
+        cmake_policy(SET CMP0091 NEW)
+    else()
         message(FATAL_ERROR "This method of setting the CRT requires cmake >=3.15.5")
     endif()
     if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-        message(FATAL_ERROR "Must be called before project()")
+        message(FATAL_ERROR "Must be called before project() or enabled_language()")
     endif()
 
     if (_arg_SHARED)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "CRT Linkage" FORCE)
-    else()
+    elseif(_arg_STATIC)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "CRT Linkage" FORCE)
+    else()
+        message(FATAL_ERROR "Argument SHARED or STATIC required")
     endif()
 endfunction()
 
@@ -57,9 +146,6 @@ function(att_clone_submodule module_dir)
     endif()
 endfunction()
 
-# Alias the is multi config property, useful for fixing visual studio quirks
-get_property(ATT_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-
 # Wrapper for ExternalProject_Add() with some default settings, directory layout
 # EXTRA_CMAKE_ARGS <arg...> Forwarded to CMAKE_ARGS, after some options like install dir, config, build shared, toolchain.
 # EXTRA_EP_ARGS <arg...> Forwarded to ExternalProject_Add.
@@ -79,6 +165,7 @@ function(att_add_external_project project_name install_dir)
 
     set(NOOP_COMMAND "${CMAKE_COMMAND}" "-E" "echo_append")
 
+    get_property(ATT_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
     if(ATT_IS_MULTI_CONFIG)
         if (CMAKE_GENERATOR MATCHES "Visual Studio")
             # $(Configuration) is Visual Studios $<CONFIG>.
