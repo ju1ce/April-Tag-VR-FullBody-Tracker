@@ -55,8 +55,6 @@
 # specifying their locations.
 #------------------------------------------------------------------------------------------------------------
 
-cmake_minimum_required (VERSION 3.12)
-
 if(WIN32)
     set(VCPKG_FALLBACK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg CACHE STRING "vcpkg configuration directory to use if vcpkg was not installed on the system before")
 else()
@@ -103,10 +101,6 @@ macro(_install_or_update_vcpkg)
         # If a reproducible build is desired (and potentially old libraries are # ok), uncomment the
         # following line and pin the vcpkg repository to a specific githash.
         # execute_process(COMMAND git checkout 745a0aea597771a580d0b0f4886ea1e3a94dbca6 WORKING_DIRECTORY ${VCPKG_ROOT})
-    else()
-        # The following command has no effect if the vcpkg repository is in a detached head state.
-        message(STATUS "Auto-updating vcpkg in ${VCPKG_ROOT}")
-        execute_process(COMMAND git pull WORKING_DIRECTORY ${VCPKG_ROOT})
     endif()
 
     if(NOT EXISTS ${VCPKG_ROOT}/README.md)
