@@ -104,6 +104,16 @@ function(att_crt_linkage)
     endif()
 endfunction()
 
+# normal target_link_libraries PRIVATE, but applies the SYSTEM attribute to include directories
+function(att_target_link_system_libraries target)
+  set(libs ${ARGN})
+  foreach(lib ${libs})
+    get_target_property(lib_include_dirs ${lib} INTERFACE_INCLUDE_DIRECTORIES)
+    target_include_directories(${target} SYSTEM PRIVATE ${lib_include_dirs})
+    target_link_libraries(${target} PUBLIC ${lib})
+  endforeach(lib)
+endfunction()
+
 # Wrapper for configure_package_config_file() with some default settings
 # Adds the template file as a SOURCE property to <project_name>-install target
 function(att_configure_package_config project_name)

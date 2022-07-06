@@ -48,9 +48,11 @@ find_package(apriltag CONFIG REQUIRED)
 find_package(wxWidgets REQUIRED core base)
 find_package(openvr CONFIG REQUIRED)
 
+att_target_link_system_libraries(AprilTagTrackers
+    ${OpenCV_LIBRARIES} apriltag::apriltag openvr::openvr_api)
 target_link_libraries(AprilTagTrackers PRIVATE
-    ${OpenCV_LIBRARIES} apriltag::apriltag ${wxWidgets_LIBRARIES} openvr::openvr_api)
-target_include_directories(AprilTagTrackers PRIVATE SYSTEM
+    ${wxWidgets_LIBRARIES})
+target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     ${wxWidgets_INCLUDE_DIRS})
 target_compile_definitions(AprilTagTrackers PRIVATE
     ${wxWidgets_DEFINITIONS} "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
@@ -61,7 +63,7 @@ target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 if(ENABLE_PS3EYE)
     find_package(libusb CONFIG REQUIRED)
     target_link_libraries(AprilTagTrackers PRIVATE ${LIBUSB_LIBRARIES})
-    target_include_directories(AprilTagTrackers PRIVATE ${LIBUSB_INCLUDE_DIRS} ps3eye)
+    target_include_directories(AprilTagTrackers SYSTEM PRIVATE ${LIBUSB_INCLUDE_DIRS} ps3eye)
     target_sources(AprilTagTrackers PRIVATE
         ps3eye/ps3eye.cpp
         ps3eye/PSEyeVideoCapture.cpp)
