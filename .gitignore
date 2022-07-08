@@ -12,3 +12,6 @@ out*/
 
 # installed by cmake
 vcpkg/
+
+# downloaded dependencies
+deps*/
