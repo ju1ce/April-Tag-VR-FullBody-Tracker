@@ -1,0 +1,29 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "apriltagtrackers",
+    "version": "0.6.0",
+    "dependencies": [
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": [
+                "contrib"
+            ]
+        },
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": [
+                "world"
+            ],
+            "platform": "!static"
+        },
+        {
+            "name": "wxwidgets",
+            "default-features": false
+        },
+        "libusb",
+        "apriltag",
+        "openvr"
+    ]
+}

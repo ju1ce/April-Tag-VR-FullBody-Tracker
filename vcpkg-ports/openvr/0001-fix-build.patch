@@ -1,0 +1,94 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8956cda..30df300 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ # Set the minimum required version of CMake for this project.
+-cmake_minimum_required(VERSION 2.8)
++cmake_minimum_required(VERSION 3.0)
+ 
+ # Set project name.
+ project(OpenVRSDK)
+@@ -22,7 +22,7 @@ string(REGEX REPLACE "${VERSION_BUILD_REGEX}" "\\1" VERSION_BUILD ${VERSION_BUIL
+ set(OPENVR_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
+ 
+ # Setup some options.
+-option(BUILD_SHARED "Builds the library as shared library" OFF)
++option(BUILD_SHARED "Builds the library as shared library" ${BUILD_SHARED_LIBS})
+ option(BUILD_FRAMEWORK "Builds the library as an apple Framework" OFF)
+ option(BUILD_UNIVERSAL "Builds the shared or framework as a universal (fat, 32- & 64-bit) binary" ON)
+ option(BUILD_OSX_I386 "Builds the shared or framework as a 32-bit binary, even on a 64-bit platform" OFF)
+@@ -68,9 +68,6 @@ elseif(APPLE)
+ endif()
+ 
+ # Set output folder for static and shared libraries
+-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+ 
+ # Enable some properties.
+ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 29b69c5..ffdb312 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -92,25 +92,41 @@ elseif(BUILD_FRAMEWORK)
+ 	)
+ else()
+ 	add_library(${LIBNAME} STATIC ${SOURCE_FILES})
++	target_compile_definitions(${LIBNAME} INTERFACE OPENVR_BUILD_STATIC)
+ endif()
+ 
++set_target_properties(${LIBNAME} PROPERTIES DEBUG_POSTFIX "d")
+ if(USE_CUSTOM_LIBCXX)
+ 	set(EXTRA_LIBS ${EXTRA_LIBS} c++ c++abi)
+ endif()
+ 
+ target_link_libraries(${LIBNAME} ${EXTRA_LIBS} ${CMAKE_DL_LIBS})
+-target_include_directories(${LIBNAME} PUBLIC ${OPENVR_HEADER_DIR})
++target_include_directories(${LIBNAME} PUBLIC
++	"$<BUILD_INTERFACE:${OPENVR_HEADER_DIR}>"
++	"$<INSTALL_INTERFACE:include/openvr>")
++install(TARGETS ${LIBNAME} EXPORT "openvrTarget"
++	ARCHIVE DESTINATION lib
++    LIBRARY DESTINATION lib
++    RUNTIME DESTINATION bin)
++install(EXPORT "openvrTarget" NAMESPACE openvr:: DESTINATION "share/openvr")
+ 
+-install(TARGETS ${LIBNAME} DESTINATION lib)
+-install(FILES ${PUBLIC_HEADER_FILES} DESTINATION include/openvr)
++install(FILES ${PUBLIC_HEADER_FILES} DESTINATION "include/openvr")
+ 
+ # Generate a .pc file for linux environments
+ if(PLATFORM_NAME MATCHES "linux")
+-    set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
++    set(INSTALL_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
+     CONFIGURE_FILE("openvr.pc.in" "openvr.pc" @ONLY)
+ 
+-    set(OPENVR_PC ${CMAKE_CURRENT_BINARY_DIR}/openvr.pc)
++    set(OPENVR_PC "${CMAKE_CURRENT_BINARY_DIR}/openvr.pc")
+     if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
+-        install(FILES ${OPENVR_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
++        install(FILES "${OPENVR_PC}" DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+     endif()
+ endif()
++
++include(CMakePackageConfigHelpers)
++configure_package_config_file(
++	"${CMAKE_CURRENT_SOURCE_DIR}/openvrConfig.cmake.in"
++	"${CMAKE_CURRENT_BINARY_DIR}/openvrConfig.cmake"
++	INSTALL_DESTINATION "share/openvr")
++
++install(FILES "${CMAKE_CURRENT_BINARY_DIR}/openvrConfig.cmake" DESTINATION "share/openvr")
+diff --git a/src/openvrConfig.cmake.in b/src/openvrConfig.cmake.in
+new file mode 100644
+index 0000000..ab71c6e
+--- /dev/null
++++ b/src/openvrConfig.cmake.in
+@@ -0,0 +1,6 @@
++set(openvr_VERSION 1.16.8)
++
++@PACKAGE_INIT@
++
++include("${CMAKE_CURRENT_LIST_DIR}/openvrTarget.cmake")
++check_required_components("openvr")

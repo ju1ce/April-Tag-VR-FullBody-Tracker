@@ -43,10 +43,13 @@ The project is a CMake project. You should be able to build it either using CMak
 
 ### Linux prerequisites
 ```
-sudo apt install build-essentials libgtk-3-dev
+sudo apt-get update -y
+sudo apt-get install -y build-essential tar curl zip unzip pkg-config autoconf libudev-dev freeglut3-dev libgtk-3-dev libsecret-1-dev libgcrypt20-dev libsystemd-dev ffmpeg
 ```
-
-Note that since this project is mostly developed on windows, some additions may occasionally break linux compatibility. It can usually be solved by commenting out the additions, or just rolling back a few commits.
+OpenCV gstreamer backend
+```
+sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+```
 
 
 ### Windows prerequisites
@@ -62,17 +65,6 @@ cmake --build build --config Release --target install
 ```
 
 That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)
-
-### Visual Studio
-
-Visual Studio is a bit picky about external projects, so some additional steps are necessary:
-
-1. Git clone with all submodules
-2. Generate Visual Studio solution files with CMake
-3. Open build/April-Tag-VR-FullBody-Tracker.sln in VS
-4. Build it, both in Debug and Release configurations. This will build and configure all dependencies. Note that you cannot run/debug ATT from here, so don't be alarmed if you get a file not found or access denied error when it attempts to do so.
-5. When done, close the solution, and open build/ApriltagTrackers/ApriltagTrackers.sln in VS
-6. The project is now configured! You should be able to change code, build, run and debug ATT from this solution.
 
 ### Troubleshooting
 

@@ -1,0 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 389e059..2104378 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -158,6 +158,7 @@ string(STRIP ${PY_DEST} PY_DEST)
+ install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
+ endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
+ 
++if(0)
+ # Examples
+ # apriltag_demo
+ add_executable(apriltag_demo example/apriltag_demo.c)
+@@ -176,3 +177,4 @@ endif(OpenCV_FOUND)
+ 
+ # install example programs
+ install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
++endif()

@@ -1,20 +1,15 @@
 # CMakeList.txt : CMake project for AprilTagTrackers, include source and define
 # project specific logic here.
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
 
-# Fixes and wrapper functions
-include("${SUPERPROJECT_SOURCE_DIR}/CMake/shared.cmake")
-
-# Options set by superproject
-AprilTagTrackers_options()
-
-# Find our dependencies
-att_find_dep(OpenCV REQUIRED)
-att_find_dep(apriltag REQUIRED)
-att_find_dep(openvr REQUIRED)
-att_find_dep(wxWidgets REQUIRED core base)
+option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
+option(ENABLE_ASAN "Create an address sanitizer build." OFF)
+option(ENABLE_PS3EYE "Enable ps3eye camera support." ON)
+option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
+option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
+set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
 
 # Explicitly list source files as recommended by cmake
 set(ATT_SOURCE_FILES
@@ -47,22 +42,36 @@ set(ATT_SOURCE_FILES
 # main build output
 add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
-att_check_config_stamp(AprilTagTrackers)
+# find and link dependencies
+find_package(OpenCV CONFIG REQUIRED)
+find_package(apriltag CONFIG REQUIRED)
+find_package(wxWidgets REQUIRED core base)
+find_package(openvr CONFIG REQUIRED)
+
+att_target_link_system_libraries(AprilTagTrackers
+    ${OpenCV_LIBRARIES} apriltag::apriltag openvr::openvr_api)
+target_link_libraries(AprilTagTrackers PRIVATE
+    ${wxWidgets_LIBRARIES})
+target_include_directories(AprilTagTrackers SYSTEM PRIVATE
+    ${wxWidgets_INCLUDE_DIRS})
+target_compile_definitions(AprilTagTrackers PRIVATE
+    ${wxWidgets_DEFINITIONS} "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
 
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Link to ps3eye target if enabled
 if(ENABLE_PS3EYE)
-    att_find_dep(ps3eye REQUIRED)
+    find_package(libusb CONFIG REQUIRED)
+    target_link_libraries(AprilTagTrackers PRIVATE ${LIBUSB_LIBRARIES})
+    target_include_directories(AprilTagTrackers SYSTEM PRIVATE ${LIBUSB_INCLUDE_DIRS} ps3eye)
+    target_sources(AprilTagTrackers PRIVATE
+        ps3eye/ps3eye.cpp
+        ps3eye/PSEyeVideoCapture.cpp)
+
     target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_PS3EYE)
-    target_link_libraries(AprilTagTrackers PUBLIC ps3eye::ps3eye)
 endif()
 
-# Link libraries defined as targets, includes are automatic
-target_link_libraries(AprilTagTrackers PUBLIC
-    ${OpenCV_LIBS} wx::wx openvr::openvr apriltag::apriltag
-    common::semver)
+target_link_libraries(AprilTagTrackers PUBLIC common::semver)
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
@@ -92,13 +101,12 @@ else()
         $<$<CONFIG:Release>:-g>)
 endif()
 
-att_read_version_file(DRIVER_VERSION "${SUPERPROJECT_SOURCE_DIR}/BridgeDriver/VERSION.txt")
-
 target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>)
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
+    wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>)
 
 # Set cross-platform defines in sources
 if(WIN32)

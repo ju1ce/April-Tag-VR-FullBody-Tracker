@@ -12,7 +12,8 @@ env:
   BUILD_TYPE: Release
   BINARY_DIR: build
   INSTALL_DIR: install
-  DEPS_HASH_FILE: deps-hash.txt
+  # read only permission if pull request
+  VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,read${{ github.event_name == 'push' && 'write' || '' }}"
 
 jobs:
   build:
@@ -23,41 +24,52 @@ jobs:
       fail-fast: true
       matrix:
         os: [windows-latest, ubuntu-latest]
+        include:
+          - os: "windows-latest"
+            mono: ""
+          - os: "ubuntu-latest"
+            mono: "mono"
 
     steps:
-      - name: Checkout project.
+      - name: Checkout project
         uses: actions/checkout@v3
 
       - name: Install Linux Dependencies
         if: ${{ matrix.os == 'ubuntu-latest'}}
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y libgtk-3-dev ffmpeg libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+          sudo apt-get install -y build-essential tar curl zip unzip pkg-config autoconf libudev-dev freeglut3-dev libgtk-3-dev libsecret-1-dev libgcrypt20-dev libsystemd-dev ffmpeg libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
 
-      - name: Generate Deps Hash
-        id: hash
+      - name: Setup vcpkg (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg
+          ./vcpkg/bootstrap-vcpkg.bat
+
+      - name: Setup vcpkg (Linux)
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          git submodule --cached status ./deps/ > ${{ env.DEPS_HASH_FILE }}
-          echo "${{ hashFiles('deps/**') }}" >> ${{ env.DEPS_HASH_FILE }}
-          echo "::set-output name=deps::$(sha256sum ${{ env.DEPS_HASH_FILE }} | cut -d ' ' -f 1)"
+          git clone --depth 1 https://github.com/microsoft/vcpkg
+          ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Check Deps Cache
-        id: deps-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.BINARY_DIR }}/deps/install
-            !${{ env.BINARY_DIR }}/deps/install/opencv/etc
-          key: deps-${{ runner.os }}-${{ steps.hash.outputs.deps }}
+      - name: Setup NuGet Credentials
+        shell: bash
+        run: |
+          NUGET_EXE="`./vcpkg/vcpkg fetch nuget | tail -n 1`"
+          NUGET_OWNER="${{ github.repository_owner }}"
+          NUGET_URL="https://nuget.pkg.github.com/${NUGET_OWNER}/index.json"
+          ${{ matrix.mono }} "${NUGET_EXE}" sources add \
+            -source "${NUGET_URL}" -storepasswordincleartext -name "GitHub" -username "${NUGET_OWNER}" -password "${{ secrets.GITHUB_TOKEN }}"
+          ${{ matrix.mono }} "${NUGET_EXE}" setapikey "${{ secrets.GITHUB_TOKEN }}" -source "${NUGET_URL}"
 
       - name: CMake Configure
         run: >-
           cmake -B ${{ env.BINARY_DIR }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_DIR }}
-          -DEXPORT_COMPILE_COMMANDS=0
-          -DDEPS_SKIP_BUILD=${{ steps.deps-cache.outputs.cache-hit == 'true' }}
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: CMake Build
         run: cmake --build ${{ env.BINARY_DIR }} --config ${{ env.BUILD_TYPE }} --target install
@@ -78,6 +90,7 @@ jobs:
             ${{ env.BINARY_DIR }}/**/CMakeCache.txt
             ${{ env.BINARY_DIR }}/**/CMakeOutput.log
             ${{ env.BINARY_DIR }}/**/CMakeError.log
+            vcpkg/buildtrees/**/*.log
 
   send_discord_nightly_webhook:
     name: Send Discord Nightly Webhook

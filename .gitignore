@@ -9,3 +9,6 @@ out*/
 
 # .clangd, .clang-format, .clang-tidy
 .clang*
+
+# installed by cmake
+vcpkg/

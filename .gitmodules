@@ -3,30 +3,3 @@
 	path = BridgeDriver
 	url = https://github.com/ju1ce/Simple-OpenVR-Bridge-Driver
 	branch = AprilTagTrackers
-
-# dependencies, shallow checkout and ignore = dirty means only changes to commit hash will be tracked
-[submodule "deps/apriltag"]
-	path = deps/apriltag
-	url = https://github.com/funnbot/apriltag
-	shallow = true
-	ignore = dirty
-[submodule "deps/wxWidgets"]
-	path = deps/wxWidgets
-	url = https://github.com/wxWidgets/wxWidgets
-	shallow = true
-	ignore = dirty
-[submodule "deps/openvr"]
-	path = deps/openvr
-	url = https://github.com/funnbot/openvr
-	shallow = true
-	ignore = dirty
-[submodule "deps/opencv"]
-	path = deps/opencv
-	url = https://github.com/opencv/opencv
-	shallow = true
-	ignore = dirty
-[submodule "deps/opencv_contrib"]
-	path = deps/opencv_contrib
-	url = https://github.com/opencv/opencv_contrib
-	shallow = true
-	ignore = dirty
