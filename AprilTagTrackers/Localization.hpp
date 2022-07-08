@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Debug.h"
-#include "GUI/U8String.h"
-#include "Serializable.h"
+#include "Debug.hpp"
+#include "GUI/U8String.hpp"
+#include "Serializable.hpp"
 
 #include <algorithm>
 #include <filesystem>

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Config.h"
-#include "FormBuilder.h"
-#include "GUI.h"
-#include "Localization.h"
-#include "PreviewPane.h"
-#include "U8String.h"
+#include "Config.hpp"
+#include "FormBuilder.hpp"
+#include "GUI.hpp"
+#include "Localization.hpp"
+#include "PreviewPane.hpp"
+#include "U8String.hpp"
 
 #include <opencv2/videoio.hpp>
 #include <opencv2/videoio/registry.hpp>

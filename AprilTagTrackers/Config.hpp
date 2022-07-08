@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Helpers.h"
-#include "Quaternion.h"
+#include "Helpers.hpp"
+#include "Quaternion.hpp"
 #include "SemVer.h"
-#include "Serializable.h"
+#include "Serializable.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>

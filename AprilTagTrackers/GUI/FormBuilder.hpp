@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Debug.h"
-#include "wxHelpers.h"
+#include "Debug.hpp"
+#include "wxHelpers.hpp"
 
 #include <wx/arrstr.h>
 #include <wx/checkbox.h>

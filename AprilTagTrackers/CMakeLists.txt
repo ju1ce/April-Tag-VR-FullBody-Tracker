@@ -18,29 +18,29 @@ att_find_dep(wxWidgets REQUIRED core base)
 
 # Explicitly list source files as recommended by cmake
 set(ATT_SOURCE_FILES
-    AprilTagWrapper.cpp AprilTagWrapper.h
-    Config.h
-    Connection.cpp Connection.h
-    Helpers.cpp Helpers.h
-    license.h
-    Localization.h
-    Quaternion.cpp Quaternion.h
-    Reflectable.h
-    Serializable.cpp Serializable.h
-    ValidatorProxy.h
-    Tracker.cpp Tracker.h
-    MyApp.cpp MyApp.h
-    Debug.cpp Debug.h
-    RefPtr.h
+    AprilTagWrapper.cpp AprilTagWrapper.hpp
+    Config.hpp
+    Connection.cpp Connection.hpp
+    Helpers.cpp Helpers.hpp
+    license.hpp
+    Localization.hpp
+    Quaternion.cpp Quaternion.hpp
+    Reflectable.hpp
+    Serializable.cpp Serializable.hpp
+    ValidatorProxy.hpp
+    Tracker.cpp Tracker.hpp
+    MyApp.cpp MyApp.hpp
+    Debug.cpp Debug.hpp
+    RefPtr.hpp
 
-    GUI.cpp GUI.h
-    GUI/MainFrame.cpp GUI/MainFrame.h
-    GUI/PreviewPane.cpp GUI/PreviewPane.h
-    GUI/FormBuilder.cpp GUI/FormBuilder.h GUI/FormBuilder.tpp
-    GUI/U8String.cpp GUI/U8String.h
-    GUI/wxHelpers.h
+    GUI.cpp GUI.hpp
+    GUI/MainFrame.cpp GUI/MainFrame.hpp
+    GUI/PreviewPane.cpp GUI/PreviewPane.hpp
+    GUI/FormBuilder.cpp GUI/FormBuilder.hpp GUI/FormBuilder.tpp
+    GUI/U8String.cpp GUI/U8String.hpp
+    GUI/wxHelpers.hpp
 
-    IPC/IPC.h
+    IPC/IPC.hpp
     IPC/UNIXSocket.cpp
     IPC/WindowsNamedPipe.cpp)
 

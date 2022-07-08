@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Debug.h"
-#include "Quaternion.h"
-#include "Reflectable.h"
+#include "Debug.hpp"
+#include "Quaternion.hpp"
+#include "Reflectable.hpp"
 #include "SemVer.h"
-#include "ValidatorProxy.h"
+#include "ValidatorProxy.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/persistence.hpp>

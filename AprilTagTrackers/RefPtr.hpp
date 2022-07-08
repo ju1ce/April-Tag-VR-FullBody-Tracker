@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Debug.h"
+#include "Debug.hpp"
 
 #include <memory>
 #include <optional>

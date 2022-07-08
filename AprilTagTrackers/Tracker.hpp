@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Config.h"
-#include "GUI.h"
-#include "Quaternion.h"
-#include "RefPtr.h"
+#include "Config.hpp"
+#include "GUI.hpp"
+#include "Quaternion.hpp"
+#include "RefPtr.hpp"
 
 #include <opencv2/core/affine.hpp>
 #include <opencv2/videoio.hpp>

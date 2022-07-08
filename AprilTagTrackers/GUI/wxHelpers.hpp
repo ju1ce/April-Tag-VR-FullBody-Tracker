@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Debug.h"
-#include "RefPtr.h"
-#include "Serializable.h"
+#include "Debug.hpp"
+#include "RefPtr.hpp"
+#include "Serializable.hpp"
 
 #include <wx/button.h>
 #include <wx/frame.h>

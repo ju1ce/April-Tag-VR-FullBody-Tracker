@@ -1,9 +1,9 @@
-#include "Tracker.h"
+#include "Tracker.hpp"
 
-#include "AprilTagWrapper.h"
-#include "Connection.h"
-#include "Debug.h"
-#include "Helpers.h"
+#include "AprilTagWrapper.hpp"
+#include "Connection.hpp"
+#include "Debug.hpp"
+#include "Helpers.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/charuco.hpp>

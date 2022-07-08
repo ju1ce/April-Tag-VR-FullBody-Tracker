@@ -1,4 +1,4 @@
-#include "MyApp.h"
+#include "MyApp.hpp"
 
 #ifdef ATT_OVERRIDE_ERROR_HANDLERS
 #include <opencv2/core/utils/logger.hpp>

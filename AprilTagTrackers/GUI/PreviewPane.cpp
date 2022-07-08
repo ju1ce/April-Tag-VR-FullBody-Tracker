@@ -1,7 +1,7 @@
-#include "PreviewPane.h"
+#include "PreviewPane.hpp"
 
-#include "Debug.h"
-#include "wxHelpers.h"
+#include "Debug.hpp"
+#include "wxHelpers.hpp"
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
