@@ -79,6 +79,10 @@ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
  "dc1394"    WITH_1394
 )
 
+if (VCPKG_TARGET_IS_LINUX)
+  set(WITH_GSTREAMER ON)
+endif()
+
 # Cannot use vcpkg_check_features() for "dnn", "gtk", ipp", "openmp", "ovis", "python", "qt, "tbb"
 set(BUILD_opencv_dnn OFF)
 if("dnn" IN_LIST FEATURES)
@@ -462,6 +466,7 @@ vcpkg_cmake_configure(
         -DWITH_TBB=${WITH_TBB}
         -DWITH_OPENJPEG=OFF
         -DWITH_CPUFEATURES=OFF
+        -DWITH_GSTREAMER=${WITH_GSTREAMER}
         ###### BUILD_options (mainly modules which require additional libraries)
         -DBUILD_opencv_ovis=${BUILD_opencv_ovis}
         -DBUILD_opencv_dnn=${BUILD_opencv_dnn}
