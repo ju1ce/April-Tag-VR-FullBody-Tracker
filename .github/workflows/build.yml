@@ -67,14 +67,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: CMake Configure
-        run: |
-          cmake -B build/release -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release" \
-          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" \
-           -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
-          cmake -B build/debug -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release" \
-          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" \
-          -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed" \
+      - name: CMake Configure Release
+        run: >
+          cmake -B build/release -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release"
+          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
+
+      - name: CMake Configure Debug
+        run: >
+          cmake -B build/debug -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release"
+          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: CMake Build
