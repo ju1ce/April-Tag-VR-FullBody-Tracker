@@ -89,10 +89,31 @@ jobs:
           cmake --build build/release --config Release --target install
           cmake --build build/debug --config Debug --target install
 
-      - name: Upload Release
+      - name: Tar Artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          tar -cvf AprilTagTrackers-Linux.tar install/release/
+          tar -cvf AprilTagTrackers-Debug-Linux.tar install/debug/
+
+      - name: Upload Release (Linux)
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3
         with:
-          name: AprilTagTrackers-${{ runner.os }}
+          name: AprilTagTrackers-Linux
+          path: AprilTagTrackers-Linux.tar
+
+      - name: Upload Debug (Linux)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: AprilTagTrackers-Debug-Linux
+          path: AprilTagTrackers-Debug-Linux.tar
+
+      - name: Upload Release (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: AprilTagTrackers-Windows
           path: |
             install/release
             !install/release/**.pdb
@@ -102,15 +123,14 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers.pdb
-          path: |
-            install/release/**.pdb
+          path: install/release/**.pdb
 
-      - name: Upload Debug
+      - name: Upload Debug (Windows)
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v3
         with:
-          name: AprilTagTrackers-Debug-${{ runner.os }}
-          path: |
-            install/debug
+          name: AprilTagTrackers-Debug-Windows
+          path: install/debug
 
       - name: Upload Logs
         if: always()
