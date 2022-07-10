@@ -68,19 +68,19 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: CMake Configure
-        run: >
-          cmake -B build -G "Ninja Multi-Config"
-          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake"
+        run: |
+          cmake -B build/release -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release" \
+          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" \
+           -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
+          cmake -B build/debug -G Ninja -DCMAKE_INSTALL_PREFIX="./install/release" \
+          -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake" \
+          -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed" \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: CMake Build
         run: |
-          cmake --build build --config Release
-          cmake --build build --config Debug
-
-      - name: CMake Install
-        run: |
-          cmake --install build --config Release --prefix install/release
-          cmake --install build --config Debug --prefix install/debug
+          cmake --build build/release --config Release --target install
+          cmake --build build/debug --config Debug --target install
 
       - name: Upload Release
         uses: actions/upload-artifact@v3
