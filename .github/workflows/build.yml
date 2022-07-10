@@ -69,8 +69,8 @@ jobs:
 
       - name: CMake Configure
         run: >
-          cmake -B build -G Ninja Multi-Config
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_CMAKE_TOOLCHAIN }}
+          cmake -B build -G "Ninja Multi-Config"
+          -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: CMake Build
         run: |
