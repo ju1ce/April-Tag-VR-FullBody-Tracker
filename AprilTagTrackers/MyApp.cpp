@@ -1,8 +1,8 @@
 #include "MyApp.hpp"
 
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
 #include <opencv2/core/utils/logger.hpp>
 
+#ifdef ATT_OVERRIDE_ERROR_HANDLERS
 #include <exception>
 #include <stdexcept>
 #endif
@@ -108,9 +108,14 @@ static void wxWidgetsAssertHandler(const wxString& file, int line, const wxStrin
 static const bool errorHandlersRedirected = ([]()
     {
         cv::redirectError(&OpenCVErrorHandler);
-        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
         wxSetAssertHandler(&wxWidgetsAssertHandler);
         return true;
     })();
 
 #endif
+
+static const bool opencvSetLogLevelWarning = ([]()
+    {
+        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
+        return true;
+    })();
