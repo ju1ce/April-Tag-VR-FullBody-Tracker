@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 
 option(BUILD_SHARED_LIBS "" FALSE)
@@ -19,6 +18,9 @@ att_bootstrap_vcpkg()
 
 # vcpkg stuff must be done before project
 project("April-Tag-VR-FullBody-Tracker" CXX)
+
+#shared needs some variables that are only initialized after project
+include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 
 if (MSVC)
     if (BUILD_SHARED_LIBS)

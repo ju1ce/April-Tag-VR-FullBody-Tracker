@@ -5,10 +5,7 @@
 
 # Fix default install path on windows
 # Noone wants to provide admin access and install to C:/Program Files (x86)/
-if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    message(WARNING "On Windows the default install destination is ${CMAKE_INSTALL_PREFIX}, \
-which requires admin rights and usually results in errors. \
-Explicitly set with -DCMAKE_INSTALL_PREFIX= to install there.")
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install directory." FORCE)
     message(STATUS "Installing to ${CMAKE_INSTALL_PREFIX}")
 endif()
