@@ -93,6 +93,28 @@ function(att_target_crt_linkage target)
     endif()
 endfunction()
 
+# Create debug symbols for release builds, msvc will generate a pdb,
+# while gcc-like will have embedded symbols.
+function(att_exe_debug_symbols target)
+    if(MSVC)
+        # Generates debug symbols in a PDB
+        target_compile_options(${target} PRIVATE
+            "$<$<CONFIG:Release>:/Zi>")
+        # enable debug and re-enable optimizations that it disables
+        target_link_options(${target} PRIVATE
+            "$<$<CONFIG:Release>:/DEBUG>"
+            "$<$<CONFIG:Release>:/OPT:REF>"
+            "$<$<CONFIG:Release>:/OPT:ICF>")
+        # Set file name and location
+        set_target_properties(${target} PROPERTIES
+            COMPILE_PDB_NAME "${target}"
+            COMPILE_PDB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        target_compile_options("${target}" PRIVATE
+            $<$<CONFIG:Release>:-g>)
+    endif()
+endfunction()
+
 # Wrapper for configure_package_config_file() with some default settings
 # Adds the template file as a SOURCE property to <project_name>-install target
 function(att_configure_package_config project_name)

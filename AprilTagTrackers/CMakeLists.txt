@@ -92,24 +92,7 @@ endif()
 
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
-if(MSVC)
-    # Generates debug symbols in a PDB
-    target_compile_options(AprilTagTrackers PRIVATE
-        "$<$<CONFIG:Release>:/Zi>")
-    # enable debug and re-enable optimizations that it disables
-    target_link_options(AprilTagTrackers PRIVATE
-        "$<$<CONFIG:Release>:/DEBUG>"
-        "$<$<CONFIG:Release>:/OPT:REF>"
-        "$<$<CONFIG:Release>:/OPT:ICF>")
-    # Set file name and location
-    set_target_properties(AprilTagTrackers PROPERTIES
-        COMPILE_PDB_NAME AprilTagTrackers
-        COMPILE_PDB_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    )
-else()
-    target_compile_options(AprilTagTrackers PRIVATE
-        $<$<CONFIG:Release>:-g>)
-endif()
+att_exe_debug_symbols(AprilTagTrackers)
 
 target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
