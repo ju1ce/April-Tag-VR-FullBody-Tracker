@@ -6,7 +6,6 @@ project(AprilTagTrackers CXX)
 
 option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
 option(ENABLE_ASAN "Create an address sanitizer build." OFF)
-option(ENABLE_PS3EYE "Enable ps3eye camera support." ON)
 option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
 option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
 set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
@@ -28,14 +27,20 @@ target_sources(AprilTagTrackers PRIVATE
     GUI/MainFrame.cpp
     GUI/PreviewPane.cpp
     GUI/FormBuilder.cpp
-    GUI/U8String.cpp)
+    GUI/U8String.cpp
+
+    ps3eye/ps3eye.cpp
+    ps3eye/PSEyeVideoCapture.cpp
+)
 
 if (WIN32)
     target_sources(AprilTagTrackers PRIVATE
-        IPC/WindowsNamedPipe.cpp)
+        IPC/WindowsNamedPipe.cpp
+    )
 else()
     target_sources(AprilTagTrackers PRIVATE
-        IPC/UNIXSocket.cpp)
+        IPC/UNIXSocket.cpp
+    )
 endif()
 
 if (MSVC)
@@ -52,33 +57,32 @@ find_package(apriltag CONFIG REQUIRED)
 find_package(wxWidgets REQUIRED core base)
 find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
+find_package(libusb CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
     ${wxWidgets_LIBRARIES}
     ${OpenCV_LIBRARIES}
+    ${LIBUSB_LIBRARIES}
     apriltag::apriltag
     openvr::openvr_api
-    doctest::doctest)
+    doctest::doctest
+    common::semver
+)
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
-    ${wxWidgets_INCLUDE_DIRS})
+    ${wxWidgets_INCLUDE_DIRS}
+    ${LIBUSB_INCLUDE_DIRS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/ps3eye"
+)
 target_compile_definitions(AprilTagTrackers PRIVATE
-    ${wxWidgets_DEFINITIONS} "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>")
+    ${wxWidgets_DEFINITIONS}
+    "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
+)
 
 # Set the root of includes, rather than relative
-target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
-if(ENABLE_PS3EYE)
-    find_package(libusb CONFIG REQUIRED)
-    target_link_libraries(AprilTagTrackers PRIVATE ${LIBUSB_LIBRARIES})
-    target_include_directories(AprilTagTrackers SYSTEM PRIVATE ${LIBUSB_INCLUDE_DIRS} ps3eye)
-    target_sources(AprilTagTrackers PRIVATE
-        ps3eye/ps3eye.cpp
-        ps3eye/PSEyeVideoCapture.cpp)
-
-    target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_PS3EYE)
-endif()
-
-target_link_libraries(AprilTagTrackers PUBLIC common::semver)
+target_include_directories(AprilTagTrackers PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+)
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
@@ -114,7 +118,9 @@ target_compile_definitions(AprilTagTrackers PUBLIC
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
     wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>
-    DOCTEST_CONFIG_DISABLE)
+    DOCTEST_CONFIG_DISABLE
+    ATT_ENABLE_PS3EYE
+)
 
 # Set cross-platform defines in sources
 if(WIN32)
@@ -141,9 +147,6 @@ endif()
 
 # Install application to bin folder
 install(TARGETS AprilTagTrackers RUNTIME DESTINATION ".")
-
-# Find the resource file and icon
-target_include_directories(AprilTagTrackers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/resources")
 
 if(WIN32)
     # install pdb file for debugging
