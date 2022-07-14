@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
+# cmake options
+# required to decide default triplet
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 
-option(BUILD_SHARED_LIBS "" FALSE)
 att_default_triplet(ATT_TRIPLET)
 
 # setup vcpkg manifest mode, set before first project() call
@@ -19,7 +22,17 @@ att_bootstrap_vcpkg()
 # vcpkg stuff must be done before project
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
-#shared needs some variables that are only initialized after project
+# cmake options
+option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (Doesn't work for VS)" ON)
+
+# project options
+option(ATT_ENABLE_TESTING "Build test executable with doctest" OFF)
+option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
+option(ATT_ENABLE_ASSERT "Enable ATASSERT in release builds" OFF)
+option(ATT_LOG_TO_FILE "Redirect stdout and stderr to output.log" ON)
+set(ATT_LOG_LEVEL "3" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Status, 4 - Trace")
+
+# shared needs some variables that are only initialized after project
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 
 # include libs in common/ for every project

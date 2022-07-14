@@ -115,6 +115,21 @@ function(att_exe_debug_symbols target)
     endif()
 endfunction()
 
+function(att_target_enable_asan target)
+    if (MSVC)
+        set(asan_flags
+            /fsanitizer=address
+        )
+    else()
+        set(asan_flags
+            -fsanitize=address
+            -fsanitize=leak
+            -fsanitize=undefined
+        )
+    endif()
+    target_compile_options(${target} PRIVATE "${asan_flags}")
+endfunction()
+
 # Wrapper for configure_package_config_file() with some default settings
 # Adds the template file as a SOURCE property to <project_name>-install target
 function(att_configure_package_config project_name)

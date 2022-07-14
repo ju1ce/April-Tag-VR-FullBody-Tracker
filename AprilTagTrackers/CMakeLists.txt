@@ -4,11 +4,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
 
-option(ENABLE_ASAN "Create an address sanitizer build." OFF)
-option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
-option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
-set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
-
 # main build output
 add_executable(AprilTagTrackers)
 
@@ -73,8 +68,10 @@ target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/ps3eye"
 )
 target_compile_definitions(AprilTagTrackers PRIVATE
+    "wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>"
     ${wxWidgets_DEFINITIONS}
     "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
+    DOCTEST_CONFIG_DISABLE
 )
 
 # Set the root of includes, rather than relative
@@ -86,8 +83,8 @@ target_include_directories(AprilTagTrackers PRIVATE
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
 
-if(ENABLE_OUTPUT_LOG_FILE)
-    target_compile_definitions(AprilTagTrackers PRIVATE ATT_ENABLE_OUTPUT_LOG_FILE)
+if(ATT_LOG_TO_FILE)
+    target_compile_definitions(AprilTagTrackers PRIVATE ATT_LOG_TO_FILE)
 endif()
 
 # Create debug symbols for release builds, msvc will generate a pdb,
@@ -96,11 +93,9 @@ att_exe_debug_symbols(AprilTagTrackers)
 
 target_compile_definitions(AprilTagTrackers PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
-    ATT_LOG_LEVEL=${LOG_LEVEL}
+    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
-    wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>
-    DOCTEST_CONFIG_DISABLE
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
     ATT_ENABLE_PS3EYE
 )
 
@@ -114,17 +109,8 @@ else()
 endif()
 
 # Build with Address Sanitizer
-if(ENABLE_ASAN)
-    if(MSVC)
-        set(ASAN_FLAGS /fsanitize=address)
-    else()
-        set(ASAN_FLAGS
-            -fsanitize=address
-            -fsanitize=leak
-            -fsanitize=undefined)
-    endif()
-
-    target_compile_options(AprilTagTrackers PRIVATE "${ASAN_FLAGS}")
+if(ATT_ENABLE_ASAN)
+    att_target_enable_asan(AprilTagTrackers)
 endif()
 
 # Install application to bin folder
@@ -133,21 +119,18 @@ install(TARGETS AprilTagTrackers RUNTIME DESTINATION ".")
 if(WIN32)
     # install pdb file for debugging
     install(FILES $<TARGET_PDB_FILE:AprilTagTrackers> DESTINATION "." OPTIONAL)
-
     # set as GUI application on windows
     set_target_properties(AprilTagTrackers PROPERTIES WIN32_EXECUTABLE TRUE)
-
     # wxWidgets will compile a resource.rc file for us
     target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
 endif()
-
-# Make AprilTagTrackers the default target in Visual Studio
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
 
 # Enable LTO
 set_target_properties(AprilTagTrackers PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
+# Make AprilTagTrackers the default target in Visual Studio
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
 # setup file structure in IDE
 file(GLOB_RECURSE SOURCE_GROUP RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp *.c)
 file(GLOB_RECURSE HEADER_GROUP RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.hpp *.h)
