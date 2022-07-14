@@ -11,36 +11,32 @@ option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
 option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
 set(LOG_LEVEL "2" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Trace")
 
-# Explicitly list source files as recommended by cmake
-set(ATT_SOURCE_FILES
-    AprilTagWrapper.cpp AprilTagWrapper.hpp
-    Config.hpp
-    Connection.cpp Connection.hpp
-    Helpers.cpp Helpers.hpp
-    license.hpp
-    Localization.hpp
-    Quaternion.cpp Quaternion.hpp
-    Reflectable.hpp
-    Serializable.cpp Serializable.hpp
-    ValidatorProxy.hpp
-    Tracker.cpp Tracker.hpp
-    MyApp.cpp MyApp.hpp
-    Debug.cpp Debug.hpp
-    RefPtr.hpp
-
-    GUI.cpp GUI.hpp
-    GUI/MainFrame.cpp GUI/MainFrame.hpp
-    GUI/PreviewPane.cpp GUI/PreviewPane.hpp
-    GUI/FormBuilder.cpp GUI/FormBuilder.hpp GUI/FormBuilder.tpp
-    GUI/U8String.cpp GUI/U8String.hpp
-    GUI/wxHelpers.hpp
-
-    IPC/IPC.hpp
-    IPC/UNIXSocket.cpp
-    IPC/WindowsNamedPipe.cpp)
-
 # main build output
-add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
+add_executable(AprilTagTrackers)
+
+target_sources(AprilTagTrackers PRIVATE
+    AprilTagWrapper.cpp
+    Connection.cpp
+    Helpers.cpp
+    Quaternion.cpp
+    Serializable.cpp
+    Tracker.cpp
+    MyApp.cpp
+    Debug.cpp
+
+    GUI.cpp
+    GUI/MainFrame.cpp
+    GUI/PreviewPane.cpp
+    GUI/FormBuilder.cpp
+    GUI/U8String.cpp)
+
+if (WIN32)
+    target_sources(AprilTagTrackers PRIVATE
+        IPC/WindowsNamedPipe.cpp)
+else()
+    target_sources(AprilTagTrackers PRIVATE
+        IPC/UNIXSocket.cpp)
+endif()
 
 if (MSVC)
     if (BUILD_SHARED_LIBS)
