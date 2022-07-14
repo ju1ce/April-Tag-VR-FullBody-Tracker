@@ -42,6 +42,14 @@ set(ATT_SOURCE_FILES
 # main build output
 add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
+if (MSVC)
+    if (BUILD_SHARED_LIBS)
+        att_crt_linkage(AprilTagTrackers DYNAMIC)
+    else()
+        att_crt_linkage(AprilTagTrackers STATIC)
+    endif()
+endif()
+
 # find and link dependencies
 find_package(OpenCV CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)

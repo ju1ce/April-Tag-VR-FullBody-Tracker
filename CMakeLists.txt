@@ -22,14 +22,6 @@ project("April-Tag-VR-FullBody-Tracker" CXX)
 #shared needs some variables that are only initialized after project
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 
-if (MSVC)
-    if (BUILD_SHARED_LIBS)
-        att_crt_linkage(SHARED)
-    else()
-        att_crt_linkage(STATIC)
-    endif()
-endif()
-
 # include libs in common/ for every project
 add_subdirectory("common" EXCLUDE_FROM_ALL)
 
