@@ -22,6 +22,20 @@ att_bootstrap_vcpkg()
 # vcpkg stuff must be done before project
 project("April-Tag-VR-FullBody-Tracker" CXX)
 
+# on windows default install is C:\Program Files (x86)\ which requires admin perms
+# this sets it for any platform if use doesn't provide
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install directory." FORCE)
+    message(STATUS "Installing to ${CMAKE_INSTALL_PREFIX}")
+endif()
+
+# multi config generators like Visual Studio and Ninja Multi-Config
+get_property(ATT_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(NOT ATT_IS_MULTI_CONFIG)
+    # Set default build type to release on single config
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Debug or Release.")
+endif()
+
 # cmake options
 option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (Doesn't work for VS)" ON)
 
@@ -31,9 +45,6 @@ option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
 option(ATT_ENABLE_ASSERT "Enable ATASSERT in release builds" OFF)
 option(ATT_LOG_TO_FILE "Redirect stdout and stderr to output.log" ON)
 set(ATT_LOG_LEVEL "3" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Status, 4 - Trace")
-
-# shared needs some variables that are only initialized after project
-include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/shared.cmake")
 
 # include libs in common/ for every project
 add_subdirectory("common" EXCLUDE_FROM_ALL)

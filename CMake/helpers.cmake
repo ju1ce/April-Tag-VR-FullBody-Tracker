@@ -130,6 +130,15 @@ function(att_target_enable_asan target)
     target_compile_options(${target} PRIVATE "${asan_flags}")
 endfunction()
 
+function(att_read_version_file output_var file_path)
+    file(READ "${file_path}" version_text)
+    string(REGEX REPLACE "[ \t\r\n]" "" version_text "${version_text}")
+    if (NOT (version_text MATCHES "^[0-9](\\.[0-9])?(\\.[0-9])?(\\.[0-9])?$"))
+        message(FATAL_ERROR "${file_path} invalid semantic version: \"${version_text}\"")
+    endif()
+    set(${output_var} "${version_text}" PARENT_SCOPE)
+endfunction()
+
 # Wrapper for configure_package_config_file() with some default settings
 # Adds the template file as a SOURCE property to <project_name>-install target
 function(att_configure_package_config project_name)
