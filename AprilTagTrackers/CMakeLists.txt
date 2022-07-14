@@ -4,7 +4,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
 
-option(ENABLE_LTO "Enable link time optimizations for release builds" ON)
 option(ENABLE_ASAN "Create an address sanitizer build." OFF)
 option(ENABLE_ASSERT "Enable ATASSERT in release builds." OFF)
 option(ENABLE_OUTPUT_LOG_FILE "Redirect stdout and stderr to an output.log file." ON)
@@ -162,11 +161,9 @@ endif()
 # Make AprilTagTrackers the default target in Visual Studio
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
 
-# Enable LTO in release
-if(ENABLE_LTO)
-    set_target_properties(AprilTagTrackers PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-endif()
+# Enable LTO
+set_target_properties(AprilTagTrackers PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 # setup file structure in IDE
 file(GLOB_RECURSE SOURCE_GROUP RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp *.c)
