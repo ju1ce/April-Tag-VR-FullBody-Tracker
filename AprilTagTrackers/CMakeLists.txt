@@ -78,23 +78,23 @@ target_compile_definitions(AprilTagTrackers PRIVATE
 )
 
 # Set the root of includes, rather than relative
-target_include_directories(AprilTagTrackers PUBLIC
+target_include_directories(AprilTagTrackers PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )
 
 # Ensure compiler with c++17 language features
-target_compile_features(AprilTagTrackers PUBLIC cxx_std_17)
+target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
 
 if(ENABLE_OUTPUT_LOG_FILE)
-    target_compile_definitions(AprilTagTrackers PUBLIC ATT_ENABLE_OUTPUT_LOG_FILE)
+    target_compile_definitions(AprilTagTrackers PRIVATE ATT_ENABLE_OUTPUT_LOG_FILE)
 endif()
 
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(AprilTagTrackers)
 
-target_compile_definitions(AprilTagTrackers PUBLIC
+target_compile_definitions(AprilTagTrackers PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
@@ -106,9 +106,9 @@ target_compile_definitions(AprilTagTrackers PUBLIC
 
 # Set cross-platform defines in sources
 if(WIN32)
-    target_compile_definitions(AprilTagTrackers PUBLIC "OS_WIN=1")
+    target_compile_definitions(AprilTagTrackers PRIVATE "OS_WIN=1")
 elseif(UNIX)
-    target_compile_definitions(AprilTagTrackers PUBLIC "OS_LINUX=1")
+    target_compile_definitions(AprilTagTrackers PRIVATE "OS_LINUX=1")
 else()
     message(FATAL_ERROR "Unknown platform ${CMAKE_SYSTEM_NAME}, compilation will fail.")
 endif()
@@ -124,7 +124,7 @@ if(ENABLE_ASAN)
             -fsanitize=undefined)
     endif()
 
-    target_compile_options(AprilTagTrackers PUBLIC "${ASAN_FLAGS}")
+    target_compile_options(AprilTagTrackers PRIVATE "${ASAN_FLAGS}")
 endif()
 
 # Install application to bin folder
