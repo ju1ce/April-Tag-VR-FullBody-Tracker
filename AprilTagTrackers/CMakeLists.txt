@@ -51,9 +51,10 @@ find_package(OpenCV CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)
 find_package(wxWidgets REQUIRED core base)
 find_package(openvr CONFIG REQUIRED)
+find_package(doctest CONFIG REQUIRED)
 
 att_target_link_system_libraries(AprilTagTrackers
-    ${OpenCV_LIBRARIES} apriltag::apriltag openvr::openvr_api)
+    ${OpenCV_LIBRARIES} apriltag::apriltag openvr::openvr_api doctest::doctest)
 target_link_libraries(AprilTagTrackers PRIVATE
     ${wxWidgets_LIBRARIES})
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
@@ -110,7 +111,8 @@ target_compile_definitions(AprilTagTrackers PUBLIC
     ATT_LOG_LEVEL=${LOG_LEVEL}
     $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
-    wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>)
+    wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>
+    DOCTEST_CONFIG_DISABLE)
 
 # Set cross-platform defines in sources
 if(WIN32)
