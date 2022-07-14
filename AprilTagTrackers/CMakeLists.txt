@@ -53,10 +53,12 @@ find_package(wxWidgets REQUIRED core base)
 find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
 
-att_target_link_system_libraries(AprilTagTrackers
-    ${OpenCV_LIBRARIES} apriltag::apriltag openvr::openvr_api doctest::doctest)
 target_link_libraries(AprilTagTrackers PRIVATE
-    ${wxWidgets_LIBRARIES})
+    ${wxWidgets_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    apriltag::apriltag
+    openvr::openvr_api
+    doctest::doctest)
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     ${wxWidgets_INCLUDE_DIRS})
 target_compile_definitions(AprilTagTrackers PRIVATE
