@@ -44,9 +44,9 @@ add_executable(AprilTagTrackers ${ATT_SOURCE_FILES})
 
 if (MSVC)
     if (BUILD_SHARED_LIBS)
-        att_crt_linkage(AprilTagTrackers DYNAMIC)
+        att_target_crt_linkage(AprilTagTrackers DYNAMIC)
     else()
-        att_crt_linkage(AprilTagTrackers STATIC)
+        att_target_crt_linkage(AprilTagTrackers STATIC)
     endif()
 endif()
 
