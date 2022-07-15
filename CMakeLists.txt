@@ -37,14 +37,16 @@ if(NOT ATT_IS_MULTI_CONFIG)
 endif()
 
 # cmake options
-option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (Doesn't work for VS)" ON)
+option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (not available with VS)" ON)
 
 # project options
-option(ATT_ENABLE_TESTING "Build test executable with doctest" OFF)
 option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
 option(ATT_ENABLE_ASSERT "Enable ATASSERT in release builds" OFF)
 option(ATT_LOG_TO_FILE "Redirect stdout and stderr to output.log" ON)
 set(ATT_LOG_LEVEL "3" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Status, 4 - Trace")
+
+option(ATT_TEST_ENABLE "Build and install att_test binary" OFF)
+option(ATT_TEST_ENABLE_ASAN "Build tests with address sanitizer" ON)
 
 # include libs in common/ for every project
 add_subdirectory("common" EXCLUDE_FROM_ALL)

@@ -3,6 +3,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
+set(ATT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # main build output
 add_executable(AprilTagTrackers)
@@ -136,3 +137,7 @@ file(GLOB_RECURSE SOURCE_GROUP RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp *.c)
 file(GLOB_RECURSE HEADER_GROUP RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.hpp *.h)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source Files" FILES ${SOURCE_GROUP})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${HEADER_GROUP})
+
+if (ATT_TEST_ENABLE)
+    add_subdirectory("test")
+endif()
