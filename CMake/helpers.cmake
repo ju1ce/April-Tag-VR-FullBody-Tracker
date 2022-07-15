@@ -118,7 +118,7 @@ endfunction()
 function(att_target_enable_asan target)
     if (MSVC)
         target_compile_options(${target} PRIVATE
-            /fsanitizer=address
+            /fsanitize=address
         )
     else()
         target_compile_options(${target} PRIVATE
