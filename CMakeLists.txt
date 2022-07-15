@@ -38,7 +38,7 @@ endif()
 
 # cmake options
 option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (not available with VS)" ON)
-option(ENABLE_TESTING "Build and install att_test binary" OFF)
+option(ENABLE_TESTING "Build and install test binary" OFF)
 
 # project options
 option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
