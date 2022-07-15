@@ -16,7 +16,6 @@ target_sources(AprilTagTrackers PRIVATE
     Serializable.cpp
     Tracker.cpp
     MyApp.cpp
-    Debug.cpp
 
     GUI.cpp
     GUI/MainFrame.cpp

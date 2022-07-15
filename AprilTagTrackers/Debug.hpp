@@ -114,12 +114,12 @@
     do {                                            \
         if (!(a_trueExpression))                    \
             ATFATAL("Assert: "                      \
-                    << a_messageStream              \
-                    << std::endl                    \
-                    << "    Assertion failure:  ( " \
-                    << #a_trueExpression            \
-                    << " )  in  "                   \
-                    << ATT_PRETTY_FUNCTION);        \
+                << a_messageStream                  \
+                << std::endl                        \
+                << "    Assertion failure:  ( "     \
+                << #a_trueExpression                \
+                << " )  in  "                       \
+                << ATT_PRETTY_FUNCTION);            \
     } while (0)
 
 /// Require an expression to be true, like assert,
@@ -143,12 +143,12 @@
 namespace Debug
 {
 /// this_thread::get_id called during static initialization
-extern const std::thread::id mainThreadID;
+inline const std::thread::id MAIN_THREAD_ID = std::this_thread::get_id();
 
 /// Test if calling thread is the main thread, (whatever static initialization set)
 inline bool IsMainThread()
 {
-    return std::this_thread::get_id() == mainThreadID;
+    return std::this_thread::get_id() == MAIN_THREAD_ID;
 }
 
 /// Intercept abort calls for easier debugging
@@ -170,14 +170,14 @@ inline void abort()
 }
 
 #if ATT_LOG_LEVEL > 0
-/// system_clock::now() called at static initialization
-extern const std::chrono::system_clock::time_point appStartTimePoint;
+
+inline const std::chrono::system_clock::time_point APP_START_TP = std::chrono::system_clock::now();
 
 /// [ thread_id @ runtime_sec ] (file:line)
 template <typename StrT>
 inline std::ostream& PreLog(const StrT file, int line) noexcept
 {
-    const auto stamp = std::chrono::system_clock::now() - appStartTimePoint;
+    const auto stamp = std::chrono::system_clock::now() - APP_START_TP;
     const auto stampSec = std::chrono::duration<float>(stamp).count();
 
     std::cerr << "[ "

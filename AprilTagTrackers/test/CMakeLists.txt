@@ -12,7 +12,6 @@ target_sources(test PRIVATE
     "${ATT_DIR}/Quaternion.cpp"
     "${ATT_DIR}/Serializable.cpp"
     "${ATT_DIR}/Tracker.cpp"
-    "${ATT_DIR}/Debug.cpp"
 
     "${ATT_DIR}/ps3eye/ps3eye.cpp"
     "${ATT_DIR}/ps3eye/PSEyeVideoCapture.cpp"
