@@ -120,6 +120,9 @@ function(att_target_enable_asan target)
         target_compile_options(${target} PRIVATE
             /fsanitize=address
         )
+        target_compile_definitions(${target} PRIVATE
+            _DISABLE_VECTOR_ANNOTATION
+        )
     else()
         target_compile_options(${target} PRIVATE
             -fsanitize=address
