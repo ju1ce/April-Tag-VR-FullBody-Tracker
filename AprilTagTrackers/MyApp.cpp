@@ -7,7 +7,7 @@
 #include <stdexcept>
 #endif
 
-#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
+#ifdef ATT_LOG_TO_FILE
 #include <fstream>
 #include <iostream>
 #endif
@@ -33,7 +33,7 @@ bool MyApp::OnInit()
     return true;
 }
 
-#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
+#ifdef ATT_LOG_TO_FILE
 
 static std::ofstream outputLogFileWriter{"output.log"};
 
