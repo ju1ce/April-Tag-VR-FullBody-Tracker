@@ -117,17 +117,21 @@ endfunction()
 
 function(att_target_enable_asan target)
     if (MSVC)
-        set(asan_flags
+        target_compile_options(${target} PRIVATE
             /fsanitizer=address
         )
     else()
-        set(asan_flags
+        target_compile_options(${target} PRIVATE
+            -fsanitize=address
+            -fsanitize=leak
+            -fsanitize=undefined
+        )
+        target_link_options(${target} PRIVATE
             -fsanitize=address
             -fsanitize=leak
             -fsanitize=undefined
         )
     endif()
-    target_compile_options(${target} PRIVATE "${asan_flags}")
 endfunction()
 
 function(att_read_version_file output_var file_path)
