@@ -40,4 +40,4 @@ add_subdirectory("AprilTagTrackers")
 add_subdirectory("BridgeDriver")
 
 # folder layout maintained
-install(DIRECTORY "bindings" "locales" "images-to-print" DESTINATION ".")
+install(DIRECTORY "utilities" "bindings" "locales" "images-to-print" DESTINATION ".")
