@@ -188,7 +188,6 @@ inline void LogAbsolute(LogTag tag, std::string_view filePath, int line, const T
     const auto& level = details::GetLogTagInfo(tag);
     details::PreLog(level.os, level.name, filePath, line);
     (details::Log(level.os, vals), ...);
-    if (level.action == details::LogAction::Abort) ATT_ABORT();
 }
 
 template <typename... Ts>
