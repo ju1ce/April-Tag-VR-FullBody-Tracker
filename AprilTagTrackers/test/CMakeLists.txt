@@ -61,9 +61,8 @@ att_exe_debug_symbols(test)
 
 target_compile_definitions(test PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
-    ATT_LOG_LEVEL=3
-    ATT_OVERRIDE_ERROR_HANDLERS
-    ATT_ENABLE_ASSERT
+    ATT_TESTING
+    ATT_DEBUG
     ATT_ENABLE_PS3EYE
 )
 # Set cross-platform defines in sources

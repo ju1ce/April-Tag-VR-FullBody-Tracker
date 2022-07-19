@@ -1,6 +1,5 @@
-#include "Debug.hpp"
 #include "GUI.hpp"
-
+#include "utils/Assert.hpp"
 
 class GUI::MainFrame
 {
