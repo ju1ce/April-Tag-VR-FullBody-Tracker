@@ -41,10 +41,10 @@ option(CMAKE_EXPORT_COMPILE_COMMANDS "Create compile_commands.json (not availabl
 option(ENABLE_TESTING "Build and install test binary" OFF)
 
 # project options
+option(ATT_DEBUG "Enable custom assert, debug logging, and debugger support. Can be used in release build." OFF)
 option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
-option(ATT_ENABLE_ASSERT "Enable ATASSERT in release builds" OFF)
 option(ATT_LOG_TO_FILE "Redirect stdout and stderr to output.log" ON)
-set(ATT_LOG_LEVEL "3" CACHE STRING "0 - Nothing, 1 - Fatal, 2 - Error, 3 - Status, 4 - Trace")
+set(ATT_LOG_LEVEL "2" CACHE STRING "0 - Silent, 1 - Error, 2 - Info, 3 - Debug")
 option(ATT_TEST_ENABLE_ASAN "Build tests with address sanitizer" ON)
 
 # include libs in common/ for every project

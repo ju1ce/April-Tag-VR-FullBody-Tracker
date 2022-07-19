@@ -46,12 +46,12 @@ if (MSVC)
 endif()
 
 # find and link dependencies
-find_package(OpenCV CONFIG REQUIRED)
-find_package(apriltag CONFIG REQUIRED)
 find_package(wxWidgets REQUIRED core base)
+find_package(OpenCV CONFIG REQUIRED)
+find_package(libusb CONFIG REQUIRED)
+find_package(apriltag CONFIG REQUIRED)
 find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
-find_package(libusb CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
     ${wxWidgets_LIBRARIES}
@@ -94,8 +94,7 @@ att_exe_debug_symbols(AprilTagTrackers)
 target_compile_definitions(AprilTagTrackers PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<CONFIG:Debug>:ATT_OVERRIDE_ERROR_HANDLERS>
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_ENABLE_ASSERT}>>:ATT_ENABLE_ASSERT>
+    $<$<BOOL:${ATT_DEBUG}>:ATT_DEBUG>
     ATT_ENABLE_PS3EYE
 )
 
