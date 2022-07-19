@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Debug.hpp"
 #include "Quaternion.hpp"
 #include "Reflectable.hpp"
 #include "SemVer.h"
+#include "utils/Assert.hpp"
 #include "ValidatorProxy.hpp"
 
 #include <opencv2/aruco.hpp>
@@ -198,7 +198,7 @@ inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::Det
 template <typename ST>
 inline bool Serializable<ST>::Save() const
 {
-    ATASSERT("filePath is not empty.", !filePath.empty());
+    ATT_ASSERT(!filePath.empty());
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
     if (!fs.isOpened())
     {
@@ -214,7 +214,7 @@ inline bool Serializable<ST>::Save() const
 template <typename ST>
 inline bool Serializable<ST>::Load()
 {
-    ATASSERT("filePath is not empty.", !filePath.empty());
+    ATT_ASSERT(!filePath.empty());
     if (!std::filesystem::exists(filePath)) return false;
     if (std::filesystem::is_empty(filePath)) return false;
     cv::FileStorage fs;

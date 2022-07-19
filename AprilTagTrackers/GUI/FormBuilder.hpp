@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Debug.hpp"
+#include "utils/Assert.hpp"
 #include "wxHelpers.hpp"
 
 #include <wx/arrstr.h>

@@ -1,7 +1,7 @@
 #include "Connection.hpp"
 
-#include "Debug.hpp"
 #include "SemVer.h"
+#include "utils/Assert.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
@@ -215,7 +215,7 @@ void Connection::Connect()
 
 void Connection::SetError(ErrorCode code, std::string msg)
 {
-    ATASSERT("Set to a valid error code.", code != ErrorCode::OK);
+    ATT_ASSERT(code != ErrorCode::OK, "Set to a valid error code.");
     errorCode = code;
     errorMsg = std::move(msg);
 

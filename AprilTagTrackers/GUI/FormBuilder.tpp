@@ -93,7 +93,7 @@ void InputNumber<T>::Create(RefPtr<wxWindow> parent, RefPtr<wxSizer> sizer, wxSi
     Bind(wxEVT_MOUSEWHEEL,
         [&val = backingValue, ctrl = GetWidget()](wxMouseEvent& evt)
         {
-            val = static_cast<double>(val)+(evt.GetWheelRotation() > 0 ? 1 : -1);
+            val = static_cast<double>(val) + (evt.GetWheelRotation() > 0 ? 1 : -1);
             ctrl->ChangeValue(ToWXString(val));
         });
 
@@ -110,13 +110,12 @@ void InputNumber<T>::Update()
     GetWidget()->ChangeValue(ToWXString(backingValue));
 }
 
-
 template <typename T>
 inline auto InputNumber<T>::CreateAdjustBackingFunc(int amount)
 {
     return [&val = backingValue, ctrl = GetWidget(), amount](wxCommandEvent&)
     {
-        val = static_cast<double>(val)+amount;
+        val = static_cast<double>(val) + amount;
         ctrl->ChangeValue(ToWXString(val));
     };
 }
@@ -143,8 +142,7 @@ inline Choice<T>::Choice(T& _backingValue, const StrList& _options)
         mappings.emplace_back(index++);
     }
 
-    ATASSERT("Options is not empty.",
-        !options.empty());
+    ATT_ASSERT(!options.empty(), "Options is not empty.");
 }
 
 template <typename T>
@@ -163,10 +161,8 @@ inline Choice<T>::Choice(T& _backingValue, const StrList& _options, const TList&
         mappings.emplace_back(elem);
     }
 
-    ATASSERT("Options list and mappings list are the same size.",
-        options.size() == mappings.size());
-    ATASSERT("Lists are not empty.",
-        !options.empty() && !mappings.empty());
+    ATT_ASSERT(options.size() == mappings.size(), "Options list and mappings list are the same size.");
+    ATT_ASSERT(!options.empty() && !mappings.empty());
 }
 
 template <typename T>

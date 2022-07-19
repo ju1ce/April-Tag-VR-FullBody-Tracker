@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Debug.hpp"
 #include "GUI/U8String.hpp"
 #include "Serializable.hpp"
+#include "utils/Assert.hpp"
 
 #include <algorithm>
 #include <filesystem>

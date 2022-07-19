@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Debug.hpp"
 #include "RefPtr.hpp"
 #include "Serializable.hpp"
+#include "utils/Assert.hpp"
 
 #include <wx/button.h>
 #include <wx/frame.h>
@@ -103,8 +103,8 @@ inline RefPtr<wxMenu> NewMenu(RefPtr<wxMenuBar> parent, const wxString& title)
 template <typename T, typename RetT, typename... ArgTs>
 inline auto MemberFunc(RetT (T::*memberFunc)(ArgTs...), T* instance)
 {
-    ATASSERT("Member function and instance is not null.",
-        memberFunc != nullptr && instance != nullptr);
+    ATT_ASSERT(memberFunc != nullptr);
+    ATT_ASSERT(instance != nullptr);
     return [=](ArgTs&&... args)
     {
         (instance->*memberFunc)(std::forward<ArgTs>(args)...);

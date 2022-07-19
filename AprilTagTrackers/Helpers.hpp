@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Debug.hpp"
 #include "Quaternion.hpp"
+#include "utils/Assert.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>

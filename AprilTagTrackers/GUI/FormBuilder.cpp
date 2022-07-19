@@ -54,20 +54,17 @@ FormBuilder& FormBuilder::PopSizer()
     auto staticSizer = GetSizer().DynamicCast<wxStaticBoxSizer>();
     if (staticSizer.NotNull())
     {
-        ATASSERT("wxStaticBoxSizer requires the parent to be its static box.",
-            parent.DynamicCast<wxStaticBox>().NotNull());
+        ATT_ASSERT(parent.DynamicCast<wxStaticBox>().NotNull(), "wxStaticBoxSizer requires the parent to be its static box.");
         parent = parent->GetParent();
     }
     sizerStack.pop();
-    ATASSERT("Sizer stack always has the initial sizer.",
-        !sizerStack.empty());
+    ATT_ASSERT(!sizerStack.empty(), "Sizer stack always has the initial sizer.");
     return *this;
 }
 
 RefPtr<wxSizer> FormBuilder::GetSizer()
 {
-    ATASSERT("Sizer stack always has the initial sizer.",
-        !sizerStack.empty());
+    ATT_ASSERT(!sizerStack.empty(), "Sizer stack always has the initial sizer.");
     return sizerStack.top();
 }
 
