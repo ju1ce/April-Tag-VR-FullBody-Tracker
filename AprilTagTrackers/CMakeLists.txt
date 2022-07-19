@@ -46,6 +46,7 @@ if (MSVC)
 endif()
 
 # find and link dependencies
+find_package(Threads REQUIRED)
 find_package(wxWidgets REQUIRED core base)
 find_package(OpenCV CONFIG REQUIRED)
 find_package(libusb CONFIG REQUIRED)
@@ -54,6 +55,7 @@ find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
+    Threads::Threads
     ${wxWidgets_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${LIBUSB_LIBRARIES}
