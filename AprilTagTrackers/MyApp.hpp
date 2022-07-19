@@ -2,10 +2,10 @@
 
 #include "Config.hpp"
 #include "Connection.hpp"
-#include "Debug.hpp"
 #include "GUI.hpp"
 #include "Localization.hpp"
 #include "Tracker.hpp"
+#include "utils/Assert.hpp"
 
 #include <wx/app.h>
 
@@ -23,7 +23,7 @@ public:
     int OnExit() override;
     bool OnInit() override;
 
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
+#ifndef ATT_DEBUG
     void OnFatalException() override;
     void OnUnhandledException() override;
     bool OnExceptionInMainLoop() override;

@@ -3,7 +3,7 @@
 #include "utils/Cross.hpp"
 #include "utils/Macros.hpp"
 
-#ifndef ATT_TESTING
+#ifdef ATT_TESTING
 #include <doctest/doctest.h>
 #endif
 
@@ -30,16 +30,24 @@
 #define ATT_LOG_LEVEL_DEBUG 3
 
 #ifdef ATT_TESTING
-#define ATT_DETAILS_LOG(p_logLevel, ...) ::utils::details::TestLog(::utils::LogTag::p_logLevel, __FILE__, __LINE__, __VA_ARGS__)
+#define ATT_DETAILS_LOG(p_logLevel, ...) \
+    ::utils::details::TestLog(::utils::LogTag::p_logLevel, __FILE__, __LINE__, __VA_ARGS__)
+#define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
+    ::utils::details::TestLog(::utils::LogTag::p_logLevel, p_file, p_line, __VA_ARGS__)
 #else
-#define ATT_DETAILS_LOG(p_logLevel, ...) ::utils::Log(::utils::LogTag::p_logLevel, ::utils::RelativeSourcePath(__FILE__), __LINE__, __VA_ARGS__)
+#define ATT_DETAILS_LOG(p_logLevel, ...) \
+    ::utils::Log(::utils::LogTag::p_logLevel, __FILE__, __LINE__, __VA_ARGS__)
+#define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
+    ::utils::LogAbsolute(::utils::LogTag::p_logLevel, p_file, p_line, __VA_ARGS__)
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_ERROR
 #define ATT_LOG_ERROR(...) ATT_DETAILS_LOG(Error, __VA_ARGS__)
+#define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_DETAILS_LOG_LIB(Error, p_file, p_line, __VA_ARGS__)
 #define ATT_DETAILS_ASSERT(p_expr, ...) ATT_DETAILS_LOG(Assert, ##__VA_ARGS__)
 #else
 #define ATT_LOG_ERROR(...) ATT_NOOP()
+#define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_NOOP()
 #define ATT_DETAILS_ASSERT(...) ATT_NOOP()
 #endif
 

@@ -2,7 +2,7 @@
 
 #include <opencv2/core/utils/logger.hpp>
 
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
+#ifdef ATT_DEBUG
 #include <exception>
 #include <stdexcept>
 #endif
@@ -46,7 +46,7 @@ static const bool consoleOutputRedirected = ([]()
 
 #endif
 
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
+#ifndef ATT_DEBUG
 
 // Expand in place to maintain stack frames
 #define HANDLE_UNHANDLED_EXCEPTION(a_msgContext)          \
@@ -83,26 +83,17 @@ bool MyApp::OnExceptionInMainLoop()
 // cv::ErrorCallback
 static int OpenCVErrorHandler(int status, const char* funcName, const char* errMsg, const char* fileName, int line, void*)
 {
-#if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(fileName, line)
-        << "OpenCV Error: " << errMsg << std::endl
-        << "    in: " << funcName << std::endl;
-#endif
-    Debug::abort();
-    return status;
+    ATT_LOG_LIB_ERROR(fileName, line, "OpenCV Error(", status, "): ", errMsg, '\n', "in  ", funcName);
+    ATT_ABORT();
+    ATT_UNREACHABLE();
 }
 
 // wxAssertHandler_t
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
-#if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(file.c_str().AsChar(), line)
-        << "wxWidgets Error: " << msg << std::endl
-        << "    Assertion failure:  ( " << cond << " )  in: " << func << std::endl;
-#endif
-#ifdef ATT_ENABLE_ASSERT
-    Debug::abort();
-#endif
+    ATT_LOG_LIB_ERROR(file.utf8_string(), line, "wxWidgets Error: ", msg, '\n',
+        "assertion failure  ( ", cond.utf8_string(), " )  in  ", func);
+    ATT_ABORT();
 }
 
 static const bool errorHandlersRedirected = ([]()
