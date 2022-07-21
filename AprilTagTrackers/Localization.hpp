@@ -22,7 +22,7 @@ public:
     // https://www.andiamo.co.uk/resources/iso-language-codes/
     static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
         "en",
-        "zh-CN"};
+        "zh-cn"};
     static constexpr std::array<U8StringView, LANG_CODE_MAP.size()> LANG_NAME_MAP{
         "English",
         "Chinese (PRC)"};
