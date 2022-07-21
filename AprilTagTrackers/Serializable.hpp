@@ -187,7 +187,7 @@ inline void ReadNode(const cv::FileNode&, const char*, const Comment&)
 { /*unused*/
 }
 
-// OpenCV dosnt have an implementation for storing its own aruco config file, so here it is.
+// OpenCV doesn't have an implementation for storing its own aruco config file, so here it is.
 // This will expand the params in-place in the object, instead of under some sub-object.
 void WriteNode(cv::FileStorage& fs, const char*, const cv::Ptr<cv::aruco::DetectorParameters>& field);
 inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::DetectorParameters>& field)
@@ -225,7 +225,7 @@ inline bool Serializable<ST>::Load()
     }
     catch (const std::exception& e)
     {
-        ATERROR(e.what());
+        ATT_LOG_ERROR(e.what());
         return false;
     }
     if (!fs.isOpened()) return false;
