@@ -20,11 +20,13 @@ public:
 
     // Keep synced, alphabetical order, from this list
     // https://www.andiamo.co.uk/resources/iso-language-codes/
-    static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
+    static constexpr std::array<std::string_view, 3> LANG_CODE_MAP{
         "en",
+        "ru",
         "zh-cn"};
     static constexpr std::array<U8StringView, LANG_CODE_MAP.size()> LANG_NAME_MAP{
         "English",
+        "Russian",
         "Chinese (PRC)"};
 
     static FS::Path GetLangPath(const std::string& langCode)
