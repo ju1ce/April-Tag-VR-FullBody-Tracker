@@ -96,6 +96,7 @@ att_exe_debug_symbols(AprilTagTrackers)
 target_compile_definitions(AprilTagTrackers PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
+    $<$<BOOL:${ATT_LOG_TO_FILE}>:ATT_LOG_TO_FILE>
     $<$<BOOL:${ATT_DEBUG}>:ATT_DEBUG>
     ATT_ENABLE_PS3EYE
 )
