@@ -19,6 +19,7 @@ public:
     static inline const FS::Path localesDir = std::filesystem::absolute("locales");
 
     // Keep synced
+    // https://www.andiamo.co.uk/resources/iso-language-codes/
     static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
         "en",
         "zh-CN"};
