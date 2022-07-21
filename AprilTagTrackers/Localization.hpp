@@ -18,7 +18,7 @@ class Localization : public FS::Serializable<Localization>
 public:
     static inline const FS::Path localesDir = std::filesystem::absolute("locales");
 
-    // Keep synced
+    // Keep synced, alphabetical order, from this list
     // https://www.andiamo.co.uk/resources/iso-language-codes/
     static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
         "en",
