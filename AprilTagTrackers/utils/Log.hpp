@@ -44,11 +44,11 @@
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_ERROR
 #define ATT_LOG_ERROR(...) ATT_DETAILS_LOG(Error, __VA_ARGS__)
 #define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_DETAILS_LOG_LIB(Error, p_file, p_line, __VA_ARGS__)
-#define ATT_DETAILS_ASSERT(p_expr, ...) ATT_DETAILS_LOG(Assert, ##__VA_ARGS__)
+#define ATT_DETAILS_LOG_ASSERT(p_expr, ...) ATT_DETAILS_LOG(Assert, ##__VA_ARGS__)
 #else
 #define ATT_LOG_ERROR(...) ATT_NOOP()
 #define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_NOOP()
-#define ATT_DETAILS_ASSERT(...) ATT_NOOP()
+#define ATT_DETAILS_LOG_ASSERT(...) ATT_NOOP()
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
@@ -196,6 +196,7 @@ inline void LogAbsolute(LogTag tag, std::string_view filePath, int line, const T
     const auto& level = details::GetLogTagInfo(tag);
     details::PreLog(level.os, level.name, filePath, line);
     (details::Log(level.os, vals), ...);
+    level.os << std::endl;
 }
 
 template <typename... Ts>
