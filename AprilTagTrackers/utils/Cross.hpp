@@ -4,6 +4,10 @@
 
 #include <string_view> // IWYU pragma: keep
 
+#ifdef ATT_DEBUG
+#  include <cstdlib> // IWYU pragma: keep
+#endif
+
 // compiler detection
 #if defined(__clang__)
 #  define ATT_COMP_CLANG 1
@@ -26,7 +30,7 @@
 #  define ATT_OS_UNKNOWN 1
 #endif
 
-// get function signature
+// function signature
 #if defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
 #  define ATT_PRETTY_FUNCTION std::string_view(static_cast<const char* const>(__PRETTY_FUNCTION__))
 #elif defined(ATT_COMP_MSVC)
@@ -42,20 +46,13 @@
 #ifdef ATT_DEBUG
 #  define ATT_ABORT() ATT_BREAKPOINT()
 #else
-#  include <cstdlib> // IWYU pragma: keep
 #  define ATT_ABORT() std::abort()
 #endif
 
-// optimize out unreachable code
-#ifdef ATT_DEBUG
-#  define ATT_UNREACHABLE() ATT_ABORT()
+#if defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
+#  define ATT_UNREACHABLE() __builtin_unreachable()
+#elif defined(ATT_COMP_MSVC)
+#  define ATT_UNREACHABLE() __assume(false)
 #else
-#  if defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
-#    define ATT_UNREACHABLE() __builtin_unreachable()
-#  elif defined(ATT_COMP_MSVC)
-#    define ATT_UNREACHABLE() __assume(false)
-#  else
-#    include <cassert>
-#    define ATT_UNREACHABLE() assert(false)
-#  endif
+#  define ATT_UNREACHABLE() ATT_ABORT()
 #endif
