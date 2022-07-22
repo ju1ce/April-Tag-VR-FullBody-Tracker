@@ -32,20 +32,20 @@ function(att_bootstrap_vcpkg)
         set(vcpkg_bootstrap_cmd "${VCPKG_ROOT}/bootstrap-vcpkg.sh")
     endif()
 
-    if (NOT EXISTS vcpkg_bootstrap_cmd)
+    if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
         find_program(GIT_CMD git REQUIRED)
         execute_process(COMMAND "${GIT_CMD}" clone --filter=tree:0 "https://github.com/microsoft/vcpkg.git" "${VCPKG_ROOT}")
 
-        if (NOT EXISTS vcpkg_bootstrap_cmd)
+        if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
             message(FATAL_ERROR "failed to clone vcpkg")
         endif()
     endif()
 
-    if (NOT EXISTS vcpkg_cmd)
+    if (NOT EXISTS "${vcpkg_cmd}")
         execute_process(COMMAND "${vcpkg_bootstrap_cmd}" -disableMetrics
             WORKING_DIRECTORY "${VCPKG_ROOT}")
 
-        if (NOT EXISTS vcpkg_cmd)
+        if (NOT EXISTS "${vcpkg_cmd}")
             message(FATAL_ERROR "failed to bootstrap vcpkg")
         endif()
     endif()
