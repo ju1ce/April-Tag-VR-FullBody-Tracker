@@ -4,7 +4,7 @@
 #include "utils/Macros.hpp"
 
 #ifdef ATT_TESTING
-#include <doctest/doctest.h>
+#  include <doctest/doctest.h>
 #endif
 
 #include <array>
@@ -30,39 +30,39 @@
 #define ATT_LOG_LEVEL_DEBUG 3
 
 #ifdef ATT_TESTING
-#define ATT_DETAILS_LOG(p_logLevel, ...) \
+#  define ATT_DETAILS_LOG(p_logLevel, ...) \
     ::utils::details::TestLog(::utils::LogTag::p_logLevel, __FILE__, __LINE__, __VA_ARGS__)
-#define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
+#  define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
     ::utils::details::TestLog(::utils::LogTag::p_logLevel, p_file, p_line, __VA_ARGS__)
 #else
-#define ATT_DETAILS_LOG(p_logLevel, ...) \
+#  define ATT_DETAILS_LOG(p_logLevel, ...) \
     ::utils::Log(::utils::LogTag::p_logLevel, __FILE__, __LINE__, __VA_ARGS__)
-#define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
+#  define ATT_DETAILS_LOG_LIB(p_logLevel, p_file, p_line, ...) \
     ::utils::LogAbsolute(::utils::LogTag::p_logLevel, p_file, p_line, __VA_ARGS__)
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_ERROR
-#define ATT_LOG_ERROR(...) ATT_DETAILS_LOG(Error, __VA_ARGS__)
-#define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_DETAILS_LOG_LIB(Error, p_file, p_line, __VA_ARGS__)
-#define ATT_DETAILS_LOG_ASSERT(p_expr, ...) ATT_DETAILS_LOG(Assert, ##__VA_ARGS__)
+#  define ATT_LOG_ERROR(...) ATT_DETAILS_LOG(Error, __VA_ARGS__)
+#  define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_DETAILS_LOG_LIB(Error, p_file, p_line, __VA_ARGS__)
+#  define ATT_DETAILS_LOG_ASSERT(p_expr, ...) ATT_DETAILS_LOG(Assert, ##__VA_ARGS__)
 #else
-#define ATT_LOG_ERROR(...) ATT_NOOP()
-#define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_NOOP()
-#define ATT_DETAILS_LOG_ASSERT(...) ATT_NOOP()
+#  define ATT_LOG_ERROR(...) ATT_NOOP()
+#  define ATT_LOG_LIB_ERROR(p_file, p_line, ...) ATT_NOOP()
+#  define ATT_DETAILS_LOG_ASSERT(...) ATT_NOOP()
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
-#define ATT_LOG_WARN(...) ATT_DETAILS_LOG(Warn, __VA_ARGS__)
-#define ATT_LOG_INFO(...) ATT_DETAILS_LOG(Info, __VA_ARGS__)
+#  define ATT_LOG_WARN(...) ATT_DETAILS_LOG(Warn, __VA_ARGS__)
+#  define ATT_LOG_INFO(...) ATT_DETAILS_LOG(Info, __VA_ARGS__)
 #else
-#define ATT_LOG_WARN(...) ATT_NOOP()
-#define ATT_LOG_INFO(...) ATT_NOOP()
+#  define ATT_LOG_WARN(...) ATT_NOOP()
+#  define ATT_LOG_INFO(...) ATT_NOOP()
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_DEBUG
-#define ATT_LOG_DEBUG(...) ATT_DETAILS_LOG(Debug, __VA_ARGS__)
+#  define ATT_LOG_DEBUG(...) ATT_DETAILS_LOG(Debug, __VA_ARGS__)
 #else
-#define ATT_LOG_DEBUG(...) ATT_NOOP()
+#  define ATT_LOG_DEBUG(...) ATT_NOOP()
 #endif
 
 namespace utils
