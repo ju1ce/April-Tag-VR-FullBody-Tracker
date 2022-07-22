@@ -26,5 +26,6 @@
         "libusb",
         "apriltag",
         "openvr"
-    ]
+    ],
+    "builtin-baseline": "cef0b3ec767df6e83806899fe9525f6cf8d7bc91"
 }
