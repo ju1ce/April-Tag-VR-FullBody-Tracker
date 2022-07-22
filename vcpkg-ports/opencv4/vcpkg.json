@@ -43,6 +43,9 @@
         }
       ]
     },
+    "contrib-aruco": {
+      "description": "aruco from opencv_contrib, don't enable with 'contrib'"
+    },
     "cuda": {
       "description": "CUDA support for opencv",
       "dependencies": [

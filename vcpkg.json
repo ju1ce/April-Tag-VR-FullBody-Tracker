@@ -7,8 +7,8 @@
             "name": "opencv4",
             "default-features": false,
             "features": [
-              "contrib",
-              "ffmpeg"
+                "contrib-aruco",
+                "ffmpeg"
             ]
         },
         {

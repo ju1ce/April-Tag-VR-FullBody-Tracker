@@ -54,6 +54,7 @@ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
  FEATURES
  "ade"       WITH_ADE
  "contrib"   WITH_CONTRIB
+ "contrib-aruco" WITH_CONTRIB
  "cuda"      WITH_CUBLAS
  "cuda"      WITH_CUDA
  "cudnn"     WITH_CUDNN
@@ -166,6 +167,28 @@ if("cuda" IN_LIST FEATURES)
   )
 endif()
 
+if("contrib" IN_LIST FEATURES AND "contrib-aruco" IN_LIST FEATURES)
+  message(FATAL_ERROR "The feature 'contrib-aruco' is included in 'contrib', only use one.")
+endif()
+
+if("contrib" IN_LIST FEATURES OR "contrib-aruco" IN_LIST FEATURES)
+  vcpkg_from_github(
+    OUT_SOURCE_PATH CONTRIB_SOURCE_PATH
+    REPO opencv/opencv_contrib
+    REF ${OPENCV_VERSION}
+    SHA512 8469de524e8e6f4c50a74b8cbec5e4cfc48a63a6dfc787609696099eca40dc02b9dc7a347a014d4416fd4efd66955d3af5f4847f44612312a8362f453e6c2e35
+    HEAD_REF master
+    PATCHES
+      0007-fix-hdf5.patch
+      0016-fix-freetype-contrib.patch
+  )
+endif()
+
+if("contrib-aruco" IN_LIST FEATURES)
+  file(COPY "${CONTRIB_SOURCE_PATH}/modules/aruco" DESTINATION "${CONTRIB_SOURCE_PATH}/subset-of-modules/modules")
+  set(BUILD_WITH_CONTRIB_FLAG "-DOPENCV_EXTRA_MODULES_PATH=${CONTRIB_SOURCE_PATH}/subset-of-modules/modules")
+endif()
+
 # Build image quality module when building with 'contrib' feature and not UWP.
 set(BUILD_opencv_quality OFF)
 if("contrib" IN_LIST FEATURES)
@@ -178,34 +201,7 @@ if("contrib" IN_LIST FEATURES)
     set(BUILD_opencv_quality CMAKE_DEPENDS_IN_PROJECT_ONLY)
   endif()
 
-  vcpkg_from_github(
-    OUT_SOURCE_PATH CONTRIB_SOURCE_PATH
-    REPO opencv/opencv_contrib
-    REF ${OPENCV_VERSION}
-    SHA512 8469de524e8e6f4c50a74b8cbec5e4cfc48a63a6dfc787609696099eca40dc02b9dc7a347a014d4416fd4efd66955d3af5f4847f44612312a8362f453e6c2e35
-    HEAD_REF master
-    PATCHES
-      0007-fix-hdf5.patch
-      0016-fix-freetype-contrib.patch
-  )
   set(BUILD_WITH_CONTRIB_FLAG "-DOPENCV_EXTRA_MODULES_PATH=${CONTRIB_SOURCE_PATH}/modules")
-
-  # MODIFIED: remove unused contrib modules
-  set(CONTRIB_FILTER_LIST aruco)
-
-  file(GLOB CONTRIB_MODULES RELATIVE "${CONTRIB_SOURCE_PATH}/modules" "${CONTRIB_SOURCE_PATH}/modules/*")
-  foreach(module_dirname ${CONTRIB_MODULES})
-    set(CONTRIB_MODULE_DIR "${CONTRIB_SOURCE_PATH}/modules/${module_dirname}")
-    if ((NOT module_dirname IN_LIST CONTRIB_FILTER_LIST) AND IS_DIRECTORY "${CONTRIB_MODULE_DIR}")
-      message(STATUS "Removing contrib module: ${module_dirname}")
-      file(REMOVE_RECURSE "${CONTRIB_MODULE_DIR}")
-    endif()
-  endforeach()
-  # MODIFIED
-
-  # MODIFIED: non of these downloads are necessary for aruco
-  if (FALSE)
-  # MODIFIED
 
   vcpkg_download_distfile(OCV_DOWNLOAD
     URLS "https://raw.githubusercontent.com/WeChatCV/opencv_3rdparty/a8b69ccc738421293254aec5ddb38bd523503252/detect.caffemodel"
@@ -287,10 +283,6 @@ if("contrib" IN_LIST FEATURES)
     FILENAME "opencv-cache/data/7505c44ca4eb54b4ab1e4777cb96ac05-face_landmark_model.dat"
     SHA512 c16e60a6c4bb4de3ab39b876ae3c3f320ea56f69c93e9303bd2dff8760841dcd71be4161fff8bc71e8fe4fe8747fa8465d49d6bd8f5ebcdaea161f4bc2da7c93
   )
-
-  # MODIFIED: non of these downloads are necessary for aruco
-  endif()
-  # MODIFIED
 endif()
 
 if(WITH_IPP)
