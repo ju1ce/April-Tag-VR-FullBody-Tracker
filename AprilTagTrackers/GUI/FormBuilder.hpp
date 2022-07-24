@@ -301,4 +301,4 @@ private:
 
 } // namespace Form
 
-#include "FormBuilder.tpp" // NOLINT: Template implementation
+#include "FormBuilder.tpp" // IWYU pragma: keep
