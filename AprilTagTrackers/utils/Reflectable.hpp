@@ -1,7 +1,6 @@
 #pragma once
 
 #include <type_traits>
-#include <utility>
 
 /// Placed in a class before a list of REFLECTABLE_FIELDS
 #define REFLECTABLE_BEGIN                \
@@ -14,33 +13,27 @@
 #define REFLECTABLE_END \
     static constexpr size_t _rfl_fieldCount = __COUNTER__ - _rfl_fieldOffset - 1
 
-#define REFLECTABLE_FIELD_DATA_COUNTER_(a_type, a_fieldName, a_counter)           \
-    template <typename _unused_>                                                  \
-    struct _rfl_FieldData<a_counter - _rfl_fieldOffset - 1, _unused_>             \
-    {                                                                             \
-        using Type = a_type;                                                      \
-        static constexpr const char* name = #a_fieldName;                         \
-        template <typename Self>                                                  \
-        static inline Type& GetField(Self& self)                                  \
-        {                                                                         \
-            return self.a_fieldName;                                              \
-        }                                                                         \
-        template <typename Self>                                                  \
-        static inline const std::remove_const_t<Type>& GetField(const Self& self) \
-        {                                                                         \
-            return self.a_fieldName;                                              \
-        }                                                                         \
+#define REFLECTABLE_FIELD_DATA_COUNTER_(a_type, a_fieldName, a_counter) \
+    template <typename _unused_>                                        \
+    struct _rfl_FieldData<a_counter - _rfl_fieldOffset - 1, _unused_>   \
+    {                                                                   \
+        using Type = a_type;                                            \
+        static constexpr const char* name = #a_fieldName;               \
+        template <typename Self>                                        \
+        static inline Type& GetField(Self& self)                        \
+        {                                                               \
+            return self.a_fieldName;                                    \
+        }                                                               \
+        template <typename Self>                                        \
+        static inline const Type& GetField(const Self& self)            \
+        {                                                               \
+            return self.a_fieldName;                                    \
+        }                                                               \
     }
 
-#define REFLECTABLE_CONCAT_(a, b) a##b
-#define REFLECTABLE_CONCAT(a, b) REFLECTABLE_CONCAT_(a, b)
-
-#define REFLECTABLE_STRINGIZE_(a) #a
-#define REFLECTABLE_STRINGIZE(a) REFLECTABLE_STRINGIZE_(a)
-
-#define REFLECTABLE_FIELD_NONAME_COUNTER_(a_type, a_fieldNamePrefix, a_counter)                           \
-    REFLECTABLE_FIELD_DATA_COUNTER_(a_type, REFLECTABLE_CONCAT(a_fieldNamePrefix, a_counter), a_counter); \
-    a_type REFLECTABLE_CONCAT(a_fieldNamePrefix, a_counter)
+#define REFLECTABLE_FIELD_NONAME_COUNTER_(a_type, a_fieldNamePrefix, a_counter)                   \
+    REFLECTABLE_FIELD_DATA_COUNTER_(a_type, ATT_CONCAT(a_fieldNamePrefix, a_counter), a_counter); \
+    a_type ATT_CONCAT(a_fieldNamePrefix, a_counter)
 
 /// Declare a reflectable field with type and name, expects a member field with name to be defined in the class
 #define REFLECTABLE_FIELD_DATA(a_type, a_fieldName) \
@@ -67,15 +60,6 @@ class Reflect
             ...);
     }
 
-    template <typename... T>
-    struct Voider
-    {
-        using Type = void;
-    };
-
-    template <typename... T>
-    using VoiderT = typename Voider<T...>::Type;
-
     template <typename RT, typename = void>
     struct IsReflectable : std::false_type
     {
@@ -83,7 +67,7 @@ class Reflect
 
     template <typename RT>
     struct IsReflectable<RT,
-        VoiderT<typename RT::template _rfl_FieldData<0>,
+        std::void_t<typename RT::template _rfl_FieldData<0>,
             decltype(RT::_rfl_fieldOffset),
             decltype(RT::_rfl_fieldCount)>> : std::true_type
     {

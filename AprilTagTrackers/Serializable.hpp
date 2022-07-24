@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Quaternion.hpp"
-#include "Reflectable.hpp"
 #include "SemVer.h"
 #include "utils/Assert.hpp"
+#include "utils/Reflectable.hpp"
 #include "ValidatorProxy.hpp"
 
 #include <opencv2/aruco.hpp>
@@ -14,8 +14,8 @@
 
 // clang-format off
 #define FILESTORAGE_COMMENT_WITH_ID(a_id, a_commentStr)   \
-    REFLECTABLE_FIELD_DATA(const FS::Comment, REFLECTABLE_CONCAT(_comment_, a_id)); \
-    static constexpr const FS::Comment REFLECTABLE_CONCAT(_comment_, a_id) { a_commentStr }
+    REFLECTABLE_FIELD_DATA(const FS::Comment, ATT_CONCAT(_comment_, a_id)); \
+    static constexpr const FS::Comment ATT_CONCAT(_comment_, a_id) { a_commentStr }
 // clang-format on
 
 #define FS_COMMENT(a_commentStr) \
@@ -53,26 +53,26 @@ inline void ReadEach(const cv::FileNode& fn, RT& reflType);
 
 } // namespace FS
 
-template <typename T>
-inline std::enable_if_t<Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
+template <typename T, std::enable_if_t<Reflect::IsReflectableV<T>, int> = 0>
+inline void Write(cv::FileStorage& fs, const T& field)
 {
     fs << "{";
     FS::WriteEach(fs, field);
     fs << "}";
 }
-template <typename T>
-inline std::enable_if_t<Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+template <typename T, std::enable_if_t<Reflect::IsReflectableV<T>, int> = 0>
+inline void Read(const cv::FileNode& fn, T& field)
 {
     FS::ReadEach(fn, field);
 }
 
-template <typename T>
-inline std::enable_if_t<!Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
+template <typename T, std::enable_if_t<!Reflect::IsReflectableV<T>, int> = 0>
+inline void Write(cv::FileStorage& fs, const T& field)
 {
     fs << field;
 }
-template <typename T>
-inline std::enable_if_t<!Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+template <typename T, std::enable_if_t<!Reflect::IsReflectableV<T>, int> = 0>
+inline void Read(const cv::FileNode& fn, T& field)
 {
     fn >> field;
 }
