@@ -5,12 +5,16 @@
 #include "GUI.hpp"
 #include "Localization.hpp"
 #include "Tracker.hpp"
-#include "utils/Assert.hpp"
+#include "utils/Env.hpp"
+#include "utils/Log.hpp"
 
 #include <wx/app.h>
 
 class MyApp : public wxApp
 {
+    utils::EnvVars envVars{};
+    utils::LogFileHandler logFileHandler{};
+
     std::unique_ptr<Tracker> tracker;
     std::unique_ptr<GUI> gui;
 
@@ -23,7 +27,7 @@ public:
     int OnExit() override;
     bool OnInit() override;
 
-#ifndef ATT_DEBUG
+#ifdef ATT_DEBUG
     void OnFatalException() override;
     void OnUnhandledException() override;
     bool OnExceptionInMainLoop() override;

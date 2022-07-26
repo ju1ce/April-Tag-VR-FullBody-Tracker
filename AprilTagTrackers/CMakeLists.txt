@@ -23,6 +23,9 @@ target_sources(AprilTagTrackers PRIVATE
     GUI/FormBuilder.cpp
     GUI/U8String.cpp
 
+    utils/Log.cpp
+    utils/Env.cpp
+
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp
 )

@@ -69,7 +69,7 @@ public:
     UserConfig() : FS::Serializable<UserConfig>("config/config.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(SemVer, driver_version) = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));
+    FIELD(SemVer, driver_version) = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
 
     FIELD(std::string, windowTitle);
     // Keep synced with Localization::LANG_CODE_MAP
