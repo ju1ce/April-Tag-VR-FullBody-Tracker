@@ -269,14 +269,14 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.calib.YAW, InputNumber{manualCalib.angleOffset[1]}})
         .Add(Labeled{lc.calib.ROLL, InputNumber{manualCalib.angleOffset[2]}})
         .Add(Labeled{lc.calib.SCALE, InputNumber{manualCalib.scale}})
-        .Add(CheckBoxButton{ lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
+        .Add(CheckBoxButton{lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
             {
                 tracker->multicamAutocalib = evt.IsChecked();
-            } })
-        .Add(CheckBoxButton{ lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
+            }})
+        .Add(CheckBoxButton{lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
             {
                 tracker->lockHeightCalib = evt.IsChecked();
-            } });
+            }});
 
     manualCalibForm->SetSizerVisible(false);
 }
@@ -292,19 +292,19 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
     params = FormBuilder{panel, boxSizer};
 
     static constexpr std::array<U8StringView, 4> markerLibraries =
-    { "AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color" };
+        {"AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color"};
 
     static constexpr std::array<U8StringView, 4> camRotOptions =
-    { "0", "90", "180", "270" };
+        {"0", "90", "180", "270"};
 
     static constexpr std::array<int, 4> camRotCodes =
-    { -1, cv::ROTATE_90_CLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_COUNTERCLOCKWISE };
+        {-1, cv::ROTATE_90_CLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_COUNTERCLOCKWISE};
 
     static constexpr std::array<U8StringView, 6> quadDecimateOptions =
-    { "1", "1.5", "2", "3", "4", "5" };
+        {"1", "1.5", "2", "3", "4", "5"};
 
     static constexpr std::array<double, 6> quadDecimateValues =
-    { 1, 1.5, 2, 3, 4, 5 };
+        {1, 1.5, 2, 3, 4, 5};
 
     params.Border(wxALL, 5)
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10))
@@ -319,8 +319,8 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
             InputText{config.cameraAddr}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_API, CreateCVCaptureAPIToolTip(lc),
             InputText{config.cameraApiPreference}})
-        .Add(Labeled{ lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
-            Choice{config.rotateCl, camRotOptions, camRotCodes} })
+        .Add(Labeled{lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
+            Choice{config.rotateCl, camRotOptions, camRotCodes}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_MIRROR, lc.PARAMS_CAMERA_TOOLTIP_MIRROR,
             CheckBox{config.mirrorCam}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_WIDTH, lc.PARAMS_CAMERA_TOOLTIP_WIDTH,

@@ -23,7 +23,7 @@
 #include <vector>
 
 #ifdef ATT_ENABLE_PS3EYE
-#include "PSEyeVideoCapture.h"
+#  include "PSEyeVideoCapture.h"
 #endif
 
 namespace
@@ -1545,7 +1545,7 @@ void Tracker::MainLoop()
 
             // cv::aruco::drawAxis(drawImg, user_config.camMat, user_config.distCoeffs, boardRvec[i], boardTvec[i], 0.05);
 
-            q = cv::Quatd{0, 0, 1, 0}*(wrotation * q) * cv::Quatd{0, 0, 1, 0};
+            q = cv::Quatd{0, 0, 1, 0} * (wrotation * q) * cv::Quatd{0, 0, 1, 0};
 
             double factor = user_config.smoothingFactor;
 
