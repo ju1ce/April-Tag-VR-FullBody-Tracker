@@ -2,7 +2,7 @@
 
 #ifdef ATT_DEBUG
 #    include <doctest/doctest.h> // IWYU pragma: keep
-
+#else
 #    include <cstdlib> // IWYU pragma: keep
 #endif
 
@@ -39,7 +39,9 @@
 
 // debug break or abort
 #ifdef ATT_DEBUG
-#    define ATT_ABORT() DOCTEST_BREAK_INTO_DEBUGGER()
+#    define ATT_ABORT() [] {           \
+        DOCTEST_BREAK_INTO_DEBUGGER(); \
+    }()
 #else
 #    define ATT_ABORT() std::abort()
 #endif
