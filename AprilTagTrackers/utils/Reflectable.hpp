@@ -51,15 +51,7 @@
 /// Auto-friended by reflectable types, provides functionality on them.
 class Reflect
 {
-    template <typename RT, typename F, size_t... Is>
-    static constexpr void ForEachInternal(RT& reflType, F&& func, std::index_sequence<Is...>)
-    {
-        // Fold into list of func calls using fielddata at each index.
-        (func(RT::template _rfl_FieldData<Is>::name,
-             RT::template _rfl_FieldData<Is>::GetField(reflType)),
-            ...);
-    }
-
+private:
     template <typename RT, typename = void>
     struct IsReflectable : std::false_type
     {
@@ -73,6 +65,43 @@ class Reflect
     {
     };
 
+    template <typename RT, size_t I, typename = void>
+    struct IsReflectableIndex : std::false_type
+    {
+    };
+
+    template <typename RT, size_t I>
+    struct IsReflectableIndex<RT, I,
+        std::void_t<decltype(RT::template _rfl_FieldData<I>::name)>> : std::true_type
+    {
+    };
+
+public:
+    /// Comptime check if a (template) type is reflectable (it uses the reflectable macros).
+    /// eg. template <typename T> std::enable_if_t<Reflect::IsReflectable<T>> MyFunc() {}
+    template <typename RT>
+    static constexpr bool IsReflectableV = IsReflectable<RT>::value;
+    template <typename RT, size_t I>
+    static constexpr bool IsReflectableIndexV = IsReflectableIndex<RT, I>::value;
+
+private:
+    template <typename RT, typename F, size_t I>
+    static constexpr void ForEachCall(RT& reflType, F&& func)
+    {
+        if constexpr (IsReflectableIndexV<RT, I>)
+        {
+            using FieldData = typename RT::template _rfl_FieldData<I>;
+            func(FieldData::name, FieldData::GetField(reflType));
+        }
+    }
+
+    template <typename RT, typename F, size_t... Is>
+    static constexpr void ForEachFold(RT& reflType, F&& func, std::index_sequence<Is...>)
+    {
+        // Fold into list of func calls using field data at each index.
+        (ForEachCall<RT, F, Is>(reflType, std::forward<F>(func)), ...);
+    }
+
 public:
     /// Iterate the type's reflectable fields.
     /// RT must contain the REFLECTABLE_BEGIN macro.
@@ -81,7 +110,7 @@ public:
     template <typename RT, typename F>
     static constexpr void ForEach(RT& reflType, F&& func)
     {
-        ForEachInternal(reflType,
+        ForEachFold(reflType,
             std::forward<F>(func),
             std::make_index_sequence<RT::_rfl_fieldCount>());
     }
@@ -103,9 +132,4 @@ public:
         static_assert(std::is_base_of_v<BaseT, DerT>, "DerT is derived from BaseT.");
         return static_cast<const DerT&>(baseThis);
     }
-
-    /// Comptime check if a (template) type is reflectable (it uses the reflectable macros).
-    /// eg. template <typename T> std::enable_if_t<Reflect::IsReflectable<T>> MyFunc() {}
-    template <typename RT>
-    static constexpr bool IsReflectableV = IsReflectable<RT>::value;
 };
