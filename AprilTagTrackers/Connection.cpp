@@ -16,7 +16,7 @@ Connection::Connection(const UserConfig& _user_config)
 #ifdef ATT_OS_WINDOWS
     auto* namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
-#else defined(ATT_OS_LINUX)
+#elif defined(ATT_OS_LINUX)
     auto namedPipe = new IPC::UNIXSocket("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
 #endif
