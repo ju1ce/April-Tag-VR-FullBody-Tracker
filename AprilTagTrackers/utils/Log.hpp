@@ -15,9 +15,9 @@
 /// No logging
 #define ATT_LOG_LEVEL_SILENT 0
 /// (default release) enable logging
-#define ATT_LOG_LEVEL_INFO 2
+#define ATT_LOG_LEVEL_INFO 1
 /// (default debug) enable ATT_DEBUG
-#define ATT_LOG_LEVEL_DEBUG 3
+#define ATT_LOG_LEVEL_DEBUG 2
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
 /// log at a Line Of Code with severity
