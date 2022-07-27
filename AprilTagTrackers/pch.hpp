@@ -36,11 +36,3 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
-
-#ifdef OS_WIN
-#    define NOMINMAX
-#    define WIN32_LEAN_AND_MEAN
-#    include "Windows.h"
-#    undef NOMINMAX
-#    undef WIN32_LEAN_AND_MEAN
-#endif
