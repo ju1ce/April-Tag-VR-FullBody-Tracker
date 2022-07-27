@@ -3,6 +3,7 @@
 #include "AprilTagWrapper.hpp"
 #include "Connection.hpp"
 #include "Helpers.hpp"
+#include "PSEyeVideoCapture.h"
 #include "utils/Assert.hpp"
 
 #include <opencv2/aruco.hpp>
@@ -21,10 +22,6 @@
 #include <random>
 #include <sstream>
 #include <vector>
-
-#ifdef ATT_ENABLE_PS3EYE
-#    include "PSEyeVideoCapture.h"
-#endif
 
 namespace
 {
@@ -198,13 +195,11 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         }
         else
 #endif
-#if ATT_ENABLE_PS3EYE
             if (apiPreference == 9100)
         {
             cap = PSEyeVideoCapture(i);
         }
         else
-#endif
         {
             cap = cv::VideoCapture(i, apiPreference);
         }

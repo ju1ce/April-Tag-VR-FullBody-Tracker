@@ -68,7 +68,6 @@ target_compile_definitions(test PRIVATE
     ATT_TESTING
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
-    ATT_ENABLE_PS3EYE
 
     # wxWidgets isn't linked, but we want the definitions to match somewhat
     ${wxWidgets_DEFINITIONS}
