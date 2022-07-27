@@ -2,6 +2,31 @@
 ---
 # Put all strings in "double quotes".
 APP_TITLE: Juices VR Marker Tracking
+word:
+   # match case of key
+   Yes: Yes
+   No: No
+   On: On
+   Off: Off
+   Error: Error
+   Warning: Warning
+   Info: Info
+   Connected: Connected
+   Disconnected: Disconnected
+status:
+   CAMERA: "Camera: "
+   DRIVER: "SteamVR Driver: "
+   TRACKER: "Tracker Running: "
+calib:
+   X: "X (cm):"
+   Y: "Y (cm):"
+   Z: "Z (cm):"
+   PITCH: "Pitch (°):"
+   YAW: "Yaw (°):"
+   ROLL: "Roll (°):"
+   SCALE: "Scale (%):"
+WINDOW_TITLE: "Set title bar [requires app restart]"
+WINDOW_TITLE_TOOLTIP: "Set a custom title name for the camera\n *requires restarting*"
 TAB_CAMERA: Camera
 TAB_PARAMS: Params
 TAB_LICENSE: License
@@ -27,13 +52,13 @@ PARAMS_CAMERA_NAME_ID: Ip or ID of camera
 PARAMS_CAMERA_TOOLTIP_ID: "Will be a number 0-10 for USB cameras and\nhttp://<ip here>:8080/video for IP webcam)"
 PARAMS_CAMERA_NAME_API: Camera API preference
 PARAMS_CAMERA_NAME_ROT_CLOCKWISE: Rotate camera clockwise
-PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "Rotate the camera 90Â°. Use both to rotate image 180Â°"
-PARAMS_CAMERA_NAME_MIRROR = "Mirror camera";
-PARAMS_CAMERA_TOOLTIP_MIRROR = "Mirror the camera horizontaly";
+PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "Rotate the camera 90°. Use both to rotate image 180°"
+PARAMS_CAMERA_NAME_MIRROR: Mirror camera
+PARAMS_CAMERA_TOOLTIP_MIRROR: Mirror the camera horizontaly
 PARAMS_CAMERA_NAME_WIDTH: Camera width in pixels
-PARAMS_CAMERA_TOOLTIP_WIDTH: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly."
+PARAMS_CAMERA_TOOLTIP_WIDTH: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn\'t work correctly."
 PARAMS_CAMERA_NAME_HEIGHT: Camera height in pixels
-PARAMS_CAMERA_TOOLTIP_HEIGHT: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn't work correctly."
+PARAMS_CAMERA_TOOLTIP_HEIGHT: "Width and height should be fine on 0, but change it to the camera resolution in case camera doesn\'t work correctly."
 PARAMS_CAMERA_NAME_FPS: Camera FPS
 PARAMS_CAMERA_TOOLTIP_FPS: Set the fps of the camera
 PARAMS_CAMERA_NAME_SETTINGS: Open camera settings
@@ -85,7 +110,7 @@ TRACKER_CAMERA_START_ERROR: "Could not start camera.Make sure you entered the co
 TRACKER_CAMERA_ERROR: Camera error
 TRACKER_CAMERA_PREVIEW: Preview
 TRACKER_CAMERA_NOTRUNNING: Camera not running
-TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS: "Camera calibration started!\n\nPlace the printed Charuco calibration board on a flat surface, or display it on a (non-curved) monitor. The camera will take a picture every second - take pictures of the board from as many different angles and distances as you can.\n\nMake sure that the board is seen nicely and isn't blurred. Move the camera around slowly.\n\nPurple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\nThe dots should be spread across the whole image\n\nPress OK to save calibration when done."
+TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS: "Camera calibration started!\n\nPlace the printed Charuco calibration board on a flat surface, or display it on a (non-curved) monitor. The camera will take a picture every second - take pictures of the board from as many different angles and distances as you can.\n\nMake sure that the board is seen nicely and isn\'t blurred. Move the camera around slowly.\n\nPurple dots = great\nGreen dots = okay\nYellow dots = bad\n\nThe grid should be fairly flat, fairly stable (can still shake a couple of pixels) and take over the whole image.\nThe dots should be spread across the whole image\n\nPress OK to save calibration when done."
 TRACKER_CAMERA_CALIBRATION_COMPLETE: "Calibration complete."
 TRACKER_CAMERA_CALIBRATION_NOTDONE: "Calibration has not been completed as too few images have been taken."
 TRACKER_CAMERA_NOTCALIBRATED: Camera not calibrated

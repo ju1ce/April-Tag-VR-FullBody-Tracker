@@ -18,17 +18,35 @@ class Localization : public FS::Serializable<Localization>
 public:
     static inline const FS::Path localesDir = std::filesystem::absolute("locales");
 
-    // Keep synced
-    static constexpr std::array<std::string_view, 2> LANG_CODE_MAP{
+    // Keep synced, alphabetical order, from this list
+    // https://www.andiamo.co.uk/resources/iso-language-codes/
+    static constexpr std::array<std::string_view, 3> LANG_CODE_MAP{
         "en",
-        "zh-CN"};
+        "ru",
+        "zh-cn"};
     static constexpr std::array<U8StringView, LANG_CODE_MAP.size()> LANG_NAME_MAP{
         "English",
+        "Russian",
         "Chinese (PRC)"};
 
     static FS::Path GetLangPath(const std::string& langCode)
     {
         return std::filesystem::absolute(localesDir) / (langCode + ".yaml");
+    }
+
+    // TODO: Make the github workflow create these "to be translated" localization files.
+    // Could create an automatic pr for them?
+
+    /// Save the updated localization, the default english will be stored in any new keys.
+    static void UpdateAllLangs()
+    {
+        for (const auto& langCode : LANG_CODE_MAP)
+        {
+            Localization lc;
+            lc.SetPath(GetLangPath(std::string(langCode)));
+            lc.Load();
+            lc.Save();
+        }
     }
 
     Localization()
@@ -44,28 +62,10 @@ public:
         return Load();
     }
 
-    // TODO: Make the github workflow create these "to be translated" localization files.
-    // Could create an automatic pr for them?
-
-    /// Save the updated localization, the default english will be stored in the new keys.
-    /// Some random language will be loaded after this is called, but its a developer function,
-    /// so don't really care, call LoadLang() afterwards to fix.
-    void UpdateAllLangs()
-    {
-        for (const auto& langCode : LANG_CODE_MAP)
-        {
-            if (langCode == "en") continue;
-            SetPath(GetLangPath(std::string(langCode)));
-            // Load existing translations if they exist
-            Load();
-            // Create or overwrite the language file, with new untranslated keys.
-            Save();
-        }
-    }
-
     struct Word
     {
         REFLECTABLE_BEGIN;
+        FS_COMMENT("match case of key");
         T(Yes) = "Yes";
         T(No) = "No";
         T(On) = "On";

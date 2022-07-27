@@ -2,6 +2,31 @@
 ---
 # Put all strings in "double quotes".
 APP_TITLE: "果汁的二维码全身追踪（简体中文）"
+word:
+   # match case of key
+   Yes: Yes
+   No: No
+   On: On
+   Off: Off
+   Error: Error
+   Warning: Warning
+   Info: Info
+   Connected: Connected
+   Disconnected: Disconnected
+status:
+   CAMERA: "Camera: "
+   DRIVER: "SteamVR Driver: "
+   TRACKER: "Tracker Running: "
+calib:
+   X: "X (cm):"
+   Y: "Y (cm):"
+   Z: "Z (cm):"
+   PITCH: "Pitch (°):"
+   YAW: "Yaw (°):"
+   ROLL: "Roll (°):"
+   SCALE: "Scale (%):"
+WINDOW_TITLE: "Set title bar [requires app restart]"
+WINDOW_TITLE_TOOLTIP: "Set a custom title name for the camera\n *requires restarting*"
 TAB_CAMERA: "主页"
 TAB_PARAMS: "参数"
 TAB_LICENSE: "关于"
@@ -28,8 +53,8 @@ PARAMS_CAMERA_TOOLTIP_ID: "USB摄像头需要填写数字 ID， 比如 0，1，2
 PARAMS_CAMERA_NAME_API: "视频捕获 API"
 PARAMS_CAMERA_NAME_ROT_CLOCKWISE: "顺时针旋转图像"
 PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "将图像顺时针旋转90°，与旁边的选项一起使用会将图像旋转180°"
-PARAMS_CAMERA_NAME_MIRROR: "Mirror camera"
-PARAMS_CAMERA_TOOLTIP_MIRROR: "Mirror the camera horizontaly"
+PARAMS_CAMERA_NAME_MIRROR: Mirror camera
+PARAMS_CAMERA_TOOLTIP_MIRROR: Mirror the camera horizontaly
 PARAMS_CAMERA_NAME_WIDTH: "图像宽度"
 PARAMS_CAMERA_TOOLTIP_WIDTH: "图像宽度和图像高度通常会自动进行调整，但如果图像不符合实际的分辨率，请手动填写这两个参数的值。"
 PARAMS_CAMERA_NAME_HEIGHT: "图像高度"
@@ -50,7 +75,7 @@ PARAMS_TRACKER: "追踪器"
 PARAMS_TRACKER_NAME_NUM_TRACKERS: "追踪器的数量"
 PARAMS_TRACKER_TOOLTIP_NUM_TRACKERS: "设置为 3 才能在 VRchat 得到全身追踪！"
 PARAMS_TRACKER_NAME_MARKER_SIZE: "边界长度（厘米）"
-PARAMS_TRACKER_TOOLTIP_MARKER_SIZE: '"边界" 是一个正方形在白色方框与黑块方框的相邻处，以毫米级精度（精确到小数点后一位）测量它的边长并填写到这里。'
+PARAMS_TRACKER_TOOLTIP_MARKER_SIZE: "\"边界\" 是一个正方形在白色方框与黑块方框的相邻处，以毫米级精度（精确到小数点后一位）测量它的边长并填写到这里。"
 PARAMS_TRACKER_NAME_QUAD_DECIMATE: "欠采样倍率"
 PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE: "它可以是 1、1.5、2、3、4 这样的数字。较大的数字将减少每帧所需要的 CPU 时间并优化性能，但会减少二维码被检测到的概率。"
 PARAMS_TRACKER_NAME_SEARCH_WINDOW: "搜索范围"
@@ -81,7 +106,7 @@ PARAMS_NOTE_2TRACKERS_IGNORE0: "追踪器数量为 2 但却启用了 \"忽略第
 PARAMS_NOTE_LANGUAGECHANGE: "语言已更改！请重启这个软件以应用最新设置。（简体中文）"
 PARAMS_SAVED_MSG: "参数已保存！"
 PARAMS_WRONG_VALUES: "请输入格式正确的参数。由于数据类型转换时发生异常，所有参数将不会保存。"
-TRACKER_CAMERA_START_ERROR: "无法启动摄像头，请确保您在参数中输入了正确的视频流地址或摄像头 ID。\n对于 USB摄像头，它的 ID 通常为 0、1、2 这样的数字，反复尝试直到此错误不再出现。\n对于 IP-Webcam, 视频流地址的格式为 http://'此处替换为手机的ip':8080/video"
+TRACKER_CAMERA_START_ERROR: "无法启动摄像头，请确保您在参数中输入了正确的视频流地址或摄像头 ID。\n对于 USB摄像头，它的 ID 通常为 0、1、2 这样的数字，反复尝试直到此错误不再出现。\n对于 IP-Webcam, 视频流地址的格式为 http://\'此处替换为手机的ip\':8080/video"
 TRACKER_CAMERA_ERROR: "摄像头已启动，但在读取下一帧图像时发生异常。"
 TRACKER_CAMERA_PREVIEW: "摄像头视角"
 TRACKER_CAMERA_NOTRUNNING: "先启动摄像头才能使用此功能。"
