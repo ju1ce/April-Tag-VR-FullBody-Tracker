@@ -1,12 +1,12 @@
-#if OS_LINUX
 #include "IPC.hpp"
 
 #include <errno.h>
-#include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#include <iostream>
 
 namespace IPC
 {
@@ -47,7 +47,8 @@ bool UNIXSocket::send(const std::string& msg, std::string& resp)
 
     char response_buffer[BUFFER_SIZE];
     unsigned long response_length = 0;
-    if ((response_length = ::recv(socket, response_buffer, BUFFER_SIZE, 0)) == 0) {
+    if ((response_length = ::recv(socket, response_buffer, BUFFER_SIZE, 0)) == 0)
+    {
         std::cerr << "Failed to receive response from socket " << this->socket_path << std::endl;
         close(socket);
         return false;
@@ -58,9 +59,7 @@ bool UNIXSocket::send(const std::string& msg, std::string& resp)
     return true;
 }
 
-}
-
-#endif
+} // namespace IPC
 
 /*
 

@@ -23,7 +23,7 @@
 #include <vector>
 
 #ifdef ATT_ENABLE_PS3EYE
-#  include "PSEyeVideoCapture.h"
+#    include "PSEyeVideoCapture.h"
 #endif
 
 namespace
@@ -179,7 +179,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (id.length() <= 2) // if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id); // convert to int
-#if OS_LINUX
+#ifdef ATT_OS_LINUX
         // On Linux cv::VideoCapture does not work when GStreamer backend is used and
         // camera is set to MJPG pixel format. As a work around we manually setup the
         // GStreamer pipeline with suitable decoding before feeding the stream into
@@ -223,7 +223,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
 
     // On Linux and when GStreamer backend is used we already setup the camera pixel format,
     // width, height and FPS above when the GStreamer pipeline was created.
-#if OS_LINUX
+#ifdef ATT_OS_LINUX
     if ((apiPreference != cv::CAP_ANY) && (apiPreference != cv::CAP_GSTREAMER))
 #endif
     {

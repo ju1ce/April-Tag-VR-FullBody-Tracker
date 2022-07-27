@@ -33,7 +33,7 @@ if (WIN32)
     target_sources(AprilTagTrackers PRIVATE
         IPC/WindowsNamedPipe.cpp
     )
-else()
+elseif(UNIX)
     target_sources(AprilTagTrackers PRIVATE
         IPC/UNIXSocket.cpp
     )
@@ -97,15 +97,7 @@ target_compile_definitions(AprilTagTrackers PRIVATE
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
     ATT_ENABLE_PS3EYE
 )
-
-# Set cross-platform defines in sources
-if(WIN32)
-    target_compile_definitions(AprilTagTrackers PRIVATE "OS_WIN=1")
-elseif(UNIX)
-    target_compile_definitions(AprilTagTrackers PRIVATE "OS_LINUX=1")
-else()
-    message(FATAL_ERROR "Unknown platform ${CMAKE_SYSTEM_NAME}, compilation will fail.")
-endif()
+att_target_platform_definitions(AprilTagTrackers)
 
 # Build with Address Sanitizer
 if(ATT_ENABLE_ASAN)

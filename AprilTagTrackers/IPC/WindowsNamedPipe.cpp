@@ -1,4 +1,3 @@
-#if OS_WIN
 #include "IPC.hpp"
 #include "utils/Assert.hpp"
 
@@ -42,7 +41,6 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp)
 }
 
 } // namespace IPC
-#endif
 
 /*
 

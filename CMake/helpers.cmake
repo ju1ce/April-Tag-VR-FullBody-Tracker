@@ -76,6 +76,34 @@ function(att_default_triplet out_triplet)
     set(${out_triplet} "${triplet}" PARENT_SCOPE)
 endfunction()
 
+# adds definitions ATT_OS_<NAME> and ATT_COMP_<NAME>
+function(att_target_platform_definitions target)
+    if (WIN32)
+        set(os_name "WINDOWS")
+    elseif(APPLE)
+        set(os_name "MACOS")
+    elseif(UNIX)
+        set(os_name "LINUX")
+    else()
+        set(os_name "UNKNOWN")
+    endif()
+
+    if (MSVC)
+        set(comp_name "MSVC")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(comp_name "CLANG")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(comp_name "GCC")
+    else()
+        set(comp_name "UNKNOWN")
+    endif()
+
+    target_compile_definitions(${target} PRIVATE
+        ATT_OS_${os_name}
+        ATT_COMP_${comp_name}
+    )
+endfunction()
+
 # Set the CRT linkage on windows, by setting MSVC_RUNTIME_LIBRARY property
 # set STATIC (/MT) or DYNAMIC (/MD)
 function(att_target_crt_linkage target)

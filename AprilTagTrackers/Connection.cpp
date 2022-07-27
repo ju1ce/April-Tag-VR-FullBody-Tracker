@@ -13,10 +13,10 @@ Connection::Connection(const UserConfig& _user_config)
     : user_config(_user_config)
 {
 // TODO: Pass the IPC client* in as an argument
-#if OS_WIN
+#ifdef ATT_OS_WINDOWS
     auto* namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
-#elif OS_LINUX
+#else defined(ATT_OS_LINUX)
     auto namedPipe = new IPC::UNIXSocket("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
 #endif

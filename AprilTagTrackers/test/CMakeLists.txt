@@ -74,14 +74,8 @@ target_compile_definitions(test PRIVATE
     ${wxWidgets_DEFINITIONS}
     "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
 )
-# Set cross-platform defines in sources
-if(WIN32)
-    target_compile_definitions(test PRIVATE "OS_WIN=1")
-elseif(UNIX)
-    target_compile_definitions(test PRIVATE "OS_LINUX=1")
-else()
-    message(FATAL_ERROR "Unknown platform ${CMAKE_SYSTEM_NAME}, compilation will fail.")
-endif()
+att_target_platform_definitions(test)
+
 # Build with Address Sanitizer
 if(ATT_TEST_ENABLE_ASAN)
     att_target_enable_asan(test)
