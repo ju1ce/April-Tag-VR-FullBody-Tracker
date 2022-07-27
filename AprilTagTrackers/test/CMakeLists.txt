@@ -40,6 +40,7 @@ if (MSVC)
 endif()
 
 target_link_libraries(test PRIVATE
+    Threads::Threads
     ${OpenCV_LIBRARIES}
     ${LIBUSB_LIBRARIES}
     apriltag::apriltag
@@ -65,7 +66,8 @@ att_exe_debug_symbols(test)
 target_compile_definitions(test PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_TESTING
-    ATT_DEBUG
+    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
     ATT_ENABLE_PS3EYE
 )
 # Set cross-platform defines in sources
