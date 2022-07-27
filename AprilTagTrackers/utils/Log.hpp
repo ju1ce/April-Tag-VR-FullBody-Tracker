@@ -36,10 +36,12 @@
             ::utils::LogValues(__VA_ARGS__),             \
             ::utils::LogEnd())
 
+#    define ATT_LOG_LOC_ERROR(p_filePath, p_line, ...) ATT_DETAIL_LOG_LOC(Error, p_filePath, p_line, __VA_ARGS__)
 #    define ATT_LOG_ERROR(...) ATT_DETAIL_LOG_AT(Error, __VA_ARGS__)
 #    define ATT_LOG_WARN(...) ATT_DETAIL_LOG_AT(Warn, __VA_ARGS__)
 #    define ATT_LOG_INFO(...) ATT_DETAIL_LOG(Info, __VA_ARGS__)
 #else
+#    define ATT_LOG_LOC_ERROR(p_filePath, p_line, ...) ATT_NOOP()
 #    define ATT_LOG_ERROR(...) ATT_NOOP()
 #    define ATT_LOG_WARN(...) ATT_NOOP()
 #    define ATT_LOG_INFO(...) ATT_NOOP()
