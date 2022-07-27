@@ -3,7 +3,6 @@
 
 cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
-set(ATT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # main build output
 add_executable(AprilTagTrackers)
@@ -129,6 +128,9 @@ endif()
 set_target_properties(AprilTagTrackers PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
+# precompiled headers
+target_precompile_headers(AprilTagTrackers PRIVATE pch.hpp)
+
 # Make AprilTagTrackers the default target in Visual Studio
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
 # setup file structure in IDE
@@ -138,5 +140,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source Files" FILES ${SO
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${HEADER_GROUP})
 
 if (ENABLE_TESTING)
+    set(ATT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     add_subdirectory("test")
 endif()

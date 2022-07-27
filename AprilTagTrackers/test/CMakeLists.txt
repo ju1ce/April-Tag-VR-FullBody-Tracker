@@ -69,6 +69,10 @@ target_compile_definitions(test PRIVATE
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
     $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
     ATT_ENABLE_PS3EYE
+
+    # wxWidgets isn't linked, but we want the definitions to match somewhat
+    ${wxWidgets_DEFINITIONS}
+    "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
 )
 # Set cross-platform defines in sources
 if(WIN32)
@@ -82,6 +86,13 @@ endif()
 if(ATT_TEST_ENABLE_ASAN)
     att_target_enable_asan(test)
 endif()
+
+# precompiled headers
+target_precompile_headers(test PRIVATE "${ATT_DIR}/pch.hpp")
+
+# Enable LTO
+set_target_properties(AprilTagTrackers PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 # Install application to bin folder
 install(TARGETS test RUNTIME DESTINATION ".")
