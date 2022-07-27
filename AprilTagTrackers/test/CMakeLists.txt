@@ -50,7 +50,7 @@ target_link_libraries(test PRIVATE
 )
 target_include_directories(test SYSTEM PRIVATE
     ${LIBUSB_INCLUDE_DIRS}
-    "${ATT_DIR}/ps3eye"
+
 )
 
 # Set the root of includes, rather than relative

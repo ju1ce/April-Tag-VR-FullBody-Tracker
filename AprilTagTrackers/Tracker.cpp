@@ -3,7 +3,7 @@
 #include "AprilTagWrapper.hpp"
 #include "Connection.hpp"
 #include "Helpers.hpp"
-#include "PSEyeVideoCapture.h"
+#include "ps3eye/PSEyeVideoCapture.h"
 #include "utils/Assert.hpp"
 
 #include <opencv2/aruco.hpp>

@@ -69,7 +69,6 @@ target_link_libraries(AprilTagTrackers PRIVATE
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     ${wxWidgets_INCLUDE_DIRS}
     ${LIBUSB_INCLUDE_DIRS}
-    "${CMAKE_CURRENT_SOURCE_DIR}/ps3eye"
 )
 target_compile_definitions(AprilTagTrackers PRIVATE
     "wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>"
