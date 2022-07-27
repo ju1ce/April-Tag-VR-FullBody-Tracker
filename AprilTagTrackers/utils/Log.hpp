@@ -9,7 +9,7 @@
 #include <string_view>
 
 // Macros and functions for logging,
-// Prefix all macros with ATT_ and private macros with ATT_DETAILS_
+// Prefix all macros with ATT_ and private macros with ATT_DETAIL_
 
 // Log verbosity levels, choose what gets printed to stderr
 /// No logging
@@ -21,24 +21,24 @@
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
 /// log at a Line Of Code with severity
-#    define ATT_DETAILS_LOG_LOC(p_logTag, p_filePath, p_line, ...)           \
+#    define ATT_DETAIL_LOG_LOC(p_logTag, p_filePath, p_line, ...)            \
         (::utils::LogPrelude(::utils::LogTag::p_logTag, p_filePath, p_line), \
             ::utils::LogValues(__VA_ARGS__),                                 \
             ::utils::LogEnd())
 /// log at the current Line Of Code with severity
-#    define ATT_DETAILS_LOG_AT(p_logTag, ...)                                \
+#    define ATT_DETAIL_LOG_AT(p_logTag, ...)                                 \
         (::utils::LogPrelude(::utils::LogTag::p_logTag, __FILE__, __LINE__), \
             ::utils::LogValues(__VA_ARGS__),                                 \
             ::utils::LogEnd())
 /// log with severity
-#    define ATT_DETAILS_LOG(p_logTag, ...)               \
+#    define ATT_DETAIL_LOG(p_logTag, ...)                \
         (::utils::LogPrelude(::utils::LogTag::p_logTag), \
             ::utils::LogValues(__VA_ARGS__),             \
             ::utils::LogEnd())
 
-#    define ATT_LOG_ERROR(...) ATT_DETAILS_LOG_AT(Error, __VA_ARGS__)
-#    define ATT_LOG_WARN(...) ATT_DETAILS_LOG_AT(Warn, __VA_ARGS__)
-#    define ATT_LOG_INFO(...) ATT_DETAILS_LOG(Info, __VA_ARGS__)
+#    define ATT_LOG_ERROR(...) ATT_DETAIL_LOG_AT(Error, __VA_ARGS__)
+#    define ATT_LOG_WARN(...) ATT_DETAIL_LOG_AT(Warn, __VA_ARGS__)
+#    define ATT_LOG_INFO(...) ATT_DETAIL_LOG(Info, __VA_ARGS__)
 #else
 #    define ATT_LOG_ERROR(...) ATT_NOOP()
 #    define ATT_LOG_WARN(...) ATT_NOOP()
@@ -46,7 +46,7 @@
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_DEBUG
-#    define ATT_LOG_DEBUG(...) ATT_DETAILS_LOG_AT(Debug, __VA_ARGS__)
+#    define ATT_LOG_DEBUG(...) ATT_DETAIL_LOG_AT(Debug, __VA_ARGS__)
 #else
 #    define ATT_LOG_DEBUG(...) ATT_NOOP()
 #endif
@@ -64,7 +64,7 @@ enum class LogTag
     Debug,
 };
 
-namespace details
+namespace detail
 {
 
 constexpr inline std::string_view LogTagToString(LogTag tag)
@@ -89,7 +89,7 @@ inline void LogValue(char value)
     if (value == '\n') std::cerr << "|     ";
 }
 
-} // namespace details
+} // namespace detail
 
 /// logs [WARN: M123456789 10.1234s]
 void LogPrelude(LogTag tag);
@@ -99,7 +99,7 @@ void LogPrelude(LogTag tag, const char* filePath, int line);
 template <typename... Ts>
 inline void LogValues(Ts&&... vals)
 {
-    (details::LogValue(std::forward<Ts>(vals)), ...);
+    (detail::LogValue(std::forward<Ts>(vals)), ...);
 }
 
 /// logs newline

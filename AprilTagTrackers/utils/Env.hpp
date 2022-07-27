@@ -11,7 +11,7 @@ namespace utils
 using system_clock = std::chrono::system_clock;
 namespace fs = std::filesystem;
 
-namespace details
+namespace detail
 {
 
 /// this_thread::get_id called during static initialization
@@ -21,12 +21,12 @@ inline const system_clock::time_point APP_START_TP = system_clock::now();
 /// directory application was started in
 inline const fs::path RUNTIME_DIR = fs::current_path();
 
-} // namespace details
+} // namespace detail
 
 /// time point of application startup
-inline system_clock::time_point GetAppStartTimePoint() { return details::APP_START_TP; }
+inline system_clock::time_point GetAppStartTimePoint() { return detail::APP_START_TP; }
 /// directory application was started in
-inline const fs::path& GetRuntimeDir() { return details::RUNTIME_DIR; }
+inline const fs::path& GetRuntimeDir() { return detail::RUNTIME_DIR; }
 inline fs::path GetLogsDir() { return GetRuntimeDir() / "logs"; }
 inline fs::path GetConfigDir() { return GetRuntimeDir() / "config"; }
 

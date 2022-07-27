@@ -30,7 +30,7 @@ std::thread::id GetThisThreadID()
 
 bool IsMainThread()
 {
-    thread_local const bool isMainThread = details::MAIN_THREAD_ID == GetThisThreadID();
+    thread_local const bool isMainThread = detail::MAIN_THREAD_ID == GetThisThreadID();
     return isMainThread;
 }
 

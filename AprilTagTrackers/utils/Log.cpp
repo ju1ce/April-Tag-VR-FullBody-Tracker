@@ -38,7 +38,7 @@ void LogPrelude(LogTag tag)
 {
     std::cerr << std::boolalpha
               << "["
-              << details::LogTagToString(tag) << ": "
+              << detail::LogTagToString(tag) << ": "
               << (IsMainThread() ? 'M' : ' ')
               << GetThisThreadID() << ' '
               << std::fixed << std::setprecision(4)

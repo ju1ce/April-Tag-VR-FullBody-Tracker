@@ -55,7 +55,7 @@ bool MyApp::OnExceptionInMainLoop()
 // cv::ErrorCallback
 static int OpenCVErrorHandler(int status, const char* funcName, const char* errMsg, const char* fileName, int line, void*)
 {
-    ATT_DETAILS_LOG_LOC(Error, fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
+    ATT_DETAIL_LOG_LOC(Error, fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
     ATT_ABORT();
     return 0;
 }
@@ -63,7 +63,7 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 // wxAssertHandler_t
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
-    ATT_DETAILS_LOG_LOC(Error, file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
+    ATT_DETAIL_LOG_LOC(Error, file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
         "\nassertion failure  ( ", cond, " )  in  ", func);
     ATT_ABORT();
 }
