@@ -50,7 +50,6 @@ target_link_libraries(test PRIVATE
 )
 target_include_directories(test SYSTEM PRIVATE
     ${LIBUSB_INCLUDE_DIRS}
-
 )
 
 # Set the root of includes, rather than relative
@@ -74,6 +73,9 @@ target_compile_definitions(test PRIVATE
     "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
 )
 att_target_platform_definitions(test)
+
+# most sources are duplicated, remove from code analysis
+set_target_properties(test PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
 
 # Build with Address Sanitizer
 if(ATT_TEST_ENABLE_ASAN)
