@@ -43,14 +43,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg
+          git clone --filter=tree:0 https://github.com/microsoft/vcpkg
           ./vcpkg/bootstrap-vcpkg.sh
 
       - name: Setup vcpkg (Windows)
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg
+          git clone --filter=tree:0 https://github.com/microsoft/vcpkg
           ./vcpkg/bootstrap-vcpkg.bat
 
       - name: Setup NuGet Credentials

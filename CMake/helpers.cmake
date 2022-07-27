@@ -21,23 +21,8 @@ function(att_bootstrap_vcpkg)
         set(vcpkg_default_root "${CMAKE_CURRENT_SOURCE_DIR}/.vcpkg")
     endif()
 
-    # not first run and vcpkg_root has not changed since first run
-    if (DEFINED VCPKG_ROOT AND VCPKG_ROOT STREQUAL vcpkg_default_root)
-        message(STATUS "vcpkg root: ${VCPKG_ROOT}")
-        return()
-    endif()
-
     set(VCPKG_ROOT "${vcpkg_default_root}" CACHE PATH "vcpkg root directory")
     message(STATUS "vcpkg root: ${VCPKG_ROOT}")
-
-    if (NOT EXISTS "${VCPKG_ROOT}/.vcpkg-root")
-        find_program(GIT_CMD git REQUIRED)
-        execute_process(COMMAND "${GIT_CMD}" clone --depth 1 "https://github.com/Microsoft/vcpkg.git" "${VCPKG_ROOT}")
-
-        if (NOT EXISTS "${VCPKG_ROOT}/.vcpkg-root")
-            message(FATAL_ERROR "failed to clone vcpkg")
-        endif()
-    endif()
 
     if (WIN32)
         set(vcpkg_cmd "${VCPKG_ROOT}/${vcpkg_cmd}")
@@ -45,6 +30,15 @@ function(att_bootstrap_vcpkg)
     else()
         set(vcpkg_cmd "${VCPKG_ROOT}/${vcpkg_cmd}")
         set(vcpkg_bootstrap_cmd "${VCPKG_ROOT}/bootstrap-vcpkg.sh")
+    endif()
+
+    if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
+        find_program(GIT_CMD git REQUIRED)
+        execute_process(COMMAND "${GIT_CMD}" clone --filter=tree:0 "https://github.com/microsoft/vcpkg.git" "${VCPKG_ROOT}")
+
+        if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
+            message(FATAL_ERROR "failed to clone vcpkg")
+        endif()
     endif()
 
     if (NOT EXISTS "${vcpkg_cmd}")
