@@ -10,13 +10,12 @@
 
 #include "MatToBitmap.hpp"
 
-#ifdef __WXMSW__
-
 namespace
 {
 
 constexpr int BITMAP_DEPTH = 24;
 
+#ifdef __WXMSW__
 // Version optimized for Microsoft Windows.
 // matBitmap must be continuous and matBitmap.cols % 4 must equal 0
 // as SetDIBits() requires the DIB rows to be DWORD-aligned.
@@ -41,9 +40,9 @@ bool ConvertMatToBitmapMSW(const cv::Mat& matBitmap, wxBitmap& bitmap)
     return success;
 }
 
-} // unnamed namespace
-
 #endif // #ifndef __WXMSW__
+
+} // unnamed namespace
 
 bool ConvertMatToBitmap(const cv::Mat& matBitmap, wxBitmap& bitmap)
 {
