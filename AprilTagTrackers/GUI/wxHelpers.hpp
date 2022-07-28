@@ -11,8 +11,21 @@
 #include <wx/statbox.h>
 #include <wx/window.h>
 
+#include <memory>
 #include <sstream>
 #include <type_traits>
+
+constexpr auto FrameDeleter = [](wxFrame* frame)
+{
+    frame->Destroy();
+};
+using FramePtr = std::unique_ptr<wxFrame, decltype(FrameDeleter)>;
+
+template <typename... Args>
+inline FramePtr NewFrame(Args&&... args)
+{
+    return FramePtr(new wxFrame(nullptr, std::forward<Args>(args)...), FrameDeleter);
+}
 
 /// Create T and return non-owning pointer, parent now owns the memory.
 template <typename T, typename... Args>
