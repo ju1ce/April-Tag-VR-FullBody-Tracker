@@ -28,10 +28,7 @@ class RefPtr
 private:
     /// Is implicit pointer conversion possible from T pointer to this pointer.
     template <typename From>
-    static constexpr bool IsConv() noexcept
-    {
-        return std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
-    }
+    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
 
 public:
     // Friend any template instantiation.
@@ -50,54 +47,80 @@ public:
     constexpr RefPtr(const RefPtr& other) noexcept = default;
     constexpr RefPtr(RefPtr&& other) noexcept = default;
 
+    /// Construct with not-null raw pointer.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(T2* _rawPtr) noexcept
+        : rawPtr(_rawPtr) { ATT_ASSERT(rawPtr != nullptr); }
+    /// Copy from RefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(const RefPtr<T2>& other) noexcept
+        : rawPtr(other.rawPtr) { ATT_ASSERT(rawPtr != nullptr); }
+    /// Move from not-null RefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(RefPtr<T2>&& other) noexcept
+        : rawPtr(std::move(other.rawPtr)) { ATT_ASSERT(rawPtr != nullptr); }
+    /// Copy from not-null OptRefPtr::Get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(const OptRefPtr<T2>& other) noexcept
+        : rawPtr(other.Get()) {}
+    /// Copy from not-null std::unique_ptr::get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(const std::unique_ptr<T2>& other) noexcept
+        : rawPtr(other.get()) { ATT_ASSERT(rawPtr != nullptr); }
+    /// Copy from not-nullopt or nullptr std::optional::value().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr(const std::optional<T2>& other) noexcept
+        : rawPtr(other.value()) { ATT_ASSERT(rawPtr != nullptr); }
+
     RefPtr& operator=(const RefPtr& rhs) noexcept = default;
     RefPtr& operator=(RefPtr&& rhs) noexcept = default;
 
-    /// Construct with not-null raw pointer.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(T2* _rawPtr) noexcept
-        : rawPtr(_rawPtr)
+    /// Assign with not-null raw pointer.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(T2* rhs) noexcept
     {
+        rawPtr = rhs;
         ATT_ASSERT(rawPtr != nullptr);
+        return *this;
     }
-
-    /// Copy from RefPtr.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(const RefPtr<T2>& other) noexcept
-        : rawPtr(other.rawPtr)
+    /// Copy assign from RefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(const RefPtr<T2>& rhs) noexcept
     {
+        rawPtr = rhs.rawPtr;
         ATT_ASSERT(rawPtr != nullptr);
+        return *this;
     }
-
-    /// Move from not-null RefPtr.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(RefPtr<T2>&& other) noexcept
-        : rawPtr(other.rawPtr)
+    /// Move assign from not-null RefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(RefPtr<T2>&& rhs) noexcept
     {
+        rawPtr = rhs.rawPtr;
         ATT_ASSERT(rawPtr != nullptr);
+        return *this;
     }
-
-    /// Copy from not-null OptRefPtr::Get().
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(const OptRefPtr<T2>& other)
-        : rawPtr(other.Get())
+    /// Copy assign from not-null OptRefPtr::Get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(const OptRefPtr<T2>& rhs) noexcept
     {
+        rawPtr = rhs.Get();
+        return *this;
     }
-
-    /// Copy from not-null  std::unique_ptr::get().
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(const std::unique_ptr<T2>& other) noexcept
-        : RefPtr<T>(other.get())
+    /// Copy assign from not-null std::unique_ptr::get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(const std::unique_ptr<T2>& rhs) noexcept
     {
+        rawPtr = rhs.get();
         ATT_ASSERT(rawPtr != nullptr);
+        return *this;
     }
-
-    /// Copy from not-nullopt or nullptr std::optional::value().
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    RefPtr(const std::optional<T2>& other) noexcept
-        : RefPtr<T>(other.value())
+    /// Copy assign from not-nullopt or nullptr std::optional::value().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    RefPtr& operator=(const std::optional<T2>& rhs) noexcept
     {
+        rawPtr = rhs.value();
         ATT_ASSERT(rawPtr != nullptr);
+        return *this;
     }
 
     Pointer Get() const noexcept
@@ -109,7 +132,10 @@ public:
     Pointer operator->() const noexcept { return Get(); }
     Reference operator*() const noexcept { return *Get(); }
     operator Pointer() const noexcept { return Get(); }
-    explicit operator bool() const noexcept = delete;
+
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    operator T2*() const noexcept { return Get(); }
+    operator bool() const noexcept = delete;
 
     /// dynamic_cast pointer to T2 pointer
     template <typename T2>
@@ -165,10 +191,7 @@ class OptRefPtr
 private:
     /// Is implicit pointer conversion possible from T pointer to this pointer.
     template <typename From>
-    static constexpr bool IsConv() noexcept
-    {
-        return std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
-    }
+    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
 
 public:
     // Friend any template instantiation.
@@ -187,54 +210,80 @@ public:
     constexpr OptRefPtr(const OptRefPtr& other) noexcept = default;
     constexpr OptRefPtr(OptRefPtr&& other) noexcept = default;
 
+    /// Construct with raw pointer.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(T2* _rawPtr) noexcept
+        : rawPtr(_rawPtr) {}
+    /// Copy from OptRefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(const OptRefPtr<T2>& other) noexcept
+        : rawPtr(other.rawPtr) {}
+    /// Move from OptRefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(OptRefPtr<T2>&& other) noexcept
+        : rawPtr(std::move(other.rawPtr)) {}
+    /// Copy from RefPtr::Get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(const RefPtr<T2>& other) noexcept
+        : rawPtr(other.Get()) {}
+    /// Copy from std::unique_ptr::get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(const std::unique_ptr<T2>& other) noexcept
+        : rawPtr(other.get()) {}
+    /// Copy from std::optional, nullopt becomes nullptr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr(const std::optional<T2>& other) noexcept
+        : rawPtr(other.has_value() ? other.value() : nullptr) {}
+
     OptRefPtr& operator=(const OptRefPtr& rhs) noexcept = default;
     OptRefPtr& operator=(OptRefPtr&& rhs) noexcept = default;
 
-    /// Construct with raw pointer.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(T2* _rawPtr) noexcept
-        : rawPtr(_rawPtr)
+    /// Assign with not-null raw pointer.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(T2* rhs) noexcept
     {
+        rawPtr = rhs;
+        return *this;
     }
-    /// Copy from OptRefPtr.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(const OptRefPtr<T2>& other) noexcept
-        : rawPtr(other.rawPtr)
+    /// Copy assign from OptRefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(const OptRefPtr<T2>& rhs) noexcept
     {
+        rawPtr = std::move(rhs.rawPtr);
+        return *this;
     }
-    /// Move from OptRefPtr.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(OptRefPtr<T2>&& other) noexcept
-        : rawPtr(other.rawPtr)
+    /// Move assign from OptRefPtr.
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(OptRefPtr<T2>&& rhs) noexcept
     {
+        rawPtr = rhs.rawPtr;
+        return *this;
     }
-    /// Copy from RefPtr::Get().
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(const RefPtr<T2>& other) noexcept
-        : rawPtr(other.Get())
+    /// Copy assign from not-null RefPtr::Get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(const RefPtr<T2>& rhs) noexcept
     {
+        rawPtr = rhs.Get();
+        return *this;
     }
-    /// Copy from std::unique_ptr::get().
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(const std::unique_ptr<T2>& other) noexcept
-        : OptRefPtr(other.get())
+    /// Copy assign from std::unique_ptr::get().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(const std::unique_ptr<T2>& rhs) noexcept
     {
+        rawPtr = rhs.get();
+        return *this;
     }
-    /// Copy from std::optional, nullopt becomes nullptr.
-    template <typename T2, typename = std::enable_if_t<IsConv<T2>()>>
-    OptRefPtr(const std::optional<T2>& other) noexcept
-        : OptRefPtr(other.has_value() ? other.value() : nullptr)
+    /// Copy assign from std::optional::value().
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    OptRefPtr& operator=(const std::optional<T2>& rhs) noexcept
     {
+        rawPtr = (rhs.has_value() ? rhs.value() : nullptr);
+        return *this;
     }
 
-    bool IsNull() const noexcept
-    {
-        return rawPtr == nullptr;
-    }
-    bool NotNull() const noexcept
-    {
-        return rawPtr != nullptr;
-    }
+    void SetNull() noexcept { rawPtr = nullptr; }
+    bool IsNull() const noexcept { return rawPtr == nullptr; }
+    bool NotNull() const noexcept { return rawPtr != nullptr; }
     Pointer Get() const noexcept
     {
         ATT_ASSERT(rawPtr != nullptr);
@@ -244,29 +293,22 @@ public:
     Pointer operator->() const noexcept { return Get(); }
     Reference operator*() const noexcept { return *Get(); }
     operator Pointer() const noexcept { return Get(); }
-    explicit operator bool() const noexcept = delete;
+    template <typename T2, typename = std::enable_if_t<IsConv<T2>>>
+    operator T2*() const noexcept { return Get(); }
+    operator bool() const noexcept { return NotNull(); }
 
     /// dynamic_cast pointer to T2 pointer, returns nullopt if failed
     template <typename T2>
-    OptRefPtr<T2> DynamicCast() const
-    {
-        return dynamic_cast<T2*>(Get());
-    }
+    OptRefPtr<T2> DynamicCast() const { return dynamic_cast<T2*>(Get()); }
 
 private:
     Pointer rawPtr = nullptr;
 };
 
 template <typename T1, typename T2>
-bool operator==(const OptRefPtr<T1>& lhs, const OptRefPtr<T2>& rhs)
-{
-    return lhs.rawPtr == rhs.rawPtr;
-}
+bool operator==(const OptRefPtr<T1>& lhs, const OptRefPtr<T2>& rhs) { return lhs.rawPtr == rhs.rawPtr; }
 template <typename T1, typename T2>
-bool operator!=(const OptRefPtr<T1>& lhs, const OptRefPtr<T2>& rhs)
-{
-    return !operator==(lhs, rhs);
-}
+bool operator!=(const OptRefPtr<T1>& lhs, const OptRefPtr<T2>& rhs) { return !operator==(lhs, rhs); }
 
 template <typename T>
 OptRefPtr(std::unique_ptr<T>) -> OptRefPtr<T>;
