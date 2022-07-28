@@ -15,6 +15,7 @@ target_sources(test PRIVATE
     "${ATT_DIR}/Quaternion.cpp"
     "${ATT_DIR}/Serializable.cpp"
     "${ATT_DIR}/Tracker.cpp"
+    "${ATT_DIR}/ImageDrawing.cpp"
 
     "${ATT_DIR}/utils/Env.cpp"
     "${ATT_DIR}/utils/Log.cpp"

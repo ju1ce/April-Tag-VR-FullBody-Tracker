@@ -1,185 +1,230 @@
 #include "PreviewPane.hpp"
 
+#include "MatToBitmap.hpp"
 #include "utils/Assert.hpp"
 #include "wxHelpers.hpp"
 
-#include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
-#include <wx/dcclient.h>
-#include <wx/image.h>
-#include <wx/rawbmp.h>
-#include <wx/sizer.h>
-
-PreviewPane::PreviewPane(RefPtr<wxWindow> parent, wxWindowID _id)
-    : wxPanel(parent, _id, wxDefaultPosition, wxSize(640, 480)), id(_id),
-      renderLoop(std::make_unique<PreviewRenderLoop>(*this))
+std::unique_ptr<wxBoxSizer> PreviewPane::Create(RefPtr<wxWindow> _parent, wxSize size)
 {
-    Hide();
-    SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
-    Bind(wxEVT_PAINT, &PreviewPane::OnPaintEvent, this, id);
+    ATT_ASSERT(utils::IsMainThread());
+    ATT_ASSERT(panel.IsNull());
+    parent = _parent;
+    panelID = wxWindow::NewControlId();
+    panel = NewWindow<wxPanel>(parent, panelID, wxDefaultPosition, size);
+    panel->Hide();
+    panel->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
+
+    auto widthSizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL);
+    widthSizer->AddStretchSpacer();
+    widthSizer->Add(panel, wxSizerFlags().Expand().Shaped());
+    widthSizer->AddStretchSpacer();
+
+    panel->Bind(
+        wxEVT_PAINT, [this](auto& evt)
+        {
+            this->OnPanelPaint(evt);
+        },
+        panelID);
+    panel->Bind(
+        wxEVT_SHOW, [this](wxShowEvent& evt)
+        {
+            this->OnPanelShow(evt.IsShown());
+        });
+
+    return std::move(widthSizer);
 }
 
-void PreviewPane::OnPaintEvent(wxPaintEvent&)
+void PreviewPane::Destroy()
 {
-    wxPaintDC dc(this);
-    // Uses a more efficient backend for drawing
-    const auto gc = std::unique_ptr<wxGraphicsContext>(wxGraphicsContext::Create(dc));
-    gc->SetInterpolationQuality(wxINTERPOLATION_FAST);
-    gc->SetCompositionMode(wxCOMPOSITION_SOURCE);
-    gc->SetAntialiasMode(wxANTIALIAS_NONE);
+    ATT_ASSERT(utils::IsMainThread());
+    ATT_ASSERT(panel.NotNull());
+    isVisible = false;
+    renderLoop->StopLoop();
+    panel.SetNull();
+    panelID = wxID_ANY;
 
-    bool rebuildBitmap = false;
-    {
-        const auto lock = std::lock_guard(imageMutex);
-        if (newImageReady && !image.empty())
-        {
-            newImageReady = false;
-            rebuildBitmap = true;
-            cv::swap(image, swapImage);
-        }
-    }
+    std::lock_guard lock{imageSwapMutex};
+    readImage.release();
+    writeImage.release();
+}
 
-    wxSize drawArea = GetSize();
-    if (swapImage.empty() || drawArea.x < 10 || drawArea.y < 10)
-    {
-        if (backgroundBrush.IsNull())
-        {
-            backgroundBrush = gc->CreateBrush(*wxGREY_BRUSH);
-        }
-        gc->SetBrush(backgroundBrush);
-        gc->DrawRectangle(0, 0, drawArea.x, drawArea.y);
-        return;
-    }
+void PreviewPane::Show()
+{
+    ATT_ASSERT(utils::IsMainThread());
+    if (panel.IsNull()) return;
+    panel->Show();
+    isVisible = true;
+    renderLoop->StartLoop(RENDER_UPS);
+}
 
-    if (rebuildBitmap || bitmap.IsNull())
-    {
-        // Sets up a reference to the pixel buffer that wxBitmap can use
-        constexpr bool isStaticData = true;
-        // expects data to be RGB 8U
-        wxImage imageRef(swapImage.cols, swapImage.rows, swapImage.data, isStaticData);
-        // copies the wxImage data to some native format
-        bitmap = gc->CreateBitmapFromImage(imageRef);
-    }
-
-    gc->DrawBitmap(bitmap, 0, 0, drawArea.x, drawArea.y);
+void PreviewPane::Hide()
+{
+    ATT_ASSERT(utils::IsMainThread());
+    if (panel.IsNull()) return;
+    isVisible = false;
+    panel->Hide();
+    renderLoop->StopLoop();
 }
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage)
 {
-    bool sizeChanged = false;
+    float aspectRatio = SetImage(newImage);
+    if (aspectRatio > 0) SetRatio(aspectRatio);
+}
+
+void PreviewPane::ClearBackground(RefPtr<wxGraphicsContext> context, wxSize drawArea)
+{
+    if (backgroundBrush.IsNull())
     {
-        const auto lock = std::lock_guard(imageMutex);
-        sizeChanged = image.cols != newImage.cols || image.rows != newImage.rows;
-        // OpenCV always outputs in BGR while wxImage only accepts RGB
-        cv::cvtColor(newImage, image, cv::COLOR_BGR2RGB);
-        newImageReady = true;
-
-        ATT_ASSERT(image.isContinuous(), "Matrix points to continuous memory.");
-        ATT_ASSERT(!image.empty() && image.rows > 1 && image.cols > 1, "Matrix is a non-empty or null, 2d image.");
+        backgroundBrush = context->CreateBrush(*wxGREY_BRUSH);
     }
-    if (sizeChanged)
+    context->SetBrush(backgroundBrush);
+    context->DrawRectangle(0, 0, drawArea.x, drawArea.y);
+}
+
+void PreviewPane::Repaint()
+{
+    ATT_ASSERT(panel.NotNull());
+    constexpr bool eraseBackground = false;
+    panel->Refresh(eraseBackground);
+}
+
+float PreviewPane::SetImage(const cv::Mat& newImage)
+{
+    ATT_ASSERT(!newImage.empty());
+
+    std::lock_guard lock{imageSwapMutex};
+    if (IsVisible())
     {
-        CallAfter([this, x = image.cols, y = image.rows]
-            {
-                // Update wxSHAPED sizing
-                OptRefPtr<wxSizerItem> item = GetContainingSizer()->GetItem(this);
-                if (item.NotNull())
-                {
-                    item->SetRatio(x, y);
-                }
-                SendSizeEventToParent();
-            });
+        newImage.copyTo(writeImage);
+        writeImageUpdated = true;
     }
-}
 
-void PreviewPane::ShowPane()
-{
-    Show();
-    renderLoop->StartLoop(RENDER_UPS);
-}
-
-void PreviewPane::HidePane()
-{
-    Hide();
-    renderLoop->StopLoop();
-}
-
-PreviewRenderLoop::PreviewRenderLoop(PreviewPane& _pane)
-    : wxTimer(), pane(_pane)
-{
-}
-
-void PreviewRenderLoop::StartLoop(int updatesPerSecond)
-{
-    if (updatesPerSecond > 0)
+    if (writeImage.cols != readImage.cols || writeImage.rows != readImage.rows)
     {
-        const int millis = 1000 / updatesPerSecond;
-        wxTimer::Start(millis);
+        return static_cast<float>(writeImage.cols) / static_cast<float>(writeImage.rows);
     }
-    else if (updatesPerSecond == -1)
+    return -1.0f;
+}
+
+bool PreviewPane::SwapReadWriteImage()
+{
+    /// TODO: test writeImageUpdated before this? its a race condition with SetImage but,
+    /// does that matter? at most it would miss a single frame.
+    std::lock_guard lock{imageSwapMutex};
+    if (writeImageUpdated)
     {
-        wxTimer::Start();
+        cv::swap(writeImage, readImage);
+        writeImageUpdated = false;
+        return true;
     }
+    return false;
 }
 
-void PreviewRenderLoop::Notify()
+void PreviewPane::SetRatioUnsafe(float aspectRatio)
 {
-    pane.Refresh(false);
-}
+    ATT_ASSERT(panel.NotNull());
+    ATT_ASSERT(utils::IsMainThread());
+    ATT_ASSERT(aspectRatio > 0);
 
-PreviewFrame::PreviewFrame(const wxString& _title)
-    : title(_title), id(wxWindow::NewControlId()), frame(nullptr, FrameDestroyer)
-{
-}
-
-void PreviewFrame::UpdateImage(const cv::Mat& image)
-{
-    const auto lock = std::lock_guard{frameLock};
-    if (!frame) return;
-    pane->UpdateImage(image);
-}
-
-void PreviewFrame::Show(CloseButton closeButton)
-{
-    const auto lock = std::lock_guard{frameLock};
-    // already visible
-    if (frame) return;
-
-    int style = wxDEFAULT_FRAME_STYLE;
-    if (closeButton == CloseButton::Hide)
-        style &= ~wxCLOSE_BOX;
-    frame.reset(new wxFrame(nullptr, id, title, wxDefaultPosition, wxDefaultSize, style));
-
-    pane = NewWindow<PreviewPane>(frame.get(), wxWindow::NewControlId());
-    pane->ShowPane();
-
-    auto horiz = NewSizer<wxBoxSizer>(frame.get(), wxHORIZONTAL);
-
-    horiz->AddStretchSpacer();
-    horiz->Add(pane, wxSizerFlags().Expand().Shaped());
-    horiz->AddStretchSpacer();
-
-    frame->Fit();
-    frame->Show();
-
-    frame->Bind(
-        wxEVT_CLOSE_WINDOW, [this](auto&)
+    if (OptRefPtr<wxSizer> sizer = panel->GetContainingSizer())
+    {
+        if (OptRefPtr<wxSizerItem> item = sizer->GetItem(panel.Get()))
         {
-            Hide();
-        },
-        id);
+            item->SetRatio(aspectRatio);
+        }
+    }
+    panel->SendSizeEventToParent();
 }
 
-void PreviewFrame::Hide()
+void PreviewPane::SetRatio(float aspectRatio)
 {
-    const auto lock = std::lock_guard{frameLock};
-    // already destroyed
-    if (!frame) return;
+    ATT_ASSERT(panel.NotNull());
+    panel->CallAfter([this, aspectRatio]
+        {
+            this->SetRatioUnsafe(aspectRatio);
+        });
+}
+
+void PreviewPane::OnPanelPaint(wxPaintEvent& evt)
+{
+    ATT_ASSERT(panel.NotNull());
+    wxPaintDC dc{panel};
+    /// uses faster platform specific drawing
+    std::unique_ptr<wxGraphicsContext> gc{wxGraphicsContext::Create(dc)};
+    gc->SetInterpolationQuality(wxINTERPOLATION_FAST);
+    gc->SetCompositionMode(wxCOMPOSITION_SOURCE);
+    gc->SetAntialiasMode(wxANTIALIAS_NONE);
+
+    wxSize drawArea = panel->GetSize();
+    if (drawArea.x < MIN_DRAW_SIZE || drawArea.y < MIN_DRAW_SIZE)
+    {
+        ClearBackground(gc, drawArea);
+        return;
+    }
+
+    bool rebuildBitmap = SwapReadWriteImage();
+
+    if (readImage.empty())
+    {
+        ClearBackground(gc, drawArea);
+        return;
+    }
+
+    if (rebuildBitmap)
+    {
+        ReserveBitmapForMat(readImage, readImageBitmap);
+        ConvertMatToBitmap(readImage, readImageBitmap);
+    }
+
+    gc->DrawBitmap(readImageBitmap, 0, 0, drawArea.x, drawArea.y);
+}
+
+void PreviewFrame::Create()
+{
+    constexpr int style = wxDEFAULT_FRAME_STYLE & (~wxCLOSE_BOX);
+    CreateFrame(wxDefaultPosition, wxDefaultSize, style);
+}
+
+void PreviewFrame::CreateClosable()
+{
+    CreateFrame(wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+}
+
+void PreviewFrame::Destroy()
+{
+    ATT_ASSERT(utils::IsMainThread());
+    isVisible = false;
+    previewPane.Destroy();
     frame.reset();
 }
 
-bool PreviewFrame::IsVisible()
+void PreviewFrame::CreateFrame(wxPoint pos, wxSize size, int style)
 {
-    const auto lock = std::lock_guard{frameLock};
-    return static_cast<bool>(frame);
+    ATT_ASSERT(utils::IsMainThread());
+    if (IsVisibleUnsafe())
+    {
+        // expand if minimized
+        frame->Iconize(false);
+        // bring to front
+        frame->Raise();
+        return;
+    }
+    frameID = wxWindow::NewControlId();
+    frame.reset(new wxFrame(nullptr, frameID, title, pos, size, style));
+    isVisible = true;
+
+    std::unique_ptr<wxBoxSizer> paneSizer = previewPane.Create(frame.get(), wxSize(640, 480));
+    frame->SetSizer(paneSizer.release());
+
+    frame->Bind(
+        wxEVT_CLOSE_WINDOW, [this](auto& evt)
+        {
+            this->Destroy();
+        },
+        frameID);
+
+    previewPane.Show();
+    frame->Fit();
+    frame->Show();
 }
