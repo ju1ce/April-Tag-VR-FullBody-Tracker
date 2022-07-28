@@ -23,14 +23,9 @@ class OptRefPtr;
 template <typename T>
 class RefPtr
 {
+public:
     static_assert(!std::is_reference_v<T>, "Cannot form pointer to reference.");
 
-private:
-    /// Is implicit pointer conversion possible from T pointer to this pointer.
-    template <typename From>
-    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
-
-public:
     // Friend any template instantiation.
     template <typename T2>
     friend class RefPtr;
@@ -39,6 +34,12 @@ public:
     using Pointer = Type*;
     using Reference = Type&;
 
+private:
+    /// Is implicit pointer conversion possible from T pointer to this pointer.
+    template <typename From>
+    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
+
+public:
     // Non-owning.
     ~RefPtr() = default;
 
@@ -186,14 +187,9 @@ RefPtr(OptRefPtr<T*>) -> RefPtr<T>;
 template <typename T>
 class OptRefPtr
 {
+public:
     static_assert(!std::is_reference_v<T>, "Cannot form pointer to reference.");
 
-private:
-    /// Is implicit pointer conversion possible from T pointer to this pointer.
-    template <typename From>
-    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
-
-public:
     // Friend any template instantiation.
     template <typename T2>
     friend class OptRefPtr;
@@ -202,6 +198,12 @@ public:
     using Pointer = Type*;
     using Reference = Type&;
 
+private:
+    /// Is implicit pointer conversion possible from T pointer to this pointer.
+    template <typename From>
+    static constexpr bool IsConv = std::is_convertible_v<std::add_pointer_t<From>, Pointer>;
+
+public:
     // Non-owning.
     ~OptRefPtr() = default;
 
