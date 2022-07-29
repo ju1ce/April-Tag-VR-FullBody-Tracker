@@ -1,3 +1,5 @@
+#pragma once
+
 // OpenCV
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
