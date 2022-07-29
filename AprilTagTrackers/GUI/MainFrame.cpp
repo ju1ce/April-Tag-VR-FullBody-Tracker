@@ -6,12 +6,15 @@
 #include <functional>
 #include <sstream>
 
+// Application icon in source code, embedding an image as a string literal
+#include "resources/apriltag.xpm"
+
 GUI::MainFrame::MainFrame(RefPtr<ITrackerControl> _tracker, const Localization& _lc, UserConfig& _config)
     : wxFrame(nullptr, wxID_ANY, _lc.APP_TITLE),
       tracker(_tracker), lc(_lc), config(_config),
       previews{PreviewFrame{"Preview [" + _config.windowTitle + "]"}, PreviewFrame{"Camera Preview [" + _config.windowTitle + "]"}}
 {
-    SetIcon(apriltag_xpm);
+    SetIcon(APRILTAG_XPM);
     if (!config.windowTitle.empty()) SetTitle(config.windowTitle);
 
     statusBar = NewWindow<wxStatusBar>(static_cast<wxFrame*>(this));

@@ -18,9 +18,6 @@
 #include <sstream>
 #include <string>
 
-// Application icon in special c code format
-#include "apriltag.xpm"
-
 /// wxWidgets will delete this
 class GUI::MainFrame : protected wxFrame
 {
