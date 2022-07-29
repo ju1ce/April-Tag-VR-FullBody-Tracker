@@ -100,6 +100,36 @@ target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(AprilTagTrackers)
 
+if (MSVC)
+    target_compile_options(AprilTagTrackers PRIVATE
+        # all source files are utf8
+        /utf-8
+        # make msvc slightly more conformant to the standard
+        /permissive-
+        /Zc:inline
+    )
+endif()
+
+if (ATT_DEBUG)
+    if (MSVC)
+        target_compile_options(AprilTagTrackers PRIVATE
+            # hide warnings from system includes
+            /external:W0
+            /external:anglebrackets # any include <> is external
+            # enable diagnostics
+            /W4
+        )
+    else()
+        target_compile_options(AprilTagTrackers PRIVATE
+            # enable diagnostics
+            -Wall
+            -Wextra
+            # warn on non conforming code
+            -pedantic
+        )
+    endif()
+endif()
+
 # Build with Address Sanitizer
 if(ATT_ENABLE_ASAN)
     att_target_enable_asan(AprilTagTrackers)

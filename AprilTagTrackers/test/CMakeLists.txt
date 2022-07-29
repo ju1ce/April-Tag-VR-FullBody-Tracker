@@ -86,6 +86,16 @@ target_compile_features(test PRIVATE cxx_std_17)
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(test)
 
+if (MSVC)
+    target_compile_options(AprilTagTrackers PRIVATE
+        # all source files are utf8
+        /utf-8
+        # make msvc slightly more conformant to the standard
+        /permissive-
+        /Zc:inline
+    )
+endif()
+
 # Build with Address Sanitizer
 if(ATT_TEST_ENABLE_ASAN)
     att_target_enable_asan(test)
