@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Config.hpp"
 #include "Helpers.hpp"
 #include "IPC/IPC.hpp"
