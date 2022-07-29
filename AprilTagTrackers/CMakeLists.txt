@@ -85,7 +85,6 @@ att_target_platform_definitions(AprilTagTrackers)
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )
 
 if (BUILD_SHARED_LIBS)
