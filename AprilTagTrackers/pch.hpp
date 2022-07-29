@@ -9,6 +9,9 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/videoio/registry.hpp>
 
+// ps3eye support for OpenCV
+#include <ps3eye/PSEyeVideoCapture.h>
+
 // OpenVR
 #include <openvr.h>
 
