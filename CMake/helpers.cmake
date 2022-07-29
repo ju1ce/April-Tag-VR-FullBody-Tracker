@@ -183,13 +183,11 @@ function(att_clone_submodule module_dir)
     if (NOT EXISTS "${abs_module_dir}")
         message(FATAL_ERROR "Submodule ${abs_module_dir} not found.")
     endif()
+    message(STATUS "Cloning submodule '${module_dir}'")
+    execute_process(
+        COMMAND "${GIT_CMD}" submodule --quiet update --init --filter=tree:0 --recursive "${abs_module_dir}"
+        WORKING_DIRECTORY "${SUPERPROJECT_SOURCE_DIR}")
     if (NOT EXISTS "${abs_module_dir}/.git")
-        message(STATUS "Cloning submodule '${module_dir}'")
-        execute_process(
-            COMMAND "${GIT_CMD}" submodule --quiet update --init --depth 1 --recursive "${abs_module_dir}"
-            WORKING_DIRECTORY "${SUPERPROJECT_SOURCE_DIR}")
-        if (NOT EXISTS "${abs_module_dir}/.git")
-            message(FATAL_ERROR "Submodule ${abs_module_dir} failed to clone.")
-        endif()
+        message(FATAL_ERROR "Submodule ${abs_module_dir} failed to clone.")
     endif()
 endfunction()
