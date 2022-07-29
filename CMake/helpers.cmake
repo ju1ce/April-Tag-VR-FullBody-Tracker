@@ -176,17 +176,17 @@ function(att_read_version_file output_var file_path)
     set(${output_var} "${version_text}" PARENT_SCOPE)
 endfunction()
 
-# clone a git submodule at a path relative to superproject source dir
+# clone a git submodule at a path relative to CMAKE_CURRENT_SOURCE_DIR
 function(att_clone_submodule module_dir)
     find_program(GIT_CMD git DOC "Clone submodules." REQUIRED)
-    set(abs_module_dir "${SUPERPROJECT_SOURCE_DIR}/${module_dir}")
+    set(abs_module_dir "${CMAKE_CURRENT_SOURCE_DIR}/${module_dir}")
     if (NOT EXISTS "${abs_module_dir}")
         message(FATAL_ERROR "Submodule ${abs_module_dir} not found.")
     endif()
     message(STATUS "Cloning submodule '${module_dir}'")
     execute_process(
         COMMAND "${GIT_CMD}" submodule --quiet update --init --filter=tree:0 --recursive "${abs_module_dir}"
-        WORKING_DIRECTORY "${SUPERPROJECT_SOURCE_DIR}")
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
     if (NOT EXISTS "${abs_module_dir}/.git")
         message(FATAL_ERROR "Submodule ${abs_module_dir} failed to clone.")
     endif()

@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 # required to decide default triplet
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-set(SUPERPROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/helpers.cmake")
 
 att_default_triplet(ATT_TRIPLET)
