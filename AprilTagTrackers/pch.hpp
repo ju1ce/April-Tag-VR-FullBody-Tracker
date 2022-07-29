@@ -17,6 +17,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <exception>
 #include <filesystem>
@@ -36,3 +37,17 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+
+// wxWidgets gui, not used in test build
+#ifndef ATT_TESTING
+#    include <wx/wx.h>
+#endif
+
+// windows only
+#ifdef ATT_OS_WINDOWS
+#    define WIN32_LEAN_AND_MEAN
+#    define NOMINMAX
+#    include <Windows.h>
+#    undef WIN32_LEAN_AND_MEAN
+#    undef NOMINMAX
+#endif
