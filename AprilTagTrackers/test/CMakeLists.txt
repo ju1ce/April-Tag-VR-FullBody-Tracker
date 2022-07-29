@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 project(test CXX)
 
+# project output
 add_executable(test)
+
+# ====== Source Files ======
 
 target_sources(test PRIVATE
     main.cpp
@@ -31,13 +34,7 @@ else()
     )
 endif()
 
-if (MSVC)
-    if (BUILD_SHARED_LIBS)
-        att_target_crt_linkage(test DYNAMIC)
-    else()
-        att_target_crt_linkage(test STATIC)
-    endif()
-endif()
+# ====== Dependencies ======
 
 target_link_libraries(test PRIVATE
     Threads::Threads
@@ -51,31 +48,43 @@ target_link_libraries(test PRIVATE
 target_include_directories(test SYSTEM PRIVATE
     ${LIBUSB_INCLUDE_DIRS}
 )
+# wxWidgets isn't linked, but we want the definitions to match somewhat
+target_compile_definitions(test PRIVATE
+    wxDEBUG_LEVEL=$<CONFIG:Debug>
+    ${wxWidgets_DEFINITIONS}
+    "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
+)
+
+# ====== Compiler Defines ======
+
+target_compile_definitions(test PRIVATE
+    ATT_DRIVER_VERSION=${DRIVER_VERSION}
+    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
+    ATT_TESTING
+)
+
+att_target_platform_definitions(test)
+
+# ====== Compiler Options ======
 
 # Set the root of includes, rather than relative
 target_include_directories(test PRIVATE
     "${ATT_DIR}"
 )
+
+if (BUILD_SHARED_LIBS)
+    att_target_crt_linkage(test DYNAMIC)
+else()
+    att_target_crt_linkage(test STATIC)
+endif()
+
 # Ensure compiler with c++17 language features
 target_compile_features(test PRIVATE cxx_std_17)
+
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(test)
-
-target_compile_definitions(test PRIVATE
-    ATT_DRIVER_VERSION=${DRIVER_VERSION}
-    ATT_TESTING
-    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
-
-    # wxWidgets isn't linked, but we want the definitions to match somewhat
-    ${wxWidgets_DEFINITIONS}
-    "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
-)
-att_target_platform_definitions(test)
-
-# most sources are duplicated, remove from code analysis
-set_target_properties(test PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
 
 # Build with Address Sanitizer
 if(ATT_TEST_ENABLE_ASAN)
@@ -89,9 +98,15 @@ target_precompile_headers(test PRIVATE "${ATT_DIR}/pch.hpp")
 set_target_properties(AprilTagTrackers PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
+# ====== CMake Configuration ======
+
 # Install application to bin folder
 install(TARGETS test RUNTIME DESTINATION ".")
+
 if(WIN32)
     # install pdb file for debugging
     install(FILES $<TARGET_PDB_FILE:test> DESTINATION "." OPTIONAL)
 endif()
+
+# most sources are duplicated, remove from code analysis
+set_target_properties(test PROPERTIES EXPORT_COMPILE_COMMANDS OFF)

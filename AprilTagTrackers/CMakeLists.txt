@@ -1,11 +1,10 @@
-# CMakeList.txt : CMake project for AprilTagTrackers, include source and define
-# project specific logic here.
-
 cmake_minimum_required(VERSION 3.16)
 project(AprilTagTrackers CXX)
 
 # main build output
 add_executable(AprilTagTrackers)
+
+# ====== Source Files ======
 
 target_sources(AprilTagTrackers PRIVATE
     AprilTagWrapper.cpp
@@ -39,13 +38,7 @@ elseif(UNIX)
     )
 endif()
 
-if (MSVC)
-    if (BUILD_SHARED_LIBS)
-        att_target_crt_linkage(AprilTagTrackers DYNAMIC)
-    else()
-        att_target_crt_linkage(AprilTagTrackers STATIC)
-    endif()
-endif()
+# ====== Dependencies ======
 
 # find and link dependencies
 find_package(Threads REQUIRED)
@@ -71,17 +64,35 @@ target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     ${LIBUSB_INCLUDE_DIRS}
 )
 target_compile_definitions(AprilTagTrackers PRIVATE
-    "wxDEBUG_LEVEL=$<IF:$<CONFIG:Release>,0,1>"
+    wxDEBUG_LEVEL=$<CONFIG:Debug>
     ${wxWidgets_DEFINITIONS}
     "$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>"
+)
+
+# ====== Compiler Defines ======
+
+target_compile_definitions(AprilTagTrackers PRIVATE
+    ATT_DRIVER_VERSION=${DRIVER_VERSION}
+    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
     DOCTEST_CONFIG_DISABLE
 )
+
+att_target_platform_definitions(AprilTagTrackers)
+
+# ====== Compiler Options ======
 
 # Set the root of includes, rather than relative
 target_include_directories(AprilTagTrackers PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )
+
+if (BUILD_SHARED_LIBS)
+    att_target_crt_linkage(AprilTagTrackers DYNAMIC)
+else()
+    att_target_crt_linkage(AprilTagTrackers STATIC)
+endif()
 
 # Ensure compiler with c++17 language features
 target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
@@ -90,17 +101,19 @@ target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(AprilTagTrackers)
 
-target_compile_definitions(AprilTagTrackers PRIVATE
-    ATT_DRIVER_VERSION=${DRIVER_VERSION}
-    ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
-)
-att_target_platform_definitions(AprilTagTrackers)
-
 # Build with Address Sanitizer
 if(ATT_ENABLE_ASAN)
     att_target_enable_asan(AprilTagTrackers)
 endif()
+
+# Precompiled std and library headers
+target_precompile_headers(AprilTagTrackers PRIVATE pch.hpp)
+
+# Enable LTO
+set_target_properties(AprilTagTrackers PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+
+# ====== CMake Configuration ======
 
 # Install application to bin folder
 install(TARGETS AprilTagTrackers RUNTIME DESTINATION ".")
@@ -113,13 +126,6 @@ if(WIN32)
     # wxWidgets will compile a resource.rc file for us
     target_sources(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources/resource.rc")
 endif()
-
-# Enable LTO
-set_target_properties(AprilTagTrackers PROPERTIES
-    INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-
-# precompiled headers
-target_precompile_headers(AprilTagTrackers PRIVATE pch.hpp)
 
 # Make AprilTagTrackers the default target in Visual Studio
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT AprilTagTrackers)
