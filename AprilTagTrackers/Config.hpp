@@ -146,7 +146,7 @@ public:
     CalibrationConfig() : FS::Serializable<CalibrationConfig>("config/calib.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(cv::Mat, camMat);
+    FIELD(cv::Mat, cameraMatrix);
     FIELD(cv::Mat, distortionCoeffs);
     FIELD(cv::Mat, stdDeviationsIntrinsics);
     FIELD(std::vector<double>, perViewErrors);

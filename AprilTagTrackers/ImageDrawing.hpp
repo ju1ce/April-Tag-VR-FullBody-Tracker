@@ -16,7 +16,7 @@ void drawCalibration(
 inline void drawCalibration(cv::Mat& drawImg, const CalibrationConfig& calib)
 {
     drawCalibration(drawImg,
-        calib.camMat,
+        calib.cameraMatrix,
         calib.distortionCoeffs,
         calib.stdDeviationsIntrinsics,
         calib.perViewErrors,
