@@ -104,17 +104,18 @@ inline void Write(cv::FileStorage& fs, const cv::Ptr<cv::aruco::Board>& board)
 {
     fs << "{";
     fs << "ids" << board->ids;
-    fs << "objPoints" << board->objPoints;
+    fs << "corners" << board->objPoints;
     fs << "}";
 }
 inline void Read(const cv::FileNode& fn, cv::Ptr<cv::aruco::Board>& board)
 {
     // Resize might grow and initialize null cv::Ptr (alias of std::shared_ptr)
+    /// TODO: this most likely breaks aruco tracking, use cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50) instead
     if (board.empty()) board = cv::makePtr<cv::aruco::Board>();
     // TODO: make our own aruco::Board, as we don't need to store the dictionary
     // Dictionary will be nullptr
     fn["ids"] >> board->ids;
-    fn["objPoints"] >> board->objPoints;
+    fn["corners"] >> board->objPoints;
 }
 
 // TODO: Use cv:Quat
