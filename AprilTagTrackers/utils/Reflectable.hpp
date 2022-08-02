@@ -83,6 +83,8 @@ public:
     static constexpr bool IsReflectableV = IsReflectable<RT>::value;
     template <typename RT, size_t I>
     static constexpr bool IsReflectableIndexV = IsReflectableIndex<RT, I>::value;
+    template <typename RT>
+    static constexpr size_t FieldCount = RT::_rfl_fieldCount;
 
 private:
     template <typename RT, typename F, size_t I>
