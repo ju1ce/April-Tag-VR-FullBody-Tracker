@@ -23,6 +23,7 @@ int MyApp::OnExit()
 bool MyApp::OnInit()
 {
     userConfig.Load();
+    userConfig.driver_version = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));       //a quick patch to prevent parameters from having an outdated version number
     calibConfig.Load();
     arucoConfig.Load();
     lc.LoadLang(userConfig.langCode);
