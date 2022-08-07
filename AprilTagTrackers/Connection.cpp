@@ -110,68 +110,66 @@ void Connection::Connect()
         }
     }
 
-    if (user_config.disableOpenVrApi)
+    if (!user_config.disableOpenVrApi)
     {
-        status = CONNECTED;
-        return;
-    }
 
-    // connect to steamvr as a client in order to get buttons.
-    vr::EVRInitError error;
-    openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
+        // connect to steamvr as a client in order to get buttons.
+        vr::EVRInitError error;
+        openvr_handle = VR_Init(&error, vr::VRApplication_Overlay);
 
-    if (error != vr::VRInitError_None)
-    {
-        std::string ovrErr = vr::VR_GetVRInitErrorAsEnglishDescription(error);
-        SetError(ErrorCode::CLIENT_ERROR, std::move(ovrErr));
-        return;
-    }
-
-    /*
-    vr::HmdMatrix34_t testZeroToStanding = openvr_handle->GetRawZeroPoseToStandingAbsoluteTrackingPose();
-
-    std::string e = "Zero pose to standing: \n ";
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 4; j++)
+        if (error != vr::VRInitError_None)
         {
-            e += std::to_string(testZeroToStanding.m[i][j]) + ", ";
+            std::string ovrErr = vr::VR_GetVRInitErrorAsEnglishDescription(error);
+            SetError(ErrorCode::CLIENT_ERROR, std::move(ovrErr));
+            return;
         }
-        e += "\n";
-    }
-    wxMessageDialog dial(NULL,
-        e, wxT("Error"), wxOK | wxICON_ERROR);
-    dial.ShowModal();
 
-    vr::HmdMatrix34_t testStandingToSeated = openvr_handle->GetSeatedZeroPoseToStandingAbsoluteTrackingPose();
+        /*
+        vr::HmdMatrix34_t testZeroToStanding = openvr_handle->GetRawZeroPoseToStandingAbsoluteTrackingPose();
 
-    e = "Seated pose to standing: \n ";
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 4; j++)
+        std::string e = "Zero pose to standing: \n ";
+        for (int i = 0; i < 3; i++)
         {
-            e += std::to_string(testStandingToSeated.m[i][j]) + ", ";
+            for (int j = 0; j < 4; j++)
+            {
+                e += std::to_string(testZeroToStanding.m[i][j]) + ", ";
+            }
+            e += "\n";
         }
-        e += "\n";
+        wxMessageDialog dial(NULL,
+            e, wxT("Error"), wxOK | wxICON_ERROR);
+        dial.ShowModal();
+
+        vr::HmdMatrix34_t testStandingToSeated = openvr_handle->GetSeatedZeroPoseToStandingAbsoluteTrackingPose();
+
+        e = "Seated pose to standing: \n ";
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                e += std::to_string(testStandingToSeated.m[i][j]) + ", ";
+            }
+            e += "\n";
+        }
+        wxMessageDialog dial2(NULL,
+            e, wxT("Error"), wxOK | wxICON_ERROR);
+        dial2.ShowModal();
+
+        */
+        const auto bindingsPath = std::filesystem::absolute("bindings/att_actions.json");
+        if (!std::filesystem::exists(bindingsPath))
+        {
+            SetError(ErrorCode::BINDINGS_MISSING);
+            return;
+        }
+        vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
+
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
+        vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
+
+        vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
     }
-    wxMessageDialog dial2(NULL,
-        e, wxT("Error"), wxOK | wxICON_ERROR);
-    dial2.ShowModal();
-
-    */
-    const auto bindingsPath = std::filesystem::absolute("bindings/att_actions.json");
-    if (!std::filesystem::exists(bindingsPath))
-    {
-        SetError(ErrorCode::BINDINGS_MISSING);
-        return;
-    }
-    vr::VRInput()->SetActionManifestPath(bindingsPath.generic_u8string().c_str());
-
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_camera", &m_actionCamera);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/grab_trackers", &m_actionTrackers);
-    vr::VRInput()->GetActionHandle("/actions/demo/in/Hand_Left", &m_actionHand);
-
-    vr::VRInput()->GetActionSetHandle("/actions/demo", &m_actionsetDemo);
 
     std::istringstream ret;
     std::string word;
