@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Macros.hpp"
+
 #include <type_traits>
 
-/// Placed in a class before a list of REFLECTABLE_FIELDS
+/// Placed in a class before a list of REFLECTABLE_FIELDs
 #define REFLECTABLE_BEGIN                \
     friend class ::Reflect;              \
     template <size_t N, typename = void> \
