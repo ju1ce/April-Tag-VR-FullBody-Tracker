@@ -113,8 +113,7 @@ inline void Write(Writer& writer, const T& value)
         value.WriteSelf(writer);
     else if constexpr (Reflect::IsReflectableV<T>)
     {
-        if constexpr (Reflect::FieldCount<T> <= 4) writer << "{:";
-        else writer << "{";
+        writer << "{";
         WriteReflectable(writer, value);
         writer << "}";
     }
