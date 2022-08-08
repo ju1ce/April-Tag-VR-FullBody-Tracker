@@ -27,7 +27,7 @@ target_sources(AprilTagTrackers PRIVATE
 
     serial/FileStorage.cpp
 
-    serial/ArucoDetectorParameters.cpp
+    serial/ReaderWriter.cpp
 
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp

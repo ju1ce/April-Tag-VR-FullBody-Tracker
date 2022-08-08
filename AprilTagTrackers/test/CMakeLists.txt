@@ -21,7 +21,7 @@ target_sources(test PRIVATE
 
     "${ATT_DIR}/serial/FileStorage.cpp"
 
-    "${ATT_DIR}/serial/ArucoDetectorParameters.cpp"
+    "${ATT_DIR}/serial/ReaderWriter.cpp"
 
     "${ATT_DIR}/ps3eye/ps3eye.cpp"
     "${ATT_DIR}/ps3eye/PSEyeVideoCapture.cpp"
