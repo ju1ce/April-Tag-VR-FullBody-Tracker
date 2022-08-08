@@ -9,6 +9,8 @@
 namespace cfg
 {
 
+/// use instead of a vector when it will be individually referenced,
+/// rather than written in bulk and saved.
 template <typename T>
 class List
 {
