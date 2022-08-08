@@ -13,12 +13,15 @@ target_sources(test PRIVATE
     "${ATT_DIR}/Connection.cpp"
     "${ATT_DIR}/Helpers.cpp"
     "${ATT_DIR}/Quaternion.cpp"
-    "${ATT_DIR}/Serializable.cpp"
     "${ATT_DIR}/Tracker.cpp"
     "${ATT_DIR}/ImageDrawing.cpp"
 
     "${ATT_DIR}/utils/Env.cpp"
     "${ATT_DIR}/utils/Log.cpp"
+
+    "${ATT_DIR}/serial/FileStorage.cpp"
+
+    "${ATT_DIR}/serial/ArucoDetectorParameters.cpp"
 
     "${ATT_DIR}/ps3eye/ps3eye.cpp"
     "${ATT_DIR}/ps3eye/PSEyeVideoCapture.cpp"

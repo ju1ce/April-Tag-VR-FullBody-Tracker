@@ -1,23 +1,21 @@
 #pragma once
 
 #include "GUI/U8String.hpp"
-#include "Serializable.hpp"
+#include "serial/Comment.hpp"
+#include "serial/Serializable.hpp"
 #include "utils/Assert.hpp"
+#include "utils/Env.hpp"
+#include "utils/Reflectable.hpp"
 
-#include <algorithm>
 #include <filesystem>
-#include <iterator>
 #include <string_view>
-#include <vector>
 
 // temporary alias, undefined at end of file,
 #define T(a_key) REFLECTABLE_FIELD(U8String, a_key)
 
-class Localization : public FS::Serializable<Localization>
+class Localization : public serial::Serializable<Localization>
 {
 public:
-    static inline const FS::Path localesDir = std::filesystem::absolute("locales");
-
     // Keep synced, alphabetical order, from this list
     // https://www.andiamo.co.uk/resources/iso-language-codes/
     static constexpr std::array<std::string_view, 3> LANG_CODE_MAP{
@@ -29,11 +27,6 @@ public:
         "Russian",
         "Chinese (PRC)"};
 
-    static FS::Path GetLangPath(const std::string& langCode)
-    {
-        return std::filesystem::absolute(localesDir) / (langCode + ".yaml");
-    }
-
     // TODO: Make the github workflow create these "to be translated" localization files.
     // Could create an automatic pr for them?
 
@@ -43,29 +36,34 @@ public:
         for (const auto& langCode : LANG_CODE_MAP)
         {
             Localization lc;
-            lc.SetPath(GetLangPath(std::string(langCode)));
+            lc.SetPathForLang(langCode);
             lc.Load();
             lc.Save();
         }
     }
 
-    Localization()
-        : FS::Serializable<Localization>()
+    Localization() : Serializable() {}
+
+    void SetPathForLang(std::string_view langCode)
     {
+        std::filesystem::path path = utils::GetLocalesDir();
+        path /= langCode;
+        path += ".yaml";
+        SetPath(std::move(path));
     }
 
-    bool LoadLang(const std::string& langCode)
+    bool LoadLang(std::string_view langCode)
     {
         // English is loaded by default
         if (langCode == "en") return true;
-        SetPath(GetLangPath(langCode));
+        SetPathForLang(langCode);
         return Load();
     }
 
     struct Word
     {
         REFLECTABLE_BEGIN;
-        FS_COMMENT("match case of key");
+        ATT_SERIAL_COMMENT("match case of key");
         T(Yes) = "Yes";
         T(No) = "No";
         T(On) = "On";
@@ -103,7 +101,7 @@ public:
     // !! Due to how reflection works, can't define a class within another reflection list,
     // !! so define subclasses above this line, though using them as fields is fine.
     REFLECTABLE_BEGIN;
-    FS_COMMENT("Put all strings in \"double quotes\".");
+    ATT_SERIAL_COMMENT("Put all strings in \"double quotes\".");
 
     // TODO: Group names in structs, instead of long ids (stored in sub-objects in yaml)
 

@@ -2,6 +2,7 @@
 
 #include "SemVer.h"
 #include "utils/Assert.hpp"
+#include "utils/Env.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
@@ -188,7 +189,7 @@ void Connection::Connect()
 
     ret >> word;
     SemVer reportedVersion = SemVer::Parse(word);
-    if (!SemVer::Compatible(reportedVersion, user_config.driver_version))
+    if (!SemVer::Compatible(reportedVersion, utils::GetBridgeDriverVersion()))
     {
         SetError(ErrorCode::DRIVER_MISMATCH, word);
         return;

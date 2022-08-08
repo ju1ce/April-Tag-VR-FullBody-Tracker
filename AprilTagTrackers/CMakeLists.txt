@@ -11,7 +11,6 @@ target_sources(AprilTagTrackers PRIVATE
     Connection.cpp
     Helpers.cpp
     Quaternion.cpp
-    Serializable.cpp
     Tracker.cpp
     MyApp.cpp
     ImageDrawing.cpp
@@ -25,6 +24,10 @@ target_sources(AprilTagTrackers PRIVATE
 
     utils/Log.cpp
     utils/Env.cpp
+
+    serial/FileStorage.cpp
+
+    serial/ArucoDetectorParameters.cpp
 
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp

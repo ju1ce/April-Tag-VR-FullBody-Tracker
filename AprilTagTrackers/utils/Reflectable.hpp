@@ -51,7 +51,7 @@
 /// Auto-friended by reflectable types, provides functionality on them.
 class Reflect
 {
-private:
+public:
     template <typename RT, typename = void>
     struct IsReflectable : std::false_type
     {
@@ -76,7 +76,6 @@ private:
     {
     };
 
-public:
     /// Comptime check if a (template) type is reflectable (it uses the reflectable macros).
     /// eg. template <typename T> std::enable_if_t<Reflect::IsReflectable<T>> MyFunc() {}
     template <typename RT>
@@ -110,7 +109,7 @@ public:
     /// Static polymorphism is necessary if a base class uses this function.
     /// @tparam F [](const char* name, FieldType& field) {}
     template <typename RT, typename F>
-    static constexpr void ForEach(RT& reflType, F&& func)
+    static void ForEach(RT& reflType, F&& func)
     {
         ForEachFold(reflType,
             std::forward<F>(func),

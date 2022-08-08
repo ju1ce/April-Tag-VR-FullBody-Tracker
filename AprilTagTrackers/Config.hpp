@@ -1,165 +1,81 @@
 #pragma once
 
+#include "config/List.hpp"
+#include "config/ManualCalib.hpp"
+#include "config/Validated.hpp"
+#include "config/VideoStream.hpp"
 #include "Helpers.hpp"
 #include "Quaternion.hpp"
 #include "SemVer.h"
-#include "Serializable.hpp"
+#include "serial/Comment.hpp"
+#include "serial/Serializable.hpp"
+#include "utils/Env.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 
 #include <algorithm>
+#include <memory>
 #include <string>
-
-// Temporary alias
-#define FIELD(a_type, a_name) \
-    REFLECTABLE_FIELD(a_type, a_name)
-
-class ManualCalib
-{
-private:
-    /// Multiplier for posOffset when displayed in the gui
-    static constexpr double POS_OFFSET_MULTI = 100;
-
-public:
-    /// Real representation of calib values, rather than what is displayed in gui and config
-    struct Real
-    {
-        /// not multiplied by POS_OFFSET_MULTI
-        cv::Vec3d posOffset;
-        /// (pitch, yaw, roll) in radians;
-        cv::Vec3d angleOffset;
-        double scale;
-    };
-
-    Real GetAsReal()
-    {
-        return {
-            posOffset * (1 / POS_OFFSET_MULTI),
-            angleOffset * DEG_2_RAD,
-            scale / 100};
-    }
-    void SetFromReal(const Real& real)
-    {
-        posOffset = real.posOffset * POS_OFFSET_MULTI;
-        angleOffset = real.angleOffset * RAD_2_DEG;
-        scale = real.scale * 100;
-    }
-
-    REFLECTABLE_BEGIN;
-    /// stored multiplied by POS_OFFSET_MULTI
-    FIELD(cv::Vec3d, posOffset);
-    FS_COMMENT("(pitch, yaw, roll) in degrees.");
-    FIELD(cv::Vec3d, angleOffset);
-    FIELD(FS::Valid<double>, scale){
-        100.0, [](auto& value)
-        {
-            value = std::clamp(value, 80.0, 120.0);
-        }};
-    REFLECTABLE_END;
-};
+#include <vector>
 
 // Create definitions for each config file below
 
-// User editable storage
-class UserConfig : public FS::Serializable<UserConfig>
+// user editable storage
+class UserConfig : public serial::Serializable<UserConfig>
 {
 public:
-    UserConfig() : FS::Serializable<UserConfig>("config/config.yaml") {}
+    UserConfig() : Serializable(utils::GetConfigDir() / "config.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(SemVer, driver_version) = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
-
-    FIELD(std::string, windowTitle);
+    REFLECTABLE_FIELD(std::string, windowTitle) = "";
     // Keep synced with Localization::LANG_CODE_MAP
-    FS_COMMENT("en, zh-CN");
-    FIELD(std::string, langCode) = "en";
-    FIELD(std::string, cameraAddr) = "0";
-    FIELD(int, cameraApiPreference) = 0;
-    FIELD(int, trackerNum) = 3;
-    FIELD(FS::Valid<double>, markerSize){
-        5.0,
-        [](auto& value)
-        {
-            if (value <= 0.) value = 0.1;
-        }};
-    FIELD(int, numOfPrevValues) = 5;
-    FIELD(double, quadDecimate) = 1;
-    FIELD(double, searchWindow) = 0.25;
-    FIELD(bool, usePredictive) = true;
-    FIELD(int, calibrationTracker) = 0;
-    FIELD(bool, chessboardCalib) = false;
-    FIELD(bool, ignoreTracker0) = false;
-    FIELD(int, rotateCl) = -1;
-    FIELD(bool, mirrorCam) = false;
-    FIELD(bool, coloredMarkers) = true;
-    FIELD(ManualCalib, manualCalib);
-    FIELD(bool, circularWindow) = true;
-    FIELD(double, smoothingFactor) = 0.5;
-    FIELD(int, camFps) = 30;
-    FIELD(int, camHeight) = 0;
-    FIELD(int, camWidth) = 0;
-    FIELD(bool, cameraSettings) = false;
-    FIELD(double, camLatency) = 0;
-    FIELD(bool, circularMarkers) = false;
-    FIELD(FS::Valid<double>, trackerCalibDistance){
-        0.5,
-        [](auto& value)
-        {
-            if (value < 0.5) value = 0.5;
-        }};
-    FIELD(FS::Valid<int>, cameraCalibSamples){
-        15,
-        [](auto& value)
-        {
-            if (value < 15) value = 15;
-        }};
-    FIELD(bool, settingsParameters) = false;
-    FIELD(double, cameraAutoexposure) = 0;
-    FIELD(double, cameraExposure) = 0;
-    FIELD(double, cameraGain) = 0;
-    FIELD(bool, trackerCalibCenters) = false;
-    FIELD(FS::Valid<float>, depthSmoothing){
-        0,
-        [](auto& value)
-        {
-            value = std::clamp(value, 0.0f, 1.0f);
-        }};
-    FIELD(float, additionalSmoothing) = 0;
-    FIELD(int, markerLibrary) = 0;
-    FIELD(FS::Valid<int>, markersPerTracker){
-        45,
-        [](auto& value)
-        {
-            if (value <= 0) value = 45;
-        }};
-    FIELD(bool, disableOpenVrApi) = false;
+    ATT_SERIAL_COMMENT("en, ru, zh-cn");
+    REFLECTABLE_FIELD(std::string, langCode) = "en";
+    REFLECTABLE_FIELD(int, trackerNum) = 3;
+    REFLECTABLE_FIELD(cfg::Validated<double>, markerSize){5.0, cfg::Min(0.01)};
+    REFLECTABLE_FIELD(int, numOfPrevValues) = 5;
+    REFLECTABLE_FIELD(bool, usePredictive) = true;
+    REFLECTABLE_FIELD(bool, ignoreTracker0) = false;
+    REFLECTABLE_FIELD(bool, coloredMarkers) = true;
+    REFLECTABLE_FIELD(cfg::ManualCalib, manualCalib){};
+    REFLECTABLE_FIELD(bool, chessboardCalib) = false;
+    REFLECTABLE_FIELD(double, smoothingFactor) = 0.5;
+    REFLECTABLE_FIELD(bool, circularMarkers) = false;
+    REFLECTABLE_FIELD(cfg::Validated<double>, trackerCalibDistance){0.5, cfg::Min(0.5)};
+    /// TODO: change to not validated, gets set during calibration, to indicate if the user has done calibration
+    REFLECTABLE_FIELD(cfg::Validated<int>, cameraCalibSamples){15, cfg::Min(15)};
+    REFLECTABLE_FIELD(bool, trackerCalibCenters) = false;
+    REFLECTABLE_FIELD(cfg::Validated<float>, depthSmoothing){0, cfg::Clamp(0.0f, 1.0f)};
+    REFLECTABLE_FIELD(float, additionalSmoothing) = 0;
+    REFLECTABLE_FIELD(int, markerLibrary) = 0;
+    /// TODO: if (value <= 0) value = 45;
+    REFLECTABLE_FIELD(cfg::Validated<int>, markersPerTracker){45, cfg::Min(1)};
+    REFLECTABLE_FIELD(bool, disableOpenVrApi) = false;
+    REFLECTABLE_FIELD(cfg::List<cfg::VideoStream>, videoStreams){1};
     REFLECTABLE_END;
 };
 
 // Non-user editable calibration data, long lists of numbers.
 // Potentially store this in a file.yaml.gz to reduce size,
 //  and show that it is not user editable. FileStorage has this ability built in
-class CalibrationConfig : public FS::Serializable<CalibrationConfig>
+class CalibrationConfig : public serial::Serializable<CalibrationConfig>
 {
 public:
-    CalibrationConfig() : FS::Serializable<CalibrationConfig>("config/calib.yaml") {}
+    CalibrationConfig() : Serializable(utils::GetConfigDir() / "calib.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(cv::Mat, cameraMatrix);
-    FIELD(cv::Mat, distortionCoeffs);
-    FIELD(cv::Mat, stdDeviationsIntrinsics);
-    FIELD(std::vector<double>, perViewErrors);
-    FIELD(std::vector<std::vector<cv::Point2f>>, allCharucoCorners);
-    FIELD(std::vector<std::vector<int>>, allCharucoIds);
-    FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers);
+    REFLECTABLE_FIELD(cfg::List<cfg::CameraCalibration>, cameras){1};
+    REFLECTABLE_FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers){};
     REFLECTABLE_END;
 };
 
-class ArucoConfig : public FS::Serializable<ArucoConfig>
+class ArucoConfig : public serial::Serializable<ArucoConfig>
 {
 public:
-    ArucoConfig() : FS::Serializable<ArucoConfig>("config/aruco.yaml")
+    using ParamsPtr = cv::Ptr<cv::aruco::DetectorParameters>;
+
+    ArucoConfig() : Serializable(utils::GetConfigDir() / "aruco.yaml")
     {
         auto p = cv::aruco::DetectorParameters::create();
         p->detectInvertedMarker = true;
@@ -168,8 +84,6 @@ public:
     }
 
     REFLECTABLE_BEGIN;
-    FIELD(cv::Ptr<cv::aruco::DetectorParameters>, params);
+    REFLECTABLE_FIELD(ParamsPtr, params);
     REFLECTABLE_END;
 };
-
-#undef FIELD

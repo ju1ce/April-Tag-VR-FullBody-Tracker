@@ -36,7 +36,7 @@ Tracker::Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, Aruco
     SetWorldTransform(user_config.manualCalib.GetAsReal());
 }
 
-void Tracker::StartCamera(std::string id, int apiPreference)
+void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
 {
     if (cameraRunning)
     {
@@ -47,9 +47,9 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         return;
     }
 
-    if (id.length() <= 2) // if camera address is a single character, try to open webcam
+    if (cam->address.length() <= 2) // if camera address is a single character, try to open webcam
     {
-        int i = std::stoi(id); // convert to int
+        int i = std::stoi(cam->address); // convert to int
 #ifdef ATT_OS_LINUX
         // On Linux cv::VideoCapture does not work when GStreamer backend is used and
         // camera is set to MJPG pixel format. As a work around we manually setup the
@@ -58,30 +58,30 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
         {
             std::stringstream ss;
-            ss << "v4l2src device=/dev/video" << id << " ! image/jpeg";
-            if (user_config.camWidth != 0)
-                ss << ",width=" << user_config.camWidth;
-            if (user_config.camHeight != 0)
-                ss << ",height=" << user_config.camHeight;
-            ss << ",framerate=" << user_config.camFps << "/1";
+            ss << "v4l2src device=/dev/video" << i << " ! image/jpeg";
+            if (cam->resolution.width != 0)
+                ss << ",width=" << cam->resolution.width;
+            if (cam->resolution.height != 0)
+                ss << ",height=" << cam->resolution.height;
+            ss << ",framerate=" << cam->fps << "/1";
             ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
-            cap = cv::VideoCapture(ss.str(), apiPreference);
+            cap = cv::VideoCapture(ss.str(), cam->api);
         }
         else
 #endif
-            if (apiPreference == 9100)
+            if (cam->api == 9100)
         {
             cap = PSEyeVideoCapture(i);
         }
         else
         {
-            cap = cv::VideoCapture(i, apiPreference);
+            cap = cv::VideoCapture(i, cam->api);
         }
     }
     else
     {
         // if address is longer, we try to open it as an ip address
-        cap = cv::VideoCapture(id, apiPreference);
+        cap = cv::VideoCapture(cam->address, cam->api);
     }
 
     if (!cap.isOpened())
@@ -99,20 +99,20 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         // cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
         // cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
-        if (user_config.camWidth != 0)
-            cap.set(cv::CAP_PROP_FRAME_WIDTH, user_config.camWidth);
-        if (user_config.camHeight != 0)
-            cap.set(cv::CAP_PROP_FRAME_HEIGHT, user_config.camHeight);
-        cap.set(cv::CAP_PROP_FPS, user_config.camFps);
+        if (cam->resolution.width != 0)
+            cap.set(cv::CAP_PROP_FRAME_WIDTH, cam->resolution.width);
+        if (cam->resolution.height != 0)
+            cap.set(cv::CAP_PROP_FRAME_HEIGHT, cam->resolution.height);
+        cap.set(cv::CAP_PROP_FPS, cam->fps);
     }
-    if (user_config.cameraSettings)
+    if (cam->openDirectShowSettings)
         cap.set(cv::CAP_PROP_SETTINGS, 1);
-    if (user_config.settingsParameters)
+    if (cam->extraSettings.enabled)
     {
         cap.set(cv::CAP_PROP_AUTOFOCUS, 0);
-        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, user_config.cameraAutoexposure);
-        cap.set(cv::CAP_PROP_EXPOSURE, user_config.cameraExposure);
-        cap.set(cv::CAP_PROP_GAIN, user_config.cameraGain);
+        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, cam->extraSettings.autoExposure);
+        cap.set(cv::CAP_PROP_EXPOSURE, cam->extraSettings.exposure);
+        cap.set(cv::CAP_PROP_GAIN, cam->extraSettings.gain);
     }
 
     double codec = 0x47504A4D; // code by FPaul. Should use MJPEG codec to enable fast framerates.
@@ -125,23 +125,25 @@ void Tracker::StartCamera(std::string id, int apiPreference)
 
 void Tracker::StartCamera()
 {
-    StartCamera(user_config.cameraAddr, user_config.cameraApiPreference);
+    StartCamera(&user_config.videoStreams[0]->camera);
 }
 
 void Tracker::CameraLoop()
 {
+    RefPtr<cfg::CameraInfo> cam = &user_config.videoStreams[0]->camera;
+
     bool rotate = false;
     int rotateFlag = -1;
 
     bool mirror = false;
 
-    if (user_config.rotateCl >= 0)
+    if (cam->rotateCl >= 0)
     {
         rotate = true;
-        rotateFlag = user_config.rotateCl;
+        rotateFlag = cam->rotateCl;
     }
 
-    if (user_config.mirrorCam)
+    if (cam->mirror)
     {
         mirror = true;
     }
@@ -187,7 +189,7 @@ void Tracker::CameraLoop()
                 std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
                 cv::putText(drawImg, resolution, cv::Point(10, 120), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 if (previewCameraCalibration)
-                    drawCalibration(drawImg, calib_config);
+                    drawCalibration(drawImg, *calib_config.cameras[0]);
                 gui->UpdatePreview(drawImg, PreviewId::Camera);
             }
         }
@@ -476,12 +478,13 @@ void Tracker::CalibrateCameraCharuco()
             */
 
             // Save calibration to our global params cameraMatrix and distCoeffs
-            calib_config.cameraMatrix = cameraMatrix;
-            calib_config.distortionCoeffs = distCoeffs;
-            calib_config.stdDeviationsIntrinsics = stdDeviationsIntrinsics;
-            calib_config.perViewErrors = perViewErrors;
-            calib_config.allCharucoCorners = allCharucoCorners;
-            calib_config.allCharucoIds = allCharucoIds;
+            RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
+            camCalib->cameraMatrix = cameraMatrix;
+            camCalib->distortionCoeffs = distCoeffs;
+            camCalib->stdDeviationsIntrinsics = stdDeviationsIntrinsics;
+            camCalib->perViewErrors = perViewErrors;
+            camCalib->allCharucoCorners = allCharucoCorners;
+            camCalib->allCharucoIds = allCharucoIds;
             calib_config.Save();
             gui->ShowPopup(lc.TRACKER_CAMERA_CALIBRATION_COMPLETE, PopupStyle::Info);
         }
@@ -590,8 +593,10 @@ void Tracker::CalibrateCamera()
 
     calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
 
-    calib_config.cameraMatrix = cameraMatrix;
-    calib_config.distortionCoeffs = distCoeffs;
+    RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
+
+    camCalib->cameraMatrix = cameraMatrix;
+    camCalib->distortionCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
     gui->ShowPopup("Calibration complete.", PopupStyle::Info);
@@ -611,7 +616,7 @@ void Tracker::StartTrackerCalib()
         mainThreadRunning = false;
         return;
     }
-    if (calib_config.cameraMatrix.empty())
+    if (calib_config.cameras[0]->cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
@@ -656,13 +661,13 @@ void Tracker::HandleConnectionErrors()
         gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);
     else if (code == Code::DRIVER_MISMATCH)
         gui->ShowPopup(lc.CONNECT_DRIVER_MISSMATCH_1 + connection->GetErrorMsg() +
-                lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version.ToString(),
+                lc.CONNECT_DRIVER_MISSMATCH_2 + utils::GetBridgeDriverVersion().ToString(),
             PopupStyle::Error);
     else // if (code == Code::SOMETHING_WRONG)
         gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);
 }
 
-void Tracker::SetWorldTransform(const ManualCalib::Real& calib)
+void Tracker::SetWorldTransform(const cfg::ManualCalib::Real& calib)
 {
     cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
     wtransform = cv::Affine3d(rmat, calib.posOffset);
@@ -685,7 +690,7 @@ void Tracker::Start()
         mainThreadRunning = false;
         return;
     }
-    if (calib_config.cameraMatrix.empty())
+    if (calib_config.cameras[0]->cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
@@ -776,6 +781,7 @@ void Tracker::CalibrateTracker()
     trackers.clear();
 
     auto preview = gui->CreatePreviewControl();
+    RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
 
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
@@ -801,7 +807,7 @@ void Tracker::CalibrateTracker()
 
         // estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), calib_config.cameraMatrix, calib_config.distortionCoeffs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), camCalib->cameraMatrix, camCalib->distortionCoeffs, rvecs, tvecs);
 
         float maxDist = static_cast<float>(user_config.trackerCalibDistance);
 
@@ -811,9 +817,9 @@ void Tracker::CalibrateTracker()
 
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, calib_config.cameraMatrix, calib_config.distortionCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
                 {
-                    cv::aruco::drawAxis(image, calib_config.cameraMatrix, calib_config.distortionCoeffs, boardRvec[i], boardTvec[i], 0.1f); // if found, draw axis and mark it found
+                    cv::aruco::drawAxis(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardRvec[i], boardTvec[i], 0.1f); // if found, draw axis and mark it found
                     boardFound[i] = true;
                 }
                 else
@@ -996,6 +1002,9 @@ void Tracker::MainLoop()
     std::vector<std::vector<int>> boardIds;
     std::vector<std::vector<std::vector<cv::Point3f>>> boardCorners;
 
+    RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
+    RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
+
     // by default, trackers have the center at the center of the main marker. If "Use centers of trackers" is checked, we move it to the center of all marker corners.
     if (user_config.trackerCalibCenters)
     {
@@ -1048,7 +1057,7 @@ void Tracker::MainLoop()
         // for timing our detection
         start = std::chrono::steady_clock::now();
 
-        bool circularWindow = user_config.circularWindow;
+        bool circularWindow = videoStream->circularWindow;
 
         // if any tracker was lost for longer than 20 frames, mark circularWindow as false
         for (int i = 0; i < trackerNum; i++)
@@ -1070,7 +1079,7 @@ void Tracker::MainLoop()
             double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame_time).count();
 
             std::string word;
-            std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - user_config.camLatency));
+            std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - videoStream->latency));
             ret >> word;
             if (word != "trackerpose")
             {
@@ -1117,7 +1126,7 @@ void Tracker::MainLoop()
             cv::Vec3d rvec, tvec;
 
             // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
-            cv::projectPoints(point, rvec, tvec, calib_config.cameraMatrix, calib_config.distortionCoeffs, projected);
+            cv::projectPoints(point, rvec, tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
 
             cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
@@ -1134,7 +1143,7 @@ void Tracker::MainLoop()
                 cv::Vec3d rvec = q.toRotVec();
                 cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
 
-                cv::aruco::drawAxis(drawImg, calib_config.cameraMatrix, calib_config.distortionCoeffs, rvec, tvec, 0.10f);
+                cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, rvec, tvec, 0.10f);
 
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
@@ -1167,7 +1176,7 @@ void Tracker::MainLoop()
 
         cv::Mat dstImage = cv::Mat::zeros(gray.size(), gray.type());
 
-        int size = static_cast<int>(std::trunc(gray.rows * user_config.searchWindow));
+        int size = static_cast<int>(std::trunc(gray.rows * videoStream->searchWindow));
 
         bool doMasking = false;
 
@@ -1202,7 +1211,7 @@ void Tracker::MainLoop()
         if (manualRecalibrate) // playspace calibration loop
         {
             int inputButton = connection->GetButtonStates();
-            ManualCalib::Real calib = gui->GetManualCalib();
+            cfg::ManualCalib::Real calib = gui->GetManualCalib();
 
             double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
             if (timeSincePress > 60) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
@@ -1322,7 +1331,7 @@ void Tracker::MainLoop()
             try
             {
                 trackerStatus[i].boardTvec /= wscale;
-                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], calib_config.cameraMatrix, calib_config.distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
                     {
@@ -1429,7 +1438,7 @@ void Tracker::MainLoop()
             // send all the values
             // frame time is how much time passed since frame was acquired.
             if (!multicamAutocalib)
-                connection->SendTracker(connection->connectedTrackers[i].DriverId, rpos[0], rpos[1], rpos[2], q.w, q.x, q.y, q.z, -frameTime - user_config.camLatency, factor);
+                connection->SendTracker(connection->connectedTrackers[i].DriverId, rpos[0], rpos[1], rpos[2], q.w, q.x, q.y, q.z, -frameTime - videoStream->latency, factor);
             else if (trackerStatus[i].boardFoundDriver)
             {
                 // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
@@ -1464,7 +1473,7 @@ void Tracker::MainLoop()
                 if (abs(dZ) > 0.1)
                     dZ = 0.1 * (dZ / abs(dZ));
 
-                ManualCalib::Real calib = gui->GetManualCalib();
+                cfg::ManualCalib::Real calib = gui->GetManualCalib();
 
                 calib.posOffset += cv::Vec3d(dX, dY, dZ);
                 calib.angleOffset += cv::Vec3d(angles[0] - driverAngles[0], angles[1] - driverAngles[1]) * 0.1;

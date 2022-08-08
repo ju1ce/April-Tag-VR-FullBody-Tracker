@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RefPtr.hpp"
-#include "Serializable.hpp"
 #include "utils/Assert.hpp"
 
 #include <wx/button.h>
@@ -166,13 +165,13 @@ inline bool FromWXString(const wxString& str, wxString& out_val)
     out_val = str;
     return true;
 }
-template <typename T>
-inline bool FromWXString(const wxString& str, FS::Valid<T>& out_val)
+template <typename T, typename = T::IsProxyTag>
+inline bool FromWXString(const wxString& str, T& out_val)
 {
-    T val;
+    typename T::ValueType val;
     if (FromWXString(str, val))
     {
-        out_val = std::forward<T>(val);
+        out_val = std::move(val);
         return true;
     }
     return false;
@@ -180,6 +179,18 @@ inline bool FromWXString(const wxString& str, FS::Valid<T>& out_val)
 
 /// Convert val to unicode string for display.
 /// Must be inverse of FromString.
+inline wxString ToWXString(int val)
+{
+    return wxString::Format("%i", val);
+}
+inline wxString ToWXString(double val)
+{
+    return wxString::FromDouble(val);
+}
+inline wxString ToWXString(float val)
+{
+    return wxString::FromDouble(val);
+}
 inline wxString ToWXString(const std::string& val)
 {
     return wxString::FromUTF8Unchecked(val);
@@ -188,15 +199,8 @@ inline wxString ToWXString(const wxString& val)
 {
     return val;
 }
-template <typename T>
+template <typename T, typename = T::IsProxyTag>
 inline wxString ToWXString(const T& val)
 {
-    std::ostringstream ss;
-    ss << val;
-    return wxString::FromUTF8(ss.str());
-}
-template <typename T>
-inline wxString ToWXString(const FS::Valid<T>& val)
-{
-    return ToWXString(static_cast<const T&>(val));
+    return ToWXString(static_cast<const T::ValueType&>(val));
 }

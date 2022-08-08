@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Config.hpp"
+#include "config/VideoStream.hpp"
 
 #include <opencv2/core.hpp>
 
@@ -13,7 +13,7 @@ void drawCalibration(
     const std::vector<std::vector<cv::Point2f>>& allCharucoCorners,
     const std::vector<std::vector<int>>& allCharucoIds);
 
-inline void drawCalibration(cv::Mat& drawImg, const CalibrationConfig& calib)
+inline void drawCalibration(cv::Mat& drawImg, const cfg::CameraCalibration& calib)
 {
     drawCalibration(drawImg,
         calib.cameraMatrix,

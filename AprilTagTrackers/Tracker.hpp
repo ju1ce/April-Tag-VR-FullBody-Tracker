@@ -29,7 +29,7 @@ public:
     Tracker(Tracker&&) = delete;
     /// config and locale references are expected to exceed lifetime of this instance
     Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc);
-    void StartCamera(std::string id, int apiPreference);
+    void StartCamera(RefPtr<cfg::CameraInfo> cam);
     void StartCamera() override;
     void StartCameraCalib() override;
     void StartTrackerCalib() override;
@@ -53,7 +53,7 @@ private:
     void HandleConnectionErrors();
 
     /// Sets the wtransform, wrotation, and wscale
-    void SetWorldTransform(const ManualCalib::Real& calib);
+    void SetWorldTransform(const cfg::ManualCalib::Real& calib);
     /// Calibration transformation
     cv::Affine3d wtransform;
     /// wtransform rotation part as a quaternion

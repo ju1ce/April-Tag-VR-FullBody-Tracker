@@ -94,9 +94,9 @@ public:
     bool IsPreviewVisible(PreviewId id = PreviewId::Main);
 
     /// Get the manual calibration currently shown in the UI
-    ManualCalib::Real GetManualCalib();
+    cfg::ManualCalib::Real GetManualCalib();
     /// Set the manual calib currently shown in the UI
-    void SetManualCalib(const ManualCalib::Real& calib);
+    void SetManualCalib(const cfg::ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
     void SetManualCalibVisible(bool visible = true);
     /// Save manual calib to user config

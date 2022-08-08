@@ -1,5 +1,8 @@
 #pragma once
 
+#include "SemVer.h"
+#include "utils/Macros.hpp"
+
 #include <chrono>
 #include <filesystem>
 #include <optional>
@@ -20,6 +23,8 @@ inline const std::thread::id MAIN_THREAD_ID = std::this_thread::get_id();
 inline const system_clock::time_point APP_START_TP = system_clock::now();
 /// directory application was started in
 inline const fs::path RUNTIME_DIR = fs::current_path();
+/// BridgeDriver version
+inline constexpr SemVer BRIDGE_DRIVER_VERSION = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
 
 } // namespace detail
 
@@ -29,6 +34,9 @@ inline system_clock::time_point GetAppStartTimePoint() { return detail::APP_STAR
 inline const fs::path& GetRuntimeDir() { return detail::RUNTIME_DIR; }
 inline fs::path GetLogsDir() { return GetRuntimeDir() / "logs"; }
 inline fs::path GetConfigDir() { return GetRuntimeDir() / "config"; }
+inline fs::path GetLocalesDir() { return GetRuntimeDir() / "locales"; }
+/// BridgeDriver version
+constexpr SemVer GetBridgeDriverVersion() { return detail::BRIDGE_DRIVER_VERSION; }
 
 /// thread id of the callsite thread
 std::thread::id GetThisThreadID();
