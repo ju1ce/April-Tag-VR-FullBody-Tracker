@@ -225,8 +225,7 @@ template <typename T>
 inline void WriteIterable(Writer& writer, const T& value)
 {
     using ValueT = typename T::value_type;
-    if constexpr (std::disjunction_v<detail::IsIterable<ValueT>, std::is_integral<ValueT>>)
-        writer << "[:";
+    if constexpr (std::is_integral_v<ValueT>) writer << "[:";
     else writer << "[";
 
     for (const auto& elem : value)
