@@ -1,10 +1,11 @@
 #pragma once
 
 #include "FileStorage.hpp"
-#include "Reader.hpp"
-#include "utils/Assert.hpp"
+#include "ReaderWriter.hpp"
+#include "utils/Log.hpp"
 #include "utils/Reflectable.hpp"
-#include "Writer.hpp"
+
+#include <exception>
 
 namespace serial
 {
@@ -24,7 +25,15 @@ public:
     {
         FileStorage fs{};
         if (!fs.Open(filePath, FileStorage::Mode::Write)) return false;
-        Write(fs.GetForWriting(), Reflect::DerivedThis<TDerived>(*this));
+        try
+        {
+            WriteReflectable(fs.GetForWriting(), Reflect::DerivedThis<TDerived>(*this));
+        }
+        catch (const std::exception& e)
+        {
+            ATT_LOG_ERROR("saving file '", filePath, "' ", e.what());
+            return false;
+        }
         return true;
     }
 
@@ -32,7 +41,15 @@ public:
     {
         FileStorage fs{};
         if (!fs.Open(filePath, FileStorage::Mode::Read)) return false;
-        Read(fs.GetForReading(), Reflect::DerivedThis<TDerived>(*this));
+        try
+        {
+            ReadReflectable(fs.GetForReading(), Reflect::DerivedThis<TDerived>(*this));
+        }
+        catch (const std::exception& e)
+        {
+            ATT_LOG_ERROR("loading file '", filePath, "' ", e.what());
+            return false;
+        }
         return true;
     }
 

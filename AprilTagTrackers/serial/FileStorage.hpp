@@ -28,7 +28,7 @@ public:
     bool Open(const fsys::path& filePath, Mode mode);
 
     cv::FileStorage& GetForWriting() { return storage; }
-    const cv::FileNode& GetForReading() const { return storage.root(); }
+    cv::FileNode GetForReading() const { return storage.root(); }
 
 private:
     cv::FileStorage storage{};
