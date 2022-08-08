@@ -8,7 +8,7 @@
 
 #include <vector>
 
-AprilTagWrapper::AprilTagWrapper(UserConfig& user_config, const ArucoConfig& aruco_config)
+AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
     : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
 {
     td->quad_decimate = user_config.videoStreams[0]->quadDecimate;

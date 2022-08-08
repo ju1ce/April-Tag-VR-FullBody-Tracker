@@ -16,7 +16,7 @@ const int APRILTAG_COLOR = 3;
 class AprilTagWrapper
 {
 public:
-    explicit AprilTagWrapper(UserConfig& user_config, const ArucoConfig& aruco_config);
+    explicit AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config);
 
     ~AprilTagWrapper();
 
