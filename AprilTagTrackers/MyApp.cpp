@@ -27,9 +27,11 @@ bool MyApp::OnInit()
 
     userConfig.Load();
 
-    //The next two lines were added as a quick fix. The two options should be handeled differently from other parameters, so as a quick fix, they are reset on every launch of ATT.
-    userConfig.driver_version = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));       //a quick patch to prevent parameters from having an outdated version number
-    userConfig.disableOpenVrApi = false;    //since disable openvr api isnt part of the parameters, it isnt loaded properly. This ensures it is globaly disabled on every launch.
+    // The next two lines were added as a quick fix. The two options should be handeled differently from other parameters, so as a quick fix, they are reset on every launch of ATT.
+    // a quick patch to prevent parameters from having an outdated version number
+    userConfig.driver_version = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
+    // since disable openvr api isnt part of the parameters, it isnt loaded properly. This ensures it is globaly disabled on every launch.
+    userConfig.disableOpenVrApi = false;
 
     calibConfig.Load();
     arucoConfig.Load();
