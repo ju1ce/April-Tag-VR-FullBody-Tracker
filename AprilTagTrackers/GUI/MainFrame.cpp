@@ -101,12 +101,12 @@ bool GUI::MainFrame::IsPreviewVisible(PreviewId id)
 
 ManualCalib::Real GUI::MainFrame::GetManualCalib()
 {
-    return manualCalib.GetAsReal();
+    return config.manualCalib.GetAsReal();
 }
 
 void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
 {
-    manualCalib.SetFromReal(calib);
+    config.manualCalib.SetFromReal(calib);
 
     using Clock = std::chrono::steady_clock;
     static Clock::time_point lastUpdate = Clock::now();
@@ -126,17 +126,14 @@ void GUI::MainFrame::SetManualCalibVisible(bool visible)
     manualCalibCheckBox->SetValue(visible);
     if (visible)
     {
-        manualCalib = config.manualCalib;
         manualCalibForm->Update();
         Fit();
     }
+    else 
+    {
+        config.Save();
+    }
     tracker->manualRecalibrate = visible;
-}
-
-void GUI::MainFrame::SaveManualCalib()
-{
-    config.manualCalib = manualCalib;
-    config.Save();
 }
 
 void GUI::MainFrame::OnNotebookPageChanged(wxBookCtrlEvent& evt)
@@ -253,7 +250,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
                            SetManualCalibVisible(checked);
                            if (!checked)
                            {
-                               SaveManualCalib();
+                               config.Save();
                            }
                        }})
             ->GetWidget();
@@ -262,21 +259,21 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
 
     manualCalibForm->PushSizer<wxBoxSizer>(wxVERTICAL)
         .Add(Label{lc.CAMERA_CALIBRATION_INSTRUCTION})
-        .Add(Labeled{lc.calib.X, InputNumber{manualCalib.posOffset[0]}})
-        .Add(Labeled{lc.calib.Y, InputNumber{manualCalib.posOffset[1]}})
-        .Add(Labeled{lc.calib.Z, InputNumber{manualCalib.posOffset[2]}})
-        .Add(Labeled{lc.calib.PITCH, InputNumber{manualCalib.angleOffset[0]}})
-        .Add(Labeled{lc.calib.YAW, InputNumber{manualCalib.angleOffset[1]}})
-        .Add(Labeled{lc.calib.ROLL, InputNumber{manualCalib.angleOffset[2]}})
-        .Add(Labeled{lc.calib.SCALE, InputNumber{manualCalib.scale}})
-        .Add(CheckBoxButton{ lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
+        .Add(Labeled{lc.calib.X, InputNumber{config.manualCalib.posOffset[0]}})
+        .Add(Labeled{lc.calib.Y, InputNumber{config.manualCalib.posOffset[1]}})
+        .Add(Labeled{lc.calib.Z, InputNumber{config.manualCalib.posOffset[2]}})
+        .Add(Labeled{lc.calib.PITCH, InputNumber{config.manualCalib.angleOffset[0]}})
+        .Add(Labeled{lc.calib.YAW, InputNumber{config.manualCalib.angleOffset[1]}})
+        .Add(Labeled{lc.calib.ROLL, InputNumber{config.manualCalib.angleOffset[2]}})
+        .Add(Labeled{lc.calib.SCALE, InputNumber{config.manualCalib.scale}})
+        .Add(CheckBoxButton{lc.CAMERA_MULTICAM_CALIB, [this](auto& evt)
             {
                 tracker->multicamAutocalib = evt.IsChecked();
-            } })
-        .Add(CheckBoxButton{ lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
+            }})
+        .Add(CheckBoxButton{lc.CAMERA_LOCK_HEIGHT, [this](auto& evt)
             {
                 tracker->lockHeightCalib = evt.IsChecked();
-            } });
+            }});
 
     manualCalibForm->SetSizerVisible(false);
 }

@@ -49,8 +49,6 @@ public:
     void SetManualCalib(const ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
     void SetManualCalibVisible(bool visible = true);
-    /// Save manual calib to user config.
-    void SaveManualCalib();
 
 private:
     void OnCloseWindow();
@@ -76,7 +74,6 @@ private:
     /// Reference to params sub form
     RefPtr<Form::FormBuilder> manualCalibForm;
     RefPtr<wxCheckBox> manualCalibCheckBox;
-    ManualCalib manualCalib{};
 
     std::array<PreviewFrame, 2> previews;
 };
