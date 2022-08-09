@@ -28,18 +28,18 @@ public:
         double scale;
     };
 
-    Real GetAsReal()
+    Real GetAsReal() const
     {
         return {
             posOffset / M_2_CM,
             angleOffset * DEG_2_RAD,
-            scale / 100};
+            scale / 100.0};
     }
     void SetFromReal(const Real& real)
     {
         posOffset = real.posOffset * M_2_CM;
         angleOffset = real.angleOffset * RAD_2_DEG;
-        scale = real.scale * 100;
+        scale = real.scale * 100.0;
     }
 
     REFLECTABLE_BEGIN;

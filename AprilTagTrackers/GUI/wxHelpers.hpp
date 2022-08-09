@@ -23,7 +23,7 @@ using FramePtr = std::unique_ptr<wxFrame, decltype(FrameDeleter)>;
 template <typename... Args>
 inline FramePtr NewFrame(Args&&... args)
 {
-    return FramePtr(new wxFrame(nullptr, std::forward<Args>(args)...), FrameDeleter);
+    return {new wxFrame(nullptr, std::forward<Args>(args)...), FrameDeleter};
 }
 
 /// Create T and return non-owning pointer, parent now owns the memory.
@@ -165,7 +165,7 @@ inline bool FromWXString(const wxString& str, wxString& out_val)
     out_val = str;
     return true;
 }
-template <typename T, typename = T::IsProxyTag>
+template <typename T, typename = typename T::IsProxyTag>
 inline bool FromWXString(const wxString& str, T& out_val)
 {
     typename T::ValueType val;
@@ -199,8 +199,8 @@ inline wxString ToWXString(const wxString& val)
 {
     return val;
 }
-template <typename T, typename = T::IsProxyTag>
+template <typename T, typename = typename T::IsProxyTag>
 inline wxString ToWXString(const T& val)
 {
-    return ToWXString(static_cast<const T::ValueType&>(val));
+    return ToWXString(static_cast<const typename T::ValueType&>(val));
 }

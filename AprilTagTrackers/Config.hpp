@@ -4,9 +4,6 @@
 #include "config/ManualCalib.hpp"
 #include "config/Validated.hpp"
 #include "config/VideoStream.hpp"
-#include "Helpers.hpp"
-#include "Quaternion.hpp"
-#include "SemVer.h"
 #include "serial/Comment.hpp"
 #include "serial/Serializable.hpp"
 #include "utils/Env.hpp"
@@ -28,7 +25,7 @@ public:
     UserConfig() : Serializable(utils::GetConfigDir() / "config.yaml") {}
 
     REFLECTABLE_BEGIN;
-    REFLECTABLE_FIELD(std::string, windowTitle) = "";
+    REFLECTABLE_FIELD(std::string, windowTitle);
     // Keep synced with Localization::LANG_CODE_MAP
     ATT_SERIAL_COMMENT("en, ru, zh-cn");
     REFLECTABLE_FIELD(std::string, langCode) = "en";
@@ -46,7 +43,7 @@ public:
     /// TODO: change to not validated, gets set during calibration, to indicate if the user has done calibration
     REFLECTABLE_FIELD(cfg::Validated<int>, cameraCalibSamples){15, cfg::Min(15)};
     REFLECTABLE_FIELD(bool, trackerCalibCenters) = false;
-    REFLECTABLE_FIELD(cfg::Validated<float>, depthSmoothing){0, cfg::Clamp(0.0f, 1.0f)};
+    REFLECTABLE_FIELD(cfg::Validated<float>, depthSmoothing){0, cfg::Clamp(0.0F, 1.0F)};
     REFLECTABLE_FIELD(float, additionalSmoothing) = 0;
     REFLECTABLE_FIELD(int, markerLibrary) = 0;
     /// TODO: if (value <= 0) value = 45;

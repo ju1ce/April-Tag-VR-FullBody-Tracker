@@ -1,5 +1,7 @@
 #include "FileStorage.hpp"
 
+#include "utils/Assert.hpp"
+
 namespace serial
 {
 

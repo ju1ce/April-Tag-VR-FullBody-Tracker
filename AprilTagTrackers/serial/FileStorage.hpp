@@ -1,7 +1,5 @@
 #pragma once
 
-#include "utils/Assert.hpp"
-
 #include <opencv2/core/persistence.hpp>
 
 #include <filesystem>

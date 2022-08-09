@@ -3,7 +3,6 @@
 #include "Comment.hpp"
 #include "Deprecate.hpp"
 #include "SemVer.h"
-#include "utils/Assert.hpp"
 #include "utils/Macros.hpp"
 #include "utils/Reflectable.hpp"
 
@@ -148,7 +147,7 @@ inline void Write(Writer& writer, const std::string&, const Comment& value)
 }
 
 template <typename T>
-inline void Write(Writer& writer, const std::string& key, const Deprecate<T>& value)
+inline void Write(Writer&, const std::string&, const Deprecate<T>&)
 {
     // don't create the deprecated key
 }
