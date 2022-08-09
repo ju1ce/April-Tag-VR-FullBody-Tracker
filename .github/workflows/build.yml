@@ -101,14 +101,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3
         with:
-          name: AprilTagTrackers-Linux
+          name: AprilTagTrackers-Linux.tar
           path: AprilTagTrackers-Linux.tar
 
       - name: Upload Debug (Linux)
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3
         with:
-          name: AprilTagTrackers-Debug-Linux
+          name: AprilTagTrackers-Debug-Linux.tar
           path: AprilTagTrackers-Debug-Linux.tar
 
       - name: Upload Release (Windows)
