@@ -92,8 +92,10 @@ jobs:
       - name: Tar Artifacts (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          tar -cvf AprilTagTrackers-Linux.tar install/release/
-          tar -cvf AprilTagTrackers-Debug-Linux.tar install/debug/
+          cd install/release
+          tar -cvf ../../AprilTagTrackers-Linux.tar *
+          cd ../../install/debug
+          tar -cvf ../../AprilTagTrackers-Debug-Linux.tar *
 
       - name: Upload Release (Linux)
         if: matrix.os == 'ubuntu-latest'
