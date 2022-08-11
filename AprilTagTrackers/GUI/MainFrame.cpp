@@ -123,6 +123,7 @@ void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
 void GUI::MainFrame::SetManualCalibVisible(bool visible)
 {
     manualCalibForm->SetSizerVisible(visible);
+    // can be called from checkbox event, SetValue won't trigger another event
     manualCalibCheckBox->SetValue(visible);
     if (visible)
     {
@@ -246,12 +247,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
         cam.AddGet(CheckBoxButton{lc.CAMERA_CALIBRATION_MODE,
                        [this](auto& evt)
                        {
-                           bool checked = evt.IsChecked();
-                           SetManualCalibVisible(checked);
-                           if (!checked)
-                           {
-                               config.Save();
-                           }
+                           SetManualCalibVisible(evt.IsChecked());
                        }})
             ->GetWidget();
 
