@@ -74,6 +74,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="./install/release"
           -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake"
           -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
+          -DVCPKG_INSTALL_OPTIONS="--clean-after-build;--debug"
 
       - name: CMake Configure Debug
         run: >
