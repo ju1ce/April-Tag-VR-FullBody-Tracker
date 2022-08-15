@@ -8,6 +8,7 @@
 #include <apriltag/apriltag.h>
 #include <apriltag/tagCircle21h7.h>
 #include <apriltag/tagStandard41h12.h>
+#include "tagCustom29h10.h"
 
 AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
     : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
@@ -17,6 +18,8 @@ AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfi
     apriltag_family_t* tf;
     if (user_config.markerLibrary == APRILTAG_CIRCULAR)
         tf = tagCircle21h7_create();
+    else if (parameters->markerLibrary == APRILTAG_CUSTOM29H10)
+        tf = tagCustom29h10_create();
     else
         tf = tagStandard41h12_create();
 
