@@ -10,7 +10,7 @@
 #include <apriltag/tagStandard41h12.h>
 #include "tagCustom29h10.hpp"
 
-#include "tagCustom29h10.cpp" //only necessary to prevent linking errors. There must be a better way to fix it, this is only temporary.
+//#include "tagCustom29h10.cpp" //only necessary to prevent linking errors. There must be a better way to fix it, this is only temporary.
 
 AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
     : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
