@@ -130,14 +130,14 @@ static uint64_t codedata[125] = {
 };
 apriltag_family_t *tagCustom29h10_create()
 {
-   apriltag_family_t *tf = calloc(1, sizeof(apriltag_family_t));
+   apriltag_family_t *tf = (apriltag_family_t*)calloc(1, sizeof(apriltag_family_t));
    tf->name = strdup("tagCustom29h10");
    tf->h = 10;
    tf->ncodes = 125;
    tf->codes = codedata;
    tf->nbits = 29;
-   tf->bit_x = calloc(29, sizeof(uint32_t));
-   tf->bit_y = calloc(29, sizeof(uint32_t));
+   tf->bit_x = (uint32_t*)calloc(29, sizeof(uint32_t));
+   tf->bit_y = (uint32_t*)calloc(29, sizeof(uint32_t));
    tf->bit_x[0] = 0;
    tf->bit_y[0] = -2;
    tf->bit_x[1] = 1;
