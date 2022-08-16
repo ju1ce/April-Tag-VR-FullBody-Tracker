@@ -24,6 +24,7 @@ set(ATT_SOURCE_FILES
     Serializable.cpp Serializable.hpp
     ValidatorProxy.hpp
     Tracker.cpp Tracker.hpp
+    tagCustom29h10.c tagCustom29h10.h
     MyApp.cpp MyApp.hpp
     Debug.cpp Debug.hpp
     RefPtr.hpp
