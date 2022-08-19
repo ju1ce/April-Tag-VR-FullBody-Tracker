@@ -294,8 +294,8 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
     auto boxSizer = NewSizer<wxBoxSizer>(panel, wxVERTICAL);
     params = FormBuilder{panel, boxSizer};
 
-    static constexpr std::array<U8StringView, 4> markerLibraries =
-        {"AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color"};
+    static constexpr std::array<U8StringView, 5> markerLibraries =
+        {"AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color", "ApriltagCustom29h10"};
 
     static constexpr std::array<U8StringView, 4> camRotOptions =
         {"0", "90", "180", "270"};
