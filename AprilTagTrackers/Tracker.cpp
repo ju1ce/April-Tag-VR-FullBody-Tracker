@@ -55,7 +55,7 @@ void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
         // camera is set to MJPG pixel format. As a work around we manually setup the
         // GStreamer pipeline with suitable decoding before feeding the stream into
         // application.
-        if ((apiPreference == cv::CAP_ANY) || (apiPreference == cv::CAP_GSTREAMER))
+        if ((cam->api == cv::CAP_ANY) || (cam->api == cv::CAP_GSTREAMER))
         {
             std::stringstream ss;
             ss << "v4l2src device=/dev/video" << i << " ! image/jpeg";
