@@ -166,6 +166,5 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source Files" FILES ${SO
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${HEADER_GROUP})
 
 if (ENABLE_TESTING)
-    set(ATT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     add_subdirectory("test")
 endif()
