@@ -13,6 +13,7 @@ target_sources(AprilTagTrackers PRIVATE
     Quaternion.cpp
     Tracker.cpp
     MyApp.cpp
+    tagCustom29h10.cpp
     ImageDrawing.cpp
 
     GUI.cpp
