@@ -27,7 +27,6 @@ target_sources(AprilTagTrackers PRIVATE
     utils/Env.cpp
 
     serial/FileStorage.cpp
-
     serial/ReaderWriter.cpp
 
     ps3eye/ps3eye.cpp
