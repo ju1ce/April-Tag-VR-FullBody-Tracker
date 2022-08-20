@@ -42,7 +42,7 @@ double GetRuntimeSeconds()
 std::optional<std::string> EnvVars::GetVarAsString(const std::string& key)
 {
     if (!IsMainThread()) std::abort();
-    const char* val = std::getenv(key.c_str()); // NOLINT(concurrency-mt-unsafe)
+    const char* val = std::getenv(key.c_str()); // NOLINT
     if (val == nullptr) return std::nullopt;
     return std::string(val);
 }
