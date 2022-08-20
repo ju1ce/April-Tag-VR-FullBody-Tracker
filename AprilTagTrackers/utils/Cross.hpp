@@ -24,14 +24,25 @@
 #    define ATT_ABORT() std::abort()
 #endif
 
-#ifdef ATT_DEBUG
-#    define ATT_UNREACHABLE() ATT_ABORT()
+#if defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
+#    define ATT_DETAIL_UNREACHABLE() __builtin_unreachable()
+#elif defined(ATT_COMP_MSVC)
+#    define ATT_DETAIL_UNREACHABLE() __assume(false)
 #else
-#    if defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
-#        define ATT_UNREACHABLE() __builtin_unreachable()
-#    elif defined(ATT_COMP_MSVC)
-#        define ATT_UNREACHABLE() __assume(false)
-#    else
-#        define ATT_UNREACHABLE() ATT_ABORT()
-#    endif
+#    define ATT_DETAIL_UNREACHABLE() \
+        while (true)                 \
+            ;
+#endif
+
+#ifdef ATT_DEBUG
+#    define ATT_UNREACHABLE()         \
+        do {                          \
+            ATT_ABORT();              \
+            ATT_DETAIL_UNREACHABLE(); \
+        } while (false)
+#else
+#    define ATT_UNREACHABLE()         \
+        do {                          \
+            ATT_DETAIL_UNREACHABLE(); \
+        } while (false)
 #endif
