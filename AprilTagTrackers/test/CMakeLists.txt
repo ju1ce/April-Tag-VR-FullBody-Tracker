@@ -6,34 +6,41 @@ add_executable(test)
 
 # ====== Source Files ======
 
-target_sources(test PRIVATE
-    main.cpp
+# base dir of sources is AprilTagTrackers/
+set(ATT_TEST_SOURCES
+    AprilTagWrapper.cpp
+    Connection.cpp
+    Helpers.cpp
+    Quaternion.cpp
+    Serializable.cpp
+    Tracker.cpp
+    tagCustom29h10.cpp
+    ImageDrawing.cpp
 
-    "${ATT_DIR}/AprilTagWrapper.cpp"
-    "${ATT_DIR}/Connection.cpp"
-    "${ATT_DIR}/Helpers.cpp"
-    "${ATT_DIR}/Quaternion.cpp"
-    "${ATT_DIR}/Serializable.cpp"
-    "${ATT_DIR}/Tracker.cpp"
-    "${ATT_DIR}/ImageDrawing.cpp"
+    utils/Env.cpp
+    utils/Log.cpp
 
-    "${ATT_DIR}/utils/Env.cpp"
-    "${ATT_DIR}/utils/Log.cpp"
+    ps3eye/ps3eye.cpp
+    ps3eye/PSEyeVideoCapture.cpp
 
-    "${ATT_DIR}/ps3eye/ps3eye.cpp"
-    "${ATT_DIR}/ps3eye/PSEyeVideoCapture.cpp"
-
-    GUI_stub.cpp)
+    test/main.cpp
+    test/GUI_stub.cpp
+)
 
 if (WIN32)
-    target_sources(test PRIVATE
-        "${ATT_DIR}/IPC/WindowsNamedPipe.cpp"
+    list(APPEND ATT_TEST_SOURCES
+        IPC/WindowsNamedPipe.cpp
     )
 else()
-    target_sources(test PRIVATE
-        "${ATT_DIR}/IPC/UNIXSocket.cpp"
+    list(APPEND ATT_TEST_SOURCES
+        IPC/UNIXSocket.cpp
     )
 endif()
+
+# prepend the AprilTagTrackers/ base to every source
+get_filename_component(ATT_SOURCES_BASE "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
+list(TRANSFORM ATT_TEST_SOURCES PREPEND "${ATT_SOURCES_BASE}/")
+target_sources(test PRIVATE ${ATT_TEST_SOURCES})
 
 # ====== Dependencies ======
 
@@ -61,7 +68,7 @@ target_compile_definitions(test PRIVATE
 target_compile_definitions(test PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
+    $<$<BOOL:${ATT_DEBUG}>:ATT_DEBUG>
     ATT_TESTING
 )
 
@@ -71,7 +78,7 @@ att_target_platform_definitions(test)
 
 # Set the root of includes, rather than relative
 target_include_directories(test PRIVATE
-    "${ATT_DIR}"
+    "${ATT_SOURCES_BASE}"
 )
 
 if (BUILD_SHARED_LIBS)
@@ -103,7 +110,7 @@ if(ATT_TEST_ENABLE_ASAN)
 endif()
 
 # precompiled headers
-target_precompile_headers(test PRIVATE "${ATT_DIR}/pch.hpp")
+target_precompile_headers(test PRIVATE "${ATT_SOURCES_BASE}/pch.hpp")
 
 # Enable LTO
 set_target_properties(AprilTagTrackers PROPERTIES
