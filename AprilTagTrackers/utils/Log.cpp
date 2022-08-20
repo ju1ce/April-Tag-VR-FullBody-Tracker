@@ -10,7 +10,7 @@ namespace utils
 
 void LogPrelude(LogTag tag)
 {
-    std::cerr << std::boolalpha
+    std::clog << std::boolalpha
               << "["
               << detail::LogTagToString(tag) << ": "
               << (IsMainThread() ? 'M' : ' ')
@@ -26,17 +26,19 @@ void LogPrelude(LogTag tag, const char* filePath, int line)
     LogPrelude(tag);
     if (filePath != nullptr)
     {
-        std::cerr << "(" << filePath;
-        if (line >= 1) std::cerr << ":" << line;
-        std::cerr << ") ";
+        std::clog << "(" << filePath;
+        if (line >= 1) std::clog << ":" << line;
+        std::clog << ") ";
     }
 }
 
 void LogEnd()
 {
-    std::cerr << '\n'
+    std::clog << std::endl
               << std::noboolalpha;
 }
+
+LogFileHandler::LogFileHandler() : logsDir(GetLogsDir()) {}
 
 void LogFileHandler::RedirectConsoleToFile()
 {
@@ -54,8 +56,10 @@ void LogFileHandler::RedirectConsoleToFile()
 
     coutBuffer = std::cout.rdbuf();
     cerrBuffer = std::cerr.rdbuf();
+    clogBuffer = std::clog.rdbuf();
     std::cout.rdbuf(logWriter.rdbuf());
     std::cerr.rdbuf(logWriter.rdbuf());
+    std::clog.rdbuf(logWriter.rdbuf());
     ATT_LOG_INFO("redirected console to file");
 }
 
@@ -64,6 +68,7 @@ void LogFileHandler::CloseAndTimestampFile()
     ATT_LOG_INFO("closing log file");
     std::cout.rdbuf(coutBuffer);
     std::cerr.rdbuf(cerrBuffer);
+    std::clog.rdbuf(clogBuffer);
     logWriter.close();
     TimestampFile();
 }

@@ -83,12 +83,12 @@ constexpr inline std::string_view LogTagToString(LogTag tag)
 template <typename T>
 inline void LogValue(const T& value)
 {
-    std::cerr << value;
+    std::clog << value;
 }
 inline void LogValue(char value)
 {
-    std::cerr << value;
-    if (value == '\n') std::cerr << "|     ";
+    std::clog << value;
+    if (value == '\n') std::clog << "|     ";
 }
 
 } // namespace detail
@@ -110,6 +110,8 @@ void LogEnd();
 class LogFileHandler
 {
 public:
+    LogFileHandler();
+
     void RedirectConsoleToFile();
     void CloseAndTimestampFile();
 
@@ -122,6 +124,7 @@ private:
     std::ofstream logWriter{};
     std::streambuf* coutBuffer = nullptr;
     std::streambuf* cerrBuffer = nullptr;
+    std::streambuf* clogBuffer = nullptr;
 };
 
 } // namespace utils
