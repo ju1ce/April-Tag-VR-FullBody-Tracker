@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef ATT_DEBUG
-#    include <doctest/doctest.h> // IWYU pragma: keep
+#    include "Test.hpp" // IWYU pragma: keep
 #else
 #    include <cstdlib> // IWYU pragma: keep
 #endif

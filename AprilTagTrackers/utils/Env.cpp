@@ -1,6 +1,6 @@
 #include "Env.hpp"
 
-#include <doctest/doctest.h>
+#include "Test.hpp"
 
 #include <cstdlib>
 #include <string_view>

@@ -4,7 +4,7 @@
 #include "Log.hpp" // IWYU pragma: keep
 
 #ifdef ATT_TESTING
-#    include <doctest/doctest.h>
+#    include "Test.hpp"
 #endif
 
 // the strings are not comptime combined to prevent duplicates in binary
