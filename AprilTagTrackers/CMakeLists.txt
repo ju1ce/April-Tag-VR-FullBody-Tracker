@@ -75,7 +75,7 @@ target_compile_definitions(AprilTagTrackers PRIVATE
 target_compile_definitions(AprilTagTrackers PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
+    $<$<BOOL:${ATT_DEBUG}>:ATT_DEBUG>
     DOCTEST_CONFIG_DISABLE
 )
 

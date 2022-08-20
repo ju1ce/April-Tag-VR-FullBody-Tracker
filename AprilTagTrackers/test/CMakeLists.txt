@@ -67,7 +67,7 @@ target_compile_definitions(test PRIVATE
 target_compile_definitions(test PRIVATE
     ATT_DRIVER_VERSION=${DRIVER_VERSION}
     ATT_LOG_LEVEL=${ATT_LOG_LEVEL}
-    $<$<OR:$<CONFIG:Debug>,$<BOOL:${ATT_DEBUG}>>:ATT_DEBUG>
+    $<$<BOOL:${ATT_DEBUG}>:ATT_DEBUG>
     ATT_TESTING
 )
 
