@@ -9,36 +9,36 @@
 #include <string_view>
 
 // Macros and functions for logging,
-// Prefix all macros with ATT_ and private macros with ATT_DETAIL_
+// The argument '\n' will newline and indent the log entry
 
 // Log verbosity levels, choose what gets printed to stderr
-/// No logging
+/// No logging (except assertion fails)
 #define ATT_LOG_LEVEL_SILENT 0
-/// (default release) enable logging
+/// (default release) enable almost all logging macros
 #define ATT_LOG_LEVEL_INFO 1
-/// (default debug) enable ATT_DEBUG
+/// (default debug) enable ATT_LOG_DEBUG
 #define ATT_LOG_LEVEL_DEBUG 2
 
-#if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
-/// log at a Line Of Code with severity
-#    define ATT_DETAIL_LOG_LOC(p_logTag, p_filePath, p_line, ...)            \
-        (::utils::LogPrelude(::utils::LogTag::p_logTag, p_filePath, p_line), \
-            ::utils::LogValues(__VA_ARGS__),                                 \
-            ::utils::LogEnd())
-/// log at the current Line Of Code with severity
-#    define ATT_DETAIL_LOG_AT(p_logTag, ...)                                 \
-        (::utils::LogPrelude(::utils::LogTag::p_logTag, __FILE__, __LINE__), \
-            ::utils::LogValues(__VA_ARGS__),                                 \
-            ::utils::LogEnd())
+/// log at a line of code with severity
+#define ATT_DETAIL_LOG_AT(p_logTag, p_filePath, p_line, ...)                \
+    static_cast<void>(                                                      \
+        ::utils::LogPrelude(::utils::LogTag::p_logTag, p_filePath, p_line), \
+        ::utils::LogValues(__VA_ARGS__),                                    \
+        ::utils::LogEnd())
+/// log at the current line of code with severity
+#define ATT_DETAIL_LOG_HERE(p_logTag, ...) \
+    ATT_DETAIL_LOG_AT(p_logTag, __FILE__, __LINE__, __VA_ARGS__)
 /// log with severity
-#    define ATT_DETAIL_LOG(p_logTag, ...)                \
-        (::utils::LogPrelude(::utils::LogTag::p_logTag), \
-            ::utils::LogValues(__VA_ARGS__),             \
-            ::utils::LogEnd())
+#define ATT_DETAIL_LOG(p_logTag, ...)                   \
+    static_cast<void>(                                  \
+        ::utils::LogPrelude(::utils::LogTag::p_logTag), \
+        ::utils::LogValues(__VA_ARGS__),                \
+        ::utils::LogEnd())
 
-#    define ATT_LOG_LOC_ERROR(p_filePath, p_line, ...) ATT_DETAIL_LOG_LOC(Error, p_filePath, p_line, __VA_ARGS__)
-#    define ATT_LOG_ERROR(...) ATT_DETAIL_LOG_AT(Error, __VA_ARGS__)
-#    define ATT_LOG_WARN(...) ATT_DETAIL_LOG_AT(Warn, __VA_ARGS__)
+#if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_INFO
+#    define ATT_LOG_ERROR_AT(p_filePath, p_line, ...) ATT_DETAIL_LOG_AT(Error, p_filePath, p_line, __VA_ARGS__)
+#    define ATT_LOG_ERROR(...) ATT_DETAIL_LOG_HERE(Error, __VA_ARGS__)
+#    define ATT_LOG_WARN(...) ATT_DETAIL_LOG_HERE(Warn, __VA_ARGS__)
 #    define ATT_LOG_INFO(...) ATT_DETAIL_LOG(Info, __VA_ARGS__)
 #else
 #    define ATT_LOG_LOC_ERROR(p_filePath, p_line, ...) ATT_NOOP()
@@ -48,7 +48,7 @@
 #endif
 
 #if ATT_LOG_LEVEL >= ATT_LOG_LEVEL_DEBUG
-#    define ATT_LOG_DEBUG(...) ATT_DETAIL_LOG_AT(Debug, __VA_ARGS__)
+#    define ATT_LOG_DEBUG(...) ATT_DETAIL_LOG_HERE(Debug, __VA_ARGS__)
 #else
 #    define ATT_LOG_DEBUG(...) ATT_NOOP()
 #endif
@@ -81,14 +81,14 @@ constexpr inline std::string_view LogTagToString(LogTag tag)
 }
 
 template <typename T>
-inline void LogValue(T&& value)
+inline void LogValue(const T& value)
 {
-    std::cerr << value;
+    std::clog << value;
 }
 inline void LogValue(char value)
 {
-    std::cerr << value;
-    if (value == '\n') std::cerr << "|     ";
+    std::clog << value;
+    if (value == '\n') std::clog << "|     ";
 }
 
 } // namespace detail
@@ -110,6 +110,8 @@ void LogEnd();
 class LogFileHandler
 {
 public:
+    LogFileHandler();
+
     void RedirectConsoleToFile();
     void CloseAndTimestampFile();
 
@@ -122,6 +124,7 @@ private:
     std::ofstream logWriter{};
     std::streambuf* coutBuffer = nullptr;
     std::streambuf* cerrBuffer = nullptr;
+    std::streambuf* clogBuffer = nullptr;
 };
 
 } // namespace utils
