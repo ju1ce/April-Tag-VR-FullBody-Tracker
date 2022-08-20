@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cross.hpp"
-#include "Log.hpp"
+#include "Log.hpp" // IWYU pragma: keep
 
 #ifdef ATT_TESTING
 #    include <doctest/doctest.h>
@@ -9,10 +9,10 @@
 
 // the strings are not comptime combined to prevent duplicates in binary
 /// log an assertion failure, the separate LogValues for __VA_ARGS__ allows for empty message
-#define ATT_DETAIL_ASSERT_LOG(p_expr, ...)                                                         \
-    (::utils::LogPrelude(::utils::LogTag::Assert, __FILE__, __LINE__),                             \
-        ::utils::LogValues(__VA_ARGS__),                                                           \
-        ::utils::LogValues('\n', "Failing Assertion: ( ", #p_expr ", ) in ", ATT_PRETTY_FUNCTION), \
+#define ATT_DETAIL_ASSERT_LOG(p_expr, ...)                                                      \
+    (::utils::LogPrelude(::utils::LogTag::Assert, __FILE__, __LINE__),                          \
+        ::utils::LogValues(__VA_ARGS__),                                                        \
+        ::utils::LogValues('\n', ATT_PRETTY_FUNCTION, ": Failing assertion ( ", #p_expr, " )"), \
         ::utils::LogEnd())
 
 #ifdef ATT_TESTING
