@@ -43,6 +43,27 @@ bool MyApp::OnInit()
 
 #ifdef ATT_DEBUG
 
+#    define ATT_FATAL_EXCEPTION(p_throwExpr, p_context)            \
+        do                                                         \
+        {                                                          \
+            try                                                    \
+            {                                                      \
+                (p_throwExpr);                                     \
+            }                                                      \
+            catch (const std::exception& exc)                      \
+            {                                                      \
+                ATT_LOG_ERROR(p_context, ": ", exc.what());        \
+                ATT_ABORT();                                       \
+            }                                                      \
+            catch (...)                                            \
+            {                                                      \
+                ATT_LOG_ERROR(p_context, ": malformed exception"); \
+                ATT_ABORT();                                       \
+            }                                                      \
+            ATT_LOG_ERROR(p_context, ": expected exception");      \
+            ATT_ABORT();                                           \
+        } while (false)
+
 void MyApp::OnFatalException()
 {
     ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnFatalException");
@@ -60,7 +81,7 @@ bool MyApp::OnExceptionInMainLoop()
 // cv::ErrorCallback
 static int OpenCVErrorHandler(int status, const char* funcName, const char* errMsg, const char* fileName, int line, void*)
 {
-    ATT_LOG_LOC_ERROR(fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
+    ATT_LOG_ERROR_AT(fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
     ATT_ABORT();
     return 0;
 }
@@ -68,7 +89,7 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 // wxAssertHandler_t
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
-    ATT_LOG_LOC_ERROR(file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
+    ATT_LOG_ERROR_AT(file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
         "\nassertion failure  ( ", cond, " )  in  ", func);
     ATT_ABORT();
 }
