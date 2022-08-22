@@ -93,7 +93,7 @@ void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
     // On Linux and when GStreamer backend is used we already setup the camera pixel format,
     // width, height and FPS above when the GStreamer pipeline was created.
 #ifdef ATT_OS_LINUX
-    if ((apiPreference != cv::CAP_ANY) && (apiPreference != cv::CAP_GSTREAMER))
+    if ((cam->api != cv::CAP_ANY) && (cam->api != cv::CAP_GSTREAMER))
 #endif
     {
         // cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
@@ -284,11 +284,11 @@ void Tracker::CalibrateCameraCharuco()
 
     bool promptSaveCalib = false;
     gui->ShowPrompt(lc.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS,
-        [&](bool pressedOk)
-        {
-            promptSaveCalib = pressedOk;
-            mainThreadRunning = false;
-        });
+                    [&](bool pressedOk)
+                    {
+                        promptSaveCalib = pressedOk;
+                        mainThreadRunning = false;
+                    });
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
     cv::Mat1d stdDeviationsIntrinsics, stdDeviationsExtrinsics;
@@ -355,8 +355,8 @@ void Tracker::CalibrateCameraCharuco()
 
                 // recalibrate camera without the problematic frame
                 cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
-                    cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
-                    cv::CALIB_USE_LU);
+                                                  cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                                                  cv::CALIB_USE_LU);
 
                 picsTaken--;
             }
@@ -412,8 +412,8 @@ void Tracker::CalibrateCameraCharuco()
                         {
                             // Calibrate camera using our data
                             cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
-                                cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
-                                cv::CALIB_USE_LU);
+                                                              cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
+                                                              cv::CALIB_USE_LU);
                         }
                         catch (const cv::Exception& e)
                         {
@@ -629,10 +629,10 @@ void Tracker::StartTrackerCalib()
     mainThread.detach();
 
     gui->ShowPrompt(lc.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS,
-        [&](bool)
-        {
-            mainThreadRunning = false;
-        });
+                    [&](bool)
+                    {
+                        mainThreadRunning = false;
+                    });
 }
 
 void Tracker::StartConnection()
@@ -645,7 +645,8 @@ void Tracker::HandleConnectionErrors()
 {
     using Code = Connection::ErrorCode;
     Code code = connection->GetAndResetErrorState();
-    if (code == Code::OK) return;
+    if (code == Code::OK)
+        return;
 
     gui->SetStatus(false, StatusItem::Driver);
 
@@ -661,8 +662,8 @@ void Tracker::HandleConnectionErrors()
         gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);
     else if (code == Code::DRIVER_MISMATCH)
         gui->ShowPopup(lc.CONNECT_DRIVER_MISSMATCH_1 + connection->GetErrorMsg() +
-                lc.CONNECT_DRIVER_MISSMATCH_2 + utils::GetBridgeDriverVersion().ToString(),
-            PopupStyle::Error);
+                           lc.CONNECT_DRIVER_MISSMATCH_2 + utils::GetBridgeDriverVersion().ToString(),
+                       PopupStyle::Error);
     else // if (code == Code::SOMETHING_WRONG)
         gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);
 }
