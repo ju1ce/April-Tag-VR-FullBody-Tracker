@@ -83,6 +83,7 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE="./vcpkg/scripts/buildsystems/vcpkg.cmake"
           -DVCPKG_INSTALLED_DIR="./build/vcpkg_installed"
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DATT_DEBUG=ON
 
       - name: CMake Build
         run: |
