@@ -12,7 +12,9 @@ int MyApp::OnExit()
     tracker->Stop();
 
     if (envVars.IsRedirectConsoleToFile())
+    {
         logFileHandler.CloseAndTimestampFile();
+    }
     return 0;
 }
 
@@ -22,7 +24,9 @@ bool MyApp::OnInit()
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_INFO);
 
     if (envVars.IsRedirectConsoleToFile())
+    {
         logFileHandler.RedirectConsoleToFile();
+    }
     ATT_LOG_INFO("Starting AprilTagTrackers");
 
     userConfig.Load();
@@ -90,7 +94,7 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
     ATT_LOG_ERROR_AT(file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
-        "\nassertion failure  ( ", cond, " )  in  ", func);
+                     "\nassertion failure  ( ", cond, " )  in  ", func);
     ATT_ABORT();
 }
 
