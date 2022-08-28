@@ -47,7 +47,7 @@ void Connection::Connect()
 
     if (user_config.ignoreTracker0 && user_config.trackerNum == 3)
     {
-        for (int i = 0; i < user_config.trackerNum - 1; i++)
+        for (int i = 0; i < user_config.trackerNum + 1; i++)
         {
             TrackerConnection temp;
             temp.TrackerId = i + 1;
