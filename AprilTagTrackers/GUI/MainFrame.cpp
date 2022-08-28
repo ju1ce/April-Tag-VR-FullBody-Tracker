@@ -12,10 +12,10 @@
 GUI::MainFrame::MainFrame(RefPtr<ITrackerControl> _tracker, const Localization& _lc, UserConfig& _config)
     : wxFrame(nullptr, wxID_ANY, _lc.APP_TITLE),
       tracker(_tracker), lc(_lc), config(_config),
-      previews{PreviewFrame{"Preview [" + _config.windowTitle + "]"}, PreviewFrame{"Camera Preview [" + _config.windowTitle + "]"}}
+      previews{PreviewFrame{"Preview [" + ToWXString(_config.windowTitle) + "]"}, PreviewFrame{"Camera Preview [" + ToWXString(_config.windowTitle) + "]"}}
 {
     SetIcon(APRILTAG_XPM);
-    if (!config.windowTitle.empty()) SetTitle(config.windowTitle);
+    if (!config.windowTitle.empty()) SetTitle(ToWXString(config.windowTitle));
 
     statusBar = NewWindow<wxStatusBar>(static_cast<wxFrame*>(this));
     SetStatusBar(statusBar);
@@ -102,12 +102,12 @@ bool GUI::MainFrame::IsPreviewVisible(PreviewId id)
     return previews[idx].IsVisible();
 }
 
-ManualCalib::Real GUI::MainFrame::GetManualCalib()
+cfg::ManualCalib::Real GUI::MainFrame::GetManualCalib()
 {
     return config.manualCalib.GetAsReal();
 }
 
-void GUI::MainFrame::SetManualCalib(const ManualCalib::Real& calib)
+void GUI::MainFrame::SetManualCalib(const cfg::ManualCalib::Real& calib)
 {
     config.manualCalib.SetFromReal(calib);
 
@@ -178,11 +178,12 @@ void GUI::MainFrame::SaveParams()
 
 void GUI::MainFrame::ValidateParams()
 {
+    RefPtr<cfg::VideoStream> streamConfig = config.videoStreams[0];
     if (config.smoothingFactor < 0.2)
         ShowPopup(lc.PARAMS_NOTE_LOW_SMOOTHING, PopupStyle::Warning);
-    if (config.cameraSettings && config.cameraApiPreference != 700)
+    if (streamConfig->camera.openDirectShowSettings && streamConfig->camera.api != 700)
         ShowPopup(lc.PARAMS_NOTE_NO_DSHOW_CAMSETTINGS, PopupStyle::Warning);
-    if (config.smoothingFactor <= config.camLatency)
+    if (config.smoothingFactor <= streamConfig->latency)
         ShowPopup(lc.PARAMS_NOTE_LATENCY_GREATER_SMOOTHING, PopupStyle::Warning);
     if (config.smoothingFactor > 1)
         ShowPopup(lc.PARAMS_NOTE_HIGH_SMOOTHING, PopupStyle::Warning);
@@ -302,6 +303,8 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
     static constexpr std::array<double, 6> quadDecimateValues =
         {1, 1.5, 2, 3, 4, 5};
 
+    RefPtr<cfg::VideoStream> streamConfig = config.videoStreams[0];
+
     params.Border(wxALL, 5)
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10))
         .Add(Labeled{lc.PARAMS_LANGUAGE,
@@ -312,39 +315,39 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
         .PushStaticBoxSizer(lc.PARAMS_CAMERA)
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10))
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_ID, lc.PARAMS_CAMERA_TOOLTIP_ID,
-            InputText{config.cameraAddr}})
-        .Add(Labeled{lc.PARAMS_CAMERA_NAME_API, CreateCVCaptureAPIToolTip(lc),
-            InputText{config.cameraApiPreference}})
+            InputText{streamConfig->camera.address}})
+        .Add(Labeled{lc.PARAMS_CAMERA_NAME_API, CreateCVCaptureAPIToolTip(),
+            InputText{streamConfig->camera.api}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
-            Choice{config.rotateCl, camRotOptions, camRotCodes}})
+            Choice{streamConfig->camera.rotateCl, camRotOptions, camRotCodes}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_MIRROR, lc.PARAMS_CAMERA_TOOLTIP_MIRROR,
-            CheckBox{config.mirrorCam}})
+            CheckBox{streamConfig->camera.mirror}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_WIDTH, lc.PARAMS_CAMERA_TOOLTIP_WIDTH,
-            InputText{config.camWidth}})
+            InputText{streamConfig->camera.resolution.width}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_HEIGHT, lc.PARAMS_CAMERA_TOOLTIP_HEIGHT,
-            InputText{config.camHeight}})
+            InputText{streamConfig->camera.resolution.height}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_FPS, lc.PARAMS_CAMERA_TOOLTIP_FPS,
-            InputText{config.camFps}})
+            InputText{streamConfig->camera.fps}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_SETTINGS, lc.PARAMS_CAMERA_TOOLTIP_SETTINGS,
-            CheckBox{config.cameraSettings}})
+            CheckBox{streamConfig->camera.openDirectShowSettings}})
         .PopSizer()
         .PushStaticBoxSizer("LIGHTING")
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10));
 
     auto extraCheck = params.AddGet(Labeled{lc.PARAMS_CAMERA_NAME_3_OPTIONS,
         lc.PARAMS_CAMERA_TOOLTIP_3_OPTIONS,
-        CheckBox{config.settingsParameters}});
+        CheckBox{streamConfig->camera.extraSettings.enabled}});
 
     auto extraOpts = params.SubForm();
     extraOpts
         ->Add(Labeled{lc.PARAMS_CAMERA_NAME_AUTOEXP, lc.PARAMS_CAMERA_TOOLTIP_AUTOEXP,
-            InputText{config.cameraAutoexposure}})
+            InputText{streamConfig->camera.extraSettings.autoExposure}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_EXP, lc.PARAMS_CAMERA_TOOLTIP_EXP,
-            InputText{config.cameraExposure}})
+            InputText{streamConfig->camera.extraSettings.exposure}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_GAIN, lc.PARAMS_CAMERA_TOOLTIP_GAIN,
-            InputText{config.cameraGain}});
+            InputText{streamConfig->camera.extraSettings.gain}});
 
-    extraOpts->SetEnabled(config.settingsParameters);
+    extraOpts->SetEnabled(streamConfig->camera.extraSettings.enabled);
 
     extraCheck->GetElem().Bind(wxEVT_CHECKBOX,
         [=](wxCommandEvent& evt)
@@ -362,9 +365,9 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_MARKER_SIZE, lc.PARAMS_TRACKER_TOOLTIP_MARKER_SIZE,
             InputText{config.markerSize}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_QUAD_DECIMATE, lc.PARAMS_TRACKER_TOOLTIP_QUAD_DECIMATE,
-            Choice{config.quadDecimate, quadDecimateOptions, quadDecimateValues}})
+            Choice{streamConfig->quadDecimate, quadDecimateOptions, quadDecimateValues}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_SEARCH_WINDOW, lc.PARAMS_TRACKER_TOOLTIP_SEARCH_WINDOW,
-            InputText{config.searchWindow}})
+            InputText{streamConfig->searchWindow}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_MARKER_LIBRARY, lc.PARAMS_TRACKER_TOOLTIP_MARKER_LIBRARY,
             Choice{config.markerLibrary, markerLibraries}})
         .Add(Labeled{lc.PARAMS_TRACKER_NAME_USE_CENTERS, lc.PARAMS_TRACKER_TOOLTIP_USE_CENTERS,
@@ -382,7 +385,7 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
         .Add(Labeled{lc.PARAMS_SMOOTHING_NAME_DEPTH, lc.PARAMS_SMOOTHING_TOOLTIP_DEPTH,
             InputText{config.depthSmoothing}})
         .Add(Labeled{lc.PARAMS_SMOOTHING_NAME_CAM_LATENCY, lc.PARAMS_SMOOTHING_TOOLTIP_CAM_LATENCY,
-            InputText{config.camLatency}})
+            InputText{streamConfig->latency}})
         .PopSizer()
         .PopSizer()
         .Add(Button{lc.PARAMS_SAVE, [&](auto&)
@@ -413,7 +416,7 @@ void GUI::MainFrame::CreateLicensePage(RefPtr<wxNotebook> pages)
 }
 
 /// Query OpenCV to find available camera api indices
-U8String GUI::MainFrame::CreateCVCaptureAPIToolTip(const Localization& lc)
+U8String GUI::MainFrame::CreateCVCaptureAPIToolTip()
 {
     std::ostringstream cameraTooltipApi;
     cameraTooltipApi << lc.PARAMS_CAMERA_TOOLTIP_API_1;

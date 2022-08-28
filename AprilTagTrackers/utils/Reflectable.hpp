@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Macros.hpp"
+
 #include <type_traits>
 
-/// Placed in a class before a list of REFLECTABLE_FIELDS
+/// Placed in a class before a list of REFLECTABLE_FIELDs
 #define REFLECTABLE_BEGIN                \
     friend class ::Reflect;              \
     template <size_t N, typename = void> \
@@ -51,7 +53,7 @@
 /// Auto-friended by reflectable types, provides functionality on them.
 class Reflect
 {
-private:
+public:
     template <typename RT, typename = void>
     struct IsReflectable : std::false_type
     {
@@ -76,13 +78,14 @@ private:
     {
     };
 
-public:
     /// Comptime check if a (template) type is reflectable (it uses the reflectable macros).
     /// eg. template <typename T> std::enable_if_t<Reflect::IsReflectable<T>> MyFunc() {}
     template <typename RT>
     static constexpr bool IsReflectableV = IsReflectable<RT>::value;
     template <typename RT, size_t I>
     static constexpr bool IsReflectableIndexV = IsReflectableIndex<RT, I>::value;
+    template <typename RT>
+    static constexpr size_t FieldCount = RT::_rfl_fieldCount;
 
 private:
     template <typename RT, typename F, size_t I>
@@ -108,7 +111,7 @@ public:
     /// Static polymorphism is necessary if a base class uses this function.
     /// @tparam F [](const char* name, FieldType& field) {}
     template <typename RT, typename F>
-    static constexpr void ForEach(RT& reflType, F&& func)
+    static void ForEach(RT& reflType, F&& func)
     {
         ForEachFold(reflType,
             std::forward<F>(func),

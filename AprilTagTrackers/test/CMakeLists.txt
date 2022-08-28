@@ -12,13 +12,15 @@ set(ATT_TEST_SOURCES
     Connection.cpp
     Helpers.cpp
     Quaternion.cpp
-    Serializable.cpp
     Tracker.cpp
     tagCustom29h10.cpp
     ImageDrawing.cpp
 
     utils/Env.cpp
     utils/Log.cpp
+
+    serial/FileStorage.cpp
+    serial/ReaderWriter.cpp
 
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp

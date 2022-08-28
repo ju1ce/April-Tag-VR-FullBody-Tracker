@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <opencv2/core/persistence.hpp>
+#include "serial/ReaderWriter.hpp"
 
 #include <string>
 #include <string_view>
@@ -33,8 +33,14 @@ public:
     friend U8String operator+(const U8String& lhs, const std::string& rhs) { return lhs.str + rhs; }
     friend U8String operator+(const std::string& lhs, const U8String& rhs) { return lhs + rhs.str; }
 
-    friend void Write(cv::FileStorage& fs, const U8String& val) { fs << val.str; }
-    friend void Read(const cv::FileNode& fn, U8String& val) { fn >> val.str; }
+    void ReadSelf(serial::Reader& reader)
+    {
+        serial::Read(reader, str);
+    }
+    void WriteSelf(serial::Writer& writer) const
+    {
+        serial::Write(writer, str);
+    }
 
 private:
     std::string str;

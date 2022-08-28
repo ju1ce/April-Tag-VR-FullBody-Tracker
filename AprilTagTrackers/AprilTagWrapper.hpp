@@ -2,11 +2,11 @@
 
 #include "Config.hpp"
 
-#include <string>
-#include <vector>
-
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
+
+#include <string>
+#include <vector>
 
 const int APRILTAG_STANDARD = 0;
 const int APRILTAG_CIRCULAR = 1;

@@ -1,19 +1,19 @@
 #include "AprilTagWrapper.hpp"
 
-#include <vector>
-
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include "tagCustom29h10.hpp"
 
 #include <apriltag/apriltag.h>
 #include <apriltag/tagCircle21h7.h>
 #include <apriltag/tagStandard41h12.h>
-#include "tagCustom29h10.hpp"
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#include <vector>
 
 AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
     : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
 {
-    td->quad_decimate = user_config.quadDecimate;
+    td->quad_decimate = user_config.videoStreams[0]->quadDecimate;
     td->nthreads = 4; // TODO: make nthreads a parameter or calculate it somehow
     apriltag_family_t* tf;
     if (user_config.markerLibrary == APRILTAG_CIRCULAR)

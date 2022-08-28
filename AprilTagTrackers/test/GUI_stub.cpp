@@ -45,12 +45,12 @@ bool GUI::IsPreviewVisible(PreviewId id)
     return true;
 }
 
-ManualCalib::Real GUI::GetManualCalib()
+cfg::ManualCalib::Real GUI::GetManualCalib()
 {
-    return ManualCalib::Real{cv::Vec3d{}, cv::Vec3d{}, 0};
+    return cfg::ManualCalib::Real{cv::Vec3d{}, cv::Vec3d{}, 0};
 }
 
-void GUI::SetManualCalib(const ManualCalib::Real& calib)
+void GUI::SetManualCalib(const cfg::ManualCalib::Real& calib)
 {
 }
 

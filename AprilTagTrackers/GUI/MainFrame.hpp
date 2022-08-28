@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Config.hpp"
+#include "config/ManualCalib.hpp"
 #include "FormBuilder.hpp"
 #include "GUI.hpp"
 #include "Localization.hpp"
@@ -40,10 +41,10 @@ public:
 
     /// thread safe.
     /// Get the manual calibration currently shown in the UI.
-    ManualCalib::Real GetManualCalib();
+    cfg::ManualCalib::Real GetManualCalib();
     /// thread safe.
     /// Set the manual calib currently shown in the UI.
-    void SetManualCalib(const ManualCalib::Real& calib);
+    void SetManualCalib(const cfg::ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
     void SetManualCalibVisible(bool visible = true);
 
@@ -58,7 +59,7 @@ private:
     void CreateParamsPage(RefPtr<wxNotebook> pages);
     void CreateLicensePage(RefPtr<wxNotebook> pages);
 
-    U8String CreateCVCaptureAPIToolTip(const Localization& lc);
+    U8String CreateCVCaptureAPIToolTip();
 
     RefPtr<ITrackerControl> tracker;
     const Localization& lc;
@@ -72,11 +73,13 @@ private:
     RefPtr<Form::FormBuilder> manualCalibForm;
     RefPtr<wxCheckBox> manualCalibCheckBox;
 
+    cfg::ManualCalib manualCalib{};
+
     std::array<PreviewFrame, 2> previews;
 };
 
 /// Care should be taken to only call this sparingly from other threads,
-/// so not continously in an update loop for example.
+/// so not continuously in an update loop for example.
 template <typename F>
 inline void GUI::MainFrame::CallOnMainThread(const F& func)
 {

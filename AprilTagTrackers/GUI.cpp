@@ -74,12 +74,12 @@ bool GUI::IsPreviewVisible(PreviewId id)
     return impl->IsPreviewVisible(id);
 }
 
-ManualCalib::Real GUI::GetManualCalib()
+cfg::ManualCalib::Real GUI::GetManualCalib()
 {
     return impl->GetManualCalib();
 }
 
-void GUI::SetManualCalib(const ManualCalib::Real& calib)
+void GUI::SetManualCalib(const cfg::ManualCalib::Real& calib)
 {
     impl->SetManualCalib(calib);
 }
