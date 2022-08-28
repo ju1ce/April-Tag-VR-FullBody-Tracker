@@ -15,6 +15,7 @@ set(ATT_TEST_SOURCES
     Serializable.cpp
     Tracker.cpp
     tagCustom29h10.cpp
+    ImageDrawing.cpp
 
     utils/Env.cpp
     utils/Log.cpp

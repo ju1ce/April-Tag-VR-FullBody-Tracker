@@ -17,9 +17,13 @@
 
 // debug break or abort
 #ifdef ATT_DEBUG
-#    define ATT_ABORT() [] {           \
-        DOCTEST_BREAK_INTO_DEBUGGER(); \
-    }()
+#    ifdef ATT_COMP_MSVC
+#        define ATT_ABORT() DOCTEST_BREAK_INTO_DEBUGGER()
+#    else
+#        define ATT_ABORT() [] {           \
+            DOCTEST_BREAK_INTO_DEBUGGER(); \
+        }()
+#    endif
 #else
 #    define ATT_ABORT() std::abort()
 #endif

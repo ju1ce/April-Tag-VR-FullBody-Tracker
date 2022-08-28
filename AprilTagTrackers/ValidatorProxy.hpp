@@ -28,13 +28,6 @@ public:
         validator(value);
         return *this;
     }
-    /// Returns true if the value was modified by the validator
-    bool Set(T val)
-    {
-        value = std::move(val);
-        validator(value);
-        return value != val;
-    }
 
     operator const T&() const { return value; }
 
@@ -50,6 +43,6 @@ public:
     }
 
 private:
-    T value;
-    Validator validator;
+    T value{};
+    Validator validator = nullptr;
 };

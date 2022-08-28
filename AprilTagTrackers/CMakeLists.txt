@@ -15,12 +15,14 @@ target_sources(AprilTagTrackers PRIVATE
     Tracker.cpp
     MyApp.cpp
     tagCustom29h10.cpp
+    ImageDrawing.cpp
 
     GUI.cpp
     GUI/MainFrame.cpp
     GUI/PreviewPane.cpp
     GUI/FormBuilder.cpp
     GUI/U8String.cpp
+    GUI/MatToBitmap.cpp
 
     utils/Log.cpp
     utils/Env.cpp
