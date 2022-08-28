@@ -1,4 +1,9 @@
+# if you want to make changes to this without affecting upstream
+# run `git update-index --skip-worktree .clang-tidy`
+# read more about command: https://stackoverflow.com/a/8327571/18158409
+
 # suppressing incorrect or ignored checks in code: https://clang.llvm.org/extra/clang-tidy/#id3
+
 ---
 # before space is style guide
 # the rest are good checks to conform to
