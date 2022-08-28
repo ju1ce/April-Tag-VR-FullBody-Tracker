@@ -476,8 +476,8 @@ void Tracker::CalibrateCameraCharuco()
             */
 
             // Save calibration to our global params cameraMatrix and distCoeffs
-            calib_config.camMat = cameraMatrix;
-            calib_config.distCoeffs = distCoeffs;
+            calib_config.cameraMatrix = cameraMatrix;
+            calib_config.distortionCoeffs = distCoeffs;
             calib_config.stdDeviationsIntrinsics = stdDeviationsIntrinsics;
             calib_config.perViewErrors = perViewErrors;
             calib_config.allCharucoCorners = allCharucoCorners;
@@ -590,8 +590,8 @@ void Tracker::CalibrateCamera()
 
     calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
 
-    calib_config.camMat = cameraMatrix;
-    calib_config.distCoeffs = distCoeffs;
+    calib_config.cameraMatrix = cameraMatrix;
+    calib_config.distortionCoeffs = distCoeffs;
     calib_config.Save();
     mainThreadRunning = false;
     gui->ShowPopup("Calibration complete.", PopupStyle::Info);
@@ -611,7 +611,7 @@ void Tracker::StartTrackerCalib()
         mainThreadRunning = false;
         return;
     }
-    if (calib_config.camMat.empty())
+    if (calib_config.cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
@@ -685,7 +685,7 @@ void Tracker::Start()
         mainThreadRunning = false;
         return;
     }
-    if (calib_config.camMat.empty())
+    if (calib_config.cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
@@ -801,7 +801,7 @@ void Tracker::CalibrateTracker()
 
         // estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), calib_config.camMat, calib_config.distCoeffs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), calib_config.cameraMatrix, calib_config.distortionCoeffs, rvecs, tvecs);
 
         float maxDist = static_cast<float>(user_config.trackerCalibDistance);
 
@@ -811,9 +811,9 @@ void Tracker::CalibrateTracker()
 
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, calib_config.camMat, calib_config.distCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
+                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, calib_config.cameraMatrix, calib_config.distortionCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
                 {
-                    cv::aruco::drawAxis(image, calib_config.camMat, calib_config.distCoeffs, boardRvec[i], boardTvec[i], 0.1f); // if found, draw axis and mark it found
+                    cv::aruco::drawAxis(image, calib_config.cameraMatrix, calib_config.distortionCoeffs, boardRvec[i], boardTvec[i], 0.1f); // if found, draw axis and mark it found
                     boardFound[i] = true;
                 }
                 else
@@ -1117,7 +1117,7 @@ void Tracker::MainLoop()
             cv::Vec3d rvec, tvec;
 
             // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
-            cv::projectPoints(point, rvec, tvec, calib_config.camMat, calib_config.distCoeffs, projected);
+            cv::projectPoints(point, rvec, tvec, calib_config.cameraMatrix, calib_config.distortionCoeffs, projected);
 
             cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
@@ -1134,7 +1134,7 @@ void Tracker::MainLoop()
                 cv::Vec3d rvec = q.toRotVec();
                 cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
 
-                cv::aruco::drawAxis(drawImg, calib_config.camMat, calib_config.distCoeffs, rvec, tvec, 0.10f);
+                cv::aruco::drawAxis(drawImg, calib_config.cameraMatrix, calib_config.distortionCoeffs, rvec, tvec, 0.10f);
 
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
@@ -1322,7 +1322,7 @@ void Tracker::MainLoop()
             try
             {
                 trackerStatus[i].boardTvec /= wscale;
-                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], calib_config.camMat, calib_config.distCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[connection->connectedTrackers[i].TrackerId], calib_config.cameraMatrix, calib_config.distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
                 {
                     for (int j = 0; j < 6; j++)
                     {
