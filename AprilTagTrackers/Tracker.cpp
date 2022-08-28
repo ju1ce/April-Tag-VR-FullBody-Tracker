@@ -1445,8 +1445,8 @@ void Tracker::MainLoop()
 
             // Figure out the camera aspect ratio, XZ and YZ ratio limits
             double aspectRatio = (double)image.cols/(double)image.rows;
-            double XZratioLimit = 0.5*(double)image.cols/calib_config.camMat.at<double>(0,0);
-            double YZratioLimit = 0.5*(double)image.rows/calib_config.camMat.at<double>(1,1);
+            double XZratioLimit = 0.5*(double)image.cols/camCalib->cameraMatrix.at<double>(0,0);
+            double YZratioLimit = 0.5*(double)image.rows/camCalib->cameraMatrix.at<double>(1,1);
 
             // Figure out whether X or Y dimension is most likely to go outside the camera field of view
             if (abs(trackerStatus[i].boardTvec[0]/trackerStatus[i].boardTvec[1]) > aspectRatio)
