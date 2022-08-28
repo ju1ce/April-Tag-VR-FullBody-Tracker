@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Debug.hpp"
 #include "Quaternion.hpp"
-#include "Reflectable.hpp"
 #include "SemVer.h"
+#include "utils/Assert.hpp"
+#include "utils/Reflectable.hpp"
 #include "ValidatorProxy.hpp"
 
 #include <opencv2/aruco.hpp>
@@ -14,8 +14,8 @@
 
 // clang-format off
 #define FILESTORAGE_COMMENT_WITH_ID(a_id, a_commentStr)   \
-    REFLECTABLE_FIELD_DATA(const FS::Comment, REFLECTABLE_CONCAT(_comment_, a_id)); \
-    static constexpr const FS::Comment REFLECTABLE_CONCAT(_comment_, a_id) { a_commentStr }
+    REFLECTABLE_FIELD_DATA(const FS::Comment, ATT_CONCAT(_comment_, a_id)); \
+    static constexpr const FS::Comment ATT_CONCAT(_comment_, a_id) { a_commentStr }
 // clang-format on
 
 #define FS_COMMENT(a_commentStr) \
@@ -53,26 +53,26 @@ inline void ReadEach(const cv::FileNode& fn, RT& reflType);
 
 } // namespace FS
 
-template <typename T>
-inline std::enable_if_t<Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
+template <typename T, std::enable_if_t<Reflect::IsReflectableV<T>, int> = 0>
+inline void Write(cv::FileStorage& fs, const T& field)
 {
     fs << "{";
     FS::WriteEach(fs, field);
     fs << "}";
 }
-template <typename T>
-inline std::enable_if_t<Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+template <typename T, std::enable_if_t<Reflect::IsReflectableV<T>, int> = 0>
+inline void Read(const cv::FileNode& fn, T& field)
 {
     FS::ReadEach(fn, field);
 }
 
-template <typename T>
-inline std::enable_if_t<!Reflect::IsReflectableV<T>> Write(cv::FileStorage& fs, const T& field)
+template <typename T, std::enable_if_t<!Reflect::IsReflectableV<T>, int> = 0>
+inline void Write(cv::FileStorage& fs, const T& field)
 {
     fs << field;
 }
-template <typename T>
-inline std::enable_if_t<!Reflect::IsReflectableV<T>> Read(const cv::FileNode& fn, T& field)
+template <typename T, std::enable_if_t<!Reflect::IsReflectableV<T>, int> = 0>
+inline void Read(const cv::FileNode& fn, T& field)
 {
     fn >> field;
 }
@@ -187,7 +187,7 @@ inline void ReadNode(const cv::FileNode&, const char*, const Comment&)
 { /*unused*/
 }
 
-// OpenCV dosnt have an implementation for storing its own aruco config file, so here it is.
+// OpenCV doesn't have an implementation for storing its own aruco config file, so here it is.
 // This will expand the params in-place in the object, instead of under some sub-object.
 void WriteNode(cv::FileStorage& fs, const char*, const cv::Ptr<cv::aruco::DetectorParameters>& field);
 inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::DetectorParameters>& field)
@@ -198,7 +198,7 @@ inline void ReadNode(const cv::FileNode& fn, const char*, cv::Ptr<cv::aruco::Det
 template <typename ST>
 inline bool Serializable<ST>::Save() const
 {
-    ATASSERT("filePath is not empty.", !filePath.empty());
+    ATT_ASSERT(!filePath.empty());
     cv::FileStorage fs{filePath.generic_string(), cv::FileStorage::WRITE};
     if (!fs.isOpened())
     {
@@ -214,7 +214,7 @@ inline bool Serializable<ST>::Save() const
 template <typename ST>
 inline bool Serializable<ST>::Load()
 {
-    ATASSERT("filePath is not empty.", !filePath.empty());
+    ATT_ASSERT(!filePath.empty());
     if (!std::filesystem::exists(filePath)) return false;
     if (std::filesystem::is_empty(filePath)) return false;
     cv::FileStorage fs;
@@ -225,7 +225,7 @@ inline bool Serializable<ST>::Load()
     }
     catch (const std::exception& e)
     {
-        ATERROR(e.what());
+        ATT_LOG_ERROR(e.what());
         return false;
     }
     if (!fs.isOpened()) return false;

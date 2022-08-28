@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Config.hpp"
 #include "Helpers.hpp"
 #include "IPC/IPC.hpp"
@@ -21,7 +23,7 @@ struct Pose
     Pose(const cv::Vec3d& pos, const cv::Quatd& rot)
         : position(pos), rotation(rot)
     {
-        ATASSERT("Pose rotation is a unit quaternion.", rotation.isNormal());
+        ATT_ASSERT(rotation.isNormal(), "Pose rotation is a unit quaternion.");
     }
 
     /// When multiplied, applies no translation or rotation

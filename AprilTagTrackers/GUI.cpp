@@ -1,7 +1,7 @@
 #include "GUI.hpp"
 
-#include "Debug.hpp"
 #include "GUI/MainFrame.hpp"
+#include "utils/Assert.hpp"
 
 namespace
 {

@@ -6,12 +6,15 @@
 #include <functional>
 #include <sstream>
 
+// Application icon in source code, embedding an image as a string literal
+#include "resources/apriltag.xpm"
+
 GUI::MainFrame::MainFrame(RefPtr<ITrackerControl> _tracker, const Localization& _lc, UserConfig& _config)
     : wxFrame(nullptr, wxID_ANY, _lc.APP_TITLE),
       tracker(_tracker), lc(_lc), config(_config),
       previews{PreviewFrame{"Preview [" + _config.windowTitle + "]"}, PreviewFrame{"Camera Preview [" + _config.windowTitle + "]"}}
 {
-    SetIcon(apriltag_xpm);
+    SetIcon(APRILTAG_XPM);
     if (!config.windowTitle.empty()) SetTitle(config.windowTitle);
 
     statusBar = NewWindow<wxStatusBar>(static_cast<wxFrame*>(this));
@@ -130,7 +133,7 @@ void GUI::MainFrame::SetManualCalibVisible(bool visible)
         manualCalibForm->Update();
         Fit();
     }
-    else 
+    else
     {
         config.Save();
     }
@@ -285,19 +288,19 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
     params = FormBuilder{panel, boxSizer};
 
     static constexpr std::array<U8StringView, 5> markerLibraries =
-    { "AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color", "ApriltagCustom29h10" };
+        {"AprilTag Standard", "AprilTag Circular", "Aruco4x4", "AprilTag Color", "ApriltagCustom29h10"};
 
     static constexpr std::array<U8StringView, 4> camRotOptions =
-    { "0", "90", "180", "270" };
+        {"0", "90", "180", "270"};
 
     static constexpr std::array<int, 4> camRotCodes =
-    { -1, cv::ROTATE_90_CLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_COUNTERCLOCKWISE };
+        {-1, cv::ROTATE_90_CLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_COUNTERCLOCKWISE};
 
     static constexpr std::array<U8StringView, 6> quadDecimateOptions =
-    { "1", "1.5", "2", "3", "4", "5" };
+        {"1", "1.5", "2", "3", "4", "5"};
 
     static constexpr std::array<double, 6> quadDecimateValues =
-    { 1, 1.5, 2, 3, 4, 5 };
+        {1, 1.5, 2, 3, 4, 5};
 
     params.Border(wxALL, 5)
         .PushSizer<wxFlexGridSizer>(4, wxSize(10, 10))
@@ -312,8 +315,8 @@ void GUI::MainFrame::CreateParamsPage(RefPtr<wxNotebook> pages)
             InputText{config.cameraAddr}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_API, CreateCVCaptureAPIToolTip(lc),
             InputText{config.cameraApiPreference}})
-        .Add(Labeled{ lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
-            Choice{config.rotateCl, camRotOptions, camRotCodes} })
+        .Add(Labeled{lc.PARAMS_CAMERA_NAME_ROT_CLOCKWISE, lc.PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE,
+            Choice{config.rotateCl, camRotOptions, camRotCodes}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_MIRROR, lc.PARAMS_CAMERA_TOOLTIP_MIRROR,
             CheckBox{config.mirrorCam}})
         .Add(Labeled{lc.PARAMS_CAMERA_NAME_WIDTH, lc.PARAMS_CAMERA_TOOLTIP_WIDTH,
@@ -420,9 +423,7 @@ U8String GUI::MainFrame::CreateCVCaptureAPIToolTip(const Localization& lc)
                          << static_cast<int>(backend) << ": "
                          << cv::videoio_registry::getBackendName(backend);
     }
-#ifdef ATT_ENABLE_PS3EYE
     cameraTooltipApi << "\n9100: PS3EYE";
-#endif
     cameraTooltipApi << "\n\n"
                      << lc.PARAMS_CAMERA_TOOLTIP_API_2;
     for (const auto& backend : cv::videoio_registry::getStreamBackends())

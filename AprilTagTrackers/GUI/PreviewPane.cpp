@@ -1,6 +1,6 @@
 #include "PreviewPane.hpp"
 
-#include "Debug.hpp"
+#include "utils/Assert.hpp"
 #include "wxHelpers.hpp"
 
 #include <opencv2/imgproc.hpp>
@@ -74,9 +74,8 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
         cv::cvtColor(newImage, image, cv::COLOR_BGR2RGB);
         newImageReady = true;
 
-        ATASSERT("Matrix points to continuous memory.", image.isContinuous());
-        ATASSERT("Matrix is a non-empty or null, 2d image.",
-            !image.empty() && image.rows > 1 && image.cols > 1);
+        ATT_ASSERT(image.isContinuous(), "Matrix points to continuous memory.");
+        ATT_ASSERT(!image.empty() && image.rows > 1 && image.cols > 1, "Matrix is a non-empty or null, 2d image.");
     }
     if (sizeChanged)
     {

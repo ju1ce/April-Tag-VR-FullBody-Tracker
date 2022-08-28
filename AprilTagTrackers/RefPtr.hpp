@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Debug.hpp"
+#include "utils/Assert.hpp"
 
 #include <memory>
 #include <optional>
@@ -58,7 +58,7 @@ public:
     RefPtr(T2* _rawPtr) noexcept
         : rawPtr(_rawPtr)
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
     }
 
     /// Copy from RefPtr.
@@ -66,7 +66,7 @@ public:
     RefPtr(const RefPtr<T2>& other) noexcept
         : rawPtr(other.rawPtr)
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
     }
 
     /// Move from not-null RefPtr.
@@ -74,7 +74,7 @@ public:
     RefPtr(RefPtr<T2>&& other) noexcept
         : rawPtr(other.rawPtr)
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
     }
 
     /// Copy from not-null OptRefPtr::Get().
@@ -89,7 +89,7 @@ public:
     RefPtr(const std::unique_ptr<T2>& other) noexcept
         : RefPtr<T>(other.get())
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
     }
 
     /// Copy from not-nullopt or nullptr std::optional::value().
@@ -97,12 +97,12 @@ public:
     RefPtr(const std::optional<T2>& other) noexcept
         : RefPtr<T>(other.value())
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
     }
 
     Pointer Get() const noexcept
     {
-        ATASSERT("Never null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
         return rawPtr;
     }
 
@@ -237,7 +237,7 @@ public:
     }
     Pointer Get() const noexcept
     {
-        ATASSERT("Not null.", rawPtr != nullptr);
+        ATT_ASSERT(rawPtr != nullptr);
         return rawPtr;
     }
 

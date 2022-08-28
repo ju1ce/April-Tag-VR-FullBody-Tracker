@@ -2,8 +2,8 @@
 
 #include "AprilTagWrapper.hpp"
 #include "Connection.hpp"
-#include "Debug.hpp"
 #include "Helpers.hpp"
+#include "utils/Assert.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/charuco.hpp>
@@ -12,6 +12,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio.hpp>
+#include <ps3eye/PSEyeVideoCapture.h>
 
 #include <algorithm>
 #include <array>
@@ -21,10 +22,6 @@
 #include <random>
 #include <sstream>
 #include <vector>
-
-#ifdef ATT_ENABLE_PS3EYE
-#include "PSEyeVideoCapture.h"
-#endif
 
 namespace
 {
@@ -91,7 +88,7 @@ void previewCalibration(
         cv::Mat1d sampleDistCoeffs = distCoeffs.clone();
         if (!stdDeviationsIntrinsics.empty())
         {
-            ATASSERT("", sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
+            ATT_ASSERT(sampleDistCoeffs.total() + 4 <= stdDeviationsIntrinsics.total());
             sampleCameraMatrix(0, 0) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(0);
             sampleCameraMatrix(1, 1) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(1);
             sampleCameraMatrix(0, 2) += unitGaussianDistribution(generator) * stdDeviationsIntrinsics(2);
@@ -179,7 +176,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
     if (id.length() <= 2) // if camera address is a single character, try to open webcam
     {
         int i = std::stoi(id); // convert to int
-#if OS_LINUX
+#ifdef ATT_OS_LINUX
         // On Linux cv::VideoCapture does not work when GStreamer backend is used and
         // camera is set to MJPG pixel format. As a work around we manually setup the
         // GStreamer pipeline with suitable decoding before feeding the stream into
@@ -198,13 +195,11 @@ void Tracker::StartCamera(std::string id, int apiPreference)
         }
         else
 #endif
-#if ATT_ENABLE_PS3EYE
             if (apiPreference == 9100)
         {
             cap = PSEyeVideoCapture(i);
         }
         else
-#endif
         {
             cap = cv::VideoCapture(i, apiPreference);
         }
@@ -223,7 +218,7 @@ void Tracker::StartCamera(std::string id, int apiPreference)
 
     // On Linux and when GStreamer backend is used we already setup the camera pixel format,
     // width, height and FPS above when the GStreamer pipeline was created.
-#if OS_LINUX
+#ifdef ATT_OS_LINUX
     if ((apiPreference != cv::CAP_ANY) && (apiPreference != cv::CAP_GSTREAMER))
 #endif
     {
@@ -499,7 +494,7 @@ void Tracker::CalibrateCameraCharuco()
         // then the masked out tags will still be visible, it probably won't effect much though.
         for (const auto& corners : markerCorners)
         {
-            ATASSERT("A square has four corners.", corners.size() == 4);
+            ATT_ASSERT(static_cast<int>(corners.size()) == 4, "A square has four corners.");
             const std::array<cv::Point, 4> points = {corners[0], corners[1], corners[2], corners[3]};
             // much faster than fillPoly, and we know they will be convex
             cv::fillConvexPoly(drawImg, points.data(), points.size(), cv::Scalar::all(255));
@@ -546,7 +541,7 @@ void Tracker::CalibrateCameraCharuco()
                         }
                         catch (const cv::Exception& e)
                         {
-                            ATERROR("cv::aruco::calibrateCameraCharuco exception: " << e.what());
+                            ATT_LOG_ERROR(e.what());
                         }
 
                         size_t curI = perViewErrors.size();
@@ -787,7 +782,7 @@ void Tracker::HandleConnectionErrors()
         gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);
     else if (code == Code::DRIVER_MISMATCH)
         gui->ShowPopup(lc.CONNECT_DRIVER_MISSMATCH_1 + connection->GetErrorMsg() +
-                           lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version.ToString(),
+                lc.CONNECT_DRIVER_MISSMATCH_2 + user_config.driver_version.ToString(),
             PopupStyle::Error);
     else // if (code == Code::SOMETHING_WRONG)
         gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);
@@ -869,7 +864,7 @@ void Tracker::CalibrateTracker()
 
     // making a marker model of our markersize for later use
     std::vector<cv::Point3f> modelMarker;
-    double markerSize = user_config.markerSize*0.01;                                 //markerSize is in centimeters, but we need it in meters
+    double markerSize = user_config.markerSize * 0.01; // markerSize is in centimeters, but we need it in meters
     modelMarker.push_back(cv::Point3f(-markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));
@@ -954,7 +949,7 @@ void Tracker::CalibrateTracker()
             }
             catch (const std::exception& e) // on weird images or calibrations, we get an error. This should usualy only happen on bad camera calibrations, or in very rare cases
             {
-                ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
+                ATT_LOG_ERROR(e.what());
                 gui->ShowPopup(lc.TRACKER_CALIBRATION_SOMETHINGWRONG, PopupStyle::Error);
                 mainThreadRunning = false;
                 return;
@@ -1378,7 +1373,7 @@ void Tracker::MainLoop()
 
                         calibControllerAngleOffset[0] = angle[0] - calib.angleOffset[0];
                         calibControllerAngleOffset[1] = angle[1] - calib.angleOffset[1];
-                        calibControllerAngleOffset[2] = distance/calib.scale;
+                        calibControllerAngleOffset[2] = distance / calib.scale;
                     }
                     else // else, deactivate it
                     {
@@ -1469,7 +1464,7 @@ void Tracker::MainLoop()
             catch (const std::exception& e)
             {
                 // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
-                ATERROR("cv::aruco::estimatePoseBoard exception: " << e.what());
+                ATT_LOG_ERROR(e.what());
                 gui->ShowPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG, PopupStyle::Error);
                 mainThreadRunning = false;
                 return;

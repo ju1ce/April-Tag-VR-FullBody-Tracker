@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Debug.hpp"
+#include "utils/Assert.hpp"
 #include "wxHelpers.hpp"
 
 #include <wx/arrstr.h>
@@ -301,4 +301,4 @@ private:
 
 } // namespace Form
 
-#include "FormBuilder.tpp" // NOLINT: Template implementation
+#include "FormBuilder.tpp" // IWYU pragma: keep

@@ -37,13 +37,13 @@ public:
         return {
             posOffset * (1 / POS_OFFSET_MULTI),
             angleOffset * DEG_2_RAD,
-            scale/100};
+            scale / 100};
     }
     void SetFromReal(const Real& real)
     {
         posOffset = real.posOffset * POS_OFFSET_MULTI;
         angleOffset = real.angleOffset * RAD_2_DEG;
-        scale = real.scale*100;
+        scale = real.scale * 100;
     }
 
     REFLECTABLE_BEGIN;
@@ -51,12 +51,11 @@ public:
     FIELD(cv::Vec3d, posOffset);
     FS_COMMENT("(pitch, yaw, roll) in degrees.");
     FIELD(cv::Vec3d, angleOffset);
-    FIELD(FS::Valid<double>, scale) {
+    FIELD(FS::Valid<double>, scale){
         100.0, [](auto& value)
         {
-            value = std::clamp(value,80.0, 120.0);
-        }
-    };
+            value = std::clamp(value, 80.0, 120.0);
+        }};
     REFLECTABLE_END;
 };
 
@@ -69,7 +68,7 @@ public:
     UserConfig() : FS::Serializable<UserConfig>("config/config.yaml") {}
 
     REFLECTABLE_BEGIN;
-    FIELD(SemVer, driver_version) = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));
+    FIELD(SemVer, driver_version) = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
 
     FIELD(std::string, windowTitle);
     // Keep synced with Localization::LANG_CODE_MAP

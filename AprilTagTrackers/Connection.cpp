@@ -1,7 +1,7 @@
 #include "Connection.hpp"
 
-#include "Debug.hpp"
 #include "SemVer.h"
+#include "utils/Assert.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
@@ -13,10 +13,10 @@ Connection::Connection(const UserConfig& _user_config)
     : user_config(_user_config)
 {
 // TODO: Pass the IPC client* in as an argument
-#if OS_WIN
+#ifdef ATT_OS_WINDOWS
     auto* namedPipe = new IPC::WindowsNamedPipe("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
-#elif OS_LINUX
+#elif defined(ATT_OS_LINUX)
     auto namedPipe = new IPC::UNIXSocket("ApriltagPipeIn");
     bridge_driver.reset(dynamic_cast<IPC::IClient*>(namedPipe));
 #endif
@@ -213,7 +213,7 @@ void Connection::Connect()
 
 void Connection::SetError(ErrorCode code, std::string msg)
 {
-    ATASSERT("Set to a valid error code.", code != ErrorCode::OK);
+    ATT_ASSERT(code != ErrorCode::OK, "Set to a valid error code.");
     errorCode = code;
     errorMsg = std::move(msg);
 

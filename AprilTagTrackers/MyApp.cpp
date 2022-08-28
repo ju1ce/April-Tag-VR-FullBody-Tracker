@@ -1,32 +1,41 @@
 #include "MyApp.hpp"
 
+#include "utils/Assert.hpp"
+#include "utils/Log.hpp"
+
 #include <opencv2/core/utils/logger.hpp>
 
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
-#include <exception>
-#include <stdexcept>
-#endif
-
-#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
-#include <fstream>
-#include <iostream>
-#endif
-
-wxIMPLEMENT_APP(MyApp);
+wxIMPLEMENT_APP(MyApp); // NOLINT
 
 int MyApp::OnExit()
 {
     tracker->Stop();
+
+    if (envVars.IsRedirectConsoleToFile())
+    {
+        logFileHandler.CloseAndTimestampFile();
+    }
     return 0;
 }
 
 bool MyApp::OnInit()
 {
+    // OnAssertFailure(const wxChar* file, int line, const wxChar* func, const wxChar* cond, const wxChar* msg);
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_INFO);
+
+    if (envVars.IsRedirectConsoleToFile())
+    {
+        logFileHandler.RedirectConsoleToFile();
+    }
+    ATT_LOG_INFO("Starting AprilTagTrackers");
+
     userConfig.Load();
 
-    //The next two lines were added as a quick fix. The two options should be handeled differently from other parameters, so as a quick fix, they are reset on every launch of ATT.
-    userConfig.driver_version = SemVer::Parse(REFLECTABLE_STRINGIZE(ATT_DRIVER_VERSION));       //a quick patch to prevent parameters from having an outdated version number
-    userConfig.disableOpenVrApi = false;    //since disable openvr api isnt part of the parameters, it isnt loaded properly. This ensures it is globaly disabled on every launch.
+    // The next two lines were added as a quick fix. The two options should be handeled differently from other parameters, so as a quick fix, they are reset on every launch of ATT.
+    // a quick patch to prevent parameters from having an outdated version number
+    userConfig.driver_version = SemVer::Parse(ATT_STRINGIZE(ATT_DRIVER_VERSION));
+    // since disable openvr api isnt part of the parameters, it isnt loaded properly. This ensures it is globaly disabled on every launch.
+    userConfig.disableOpenVrApi = false;
 
     calibConfig.Load();
     arucoConfig.Load();
@@ -38,89 +47,64 @@ bool MyApp::OnInit()
     return true;
 }
 
-#ifdef ATT_ENABLE_OUTPUT_LOG_FILE
+#ifdef ATT_DEBUG
 
-static std::ofstream outputLogFileWriter{"output.log"};
-
-static const bool consoleOutputRedirected = ([]()
-    {
-        std::cout.rdbuf(outputLogFileWriter.rdbuf());
-        std::cerr.rdbuf(outputLogFileWriter.rdbuf());
-        return true;
-    })();
-
-#endif
-
-#ifdef ATT_OVERRIDE_ERROR_HANDLERS
-
-// Expand in place to maintain stack frames
-#define HANDLE_UNHANDLED_EXCEPTION(a_msgContext)          \
-    const auto ePtr = std::current_exception();           \
-    try                                                   \
-    {                                                     \
-        RethrowStoredException();                         \
-        if (ePtr) std::rethrow_exception(ePtr);           \
-    }                                                     \
-    catch (const std::exception& e)                       \
-    {                                                     \
-        ATFATAL(a_msgContext << ": " << e.what());        \
-    }                                                     \
-    catch (...)                                           \
-    {                                                     \
-        ATFATAL(a_msgContext << ": malformed exception"); \
-    }                                                     \
-    ATFATAL(a_msgContext << ": unknown exception");
+#    define ATT_FATAL_EXCEPTION(p_throwExpr, p_context)            \
+        do                                                         \
+        {                                                          \
+            try                                                    \
+            {                                                      \
+                (p_throwExpr);                                     \
+            }                                                      \
+            catch (const std::exception& exc)                      \
+            {                                                      \
+                ATT_LOG_ERROR(p_context, ": ", exc.what());        \
+                ATT_ABORT();                                       \
+            }                                                      \
+            catch (...)                                            \
+            {                                                      \
+                ATT_LOG_ERROR(p_context, ": malformed exception"); \
+                ATT_ABORT();                                       \
+            }                                                      \
+            ATT_LOG_ERROR(p_context, ": expected exception");      \
+            ATT_ABORT();                                           \
+        } while (false)
 
 void MyApp::OnFatalException()
 {
-    HANDLE_UNHANDLED_EXCEPTION("wxApp::OnFatalException");
+    ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnFatalException");
 }
 void MyApp::OnUnhandledException()
 {
-    HANDLE_UNHANDLED_EXCEPTION("wxApp::OnUnhandledException");
+    ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnUnhandledException");
 }
 bool MyApp::OnExceptionInMainLoop()
 {
-    HANDLE_UNHANDLED_EXCEPTION("wxApp::OnExceptionInMainLoop");
-    return true; // suppress warning
+    ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnExceptionInMainLoop");
+    return true;
 }
 
 // cv::ErrorCallback
 static int OpenCVErrorHandler(int status, const char* funcName, const char* errMsg, const char* fileName, int line, void*)
 {
-#if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(fileName, line)
-        << "OpenCV Error: " << errMsg << std::endl
-        << "    in: " << funcName << std::endl;
-#endif
-    Debug::abort();
-    return status;
+    ATT_LOG_ERROR_AT(fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
+    ATT_ABORT();
+    return 0;
 }
 
 // wxAssertHandler_t
 static void wxWidgetsAssertHandler(const wxString& file, int line, const wxString& func, const wxString& cond, const wxString& msg)
 {
-#if ATT_LOG_LEVEL >= 1
-    Debug::PreLog(file.c_str().AsChar(), line)
-        << "wxWidgets Error: " << msg << std::endl
-        << "    Assertion failure:  ( " << cond << " )  in: " << func << std::endl;
-#endif
-#ifdef ATT_ENABLE_ASSERT
-    Debug::abort();
-#endif
+    ATT_LOG_ERROR_AT(file.c_str().AsChar(), line, "wxWidgets Error: ", msg,
+                     "\nassertion failure  ( ", cond, " )  in  ", func);
+    ATT_ABORT();
 }
 
-static const bool errorHandlersRedirected = ([]()
-    {
-        cv::redirectError(&OpenCVErrorHandler);
-        wxSetAssertHandler(&wxWidgetsAssertHandler);
-        return true;
-    })();
+static inline const bool overrideErrorHandlers = []
+{
+    cv::redirectError(&OpenCVErrorHandler);
+    wxSetAssertHandler(&wxWidgetsAssertHandler);
+    return true;
+}();
 
 #endif
-
-static const bool opencvSetLogLevelWarning = ([]()
-    {
-        cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
-        return true;
-    })();

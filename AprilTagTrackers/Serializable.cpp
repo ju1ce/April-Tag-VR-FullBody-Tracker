@@ -43,4 +43,4 @@ void SerializeField(cv::FileStorage& fs, const char*, const cv::Ptr<cv::aruco::D
     fs << "detectInvertedMarker" << field->detectInvertedMarker;
 }
 
-};
+}; // namespace FS
