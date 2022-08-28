@@ -1436,6 +1436,38 @@ void Tracker::MainLoop()
             end = std::chrono::steady_clock::now();
             double frameTime = std::chrono::duration<double>(end - last_frame_time).count();
 
+            // Reject detected positions that are behind the camera
+            if (trackerStatus[i].boardTvec[2]  < 0)
+            {
+                trackerStatus[i].boardFound = false;
+                continue;
+            }
+
+            // Figure out the camera aspect ratio, XZ and YZ ratio limits
+            double aspectRatio = (double)image.cols/(double)image.rows;
+            double XZratioLimit = 0.5*(double)image.cols/calib_config.camMat.at<double>(0,0);
+            double YZratioLimit = 0.5*(double)image.rows/calib_config.camMat.at<double>(1,1);
+
+            // Figure out whether X or Y dimension is most likely to go outside the camera field of view
+            if (abs(trackerStatus[i].boardTvec[0]/trackerStatus[i].boardTvec[1]) > aspectRatio)
+            {
+                // Reject detections when XZ coordinate ratio goes out of camera FOV
+                if (abs(trackerStatus[i].boardTvec[0]/trackerStatus[i].boardTvec[2]) > XZratioLimit)
+                {
+                    trackerStatus[i].boardFound = false;
+                    continue;
+                }
+            }
+            else
+            {
+                // Reject detections when YZ coordinate ratio goes out of camera FOV
+                if (abs(trackerStatus[i].boardTvec[1]/trackerStatus[i].boardTvec[2]) > YZratioLimit)
+                {
+                    trackerStatus[i].boardFound = false;
+                    continue;
+                }
+            }
+
             // send all the values
             // frame time is how much time passed since frame was acquired.
             if (!multicamAutocalib)
