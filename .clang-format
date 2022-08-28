@@ -1,0 +1,25 @@
+# allowing custom formatting
+# // clang-format off
+# some code;
+# // clang-format on
+---
+BasedOnStyle: LLVM
+UseTab: Never
+IndentWidth: 4
+BreakBeforeBraces: Allman
+ColumnLimit: 0
+AccessModifierOffset: -4
+PointerAlignment: Left
+IndentPPDirectives: AfterHash
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Headers in <> without extension.
+  - Regex: '<([[:alnum:]\Q/-_\E])+>'
+    Priority: 3
+  # Headers in <> with extension.
+  - Regex: '<([[:alnum:].\Q/-_\E])+>'
+    Priority: 2
+  # Headers in "" with extension.
+  - Regex: '"([[:alnum:].\Q/-_\E])+"'
+    Priority: 1
