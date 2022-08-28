@@ -99,8 +99,6 @@ public:
     void SetManualCalib(const cfg::ManualCalib::Real& calib);
     /// Set if the manual calib window is visible.
     void SetManualCalibVisible(bool visible = true);
-    /// Save manual calib to user config
-    void SaveManualCalib();
 
     /// Defined in GUI/MainFrame.h, but used as opaque ptr, not to be included in headers.
     class MainFrame;
