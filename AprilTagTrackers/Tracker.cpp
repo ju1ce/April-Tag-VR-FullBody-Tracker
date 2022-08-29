@@ -1444,15 +1444,15 @@ void Tracker::MainLoop()
             }
 
             // Figure out the camera aspect ratio, XZ and YZ ratio limits
-            double aspectRatio = (double)image.cols/(double)image.rows;
-            double XZratioLimit = 0.5*(double)image.cols/calib_config.camMat.at<double>(0,0);
-            double YZratioLimit = 0.5*(double)image.rows/calib_config.camMat.at<double>(1,1);
+            double aspectRatio = static_cast<double>(image.cols) / static_cast<double>(image.rows);
+            double XZratioLimit = 0.5 * static_cast<double>(image.cols) / camCalib->cameraMatrix.at<double>(0,0);
+            double YZratioLimit = 0.5 * static_cast<double>(image.rows) / camCalib->cameraMatrix.at<double>(1,1);
 
             // Figure out whether X or Y dimension is most likely to go outside the camera field of view
-            if (abs(trackerStatus[i].boardTvec[0]/trackerStatus[i].boardTvec[1]) > aspectRatio)
+            if (std::abs(trackerStatus[i].boardTvec[0] / trackerStatus[i].boardTvec[1]) > aspectRatio)
             {
                 // Reject detections when XZ coordinate ratio goes out of camera FOV
-                if (abs(trackerStatus[i].boardTvec[0]/trackerStatus[i].boardTvec[2]) > XZratioLimit)
+                if (std::abs(trackerStatus[i].boardTvec[0] / trackerStatus[i].boardTvec[2]) > XZratioLimit)
                 {
                     trackerStatus[i].boardFound = false;
                     continue;
@@ -1461,7 +1461,7 @@ void Tracker::MainLoop()
             else
             {
                 // Reject detections when YZ coordinate ratio goes out of camera FOV
-                if (abs(trackerStatus[i].boardTvec[1]/trackerStatus[i].boardTvec[2]) > YZratioLimit)
+                if (std::abs(trackerStatus[i].boardTvec[1] / trackerStatus[i].boardTvec[2]) > YZratioLimit)
                 {
                     trackerStatus[i].boardFound = false;
                     continue;
