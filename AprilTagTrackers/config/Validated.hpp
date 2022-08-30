@@ -59,20 +59,20 @@ constexpr auto Clamp(const T& minInc, const T& maxInc)
 }
 
 template <typename T>
-constexpr auto Min(const T& min)
+constexpr auto GreaterEqual(const T& min)
 {
     return [=](T& value)
     {
-        value = std::min(value, min);
+        value = std::max(value, min);
     };
 }
 
 template <typename T>
-constexpr auto Max(const T& max)
+constexpr auto LessEqual(const T& max)
 {
     return [=](T& value)
     {
-        value = std::max(value, max);
+        value = std::min(value, max);
     };
 }
 
