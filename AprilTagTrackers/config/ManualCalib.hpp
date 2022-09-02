@@ -44,9 +44,9 @@ public:
 
     REFLECTABLE_BEGIN;
     ATT_SERIAL_COMMENT("centimeters");
-    REFLECTABLE_FIELD(cv::Vec3d, posOffset);
+    REFLECTABLE_FIELD(cv::Vec3d, posOffset){0, 100.0, 100.0}; // origin is below floor, place up and in front
     ATT_SERIAL_COMMENT("(pitch, yaw, roll) in degrees");
-    REFLECTABLE_FIELD(cv::Vec3d, angleOffset);
+    REFLECTABLE_FIELD(cv::Vec3d, angleOffset){180.0, 0, 0}; // zeroed is user forward, flip to point at user
     ATT_SERIAL_COMMENT("percentage");
     REFLECTABLE_FIELD(cfg::Validated<double>, scale){100.0, cfg::Clamp(80.0, 120.0)};
     REFLECTABLE_END;
