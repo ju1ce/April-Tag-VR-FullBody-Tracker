@@ -30,7 +30,7 @@ public:
     ATT_SERIAL_COMMENT("en, ru, zh-cn");
     REFLECTABLE_FIELD(std::string, langCode) = "en";
     REFLECTABLE_FIELD(int, trackerNum) = 3;
-    REFLECTABLE_FIELD(cfg::Validated<double>, markerSize){5.0, cfg::Min(0.01)};
+    REFLECTABLE_FIELD(cfg::Validated<double>, markerSize){5.0, cfg::GreaterEqual(0.01)};
     REFLECTABLE_FIELD(int, numOfPrevValues) = 5;
     REFLECTABLE_FIELD(bool, usePredictive) = true;
     REFLECTABLE_FIELD(bool, ignoreTracker0) = false;
@@ -39,15 +39,15 @@ public:
     REFLECTABLE_FIELD(bool, chessboardCalib) = false;
     REFLECTABLE_FIELD(double, smoothingFactor) = 0.5;
     REFLECTABLE_FIELD(bool, circularMarkers) = false;
-    REFLECTABLE_FIELD(cfg::Validated<double>, trackerCalibDistance){0.5, cfg::Min(0.5)};
+    REFLECTABLE_FIELD(cfg::Validated<double>, trackerCalibDistance){0.5, cfg::GreaterEqual(0.5)};
     /// TODO: change to not validated, gets set during calibration, to indicate if the user has done calibration
-    REFLECTABLE_FIELD(cfg::Validated<int>, cameraCalibSamples){15, cfg::Min(15)};
+    REFLECTABLE_FIELD(cfg::Validated<int>, cameraCalibSamples){15, cfg::GreaterEqual(15)};
     REFLECTABLE_FIELD(bool, trackerCalibCenters) = false;
     REFLECTABLE_FIELD(cfg::Validated<float>, depthSmoothing){0, cfg::Clamp(0.0F, 1.0F)};
     REFLECTABLE_FIELD(float, additionalSmoothing) = 0;
     REFLECTABLE_FIELD(int, markerLibrary) = 0;
     /// TODO: if (value <= 0) value = 45;
-    REFLECTABLE_FIELD(cfg::Validated<int>, markersPerTracker){45, cfg::Min(1)};
+    REFLECTABLE_FIELD(cfg::Validated<int>, markersPerTracker){45, cfg::GreaterEqual(1)};
     REFLECTABLE_FIELD(bool, disableOpenVrApi) = false;
     REFLECTABLE_FIELD(cfg::List<cfg::VideoStream>, videoStreams){1};
     REFLECTABLE_END;
