@@ -58,10 +58,6 @@ void GUI::SetManualCalibVisible(bool visible)
 {
 }
 
-void GUI::SaveManualCalib()
-{
-}
-
 PreviewControl::PreviewControl(RefPtr<GUI> _gui, PreviewId _id)
     : gui(_gui), id(_id)
 {
