@@ -20,9 +20,13 @@
 /// decomposes binary and unary expressions and captures their values
 /// but is limited to simpler expressions, and cannot decompose unary ! operator
 #define REQUIRE(...) DOCTEST_REQUIRE(__VA_ARGS__)
+/// require an expression to be false, can't decompose unary ! operator
+#define REQUIRE_NOT(...) DOCTEST_REQUIRE_FALSE(__VA_ARGS__)
 /// REQUIRE with message, see LOG_INFO
 #define REQUIRE_M(expr, ...) DOCTEST_REQUIRE_MESSAGE(expr, __VA_ARGS__)
 /// similar to REQUIRE but the test case will continue, and still be marked as failed
 #define CHECK(...) DOCTEST_CHECK(__VA_ARGS__)
+/// CHECK expression is false, see REQUIRE_NOT
+#define CHECK_NOT(...) DOCTEST_CHECK_FALSE(__VA_ARGS__)
 /// CHECK with message, see LOG_INFO
 #define CHECK_M(expr, ...) DOCTEST_CHECK_MESSAGE(expr, __VA_ARGS__)
