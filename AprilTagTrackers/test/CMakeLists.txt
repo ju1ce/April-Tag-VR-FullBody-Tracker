@@ -10,6 +10,8 @@ add_executable(test)
 set(ATT_TEST_SOURCES
     ${ATT_TESTABLE_SOURCES}
 
+    tracker/VideoCapture.cpp
+
     test/main.cpp
     test/GUI_stub.cpp
 )
