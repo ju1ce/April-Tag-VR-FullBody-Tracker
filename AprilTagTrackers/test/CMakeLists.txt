@@ -25,6 +25,8 @@ set(ATT_TEST_SOURCES
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp
 
+    tracker/VideoCapture.cpp
+
     test/main.cpp
     test/GUI_stub.cpp
 )

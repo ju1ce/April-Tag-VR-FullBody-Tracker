@@ -25,7 +25,8 @@
 #include <vector>
 
 Tracker::Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc)
-    : connection(std::make_unique<Connection>(_userConfig)),
+    : mCapture(&_userConfig.videoStreams[0]->camera),
+      connection(std::make_unique<Connection>(_userConfig)),
       user_config(_userConfig), calib_config(_calibConfig), aruco_config(_arucoConfig), lc(_lc)
 {
     if (!calib_config.trackers.empty())
@@ -47,76 +48,11 @@ void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
         return;
     }
 
-    if (cam->address.length() <= 2) // if camera address is a single character, try to open webcam
-    {
-        int i = std::stoi(cam->address); // convert to int
-#ifdef ATT_OS_LINUX
-        // On Linux cv::VideoCapture does not work when GStreamer backend is used and
-        // camera is set to MJPG pixel format. As a work around we manually setup the
-        // GStreamer pipeline with suitable decoding before feeding the stream into
-        // application.
-        if ((cam->api == cv::CAP_ANY) || (cam->api == cv::CAP_GSTREAMER))
-        {
-            std::stringstream ss;
-            ss << "v4l2src device=/dev/video" << i << " ! image/jpeg";
-            if (cam->resolution.width != 0)
-                ss << ",width=" << cam->resolution.width;
-            if (cam->resolution.height != 0)
-                ss << ",height=" << cam->resolution.height;
-            ss << ",framerate=" << cam->fps << "/1";
-            ss << " ! jpegdec ! video/x-raw,format=I420 ! videoconvert ! appsink";
-            cap = cv::VideoCapture(ss.str(), cam->api);
-        }
-        else
-#endif
-            if (cam->api == 9100)
-        {
-            cap = PSEyeVideoCapture(i);
-        }
-        else
-        {
-            cap = cv::VideoCapture(i, cam->api);
-        }
-    }
-    else
-    {
-        // if address is longer, we try to open it as an ip address
-        cap = cv::VideoCapture(cam->address, cam->api);
-    }
-
-    if (!cap.isOpened())
+    if (!mCapture.TryOpen())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_START_ERROR, PopupStyle::Error);
         return;
     }
-
-    // On Linux and when GStreamer backend is used we already setup the camera pixel format,
-    // width, height and FPS above when the GStreamer pipeline was created.
-#ifdef ATT_OS_LINUX
-    if ((cam->api != cv::CAP_ANY) && (cam->api != cv::CAP_GSTREAMER))
-#endif
-    {
-        // cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('m', 'j', 'p', 'g'));
-        // cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
-
-        if (cam->resolution.width != 0)
-            cap.set(cv::CAP_PROP_FRAME_WIDTH, cam->resolution.width);
-        if (cam->resolution.height != 0)
-            cap.set(cv::CAP_PROP_FRAME_HEIGHT, cam->resolution.height);
-        cap.set(cv::CAP_PROP_FPS, cam->fps);
-    }
-    if (cam->openDirectShowSettings)
-        cap.set(cv::CAP_PROP_SETTINGS, 1);
-    if (cam->extraSettings.enabled)
-    {
-        cap.set(cv::CAP_PROP_AUTOFOCUS, 0);
-        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, cam->extraSettings.autoExposure);
-        cap.set(cv::CAP_PROP_EXPOSURE, cam->extraSettings.exposure);
-        cap.set(cv::CAP_PROP_GAIN, cam->extraSettings.gain);
-    }
-
-    double codec = 0x47504A4D; // code by FPaul. Should use MJPEG codec to enable fast framerates.
-    cap.set(cv::CAP_PROP_FOURCC, codec);
 
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
@@ -158,7 +94,7 @@ void Tracker::CameraLoop()
 
     while (cameraRunning)
     {
-        if (!cap.read(img) || img.empty())
+        if (!mCapture.TryReadFrame(img))
         {
             gui->ShowPopup(lc.TRACKER_CAMERA_ERROR, PopupStyle::Error);
             cameraRunning = false;
@@ -210,7 +146,7 @@ void Tracker::CameraLoop()
             mainThreadRunning = false;
         HandleConnectionErrors();
     }
-    cap.release();
+    mCapture.Close();
     gui->SetStatus(false, StatusItem::Camera);
 }
 

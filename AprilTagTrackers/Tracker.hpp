@@ -4,6 +4,7 @@
 #include "GUI.hpp"
 #include "Quaternion.hpp"
 #include "RefPtr.hpp"
+#include "tracker/VideoCapture.hpp"
 
 #include <opencv2/core/affine.hpp>
 #include <opencv2/videoio.hpp>
@@ -62,7 +63,7 @@ private:
 
     int drawImgSize = 480;
 
-    cv::VideoCapture cap;
+    tracker::VideoCapture mCapture;
 
     // cameraImage and imageReady are protected by cameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
