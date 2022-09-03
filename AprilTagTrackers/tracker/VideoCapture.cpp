@@ -120,7 +120,7 @@ bool VideoCapture::TryOpenGStreamerCapture(int index) // NOLINT: linux only
 #if ATT_OS_LINUX
     ATT_REQUIRE(mCapture);
     std::string pipeline = CreateGStreamerPipeline(index, mCameraInfo->resolution, mCameraInfo->fps);
-    return mCapture.open(pipeline, cv::CAP_GSTREAMER);
+    return mCapture->open(pipeline, cv::CAP_GSTREAMER);
 #else
     return false;
 #endif
