@@ -32,6 +32,7 @@ inline constexpr SemVer BRIDGE_DRIVER_VERSION = SemVer::Parse(ATT_STRINGIZE(ATT_
 inline system_clock::time_point GetAppStartTimePoint() { return detail::APP_START_TP; }
 /// directory application was started in
 inline const fs::path& GetRuntimeDir() { return detail::RUNTIME_DIR; }
+inline fs::path GetBindingsDir() { return GetRuntimeDir() / "bindings"; }
 inline fs::path GetLogsDir() { return GetRuntimeDir() / "logs"; }
 inline fs::path GetConfigDir() { return GetRuntimeDir() / "config"; }
 inline fs::path GetLocalesDir() { return GetRuntimeDir() / "locales"; }
