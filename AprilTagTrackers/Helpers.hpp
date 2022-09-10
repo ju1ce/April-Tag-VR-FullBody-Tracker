@@ -142,3 +142,18 @@ inline void CoordTransformOVR(cv::Quat<T>& quat)
     quat.x = -quat.x;
     quat.z = -quat.z;
 }
+/// Transform from/to ovr coordinate system
+/// by negating the x and z components.
+template <typename T>
+inline void CoordTransformOVR(cv::Point_<T>& point)
+{
+    point.x = -point.x;
+}
+/// Transform from/to ovr coordinate system
+/// by negating the x and z components.
+template <typename T>
+inline void CoordTransformOVR(cv::Point3_<T>& point)
+{
+    point.x = -point.x;
+    point.z = -point.z;
+}
