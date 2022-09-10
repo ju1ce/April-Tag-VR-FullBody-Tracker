@@ -26,8 +26,15 @@
 /// assert an expression is true.
 /// useful for cheaper checks or non-performance critical contexts
 /// not a replacement for error handling, only for checking programmer/logic errors
-#define ATT_REQUIRE(p_expr, ...) \
-    static_cast<void>((!!(p_expr)) || (ATT_DETAIL_ASSERT_LOG(p_expr, __VA_ARGS__), ATT_DETAIL_ASSERT_ABORT(), false))
+#define ATT_REQUIRE(p_expr, ...)                        \
+    do                                                  \
+    {                                                   \
+        if (!(p_expr))                                  \
+        {                                               \
+            ATT_DETAIL_ASSERT_LOG(p_expr, __VA_ARGS__); \
+            ATT_DETAIL_ASSERT_ABORT();                  \
+        }                                               \
+    } while (false)
 
 #ifdef ATT_DEBUG
 /// assert an expression is true. If ATT_DEBUG isn't defined, becomes noop
