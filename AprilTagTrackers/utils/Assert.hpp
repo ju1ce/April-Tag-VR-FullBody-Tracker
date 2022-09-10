@@ -9,11 +9,11 @@
 
 // the strings are not comptime combined to prevent duplicates in binary
 /// log an assertion failure, the separate LogValues for __VA_ARGS__ allows for empty message
-#define ATT_DETAIL_ASSERT_LOG(p_expr, ...)                                                      \
-    (::utils::LogPrelude(::utils::LogTag::Assert, __FILE__, __LINE__),                          \
-        ::utils::LogValues(__VA_ARGS__),                                                        \
-        ::utils::LogValues('\n', ATT_PRETTY_FUNCTION, ": Failing assertion ( ", #p_expr, " )"), \
-        ::utils::LogEnd())
+#define ATT_DETAIL_ASSERT_LOG(p_expr, ...)                                                   \
+    (::utils::LogPrelude(::utils::LogTag::Assert, __FILE__, __LINE__),                       \
+     ::utils::LogValues(__VA_ARGS__),                                                        \
+     ::utils::LogValues('\n', ATT_PRETTY_FUNCTION, ": Failing assertion ( ", #p_expr, " )"), \
+     ::utils::LogEnd())
 
 #ifdef ATT_TESTING
 #    define ATT_DETAIL_ASSERT_ABORT() [] {                     \
@@ -36,3 +36,13 @@
 #else
 #    define ATT_ASSERT(p_expr, ...) ATT_NOOP()
 #endif
+
+namespace utils
+{
+
+/// allow `static_assert(false)` in `if constexpr`
+/// do not specialize
+template <typename...>
+inline constexpr bool alwaysFalse = false;
+
+} // namespace utils
