@@ -1,7 +1,11 @@
 #pragma once
 
-#include <memory>
+#include "utils/Assert.hpp"
+
 #include <string>
+#include <array>
+#include <string_view>
+#include <optional>
 
 namespace IPC
 {
@@ -19,30 +23,43 @@ class IClient
 {
 public:
     virtual ~IClient() = default;
-    // returns true on success
-    virtual bool send(const std::string &message, std::string &out_response) = 0;
+    /// @return temporary view of IClient buffer, invalidated when SendRecv is called again
+    [[nodiscard]] virtual std::string_view SendRecv(std::string_view message) = 0;
+
+protected:
+    static constexpr int BUFFER_SIZE = 1024;
+    constexpr std::string_view GetBufferStringView(int stringLength) const
+    {
+        ATT_ASSERT(stringLength > 0);
+        ATT_ASSERT(stringLength <= BUFFER_SIZE);
+        return {mBuffer.data(), static_cast<std::size_t>(stringLength)};
+    }
+    constexpr char* GetBufferPtr() { return mBuffer.data(); }
+
+private:
+    std::array<char, BUFFER_SIZE> mBuffer;
 };
 
 class WindowsNamedPipe : public IClient
 {
 public:
-    explicit WindowsNamedPipe(const std::string &pipe_name);
+    explicit WindowsNamedPipe(std::string pipeName);
 
-    bool send(const std::string &msg, std::string &resp) override;
+    std::string_view SendRecv(std::string_view message) final;
 
 private:
-    std::string pipe_name;
+    std::string mPipeName;
 };
 
 class UNIXSocket : public IClient
 {
 public:
-    explicit UNIXSocket(const std::string &socket_name);
+    explicit UNIXSocket(std::string socketName);
 
-    bool send(const std::string &msg, std::string &resp) override;
+    std::string_view SendRecv(std::string_view message) final;
 
 private:
-    std::string socket_path;
+    std::string mSocketPath;
 };
 
 };

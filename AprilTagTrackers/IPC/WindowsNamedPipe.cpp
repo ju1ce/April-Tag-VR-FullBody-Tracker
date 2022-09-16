@@ -1,43 +1,36 @@
 #include "IPC.hpp"
-#include "utils/Assert.hpp"
+#include "utils/Log.hpp"
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
-
-#include <iostream>
 
 namespace IPC
 {
 
-constexpr int BUFFER_SIZE = 512;
 constexpr int SEC_TO_MS = 1000;
 
-WindowsNamedPipe::WindowsNamedPipe(const std::string& pipe_name)
-{
-    this->pipe_name = R"(\\.\pipe\)" + pipe_name;
-}
+WindowsNamedPipe::WindowsNamedPipe(std::string pipeName)
+    : mPipeName(R"(\\.\pipe\)" + std::move(pipeName)) {}
 
-bool WindowsNamedPipe::send(const std::string& msg, std::string& resp)
+std::string_view WindowsNamedPipe::SendRecv(std::string_view message)
 {
-    char response_buffer[BUFFER_SIZE];
-    DWORD response_length = 0;
-    // Remove const-ness as callnamedpipe expects a void*, it will not change the inbuffer.
-    auto msg_cstr = reinterpret_cast<LPVOID>(const_cast<char*>(msg.c_str()));
-    // success will be zero if failed
+    // NOLINTNEXTLINE: Remove const-ness as callnamedpipe expects a void*, but it will not be modified
+    LPVOID messagePtr = reinterpret_cast<LPVOID>(const_cast<char*>(message.data()));
+    DWORD responseLength = 0;
     if (FAILED(CallNamedPipeA(
-            this->pipe_name.c_str(), // pipe name
-            msg_cstr,                // message
-            msg.size(),              // message size
-            response_buffer,         // response
-            BUFFER_SIZE,             // response max size
-            &response_length,        // response size
-            2 * SEC_TO_MS)))         // timeout in ms
+            mPipeName.c_str(),
+            messagePtr,
+            message.size(),
+            GetBufferPtr(),
+            BUFFER_SIZE,
+            &responseLength,
+            2 * SEC_TO_MS)))
     {
-        ATT_LOG_ERROR("Named pipe (", this->pipe_name, ") send error: ", GetLastError());
-        return false;
+        ATT_LOG_ERROR("named pipe send error: ", GetLastError());
+        throw std::system_error(static_cast<int>(GetLastError()), std::system_category());
     }
-
-    resp = std::string(response_buffer, response_length);
-    return true;
+    return GetBufferStringView(static_cast<int>(responseLength));
 }
 
 } // namespace IPC

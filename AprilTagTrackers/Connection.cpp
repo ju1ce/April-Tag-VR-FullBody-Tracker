@@ -223,9 +223,8 @@ void Connection::SetError(ErrorCode code, std::string msg)
 
 std::istringstream Connection::Send(const std::string& buffer)
 {
-    std::string resp;
-    this->bridge_driver->send(buffer, resp);
-    return std::istringstream(resp);
+    const std::string_view response = bridge_driver->SendRecv(buffer);
+    return std::istringstream(std::string(response));
 }
 
 std::istringstream Connection::SendTracker(int id, double a, double b, double c, double qw, double qx, double qy, double qz, double time, double smoothing)

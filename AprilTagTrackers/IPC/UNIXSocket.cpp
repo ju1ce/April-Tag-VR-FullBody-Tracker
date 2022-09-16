@@ -1,62 +1,85 @@
 #include "IPC.hpp"
 
-#include <errno.h>
+#include <cerrno>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-#include <iostream>
+#include <system_error>
+#include <tuple>
+
+using std::size_t;
+using sockaddr_un_t = struct ::sockaddr_un;
+using sockaddr_t = struct ::sockaddr;
+
+namespace
+{
+
+template <typename TFn, typename... TArgs>
+inline int SysCall(TFn&& func, TArgs&&... args)
+{
+    const int result = func(std::forward<TArgs>(args)...);
+    if (result == -1) throw std::system_error(errno, std::generic_category());
+    ATT_ASSERT(result >= 0);
+    return result;
+}
+
+std::tuple<sockaddr_un_t, socklen_t> CreateAddress(std::string_view path)
+{
+    constexpr int maxPathSize = sizeof(sockaddr_un_t::sun_path);
+    ATT_ASSERT(path.size() < maxPathSize);
+
+    sockaddr_un_t serverAddr{};
+    serverAddr.sun_family = AF_UNIX;
+    std::strncpy(serverAddr.sun_path, path.data(), path.size());
+    serverAddr.sun_path[path.size()] = '\0';
+
+    constexpr int pathOffset = sizeof(sockaddr_un_t) - maxPathSize;
+    // start of struct + path length + null byte
+    const socklen_t addrSize = pathOffset + path.size() + 1;
+    return {serverAddr, addrSize};
+}
+
+size_t SendRecv(std::string_view path, std::string_view message, char* bufferPtr, int bufferSize)
+{
+    const int socketFD = SysCall(::socket, AF_UNIX, SOCK_SEQPACKET, 0);
+    try
+    {
+        const auto [serverAddr, addrSize] = CreateAddress(path);
+        SysCall(::connect, socketFD, reinterpret_cast<const sockaddr_t*>(&serverAddr), addrSize); // NOLINT: cast necessary
+        SysCall(::send, socketFD, message.data(), message.size(), 0);
+        const size_t responseLength = SysCall(::recv, socketFD, bufferPtr, bufferSize, 0);
+        ::close(socketFD);
+        return responseLength;
+    }
+    catch (...)
+    {
+        ::close(socketFD);
+        throw;
+    }
+}
+
+} // namespace
 
 namespace IPC
 {
 
-constexpr int BUFFER_SIZE = 512;
+UNIXSocket::UNIXSocket(std::string socketName)
+    : mSocketPath("/tmp/" + std::move(socketName)) {}
 
-UNIXSocket::UNIXSocket(const std::string& socket_name)
+std::string_view UNIXSocket::SendRecv(std::string_view message)
 {
-    this->socket_path = "/tmp/" + socket_name;
-}
-
-bool UNIXSocket::send(const std::string& msg, std::string& resp)
-{
-    int socket = ::socket(AF_UNIX, SOCK_SEQPACKET, 0);
-    if (socket == -1)
+    try
     {
-        std::cerr << "Failed to create socket." << std::endl;
-        return false;
+        const size_t responseLength = ::SendRecv(mSocketPath, message, GetBufferPtr(), BUFFER_SIZE);
+        return GetBufferStringView(static_cast<int>(responseLength));
     }
-
-    struct sockaddr_un server_addr;
-    server_addr.sun_family = AF_UNIX;
-    strcpy(server_addr.sun_path, this->socket_path.c_str());
-    unsigned int addr_size = sizeof(server_addr.sun_family) + socket_path.size();
-    if (::connect(socket, reinterpret_cast<struct sockaddr*>(&server_addr), addr_size) == -1)
+    catch (const std::system_error& e)
     {
-        std::cerr << "Failed to connect to socket " << this->socket_path << std::endl;
-        close(socket);
-        return false;
+        ATT_LOG_ERROR("socket error: ", e.what());
+        throw;
     }
-
-    if (::send(socket, msg.c_str(), msg.size(), 0) == -1)
-    {
-        std::cerr << "Failed to send buffer to socket " << this->socket_path << std::endl;
-        close(socket);
-        return false;
-    }
-
-    char response_buffer[BUFFER_SIZE];
-    unsigned long response_length = 0;
-    if ((response_length = ::recv(socket, response_buffer, BUFFER_SIZE, 0)) == 0)
-    {
-        std::cerr << "Failed to receive response from socket " << this->socket_path << std::endl;
-        close(socket);
-        return false;
-    }
-
-    close(socket);
-    resp = std::string(response_buffer, response_length);
-    return true;
 }
 
 } // namespace IPC
