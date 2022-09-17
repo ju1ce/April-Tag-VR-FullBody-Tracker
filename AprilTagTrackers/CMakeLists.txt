@@ -6,15 +6,29 @@ add_executable(AprilTagTrackers)
 
 # ====== Source Files ======
 
-target_sources(AprilTagTrackers PRIVATE
+# sources used in both testing and non testing builds
+set(ATT_TESTABLE_SOURCES
     AprilTagWrapper.cpp
     Connection.cpp
     Helpers.cpp
     Quaternion.cpp
     Tracker.cpp
-    MyApp.cpp
     tagCustom29h10.cpp
     ImageDrawing.cpp
+
+    utils/Env.cpp
+    utils/Log.cpp
+
+    serial/FileStorage.cpp
+    serial/ReaderWriter.cpp
+
+    ps3eye/ps3eye.cpp
+    ps3eye/PSEyeVideoCapture.cpp
+)
+
+target_sources(AprilTagTrackers PRIVATE
+    ${ATT_TESTABLE_SOURCES}
+    MyApp.cpp
 
     GUI.cpp
     GUI/MainFrame.cpp
@@ -22,15 +36,6 @@ target_sources(AprilTagTrackers PRIVATE
     GUI/FormBuilder.cpp
     GUI/U8String.cpp
     GUI/MatToBitmap.cpp
-
-    utils/Log.cpp
-    utils/Env.cpp
-
-    serial/FileStorage.cpp
-    serial/ReaderWriter.cpp
-
-    ps3eye/ps3eye.cpp
-    ps3eye/PSEyeVideoCapture.cpp
 )
 
 if (WIN32)

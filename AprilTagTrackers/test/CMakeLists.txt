@@ -8,22 +8,7 @@ add_executable(test)
 
 # base dir of sources is AprilTagTrackers/
 set(ATT_TEST_SOURCES
-    AprilTagWrapper.cpp
-    Connection.cpp
-    Helpers.cpp
-    Quaternion.cpp
-    Tracker.cpp
-    tagCustom29h10.cpp
-    ImageDrawing.cpp
-
-    utils/Env.cpp
-    utils/Log.cpp
-
-    serial/FileStorage.cpp
-    serial/ReaderWriter.cpp
-
-    ps3eye/ps3eye.cpp
-    ps3eye/PSEyeVideoCapture.cpp
+    ${ATT_TESTABLE_SOURCES}
 
     test/main.cpp
     test/GUI_stub.cpp
