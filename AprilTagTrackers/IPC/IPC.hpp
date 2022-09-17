@@ -2,10 +2,10 @@
 
 #include "utils/Assert.hpp"
 
-#include <string>
 #include <array>
+#include <memory>
+#include <string>
 #include <string_view>
-#include <optional>
 
 namespace IPC
 {
@@ -62,4 +62,14 @@ private:
     std::string mSocketPath;
 };
 
-};
+inline std::unique_ptr<IClient> CreateDriverConnection()
+{
+    const std::string driverPath = "AprilTagPipeIn";
+#ifdef ATT_OS_WINDOWS
+    return std::make_unique<WindowsNamedPipe>(driverPath);
+#else
+    return std::make_unique<UNIXSocket>(driverPath);
+#endif
+}
+
+}; // namespace IPC
