@@ -1230,7 +1230,7 @@ void Tracker::MainLoop()
                     {
                         calibControllerPosActive = true;
                         Pose pose = connection->GetControllerPose();
-                        calibControllerPosOffset = pose.position - calib.posOffset;
+                        calibControllerPosOffset = cv::Vec3d(pose.position) - calib.posOffset;
 
                         RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
                     }
@@ -1252,8 +1252,8 @@ void Tracker::MainLoop()
                         calibControllerAngleActive = true;
                         Pose pose = connection->GetControllerPose();
 
-                        cv::Vec2d angle = EulerAnglesFromPos(pose.position, calib.posOffset);
-                        double distance = Distance(pose.position, calib.posOffset);
+                        cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+                        double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
 
                         calibControllerAngleOffset[0] = angle[0] - calib.angleOffset[0];
                         calibControllerAngleOffset[1] = angle[1] - calib.angleOffset[1];
@@ -1273,12 +1273,12 @@ void Tracker::MainLoop()
 
                 RotateVecByQuat(calibControllerPosOffset, pose.rotation);
 
-                calib.posOffset[0] = pose.position[0] - calibControllerPosOffset[0];
+                calib.posOffset[0] = pose.position.x - calibControllerPosOffset[0];
                 if (!lockHeightCalib)
                 {
-                    calib.posOffset[1] = pose.position[1] - calibControllerPosOffset[1];
+                    calib.posOffset[1] = pose.position.y - calibControllerPosOffset[1];
                 }
-                calib.posOffset[2] = pose.position[2] - calibControllerPosOffset[2];
+                calib.posOffset[2] = pose.position.z - calibControllerPosOffset[2];
 
                 RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
             }
@@ -1286,8 +1286,8 @@ void Tracker::MainLoop()
             if (calibControllerAngleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
             {
                 Pose pose = connection->GetControllerPose();
-                cv::Vec2d angle = EulerAnglesFromPos(pose.position, calib.posOffset);
-                double distance = Distance(pose.position, calib.posOffset);
+                cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+                double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
 
                 calib.angleOffset[1] = angle[1] - calibControllerAngleOffset[1];
                 if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale

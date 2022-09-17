@@ -16,24 +16,6 @@ struct TrackerConnection
     std::string Role;
 };
 
-/// 3d vector position and quaternion translation
-/// right handed system, -x right, +y up, +z forward
-struct Pose
-{
-    Pose(const cv::Vec3d& pos, const cv::Quatd& rot)
-        : position(pos), rotation(rot)
-    {
-        ATT_ASSERT(rotation.isNormal(), "Pose rotation is a unit quaternion.");
-    }
-
-    /// When multiplied, applies no translation or rotation
-    static Pose Ident() { return {{0, 0, 0}, {1, 0, 0, 0}}; }
-
-    cv::Vec3d position;
-    /// unit quaternion
-    cv::Quatd rotation;
-};
-
 class Connection
 {
 public:

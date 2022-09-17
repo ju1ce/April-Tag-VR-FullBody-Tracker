@@ -17,6 +17,24 @@ constexpr double PI = 3.14159265358979323846;
 constexpr double RAD_2_DEG = 180.0 / PI;
 constexpr double DEG_2_RAD = PI / 180.0;
 
+/// 3d vector position and quaternion translation
+/// right handed system, -x right, +y up, +z forward
+struct Pose
+{
+    Pose(const cv::Point3d& pos, const cv::Quatd& rot)
+        : position(pos), rotation(rot)
+    {
+        ATT_ASSERT(rotation.isNormal(), "pose rotation is a unit quaternion");
+    }
+
+    /// When multiplied, applies no translation or rotation
+    static Pose Ident() { return {{0, 0, 0}, {1, 0, 0, 0}}; }
+
+    cv::Point3d position;
+    /// unit quaternion
+    cv::Quatd rotation;
+};
+
 void drawMarker(cv::Mat, std::vector<cv::Point2f>, cv::Scalar);
 void transformMarkerSpace(std::vector<cv::Point3f>, cv::Vec3d, cv::Vec3d, cv::Vec3d, cv::Vec3d, std::vector<cv::Point3f>*);
 void getMedianMarker(std::vector<std::vector<cv::Point3f>>, std::vector<cv::Point3f>*);
