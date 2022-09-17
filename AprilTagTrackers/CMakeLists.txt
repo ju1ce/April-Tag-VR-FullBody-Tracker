@@ -16,6 +16,8 @@ set(ATT_TESTABLE_SOURCES
     tagCustom29h10.cpp
     ImageDrawing.cpp
 
+    tracker/OpenVRClient.cpp
+
     utils/Env.cpp
     utils/Log.cpp
 
