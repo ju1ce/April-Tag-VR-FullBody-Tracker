@@ -5,6 +5,7 @@
 #include "Quaternion.hpp"
 #include "RefPtr.hpp"
 #include "tracker/VideoCapture.hpp"
+#include "utils/SteadyTimer.hpp"
 
 #include <opencv2/core/affine.hpp>
 #include <opencv2/videoio.hpp>
