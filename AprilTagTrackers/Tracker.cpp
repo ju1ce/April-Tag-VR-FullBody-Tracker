@@ -5,6 +5,7 @@
 #include "Helpers.hpp"
 #include "ImageDrawing.hpp"
 #include "utils/Assert.hpp"
+#include "utils/SteadyTimer.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/charuco.hpp>
@@ -87,39 +88,33 @@ void Tracker::CameraLoop()
     cv::Mat img;
     cv::Mat drawImg;
     double fps = 0;
-    auto last_preview_time = std::chrono::steady_clock::now();
-    last_frame_time = std::chrono::steady_clock::now();
+    utils::SteadyTimer frameTimer{};
+    utils::SteadyTimer previewTimer{};
     bool frame_visible = false;
     gui->SetStatus(true, StatusItem::Camera);
 
     while (cameraRunning)
     {
+        const utils::NanoS lastFrameTime = mFrameTimer.Restart();
+
         if (!mCapture.TryReadFrame(img))
         {
             gui->ShowPopup(lc.TRACKER_CAMERA_ERROR, PopupStyle::Error);
             cameraRunning = false;
             break;
         }
-        auto curtime = std::chrono::steady_clock::now();
-        fps = 0.95 * fps + 0.05 / std::chrono::duration<double>(curtime - last_frame_time).count();
-        last_frame_time = curtime;
-        if (rotate)
-        {
-            cv::rotate(img, img, rotateFlag);
-        }
-        if (mirror)
-        {
-            cv::flip(img, img, 1);
-        }
+        // one time call needed per frame
+        const auto now = utils::SteadyTimer::Now();
+        const utils::NanoS frameTime = frameTimer.Restart(now);
+        fps = (0.95 * fps) + (0.05 * utils::PerSecond(frameTime).count());
         // Ensure that preview isnt shown more than 60 times per second.
         // In some cases opencv will return a solid color image without any blocking delay (unlike a camera locked to a framerate),
         // and we would just be drawing fps text on nothing.
-        double timeSinceLast = std::chrono::duration<double>(curtime - last_preview_time).count();
-        if (timeSinceLast > 0.015)
+        if ((previewTimer.Get(now) * 60) > utils::Seconds(1))
         {
             if (gui->IsPreviewVisible(PreviewId::Camera))
             {
-                last_preview_time = std::chrono::steady_clock::now();
+                previewTimer.Restart(now);
                 img.copyTo(drawImg);
                 cv::putText(drawImg, std::to_string(static_cast<int>(std::ceil(fps))), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
@@ -876,6 +871,122 @@ void Tracker::CalibrateTracker()
     mainThreadRunning = false;
 }
 
+void Tracker::UpdatePlayspaceCalibrator(bool& posActive, bool& angleActive, cv::Vec3d& posOffset, cv::Vec3d& angleOffset, utils::SteadyTimer& timer)
+{
+    const int inputButton = connection->GetButtonStates();
+    cfg::ManualCalib::Real calib = gui->GetManualCalib();
+
+    const auto now = utils::SteadyTimer::Now();
+
+    if (timer.Get(now) > utils::Seconds(60)) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
+    {
+        ATT_LOG_INFO("auto timeout of playspace calibration");
+        gui->SetManualCalibVisible(false);
+    }
+
+    if (inputButton == 1) // logic for position button
+    {
+        // to prevent accidental double presses, 0.2 seconds must pass between presses.
+        if (timer.Get(now) > utils::MilliS(200))
+        {
+            if (!posActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
+            {
+                posActive = true;
+                const Pose pose = connection->GetControllerPose();
+                posOffset = cv::Vec3d(pose.position) - calib.posOffset;
+
+                RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
+            }
+            else // else, deactivate it
+            {
+                posActive = false;
+            }
+        }
+        timer.Restart(now);
+    }
+    else if (inputButton == 2) // logic for rotation button
+    {
+        // to prevent accidental double presses, 0.2 seconds must pass between presses.
+        if (timer.Get(now) > utils::MilliS(200))
+        {
+            if (!angleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
+            {
+                angleActive = true;
+                const Pose pose = connection->GetControllerPose();
+
+                cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+                const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
+
+                angleOffset[0] = angle[0] - calib.angleOffset[0];
+                angleOffset[1] = angle[1] - calib.angleOffset[1];
+                angleOffset[2] = distance / calib.scale;
+            }
+            else // else, deactivate it
+            {
+                angleActive = false;
+            }
+        }
+        timer.Restart(now);
+    }
+
+    if (posActive) // while position calibration is active, apply the camera to controller offset to X, Y and Z values
+    {
+        const Pose pose = connection->GetControllerPose();
+
+        RotateVecByQuat(posOffset, pose.rotation);
+
+        calib.posOffset[0] = pose.position.x - posOffset[0];
+        if (!lockHeightCalib)
+        {
+            calib.posOffset[1] = pose.position.y - posOffset[1];
+        }
+        calib.posOffset[2] = pose.position.z - posOffset[2];
+
+        RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
+    }
+
+    if (angleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
+    {
+        const Pose pose = connection->GetControllerPose();
+        cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+        const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
+
+        calib.angleOffset[1] = angle[1] - angleOffset[1];
+        if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale
+        {
+            calib.angleOffset[0] = angle[0] - angleOffset[0];
+            calib.scale = distance / angleOffset[2];
+        }
+    }
+
+    // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
+    calib.angleOffset[0] = std::clamp(calib.angleOffset[0], 91 * DEG_2_RAD, 269 * DEG_2_RAD);
+    if (calib.angleOffset[0] < 91 * DEG_2_RAD)
+    {
+        calib.angleOffset[0] = 91 * DEG_2_RAD;
+    }
+    else if (calib.angleOffset[0] > 269 * DEG_2_RAD)
+    {
+        calib.angleOffset[0] = 269 * DEG_2_RAD;
+    }
+
+    if (angleActive || posActive)
+    {
+        // update the calib in the gui as it wont be modified anymore
+        gui->SetManualCalib(calib);
+    }
+    // update the pre calculated calibration transformations
+    SetWorldTransform(gui->GetManualCalib());
+
+    cv::Vec3d stationPos = wtransform.translation();
+    CoordTransformOVR(stationPos);
+    // rotate y axis by 180 degrees, aka, reflect across xz plane
+    cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * wrotation;
+
+    // move the camera in steamvr to new calibration
+    connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);
+}
+
 void Tracker::MainLoop()
 {
 
@@ -935,6 +1046,8 @@ void Tracker::MainLoop()
     /// (pitch, yaw) in radians, 3rd component is distance
     cv::Vec3d calibControllerAngleOffset = {0, 0, 0};
 
+    utils::SteadyTimer calibControllerTimer{};
+    utils::SteadyTimer detectionTimer{};
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     std::vector<std::vector<int>> boardIds;
     std::vector<std::vector<std::vector<cv::Point3f>>> boardCorners;
@@ -990,9 +1103,7 @@ void Tracker::MainLoop()
         drawImg = image;
         april.convertToSingleChannel(image, gray);
 
-        std::chrono::steady_clock::time_point start, end;
-        // for timing our detection
-        start = std::chrono::steady_clock::now();
+        detectionTimer.Restart();
 
         bool circularWindow = videoStream->circularWindow;
 
@@ -1012,8 +1123,7 @@ void Tracker::MainLoop()
 
         for (int i = 0; i < trackerNum; i++)
         {
-
-            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame_time).count();
+            const double frameTime = duration_cast<utils::FSeconds>(mFrameTimer.Get()).count();
 
             std::string word;
             std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - videoStream->latency));
@@ -1146,118 +1256,10 @@ void Tracker::MainLoop()
         }
 
         if (manualRecalibrate) // playspace calibration loop
-        {
-            int inputButton = connection->GetButtonStates();
-            cfg::ManualCalib::Real calib = gui->GetManualCalib();
-
-            double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
-            if (timeSincePress > 60) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
-            {
-                gui->SetManualCalibVisible(false);
-            }
-
-            if (inputButton == 1) // logic for position button
-            {
-                // to prevent accidental double presses, 0.2 seconds must pass between presses.
-                double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
-                if (timeSincePress >= 0.2)
-                {
-                    if (!calibControllerPosActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
-                    {
-                        calibControllerPosActive = true;
-                        Pose pose = connection->GetControllerPose();
-                        calibControllerPosOffset = cv::Vec3d(pose.position) - calib.posOffset;
-
-                        RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
-                    }
-                    else // else, deactivate it
-                    {
-                        calibControllerPosActive = false;
-                    }
-                }
-                calibControllerLastPress = std::chrono::steady_clock::now();
-            }
-            else if (inputButton == 2) // logic for rotation button
-            {
-                // to prevent accidental double presses, 0.2 seconds must pass between presses.
-                double timeSincePress = std::chrono::duration<double>(start - calibControllerLastPress).count();
-                if (timeSincePress >= 0.2)
-                {
-                    if (!calibControllerAngleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
-                    {
-                        calibControllerAngleActive = true;
-                        Pose pose = connection->GetControllerPose();
-
-                        cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
-                        double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
-
-                        calibControllerAngleOffset[0] = angle[0] - calib.angleOffset[0];
-                        calibControllerAngleOffset[1] = angle[1] - calib.angleOffset[1];
-                        calibControllerAngleOffset[2] = distance / calib.scale;
-                    }
-                    else // else, deactivate it
-                    {
-                        calibControllerAngleActive = false;
-                    }
-                }
-                calibControllerLastPress = std::chrono::steady_clock::now();
-            }
-
-            if (calibControllerPosActive) // while position calibration is active, apply the camera to controller offset to X, Y and Z values
-            {
-                Pose pose = connection->GetControllerPose();
-
-                RotateVecByQuat(calibControllerPosOffset, pose.rotation);
-
-                calib.posOffset[0] = pose.position.x - calibControllerPosOffset[0];
-                if (!lockHeightCalib)
-                {
-                    calib.posOffset[1] = pose.position.y - calibControllerPosOffset[1];
-                }
-                calib.posOffset[2] = pose.position.z - calibControllerPosOffset[2];
-
-                RotateVecByQuat(calibControllerPosOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
-            }
-
-            if (calibControllerAngleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
-            {
-                Pose pose = connection->GetControllerPose();
-                cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
-                double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
-
-                calib.angleOffset[1] = angle[1] - calibControllerAngleOffset[1];
-                if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale
-                {
-                    calib.angleOffset[0] = angle[0] - calibControllerAngleOffset[0];
-                    calib.scale = distance / calibControllerAngleOffset[2];
-                }
-            }
-
-            // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
-            if (calib.angleOffset[0] < 91 * DEG_2_RAD)
-                calib.angleOffset[0] = 91 * DEG_2_RAD;
-            else if (calib.angleOffset[0] > 269 * DEG_2_RAD)
-                calib.angleOffset[0] = 269 * DEG_2_RAD;
-
-            if (calibControllerAngleActive || calibControllerPosActive)
-            {
-                // update the calib in the gui as it wont be modified anymore
-                gui->SetManualCalib(calib);
-            }
-            // update the pre calculated calibration transformations
-            SetWorldTransform(gui->GetManualCalib());
-
-            cv::Vec3d stationPos = wtransform.translation();
-            CoordTransformOVR(stationPos);
-            // rotate y axis by 180 degrees, aka, reflect across xz plane
-            cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * wrotation;
-
-            // move the camera in steamvr to new calibration
-            connection->SendStation(0, stationPos[0], stationPos[1], stationPos[2], stationQ.w, stationQ.x, stationQ.y, stationQ.z);
-        }
+            UpdatePlayspaceCalibrator(calibControllerPosActive, calibControllerAngleActive, calibControllerPosOffset, calibControllerAngleOffset, calibControllerTimer);
         else
         {
-            calibControllerLastPress = std::chrono::steady_clock::now();
+            calibControllerTimer.Restart();
         }
         april.detectMarkers(gray, &corners, &ids, &centers, trackers);
         for (int i = 0; i < trackerNum; ++i)
@@ -1369,8 +1371,7 @@ void Tracker::MainLoop()
             else if (factor >= 1)
                 factor = 0.99;
 
-            end = std::chrono::steady_clock::now();
-            double frameTime = std::chrono::duration<double>(end - last_frame_time).count();
+            const double frameTime = duration_cast<utils::FSeconds>(mFrameTimer.Get()).count();
 
             // Reject detected positions that are behind the camera
             if (trackerStatus[i].boardTvec[2]  < 0)
@@ -1457,8 +1458,7 @@ void Tracker::MainLoop()
         if (ids.size() > 0)
             cv::aruco::drawDetectedMarkers(drawImg, corners, ids);
 
-        end = std::chrono::steady_clock::now();
-        double frameTime = std::chrono::duration<double>(end - start).count();
+        const double frameTime = duration_cast<utils::FSeconds>(mFrameTimer.Get()).count();
 
         if (gui->IsPreviewVisible())
         {

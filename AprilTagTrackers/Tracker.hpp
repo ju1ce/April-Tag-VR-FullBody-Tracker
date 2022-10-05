@@ -49,6 +49,7 @@ private:
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
+    void UpdatePlayspaceCalibrator(bool& posActive, bool& angleActive, cv::Vec3d& posOffset, cv::Vec3d& angleOffset, utils::SteadyTimer& timer);
     void MainLoop();
 
     void HandleConnectionErrors();
@@ -83,6 +84,5 @@ private:
 
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     bool trackersCalibrated = false;
-
-    std::chrono::steady_clock::time_point last_frame_time;
+    utils::SteadyTimer mFrameTimer{};
 };
