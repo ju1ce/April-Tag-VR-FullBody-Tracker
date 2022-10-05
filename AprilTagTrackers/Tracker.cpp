@@ -160,6 +160,7 @@ void Tracker::StartCameraCalib()
     if (mainThreadRunning)
     {
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
     if (!cameraRunning)
@@ -178,7 +179,6 @@ void Tracker::StartCameraCalib()
     {
         mainThread = std::thread(&Tracker::CalibrateCamera, this);
     }
-    mainThread.detach();
 }
 
 /// function to calibrate our camera
@@ -527,6 +527,7 @@ void Tracker::StartTrackerCalib()
     if (mainThreadRunning)
     {
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
     if (!cameraRunning)
@@ -545,7 +546,6 @@ void Tracker::StartTrackerCalib()
     // start tracker calibration on another thread
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::CalibrateTracker, this);
-    mainThread.detach();
 
     gui->ShowPrompt(lc.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS,
                     [&](bool)
@@ -602,30 +602,35 @@ void Tracker::Start()
     {
         mainThreadRunning = false;
         gui->SetStatus(false, StatusItem::Tracker);
+        mainThread.join();
         return;
     }
     if (!cameraRunning)
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
     if (calib_config.cameras[0]->cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
     if (!trackersCalibrated)
     {
         gui->ShowPopup(lc.TRACKER_TRACKER_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
     if (connection->status != connection->CONNECTED)
     {
         gui->ShowPopup(lc.TRACKER_STEAMVR_NOTCONNECTED, PopupStyle::Error);
         mainThreadRunning = false;
+        mainThread.join();
         return;
     }
 
@@ -634,7 +639,6 @@ void Tracker::Start()
     // start detection on another thread
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::MainLoop, this);
-    mainThread.detach();
 }
 
 void Tracker::Stop()
