@@ -680,8 +680,9 @@ void Tracker::CalibrateTracker()
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(markerSize / 2.f, -markerSize / 2.f, 0));
     modelMarker.push_back(cv::Point3f(-markerSize / 2.f, -markerSize / 2.f, 0));
-
-    AprilTagWrapper april{user_config, aruco_config};
+    // TODO: support other families
+    AprilTagWrapper april{MarkerFamily::Standard41h12, user_config.videoStreams[0]->quadDecimate, 4};
+    MarkerDetectionList dets{};
 
     int markersPerTracker = user_config.markersPerTracker;
     int trackerNum = user_config.trackerNum;
@@ -729,17 +730,17 @@ void Tracker::CalibrateTracker()
         std::vector<std::vector<cv::Point2f>> corners;
         std::vector<cv::Point2f> centers;
 
-        april.detectMarkers(image, &corners, &ids, &centers, trackers);
+        april.DetectMarkers(image, dets);
         if (showTimeProfile)
         {
-            april.drawTimeProfile(image, cv::Point(10, 60));
+            april.DrawTimeProfile(image, cv::Point(10, 60));
         }
 
-        cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0)); // draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
+        cv::aruco::drawDetectedMarkers(image, dets.GetCorners(), cv::noArray(), cv::Scalar(255, 0, 0)); // draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
 
         // estimate pose of our markers
         std::vector<cv::Vec3d> rvecs, tvecs;
-        cv::aruco::estimatePoseSingleMarkers(corners, static_cast<float>(markerSize), camCalib->cameraMatrix, camCalib->distortionCoeffs, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(dets.GetCorners(), static_cast<float>(markerSize), camCalib->cameraMatrix, camCalib->distortionCoeffs, rvecs, tvecs);
 
         float maxDist = static_cast<float>(user_config.trackerCalibDistance);
 
@@ -749,7 +750,7 @@ void Tracker::CalibrateTracker()
 
             try
             {
-                if (cv::aruco::estimatePoseBoard(corners, ids, arBoard, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
+                if (cv::aruco::estimatePoseBoard(dets.GetCorners(), dets.ids, arBoard, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardRvec[i], boardTvec[i], false) > 0) // try to estimate current trackers pose
                 {
                     cv::aruco::drawAxis(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardRvec[i], boardTvec[i], 0.1f); // if found, draw axis and mark it found
                     boardFound[i] = true;
@@ -771,14 +772,14 @@ void Tracker::CalibrateTracker()
 
             bool foundMarkerToCalibrate = false;
 
-            for (int j = 0; j < ids.size(); j++) // check all of the found markers
+            for (int j = 0; j < dets.ids.size(); j++) // check all of the found markers
             {
-                if (ids[j] >= i * markersPerTracker && ids[j] < (i + 1) * markersPerTracker) // if marker is part of current tracker (usualy, 0 is 0-44, 1 is 45-89 etc)
+                if (dets.ids[j] >= i * markersPerTracker && dets.ids[j] < (i + 1) * markersPerTracker) // if marker is part of current tracker (usualy, 0 is 0-44, 1 is 45-89 etc)
                 {
                     bool markerInBoard = false;
                     for (int k = 0; k < boardIds[i].size(); k++) // check if marker is already part of the tracker
                     {
-                        if (boardIds[i][k] == ids[j])
+                        if (boardIds[i][k] == dets.ids[j])
                         {
                             markerInBoard = true;
                             break;
@@ -786,18 +787,18 @@ void Tracker::CalibrateTracker()
                     }
                     if (markerInBoard == true) // if it is, draw it green and continue to next marker
                     {
-                        drawMarker(image, corners[j], cv::Scalar(0, 255, 0));
+                        DrawMarker(image, dets.corners[j], cv::Scalar(0, 255, 0));
                         continue;
                     }
                     if (boardFound[i]) // if it isnt part of the current tracker, but the tracker was detected, we will attempt to add it
                     {
                         if (sqrt(tvecs[j][0] * tvecs[j][0] + tvecs[j][1] * tvecs[j][1] + tvecs[j][2] * tvecs[j][2]) > maxDist) // if marker is too far away from camera, we just paint it purple as adding it could have too much error
                         {
-                            drawMarker(image, corners[j], cv::Scalar(255, 0, 255));
+                            DrawMarker(image, dets.corners[j], cv::Scalar(255, 0, 255));
                             continue;
                         }
 
-                        drawMarker(image, corners[j], cv::Scalar(0, 255, 255)); // start adding marker, mark that by painting it yellow
+                        DrawMarker(image, dets.corners[j], cv::Scalar(0, 255, 255)); // start adding marker, mark that by painting it yellow
 
                         if (foundMarkerToCalibrate) // only calibrate one marker at a time, so continue loop if this is the second marker found
                             continue;
@@ -810,7 +811,7 @@ void Tracker::CalibrateTracker()
                         int listIndex = -1;
                         for (int k = 0; k < idsList.size(); k++) // check whether the idsList and cornersList already contains data for this marker
                         {
-                            if (idsList[k] == ids[j])
+                            if (idsList[k] == dets.ids[j])
                             {
                                 listIndex = k;
                             }
@@ -818,7 +819,7 @@ void Tracker::CalibrateTracker()
                         if (listIndex < 0) // if not, add and initialize it
                         {
                             listIndex = static_cast<int>(idsList.size());
-                            idsList.push_back(ids[j]);
+                            idsList.push_back(dets.ids[j]);
                             cornersList.push_back(std::vector<std::vector<cv::Point3f>>());
                         }
 
@@ -829,13 +830,13 @@ void Tracker::CalibrateTracker()
 
                             getMedianMarker(cornersList[listIndex], &medianMarker); // calculate median position of each corner to get rid of outliers
 
-                            boardIds[i].push_back(ids[j]); // add the marker to the tracker
+                            boardIds[i].push_back(dets.ids[j]); // add the marker to the tracker
                             boardCorners[i].push_back(medianMarker);
                         }
                     }
                     else
                     {
-                        drawMarker(image, corners[j], cv::Scalar(0, 0, 255));
+                        DrawMarker(image, dets.corners[j], cv::Scalar(0, 0, 255));
                     }
                 }
             }
@@ -997,6 +998,7 @@ void Tracker::MainLoop()
 
     // these variables are used to save detections of apriltags, so we dont define them every frame
 
+    MarkerDetectionList detections{};
     std::vector<int> ids;
     std::vector<std::vector<cv::Point2f>> corners;
     std::vector<cv::Point2f> centers;
@@ -1024,8 +1026,6 @@ void Tracker::MainLoop()
         prevLocValuesX.push_back(j);
     }
 
-    AprilTagWrapper april{user_config, aruco_config};
-
     int framesSinceLastSeen = 0;
     int framesToCheckAll = 20;
 
@@ -1052,8 +1052,8 @@ void Tracker::MainLoop()
     std::vector<std::vector<int>> boardIds;
     std::vector<std::vector<std::vector<cv::Point3f>>> boardCorners;
 
-    RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
-    RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
+    // TODO: support other marker families
+    AprilTagWrapper april{MarkerFamily::Standard41h12, videoStream->quadDecimate, 4};
 
     // by default, trackers have the center at the center of the main marker. If "Use centers of trackers" is checked, we move it to the center of all marker corners.
     if (user_config.trackerCalibCenters)
@@ -1101,7 +1101,7 @@ void Tracker::MainLoop()
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = image;
-        april.convertToSingleChannel(image, gray);
+        AprilTagWrapper::ConvertGrayscale(image, gray);
 
         detectionTimer.Restart();
 
@@ -1261,7 +1261,7 @@ void Tracker::MainLoop()
         {
             calibControllerTimer.Restart();
         }
-        april.detectMarkers(gray, &corners, &ids, &centers, trackers);
+        april.DetectMarkers(gray, detections);
         for (int i = 0; i < trackerNum; ++i)
         {
 
@@ -1478,7 +1478,7 @@ void Tracker::MainLoop()
             cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {
-                april.drawTimeProfile(outImg, cv::Point(10, 60));
+                april.DrawTimeProfile(outImg, cv::Point(10, 60));
             }
             gui->UpdatePreview(outImg);
         }
