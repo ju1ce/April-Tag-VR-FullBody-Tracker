@@ -10,6 +10,7 @@
 #include <opencv2/videoio.hpp>
 
 #include <chrono>
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 
@@ -68,11 +69,10 @@ private:
 
     // cameraImage and imageReady are protected by cameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
-    std::mutex cameraImageMutex;
-    cv::Mat cameraImage;
-    bool imageReady = false;
-
-    std::unique_ptr<Connection> connection;
+    std::mutex mCameraImageMutex{};
+    cv::Mat mCameraImage{};
+    std::condition_variable mImageReadyCond{};
+    bool mIsImageReady = false;
 
     UserConfig& user_config;
     CalibrationConfig& calib_config;

@@ -44,8 +44,7 @@ void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
     {
         cameraRunning = false;
         mainThreadRunning = false;
-        // cameraThread.join();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        cameraThread.join();
         return;
     }
 
@@ -125,17 +124,18 @@ void Tracker::CameraLoop()
             }
         }
         {
-            std::lock_guard<std::mutex> lock(cameraImageMutex);
+            std::lock_guard lock{mCameraImageMutex};
             // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
             // The pixel buffer from cameraImage can be reused if the size and format matches.
-            cv::swap(img, cameraImage);
+            cv::swap(img, mCameraImage);
             // TODO: does opencv really care if img.read is called on the wrong size of matrix?
-            if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
-            {
-                img.release();
-            }
-            imageReady = true;
+            // if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
+            // {
+            //     img.release();
+            // }
+            mIsImageReady = true;
         }
+        mImageReadyCond.notify_one();
 
         if (connection->PollQuitEvent())
             mainThreadRunning = false;
@@ -147,24 +147,12 @@ void Tracker::CameraLoop()
 
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
-    /// TODO: replace with std::condition_variable
-    // Sleep happens between each iteration when the mutex is not locked.
-    for (;; std::this_thread::sleep_for(std::chrono::milliseconds(1)))
-    {
-        std::lock_guard<std::mutex> lock(cameraImageMutex);
-        if (imageReady)
-        {
-            imageReady = false;
-            // Swap metadata and pointers to pixel buffers.
-            cv::swap(image, cameraImage);
-            // We don't want to overwrite shared data so release the image unless we are the only user of it.
-            if (!(cameraImage.u && cameraImage.u->refcount == 1))
-            {
-                cameraImage.release();
-            }
-            return;
-        }
-    }
+    std::unique_lock lock{mCameraImageMutex};
+    mImageReadyCond.wait(lock, [&]
+                         { return mIsImageReady; });
+
+    mIsImageReady = false;
+    cv::swap(image, mCameraImage);
 }
 
 void Tracker::StartCameraCalib()
@@ -653,8 +641,9 @@ void Tracker::Stop()
 {
     mainThreadRunning = false;
     cameraRunning = false;
-    /// TODO: join threads instead of sleeping
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    if (cameraThread.joinable()) cameraThread.join();
+    if (mainThread.joinable()) mainThread.join();
 }
 
 void Tracker::UpdateConfig()
