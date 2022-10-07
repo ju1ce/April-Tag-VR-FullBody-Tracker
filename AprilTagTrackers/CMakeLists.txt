@@ -106,8 +106,8 @@ else()
     att_target_crt_linkage(AprilTagTrackers STATIC)
 endif()
 
-# Ensure compiler with c++17 language features
-target_compile_features(AprilTagTrackers PRIVATE cxx_std_17)
+# Ensure compiler with c++20 language features
+target_compile_features(AprilTagTrackers PRIVATE cxx_std_20)
 
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
