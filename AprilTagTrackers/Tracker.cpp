@@ -992,9 +992,6 @@ void Tracker::MainLoop()
     // these variables are used to save detections of apriltags, so we dont define them every frame
 
     MarkerDetectionList detections{};
-    std::vector<int> ids;
-    std::vector<std::vector<cv::Point2f>> corners;
-    std::vector<cv::Point2f> centers;
 
     cv::Mat image, drawImg, outImg, ycc, gray, cr;
 
