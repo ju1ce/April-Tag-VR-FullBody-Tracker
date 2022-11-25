@@ -40,6 +40,10 @@ void GUI::UpdatePreview(const cv::Mat& image, PreviewId id)
 {
 }
 
+void GUI::UpdatePreview(const cv::Mat& image, int constrainSize, PreviewId id)
+{
+}
+
 bool GUI::IsPreviewVisible(PreviewId id)
 {
     return true;
@@ -56,22 +60,4 @@ void GUI::SetManualCalib(const cfg::ManualCalib::Real& calib)
 
 void GUI::SetManualCalibVisible(bool visible)
 {
-}
-
-PreviewControl::PreviewControl(RefPtr<GUI> _gui, PreviewId _id)
-    : gui(_gui), id(_id)
-{
-}
-
-PreviewControl::~PreviewControl()
-{
-}
-
-void PreviewControl::Update(const cv::Mat& image)
-{
-}
-
-bool PreviewControl::IsVisible()
-{
-    return true;
 }
