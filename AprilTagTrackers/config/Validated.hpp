@@ -1,6 +1,6 @@
 #pragma once
 
-#include "serial/ReaderWriter.hpp"
+#include "serial/Serial.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -15,38 +15,30 @@ public:
     using IsProxyTag = void;
     using ValueType = T;
 
-    /// @param _validator void(T&)
+    friend struct serial::Serial<Validated>;
+
+    /// @param validator void(T&)
     template <typename Fn>
-    constexpr Validated(T _value, Fn&& _validator)
-        : value(std::move(_value)), validator(std::forward<Fn>(_validator)) {}
+    constexpr Validated(T value, Fn&& validator)
+        : mValue(std::move(value)), mValidator(std::forward<Fn>(validator)) {}
 
     Validated& operator=(T rhs)
     {
-        value = std::move(rhs);
+        mValue = std::move(rhs);
         Validate();
         return *this;
     }
 
-    operator const T&() const { return value; }
-    const T* operator->() const { return &value; }
+    operator const T&() const { return mValue; }
+    const T* operator->() const { return &mValue; }
 
-    const T& Get() const { return value; }
-
-    void WriteSelf(serial::Writer& writer) const
-    {
-        serial::Write(writer, value);
-    }
-    void ReadSelf(serial::Reader& reader)
-    {
-        serial::Read(reader, value);
-        Validate();
-    }
+    const T& Get() const { return mValue; }
 
 private:
-    void Validate() { validator(value); }
+    void Validate() { mValidator(mValue); }
 
-    T value;
-    std::function<void(T&)> validator;
+    T mValue;
+    std::function<void(T&)> mValidator;
 };
 
 template <typename T>
@@ -77,3 +69,17 @@ constexpr auto LessEqual(const T& max)
 }
 
 } // namespace cfg
+
+template <typename T>
+struct serial::Serial<cfg::Validated<T>>
+{
+    static void Parse(auto& ctx, cfg::Validated<T>& outValue)
+    {
+        ctx.Read(outValue.mValue);
+        outValue.Validate();
+    }
+    static void Format(auto& ctx, const cfg::Validated<T>& value)
+    {
+        ctx.Write(value.mValue);
+    }
+};

@@ -1,9 +1,11 @@
 #pragma once
 
 #include "RefPtr.hpp"
-#include "serial/ReaderWriter.hpp"
+#include "serial/Serial.hpp"
+#include "utils/Types.hpp"
 
 #include <memory>
+#include <ranges>
 #include <vector>
 
 namespace cfg
@@ -15,25 +17,45 @@ template <typename T>
 class List
 {
 public:
+    friend struct serial::Serial<List<T>>;
+
     explicit List(int count) { Resize(count); }
 
-    void Resize(int newSize)
+    void Resize(Index newSize)
     {
-        list.resize(newSize);
-        for (auto& ptr : list)
+        mList.resize(newSize);
+        for (auto& ptr : mList)
         {
             if (!ptr) ptr.reset(new T());
         }
     }
 
-    RefPtr<T> operator[](int idx) const { return list[idx]; }
-    int Size() const noexcept { return static_cast<int>(list.size()); }
+    RefPtr<T> operator[](Index idx) const { return mList.at(idx); }
+    RefPtr<T> UnsafeAt(Index idx) const { return mList[idx]; }
 
-    void ReadSelf(serial::Reader& reader) { serial::Read(reader, list); }
-    void WriteSelf(serial::Writer& writer) const { serial::Write(writer, list); }
+    Index GetSize() const noexcept { return mList.size(); }
+
+    constexpr std::ranges::random_access_range auto AsRange() const
+    {
+        return mList | std::views::transform([](const std::unique_ptr<T>& ptr)
+                                             { return *ptr; });
+    }
 
 private:
-    std::vector<std::unique_ptr<T>> list{};
+    std::vector<std::unique_ptr<T>> mList{};
 };
 
 } // namespace cfg
+
+template <typename T>
+struct serial::Serial<cfg::List<T>>
+{
+    void Parse(auto ctx, cfg::List<T>& outValue)
+    {
+        ctx.Read(outValue.mList);
+    }
+    void Format(auto ctx, const cfg::List<T>& value)
+    {
+        ctx.Write(value.mList);
+    }
+};

@@ -2,6 +2,7 @@
 
 #include "config/List.hpp"
 #include "config/ManualCalib.hpp"
+#include "config/TrackerUnit.hpp"
 #include "config/Validated.hpp"
 #include "config/VideoStream.hpp"
 #include "serial/Comment.hpp"
@@ -11,8 +12,6 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 
-#include <algorithm>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -37,19 +36,21 @@ public:
     REFLECTABLE_FIELD(bool, coloredMarkers) = true;
     REFLECTABLE_FIELD(cfg::ManualCalib, manualCalib){};
     REFLECTABLE_FIELD(bool, chessboardCalib) = false;
-    REFLECTABLE_FIELD(double, smoothingFactor) = 0.5;
+    REFLECTABLE_FIELD(cfg::Validated<double>, smoothingFactor){0.5, cfg::Clamp(0.0, 1.0)};
     REFLECTABLE_FIELD(bool, circularMarkers) = false;
     REFLECTABLE_FIELD(cfg::Validated<double>, trackerCalibDistance){0.5, cfg::GreaterEqual(0.5)};
     /// TODO: change to not validated, gets set during calibration, to indicate if the user has done calibration
     REFLECTABLE_FIELD(cfg::Validated<int>, cameraCalibSamples){15, cfg::GreaterEqual(15)};
     REFLECTABLE_FIELD(bool, trackerCalibCenters) = false;
-    REFLECTABLE_FIELD(cfg::Validated<float>, depthSmoothing){0, cfg::Clamp(0.0F, 1.0F)};
+    REFLECTABLE_FIELD(cfg::Validated<double>, depthSmoothing){0, cfg::Clamp(0.0, 1.0)};
     REFLECTABLE_FIELD(float, additionalSmoothing) = 0;
     REFLECTABLE_FIELD(int, markerLibrary) = 0;
     /// TODO: if (value <= 0) value = 45;
     REFLECTABLE_FIELD(cfg::Validated<int>, markersPerTracker){45, cfg::GreaterEqual(1)};
     REFLECTABLE_FIELD(bool, disableOpenVrApi) = false;
+    REFLECTABLE_FIELD(cfg::Validated<int>, apriltagThreadCount){4, cfg::Clamp(1, 32)};
     REFLECTABLE_FIELD(cfg::List<cfg::VideoStream>, videoStreams){1};
+    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnit>, trackers){3};
     REFLECTABLE_END;
 };
 
@@ -62,8 +63,8 @@ public:
     CalibrationConfig() : Serializable(utils::GetConfigDir() / "calib.yaml") {}
 
     REFLECTABLE_BEGIN;
-    REFLECTABLE_FIELD(cfg::List<cfg::CameraCalibration>, cameras){1};
-    REFLECTABLE_FIELD(std::vector<cv::Ptr<cv::aruco::Board>>, trackers){};
+    REFLECTABLE_FIELD(cfg::List<cfg::CameraCalib>, cameras){1};
+    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnitCalib>, trackerCalibs){3};
     REFLECTABLE_END;
 };
 

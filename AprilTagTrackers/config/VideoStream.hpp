@@ -44,7 +44,7 @@ struct VideoStream
     REFLECTABLE_END;
 };
 
-struct CameraCalibration
+struct CameraCalib
 {
     REFLECTABLE_BEGIN;
     REFLECTABLE_FIELD(cv::Mat, cameraMatrix){};
