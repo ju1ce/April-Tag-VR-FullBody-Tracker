@@ -9,7 +9,6 @@ add_executable(AprilTagTrackers)
 # sources used in both testing and non testing builds
 set(ATT_TESTABLE_SOURCES
     AprilTagWrapper.cpp
-    Connection.cpp
     Helpers.cpp
     Quaternion.cpp
     Tracker.cpp
