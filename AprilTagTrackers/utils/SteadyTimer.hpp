@@ -31,6 +31,7 @@ public:
 
     static TimePoint Now() { return Clock::now(); }
 
+    SteadyTimer() noexcept : mStart(Now()) {}
     Duration Get(const TimePoint now) const
     {
         return duration_cast<Duration>(now - mStart);
