@@ -24,6 +24,7 @@
 #include <charconv>
 #include <chrono>
 #include <cmath>
+#include <concepts>
 #include <condition_variable>
 #include <exception>
 #include <filesystem>
@@ -32,9 +33,11 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <sstream>
 #include <stack>
 #include <stdexcept>
