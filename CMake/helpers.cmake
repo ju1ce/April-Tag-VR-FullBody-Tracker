@@ -145,6 +145,53 @@ function(att_exe_debug_symbols target)
     endif()
 endfunction()
 
+function(att_target_strict_conformance target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
+            # all source files are utf8
+            /utf-8
+            # make msvc slightly more conformant to the standard
+            /permissive-
+            /Zc:inline
+        )
+    else()
+        target_compile_options(${target}PRIVATE
+            # errors on non conforming code
+            -pedantic-errors
+        )
+    endif()
+endfunction()
+
+function(att_target_enable_diagnostics target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
+            # hide warnings from system includes
+            /external:W0
+            /external:anglebrackets # any include <> is external
+            # enable diagnostics
+            /W4
+        )
+    else()
+        target_compile_options(${target} PRIVATE
+            # enable diagnostics
+            -Wall
+            -Wextra
+        )
+    endif()
+endfunction()
+
+function(att_target_disable_diagnostics target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
+            /W0
+        )
+    else()
+        target_compile_options(${target} PRIVATE
+            -w
+        )
+    endif()
+endfunction()
+
 function(att_target_enable_asan target)
     if (MSVC)
         target_compile_options(${target} PRIVATE
