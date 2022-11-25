@@ -20,6 +20,8 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
+    utils::RegisterThisThreadName("Main");
+
     // OnAssertFailure(const wxChar* file, int line, const wxChar* func, const wxChar* cond, const wxChar* msg);
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_INFO);
 

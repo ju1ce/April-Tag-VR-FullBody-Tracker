@@ -7,6 +7,7 @@
 #include "Tracker.hpp"
 #include "utils/Env.hpp"
 #include "utils/Log.hpp"
+#include "utils/LogFileHandler.hpp"
 
 #include <wx/app.h>
 
