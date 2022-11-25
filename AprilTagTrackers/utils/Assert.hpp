@@ -12,7 +12,7 @@
 #define ATT_DETAIL_ASSERT_LOG(p_expr, ...)                                                   \
     (::utils::LogPrelude(::utils::LogTag::Assert, __FILE__, __LINE__),                       \
      ::utils::LogValues(__VA_ARGS__),                                                        \
-     ::utils::LogValues('\n', ATT_PRETTY_FUNCTION, ": Failing assertion ( ", #p_expr, " )"), \
+     ::utils::LogValues("\n", ATT_PRETTY_FUNCTION, ": Failing assertion ( ", #p_expr, " )"), \
      ::utils::LogEnd())
 
 #ifdef ATT_TESTING
@@ -26,14 +26,15 @@
 /// assert an expression is true.
 /// useful for cheaper checks or non-performance critical contexts
 /// not a replacement for error handling, only for checking programmer/logic errors
-#define ATT_REQUIRE(p_expr, ...)                        \
-    do                                                  \
-    {                                                   \
-        if (!(p_expr))                                  \
-        {                                               \
-            ATT_DETAIL_ASSERT_LOG(p_expr, __VA_ARGS__); \
-            ATT_DETAIL_ASSERT_ABORT();                  \
-        }                                               \
+#define ATT_REQUIRE(p_expr, ...)                             \
+    do                                                       \
+    {                                                        \
+        const bool exprResult = static_cast<bool>((p_expr)); \
+        if (!exprResult)                                     \
+        {                                                    \
+            ATT_DETAIL_ASSERT_LOG(p_expr, __VA_ARGS__);      \
+            ATT_DETAIL_ASSERT_ABORT();                       \
+        }                                                    \
     } while (false)
 
 #ifdef ATT_DEBUG
@@ -51,5 +52,12 @@ namespace utils
 /// do not specialize
 template <typename...>
 inline constexpr bool alwaysFalse = false;
+
+/// force `if else constexpr` chain exhaustive by causing a compile error in the else branch
+template <typename T>
+consteval void Exhaustive()
+{
+    static_assert(alwaysFalse<T>, "if else constexpr chain was not exhaustive for type");
+}
 
 } // namespace utils
