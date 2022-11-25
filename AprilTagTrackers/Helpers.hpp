@@ -1,5 +1,6 @@
 #pragma once
 
+#include "math/CVTypes.hpp"
 #include "Quaternion.hpp"
 #include "utils/Assert.hpp"
 
@@ -11,13 +12,16 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include <array>
 #include <cmath>
 
 constexpr double PI = 3.14159265358979323846;
 constexpr double RAD_2_DEG = 180.0 / PI;
 constexpr double DEG_2_RAD = PI / 180.0;
 
-/// 3d vector position and quaternion translation
+struct RodrPose;
+
+/// 3d vector position and quaternion rotation
 /// right handed system, -x right, +y up, +z forward
 struct Pose
 {
@@ -26,6 +30,7 @@ struct Pose
     {
         ATT_ASSERT(rotation.isNormal(), "pose rotation is a unit quaternion");
     }
+    explicit Pose(const RodrPose& pose);
 
     /// When multiplied, applies no translation or rotation
     static Pose Ident() { return {{0, 0, 0}, {1, 0, 0, 0}}; }
@@ -35,9 +40,41 @@ struct Pose
     cv::Quatd rotation;
 };
 
-void drawMarker(cv::Mat, std::vector<cv::Point2f>, cv::Scalar);
-void transformMarkerSpace(std::vector<cv::Point3f>, cv::Vec3d, cv::Vec3d, cv::Vec3d, cv::Vec3d, std::vector<cv::Point3f>*);
-void getMedianMarker(std::vector<std::vector<cv::Point3f>>, std::vector<cv::Point3f>*);
+/// 3d position and angle axis rotation
+/// right handed system, -x right, +y up, +z forward
+struct RodrPose
+{
+    constexpr RodrPose() = default;
+    RodrPose(const cv::Vec3d& pos, const math::RodriguesVec3d& rot)
+        : position(pos), rotation(rot) {}
+    explicit RodrPose(const Pose& pose)
+        : position(pose.position), rotation(pose.rotation.toRotVec(cv::QUAT_ASSUME_UNIT)) {}
+
+    cv::Affine3d ToAffine3d() const
+    {
+        cv::Matx33d rotMat;
+        cv::Rodrigues(rotation.value, rotMat);
+        return {rotMat, position};
+    }
+
+    /// opencv usually expects vec3d, easier to not have to adapt everywhere
+    cv::Vec3d position{};
+    /// rodrigues rotation vector aka angle-axis vector
+    math::RodriguesVec3d rotation{};
+};
+
+inline Pose::Pose(const RodrPose& pose)
+    : position(pose.position), rotation(cv::Quatd::createFromRvec(pose.rotation.value)) {}
+
+using MarkerCorners = std::array<cv::Point2d, 4>;
+
+void DrawMarker(const cv::Mat& frame, const MarkerCorners2f& corners, const cv::Scalar& color);
+void TransformMarkerSpace(const MarkerCorners3f& modelMarker, const RodrPose& boardToCam, const RodrPose& markerToCam, MarkerCorners3f& outMarker);
+void FindMedianMarker(const std::vector<MarkerCorners3f>& markerList, MarkerCorners3f& outMedianMarker);
+
+[[deprecated]] void drawMarker(cv::Mat, std::vector<cv::Point2f>, cv::Scalar);
+[[deprecated]] void transformMarkerSpace(std::vector<cv::Point3f>, cv::Vec3d, cv::Vec3d, cv::Vec3d, cv::Vec3d, std::vector<cv::Point3f>*);
+[[deprecated]] void getMedianMarker(std::vector<std::vector<cv::Point3f>>, std::vector<cv::Point3f>*);
 Quaternion<double> rodr2quat(double, double, double);
 cv::Mat getSpaceCalib(cv::Vec3d, cv::Vec3d, double, double, double);
 cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f theta);
@@ -45,6 +82,24 @@ bool isRotationMatrix(cv::Mat& R);
 cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
 Quaternion<double> mRot2Quat(const cv::Mat& m);
 cv::Vec3d quat2rodr(double qw, double qx, double qy, double qz);
+
+template <typename T, typename TInt = int>
+constexpr TInt RoundToInt(T value) { return static_cast<TInt>(std::round(value)); }
+
+template <typename TA, typename TB>
+    requires(std::integral<TA> || std::same_as<double, TA>) &&
+            (std::integral<TB> || std::same_as<double, TB>)
+constexpr double FloatDiv(TA a, TB b)
+{
+    return static_cast<double>(a) / static_cast<double>(b);
+}
+template <typename TA, typename TB>
+    requires(std::integral<TA> || std::same_as<double, TA>) &&
+            (std::integral<TB> || std::same_as<double, TB>)
+constexpr double FloatMult(TA a, TB b)
+{
+    return static_cast<double>(a) * static_cast<double>(b);
+}
 
 template <typename T>
 inline void RotateVecByQuat(cv::Vec<T, 3>& out_pos, const cv::Quat<T>& rot)
@@ -63,6 +118,13 @@ inline void RotateVecByQuat(cv::Vec<T, 3>& out_pos, const cv::Quat<T>& rot)
     //       (ang * ang - axis.dot(axis)) * pos +
     //       2.0 * ang * axis.cross(pos);
 }
+template <typename T>
+inline void RotatePointByQuat(cv::Point3_<T>& outPos, const cv::Quat<T>& rot)
+{
+    cv::Quat<T> p{0, outPos.x, outPos.y, outPos.z};
+    cv::Quat<T> r = rot * p * rot.inv();
+    outPos = cv::Point3_<T>{r.x, r.y, r.z};
+}
 
 template <typename T>
 inline T Length(T a)
@@ -80,9 +142,24 @@ inline T Length(T a, T b, T c)
     return std::sqrt(a * a + b * b + c * c);
 }
 template <typename T>
+inline T Length(cv::Vec<T, 2> a)
+{
+    return Length(a[0], a[1]);
+}
+template <typename T>
 inline T Length(cv::Vec<T, 3> a)
 {
     return Length(a[0], a[1], a[2]);
+}
+template <typename T>
+inline T Length(cv::Point_<T> a)
+{
+    return Length(a.x, a.y);
+}
+template <typename T>
+inline T Length(cv::Point3_<T> a)
+{
+    return Length(a.x, a.y, a.z);
 }
 template <typename T>
 inline T Distance(T x1, T x2)
@@ -98,6 +175,11 @@ template <typename T>
 inline T Distance(T x1, T y1, T z1, T x2, T y2, T z2)
 {
     return Length(x2 - x1, y2 - y1, z2 - z1);
+}
+template <typename T>
+inline T Distance(cv::Vec<T, 2> a, cv::Vec<T, 2> b)
+{
+    return Distance(a[0], a[1], b[0], b[1]);
 }
 template <typename T>
 inline T Distance(cv::Vec<T, 3> a, cv::Vec<T, 3> b)
