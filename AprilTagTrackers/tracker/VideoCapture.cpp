@@ -14,7 +14,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <bitset>
 
 namespace
 {
@@ -89,7 +88,18 @@ void VideoCapture::Close()
 
 bool VideoCapture::TryReadFrame(cv::Mat& outImage)
 {
-    return mCapture && mCapture->read(outImage) && !outImage.empty();
+    if (!mCapture) return false;
+    if (!mCapture->read(outImage) || outImage.empty()) return false;
+
+    if (mCameraInfo->rotateCl >= 0)
+    {
+        cv::rotate(outImage, outImage, mCameraInfo->rotateCl);
+    }
+    if (mCameraInfo->mirror)
+    {
+        cv::flip(outImage, outImage, 1);
+    }
+    return true;
 }
 
 bool VideoCapture::TryOpenCapture()
