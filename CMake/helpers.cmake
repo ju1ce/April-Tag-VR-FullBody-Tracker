@@ -155,7 +155,7 @@ function(att_target_strict_conformance target)
             /Zc:inline
         )
     else()
-        target_compile_options(${target}PRIVATE
+        target_compile_options(${target} PRIVATE
             # errors on non conforming code
             -pedantic-errors
         )
