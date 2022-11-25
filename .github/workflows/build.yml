@@ -20,34 +20,67 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-22.04]
         include:
           - os: "windows-latest"
             mono: ""
-          - os: "ubuntu-latest"
+          - os: "ubuntu-22.04"
             mono: "mono"
 
     steps:
       - name: Checkout project
         uses: actions/checkout@v3
 
+      - name: Workaround
+        if: runner.os == 'Windows'
+        run: |
+          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $componentsToRemove= @(
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ARM"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ARM.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ARM64"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ARM64.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM64"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM64.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC.ARM"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC.ARM.Spectre"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC.ARM64"
+            "Microsoft.VisualStudio.Component.VC.14.33.17.3.MFC.ARM64.Spectre"
+          )
+          [string]$workloadArgs = $componentsToRemove | ForEach-Object {" --remove " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          # should be run twice
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+
       - name: Install Dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: >
-          sudo apt-get update -y && sudo apt-get install -y
+          sudo apt-get update -y &&
+          sudo apt-get install -y libunwind-dev &&
+          sudo apt-get install -y
           build-essential tar curl zip unzip pkg-config autoconf ninja-build
           libudev-dev freeglut3-dev libgtk-3-dev libsecret-1-dev libgcrypt20-dev libsystemd-dev nasm
-          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
 
       - name: Setup vcpkg (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           git clone --filter=tree:0 https://github.com/microsoft/vcpkg
           ./vcpkg/bootstrap-vcpkg.sh
 
       - name: Setup vcpkg (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         shell: cmd
         run: |
           git clone --filter=tree:0 https://github.com/microsoft/vcpkg
@@ -64,7 +97,7 @@ jobs:
           ${{ matrix.mono }} "${NUGET_EXE}" setapikey "${{ secrets.GITHUB_TOKEN }}" -source "${NUGET_URL}"
 
       - name: Developer Command Prompt (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: CMake Configure Release
@@ -85,13 +118,16 @@ jobs:
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           -DATT_DEBUG=ON
 
-      - name: CMake Build
+      - name: CMake Build Release
         run: |
           cmake --build build/release --config Release --target install
+
+      - name: CMake Build Debug
+        run: |
           cmake --build build/debug --config Debug --target install
 
       - name: Tar Artifacts (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           cd install/release
           tar -cvf ../../AprilTagTrackers-Linux.tar *
@@ -99,21 +135,21 @@ jobs:
           tar -cvf ../../AprilTagTrackers-Debug-Linux.tar *
 
       - name: Upload Release (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers-Linux.tar
           path: AprilTagTrackers-Linux.tar
 
       - name: Upload Debug (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers-Debug-Linux.tar
           path: AprilTagTrackers-Debug-Linux.tar
 
       - name: Upload Release (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers-Windows
@@ -122,14 +158,14 @@ jobs:
             !install/release/**.pdb
 
       - name: Upload Release PDB (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers.pdb
           path: install/release/**.pdb
 
       - name: Upload Debug (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: AprilTagTrackers-Debug-Windows
