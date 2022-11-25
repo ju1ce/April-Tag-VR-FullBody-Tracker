@@ -41,7 +41,7 @@ inline bool GetDigitalState(vr::VRActionHandle_t action)
     return actionData.bActive && actionData.bState;
 }
 
-inline std::optional<vr::HmdMatrix34_t> GetPoseForNextFrame(vr::VRActionHandle_t action)
+std::optional<vr::HmdMatrix34_t> GetPoseForNextFrame(vr::VRActionHandle_t action)
 {
     vr::InputPoseActionData_t actionData{};
     constexpr vr::ETrackingUniverseOrigin origin = vr::TrackingUniverseRawAndUncalibrated;
@@ -50,7 +50,7 @@ inline std::optional<vr::HmdMatrix34_t> GetPoseForNextFrame(vr::VRActionHandle_t
     return actionData.pose.mDeviceToAbsoluteTracking;
 }
 
-inline Pose OVRPoseMatrixToPose(vr::HmdMatrix34_t matrix)
+Pose OVRPoseMatrixToPose(vr::HmdMatrix34_t matrix)
 {
     const cv::Matx33d rotMat(
         matrix.m[0][0], matrix.m[0][1], matrix.m[0][2],
@@ -77,9 +77,9 @@ inline Pose OVRPoseMatrixToPose(vr::HmdMatrix34_t matrix)
 namespace tracker
 {
 
-bool OpenVRClient::CanInitializeOpenVR() const
+bool OpenVRClient::CanInit() const
 {
-    if (IsInitialized()) return false;
+    if (IsInit()) return false;
     return vr::VR_IsHmdPresent();
 }
 
