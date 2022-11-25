@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils/Assert.hpp"
+#include "utils/Types.hpp"
 
 #include <array>
 #include <memory>
@@ -10,34 +11,48 @@
 namespace IPC
 {
 
+template <Index NSize>
+class IOBuffer
+{
+public:
+protected:
+    constexpr std::string_view GetBufferStringView(Index stringLength) const
+    {
+        ATT_ASSERT(stringLength >= 0);
+        ATT_ASSERT(stringLength <= NSize);
+        return std::string_view(mBuffer.data(), stringLength);
+    }
+    constexpr char* GetBufferPtr() { return mBuffer.data(); }
+    constexpr Index GetBufferSize() const { return NSize - 1; }
+
+private:
+    std::array<char, NSize> mBuffer{};
+};
+
+class IConnection : public IOBuffer<1024>
+{
+public:
+    virtual ~IConnection() = default;
+    virtual void Send(std::string_view message) = 0;
+    /// @return temporary view of buffer, invalidated when SendRecv is called again
+    [[nodiscard]] virtual std::string_view Recv() = 0;
+};
+
 // Interface for inter-process-communication, be that over network, udp, or pipes, multithreaded or not
 class IServer
 {
 public:
     virtual ~IServer() = default;
-    void (*on_message)(std::string message) = nullptr;
+    [[nodiscard]] virtual std::unique_ptr<IConnection> Accept() = 0;
 };
 
 // Interface for inter-process-communication, be that over network, udp, or pipes, multithreaded or not
-class IClient
+class IClient : public IOBuffer<1024>
 {
 public:
     virtual ~IClient() = default;
-    /// @return temporary view of IClient buffer, invalidated when SendRecv is called again
+    /// @return temporary view of buffer, invalidated when SendRecv is called again
     [[nodiscard]] virtual std::string_view SendRecv(std::string_view message) = 0;
-
-protected:
-    static constexpr int BUFFER_SIZE = 1024;
-    constexpr std::string_view GetBufferStringView(int stringLength) const
-    {
-        ATT_ASSERT(stringLength > 0);
-        ATT_ASSERT(stringLength <= BUFFER_SIZE);
-        return {mBuffer.data(), static_cast<std::size_t>(stringLength)};
-    }
-    constexpr char* GetBufferPtr() { return mBuffer.data(); }
-
-private:
-    std::array<char, BUFFER_SIZE> mBuffer;
 };
 
 class WindowsNamedPipe : public IClient
@@ -62,7 +77,7 @@ private:
     std::string mSocketPath;
 };
 
-inline std::unique_ptr<IClient> CreateDriverConnection()
+inline std::unique_ptr<IClient> CreateDriverClient()
 {
     const std::string driverPath = "AprilTagPipeIn";
 #ifdef ATT_OS_WINDOWS
@@ -71,5 +86,7 @@ inline std::unique_ptr<IClient> CreateDriverConnection()
     return std::make_unique<UNIXSocket>(driverPath);
 #endif
 }
+
+[[nodiscard]] std::unique_ptr<IServer> CreateDriverServer();
 
 }; // namespace IPC

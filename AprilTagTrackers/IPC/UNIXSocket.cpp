@@ -72,7 +72,7 @@ std::string_view UNIXSocket::SendRecv(std::string_view message)
 {
     try
     {
-        const size_t responseLength = ::SendRecv(mSocketPath, message, GetBufferPtr(), BUFFER_SIZE);
+        const size_t responseLength = ::SendRecv(mSocketPath, message, GetBufferPtr(), GetBufferSize());
         return GetBufferStringView(static_cast<int>(responseLength));
     }
     catch (const std::system_error& e)
@@ -80,6 +80,11 @@ std::string_view UNIXSocket::SendRecv(std::string_view message)
         ATT_LOG_ERROR("socket error: ", e.what());
         throw;
     }
+}
+
+[[nodiscard]] std::unique_ptr<IServer> CreateDriverServer()
+{
+    utils::Unreachable(); // unimplemented
 }
 
 } // namespace IPC
