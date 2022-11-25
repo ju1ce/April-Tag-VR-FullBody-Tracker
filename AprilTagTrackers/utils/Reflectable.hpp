@@ -3,6 +3,7 @@
 #include "Macros.hpp"
 
 #include <type_traits>
+#include <concepts>
 
 /// Placed in a class before a list of REFLECTABLE_FIELDs
 #define REFLECTABLE_BEGIN                \
@@ -136,3 +137,11 @@ public:
         return static_cast<const DerT&>(baseThis);
     }
 };
+
+template <typename T, size_t Index>
+concept ReflectableAtIndex = requires {
+        typename T::template _rfl_FieldData<Index>;
+        { T::_rfl_fieldOffset } -> std::same_as<size_t>;
+        { T::_rfl_fieldCount } -> std::same_as<size_t>; };
+template <typename T>
+concept Reflectable = ReflectableAtIndex<T, 0>;
