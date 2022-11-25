@@ -10,8 +10,6 @@ add_executable(test)
 set(ATT_TEST_SOURCES
     ${ATT_TESTABLE_SOURCES}
 
-    tracker/VideoCapture.cpp
-
     test/main.cpp
     test/GUI_stub.cpp
 )
@@ -40,6 +38,7 @@ target_link_libraries(test PRIVATE
     apriltag::apriltag
     openvr::openvr_api
     doctest::doctest
+    Taskflow::Taskflow
     common::semver
 )
 target_include_directories(test SYSTEM PRIVATE
@@ -76,22 +75,14 @@ else()
     att_target_crt_linkage(test STATIC)
 endif()
 
-# Ensure compiler with c++17 language features
+# Ensure compiler with c++20 language features
 target_compile_features(test PRIVATE cxx_std_20)
 
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(test)
-
-if (MSVC)
-    target_compile_options(AprilTagTrackers PRIVATE
-        # all source files are utf8
-        /utf-8
-        # make msvc slightly more conformant to the standard
-        /permissive-
-        /Zc:inline
-    )
-endif()
+att_target_strict_conformance(test)
+att_target_disable_diagnostics(test)
 
 # Build with Address Sanitizer
 if(ATT_TEST_ENABLE_ASAN)
@@ -102,7 +93,7 @@ endif()
 target_precompile_headers(test PRIVATE "${ATT_SOURCES_BASE}/pch.hpp")
 
 # Enable LTO
-set_target_properties(AprilTagTrackers PROPERTIES
+set_target_properties(test PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 # ====== CMake Configuration ======

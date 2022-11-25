@@ -22,9 +22,10 @@ set(ATT_TESTABLE_SOURCES
 
     utils/Env.cpp
     utils/Log.cpp
+    utils/LogFileHandler.cpp
 
     serial/FileStorage.cpp
-    serial/ReaderWriter.cpp
+    serial/CustomSerial.cpp
 
     ps3eye/ps3eye.cpp
     ps3eye/PSEyeVideoCapture.cpp
@@ -62,6 +63,7 @@ find_package(libusb CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)
 find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
+find_package(Taskflow CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
     Threads::Threads
@@ -71,6 +73,7 @@ target_link_libraries(AprilTagTrackers PRIVATE
     apriltag::apriltag
     openvr::openvr_api
     doctest::doctest
+    Taskflow::Taskflow
     common::semver
 )
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
@@ -112,35 +115,9 @@ target_compile_features(AprilTagTrackers PRIVATE cxx_std_20)
 # Create debug symbols for release builds, msvc will generate a pdb,
 # while gcc-like will have embedded symbols.
 att_exe_debug_symbols(AprilTagTrackers)
-
-if (MSVC)
-    target_compile_options(AprilTagTrackers PRIVATE
-        # all source files are utf8
-        /utf-8
-        # make msvc slightly more conformant to the standard
-        /permissive-
-        /Zc:inline
-    )
-endif()
-
+att_target_strict_conformance(AprilTagTrackers)
 if (ATT_DEBUG)
-    if (MSVC)
-        target_compile_options(AprilTagTrackers PRIVATE
-            # hide warnings from system includes
-            /external:W0
-            /external:anglebrackets # any include <> is external
-            # enable diagnostics
-            /W4
-        )
-    else()
-        target_compile_options(AprilTagTrackers PRIVATE
-            # enable diagnostics
-            -Wall
-            -Wextra
-            # warn on non conforming code
-            -pedantic
-        )
-    endif()
+    att_target_enable_diagnostics(AprilTagTrackers)
 endif()
 
 # Build with Address Sanitizer
@@ -179,4 +156,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${HE
 
 if (ENABLE_TESTING)
     add_subdirectory("test")
+endif()
+if (ATT_ENABLE_DEBUG_DRIVER)
+    add_subdirectory("debug_driver")
 endif()

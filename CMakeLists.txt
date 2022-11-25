@@ -42,6 +42,7 @@ option(ENABLE_TESTING "Build and install test binary" OFF)
 # project options
 option(ATT_INSTALL_RESOURCES "Copy various required resources to install" ON)
 option(ATT_ENABLE_DRIVER "Build and install the BridgeDriver" ON)
+option(ATT_ENABLE_DEBUG_DRIVER "Build and install a debug/testing driver" OFF)
 option(ATT_DEBUG "Developer mode. Enable custom assert, debug logging, and debugger support. Can be used in release build." OFF)
 option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
 set(ATT_LOG_LEVEL "1" CACHE STRING "0 - Silent, 1 - Info, 2 - Debug")
