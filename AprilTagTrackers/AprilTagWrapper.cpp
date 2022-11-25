@@ -17,6 +17,7 @@ AprilTagWrapper::AprilTagWrapper(MarkerFamily family, double quadDecimate, int t
 {
     mDetector->quad_decimate = static_cast<float>(quadDecimate);
     mDetector->nthreads = threadCount;
+
     if (mFamilyType == MarkerFamily::Standard41h12)
     {
         mFamilyPtr = tagStandard41h12_create();
@@ -82,17 +83,19 @@ void AprilTagWrapper::DetectMarkers(cv::Mat& frame, MarkerDetectionList& outList
 
     for (int i = 0; i < size; ++i)
     {
-        const apriltag_detection_t* det = nullptr;
-        zarray_get_volatile(detections, i, &det);
+        apriltag_detection_t* det = nullptr;
+        zarray_get(detections, i, &det);
         ATT_ASSERT(det != nullptr);
 
         outList.ids[i] = det->id;
         outList.centers[i] = cv::Point2d(det->c[0], det->c[1]);
 
-        for (int cornerIdx = 0; cornerIdx < 4; ++cornerIdx)
+        constexpr int numCorners = 4;
+        outList.corners[i].resize(numCorners);
+        for (int cornerIdx = 0; cornerIdx < numCorners; ++cornerIdx)
         {
-            /// apriltag returns CW order, while we need CCW for opencv
-            const int detCornerIdx = 3 - cornerIdx;
+            /// apriltag returns CCW order, while we need CW for opencv
+            const int detCornerIdx = (numCorners - 1) - cornerIdx;
             outList.corners[i][cornerIdx] = cv::Point2d(
                 det->p[detCornerIdx][0], det->p[detCornerIdx][1]);
         }

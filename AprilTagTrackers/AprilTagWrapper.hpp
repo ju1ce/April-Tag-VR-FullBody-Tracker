@@ -1,5 +1,7 @@
 #pragma once
 
+#include "math/CVTypes.hpp"
+
 #include <opencv2/aruco.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/core/mat.hpp>
@@ -23,13 +25,8 @@ enum class MarkerFamily
 struct MarkerDetectionList
 {
     std::vector<int> ids{};
-    std::vector<std::array<cv::Point2d, 4>> corners{}; /// 4 corners in CCW order
+    std::vector<MarkerCorners2f> corners{}; /// 4 corners in CCW order
     std::vector<cv::Point2d> centers{};
-
-    cv::_InputArray GetCorners()
-    {
-        return cv::_InputArray::rawIn(corners);
-    }
 };
 
 struct apriltag_detector;
@@ -57,6 +54,13 @@ public:
 
     AprilTagWrapper(const AprilTagWrapper&) = delete;
     AprilTagWrapper& operator=(const AprilTagWrapper&) = delete;
+
+    static MarkerFamily ConvertFamily(int familyId)
+    {
+        if (familyId == APRILTAG_CIRCULAR) return MarkerFamily::Circle21h7;
+        if (familyId == APRILTAG_CUSTOM29H10) return MarkerFamily::Custom29h10;
+        return MarkerFamily::Standard41h12;
+    }
 
     /// convert BGR image to single channel grayscale
     static void ConvertGrayscale(const cv::Mat& image, cv::Mat& outImage)
