@@ -19,7 +19,9 @@ bool FileStorage::Open(const fsys::path& filePath, Mode mode)
     else if (mode == Mode::Write)
     {
         if (!fsys::exists(filePath.parent_path()))
+        {
             fsys::create_directories(filePath.parent_path());
+        }
         storageMode = cv::FileStorage::Mode::WRITE;
     }
     else ATT_ASSERT(false, "unhandled FileStorage::Mode ", static_cast<int>(mode));
