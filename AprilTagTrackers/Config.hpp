@@ -64,7 +64,7 @@ public:
 
     REFLECTABLE_BEGIN;
     REFLECTABLE_FIELD(cfg::List<cfg::CameraCalib>, cameras){1};
-    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnitCalib>, trackerCalibs){3};
+    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnitCalib>, trackers){3};
     REFLECTABLE_END;
 };
 
