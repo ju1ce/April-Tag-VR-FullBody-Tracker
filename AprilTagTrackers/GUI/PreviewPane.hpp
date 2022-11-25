@@ -23,14 +23,12 @@ class PreviewPane
     static constexpr int MIN_DRAW_SIZE = 20;
     /// render loop updates per second
     static constexpr int RENDER_UPS = 30;
-    /// can only be created in a paint event
-    static inline wxGraphicsBrush backgroundBrush = wxNullGraphicsBrush;
 
     /// render loop without blocking gui thread, handled by wx event loop
     class RenderLoop : private wxTimer
     {
     public:
-        RenderLoop(PreviewPane& _parentPane) : parentPane(_parentPane) {}
+        explicit RenderLoop(PreviewPane& _parentPane) : parentPane(_parentPane) {}
         /// calls Notify at updates per second
         void StartLoop(int ups) { wxTimer::Start(1000 / ups); }
         void StopLoop() { wxTimer::Stop(); }
@@ -53,15 +51,13 @@ public:
     void Hide();
 
     void UpdateImage(const cv::Mat& newImage);
+    void UpdateImage(const cv::Mat& newImage, int constrainSize);
     bool IsVisible() const { return isVisible; }
 
 private:
-    static void ClearBackground(RefPtr<wxGraphicsContext> context, wxSize drawArea);
+    void ClearBackground(RefPtr<wxGraphicsContext> context, wxSize drawArea);
 
     void Repaint();
-
-    /// @return new aspect ratio if changed, otherwise negative
-    float SetImage(const cv::Mat& newImage);
 
     /// @return whether the image was swapped
     bool SwapReadWriteImage();
@@ -69,7 +65,7 @@ private:
     /// sets the aspect ratio of panel for wxSHAPED
     void SetRatioUnsafe(float aspectRatio);
 
-    void SetRatio(float aspectRatio);
+    void UpdateRatioIfChanged();
 
     /// panel.Refresh invalidates area to be painted later
     /// panel.Update triggers a repaint now, on any invalidated area
@@ -101,6 +97,9 @@ private:
 
     /// protect swapping writeImage and readImage
     std::mutex imageSwapMutex{};
+
+    /// can only be created in a paint event
+    wxGraphicsBrush backgroundBrush = wxNullGraphicsBrush;
 };
 
 class PreviewFrame
@@ -113,10 +112,8 @@ public:
     void CreateClosable();
     void Destroy();
 
-    void UpdateImage(const cv::Mat& newImage)
-    {
-        previewPane.UpdateImage(newImage);
-    }
+    void UpdateImage(const cv::Mat& newImage) { previewPane.UpdateImage(newImage); }
+    void UpdateImage(const cv::Mat& newImage, int constrainSize) { previewPane.UpdateImage(newImage, constrainSize); };
 
     bool IsVisible() const { return isVisible; }
 

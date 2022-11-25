@@ -1,5 +1,6 @@
 #include "PreviewPane.hpp"
 
+#include "math/CVHelpers.hpp"
 #include "MatToBitmap.hpp"
 #include "utils/Assert.hpp"
 #include "wxHelpers.hpp"
@@ -11,7 +12,6 @@ std::unique_ptr<wxBoxSizer> PreviewPane::Create(RefPtr<wxWindow> _parent, wxSize
     parent = _parent;
     panelID = wxWindow::NewControlId();
     panel = NewWindow<wxPanel>(parent, panelID, wxDefaultPosition, size);
-    panel->Hide();
     panel->SetBackgroundStyle(wxBackgroundStyle::wxBG_STYLE_PAINT);
 
     auto widthSizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL);
@@ -21,16 +21,12 @@ std::unique_ptr<wxBoxSizer> PreviewPane::Create(RefPtr<wxWindow> _parent, wxSize
 
     panel->Bind(
         wxEVT_PAINT, [this](auto& evt)
-        {
-            this->OnPanelPaint(evt);
-        },
+        { this->OnPanelPaint(evt); },
         panelID);
     panel->Bind(
         wxEVT_SHOW, [this](wxShowEvent& evt)
-        {
-            this->OnPanelShow(evt.IsShown());
-        });
-
+        { this->OnPanelShow(evt.IsShown()); });
+    Show();
     return std::move(widthSizer);
 }
 
@@ -68,8 +64,30 @@ void PreviewPane::Hide()
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage)
 {
-    float aspectRatio = SetImage(newImage);
-    if (aspectRatio > 0) SetRatio(aspectRatio);
+    ATT_ASSERT(!newImage.empty());
+    if (!IsVisible()) return;
+
+    { // lock scope
+        const std::lock_guard lock{imageSwapMutex};
+        newImage.copyTo(writeImage);
+        writeImageUpdated = true;
+    }
+    UpdateRatioIfChanged();
+}
+
+void PreviewPane::UpdateImage(const cv::Mat& newImage, int constrainSize)
+{
+    ATT_ASSERT(!newImage.empty());
+    ATT_ASSERT(constrainSize > 0);
+    if (!IsVisible()) return;
+
+    { // lock scope
+        const std::lock_guard lock{imageSwapMutex};
+        const cv::Size2i size = math::ConstrainSize(GetMatSize(newImage), constrainSize);
+        cv::resize(newImage, writeImage, size);
+        writeImageUpdated = true;
+    }
+    UpdateRatioIfChanged();
 }
 
 void PreviewPane::ClearBackground(RefPtr<wxGraphicsContext> context, wxSize drawArea)
@@ -87,24 +105,6 @@ void PreviewPane::Repaint()
     ATT_ASSERT(panel.NotNull());
     constexpr bool eraseBackground = false;
     panel->Refresh(eraseBackground);
-}
-
-float PreviewPane::SetImage(const cv::Mat& newImage)
-{
-    ATT_ASSERT(!newImage.empty());
-
-    std::lock_guard lock{imageSwapMutex};
-    if (IsVisible())
-    {
-        newImage.copyTo(writeImage);
-        writeImageUpdated = true;
-    }
-
-    if (writeImage.cols != readImage.cols || writeImage.rows != readImage.rows)
-    {
-        return static_cast<float>(writeImage.cols) / static_cast<float>(writeImage.rows);
-    }
-    return -1.0f;
 }
 
 bool PreviewPane::SwapReadWriteImage()
@@ -137,26 +137,28 @@ void PreviewPane::SetRatioUnsafe(float aspectRatio)
     panel->SendSizeEventToParent();
 }
 
-void PreviewPane::SetRatio(float aspectRatio)
+void PreviewPane::UpdateRatioIfChanged()
 {
     ATT_ASSERT(panel.NotNull());
-    panel->CallAfter([this, aspectRatio]
-        {
-            this->SetRatioUnsafe(aspectRatio);
-        });
+    if (GetMatSize(writeImage) != GetMatSize(readImage))
+    {
+        const float aspectRatio = static_cast<float>(writeImage.cols) / static_cast<float>(writeImage.rows);
+        panel->CallAfter([this, aspectRatio]
+                         { this->SetRatioUnsafe(aspectRatio); });
+    }
 }
 
-void PreviewPane::OnPanelPaint(wxPaintEvent& evt)
+void PreviewPane::OnPanelPaint(wxPaintEvent&)
 {
     ATT_ASSERT(panel.NotNull());
-    wxPaintDC dc{panel};
+    const wxPaintDC dc{panel};
     /// uses faster platform specific drawing
-    std::unique_ptr<wxGraphicsContext> gc{wxGraphicsContext::Create(dc)};
+    const std::unique_ptr<wxGraphicsContext> gc{wxGraphicsContext::Create(dc)};
     gc->SetInterpolationQuality(wxINTERPOLATION_FAST);
     gc->SetCompositionMode(wxCOMPOSITION_SOURCE);
     gc->SetAntialiasMode(wxANTIALIAS_NONE);
 
-    wxSize drawArea = panel->GetSize();
+    const wxSize drawArea = panel->GetSize();
     if (drawArea.x < MIN_DRAW_SIZE || drawArea.y < MIN_DRAW_SIZE)
     {
         ClearBackground(gc, drawArea);
@@ -218,10 +220,8 @@ void PreviewFrame::CreateFrame(wxPoint pos, wxSize size, int style)
     frame->SetSizer(paneSizer.release());
 
     frame->Bind(
-        wxEVT_CLOSE_WINDOW, [this](auto& evt)
-        {
-            this->Destroy();
-        },
+        wxEVT_CLOSE_WINDOW, [this](auto&)
+        { this->Destroy(); },
         frameID);
 
     previewPane.Show();
