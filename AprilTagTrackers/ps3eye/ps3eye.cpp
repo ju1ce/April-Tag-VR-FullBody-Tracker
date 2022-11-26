@@ -55,6 +55,8 @@ http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/medi
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
+#pragma GCC diagnostic ignored "-Wanalyzer-possible-null-argument"
 #endif
 // MODIFIED
 
