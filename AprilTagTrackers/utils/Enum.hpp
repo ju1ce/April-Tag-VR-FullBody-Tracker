@@ -108,16 +108,19 @@ constexpr std::optional<TSecond> MatchPairs(TFirst value, TFirst first, TSecond 
     }
 }
 
+template <typename T>
+concept NotVoid = !std::same_as<T, void>;
+
 } // namespace detail
 
 // use adl to find enum meta data in other namespaces
-constexpr std::string_view ATTDetailReflectEnumStringized(detail::Tag<void>);
-constexpr auto ATTDetailReflectEnumValues(detail::Tag<void>);
+constexpr void ATTDetailReflectEnumStringized(...);
+constexpr void ATTDetailReflectEnumValues(...);
 
 template <typename T>
-concept Reflectable = requires() {
-                          ATTDetailReflectEnumStringized(detail::Tag<T>{});
-                          ATTDetailReflectEnumValues(detail::Tag<T>{});
+concept Reflectable = requires {
+                          { ATTDetailReflectEnumStringized(detail::Tag<T>{}) } -> detail::NotVoid;
+                          { ATTDetailReflectEnumValues(detail::Tag<T>{}) } -> detail::NotVoid;
                       };
 
 template <Reflectable T>

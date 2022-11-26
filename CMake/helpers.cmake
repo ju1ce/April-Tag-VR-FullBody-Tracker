@@ -176,6 +176,7 @@ function(att_target_enable_diagnostics target)
             # enable diagnostics
             -Wall
             -Wextra
+            "-fconcepts-diagnostics-depth=4"
         )
     endif()
 endfunction()
