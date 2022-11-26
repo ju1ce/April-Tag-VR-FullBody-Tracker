@@ -52,7 +52,9 @@ http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/medi
 #pragma warning(push, 0)
 #pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #else
-#pragma GCC system_header
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 // MODIFIED
 
@@ -1418,5 +1420,7 @@ void PS3EYECam::sccb_w_array(const uint8_t (*data)[2], int len)
 // MODIFIED: enable warnings again
 #ifdef _MSC_VER
 #pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
 #endif
 // MODIFIED

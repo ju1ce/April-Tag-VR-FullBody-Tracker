@@ -20,7 +20,9 @@ limitations under the License.
 #pragma warning(push, 0)
 #pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #else
-#pragma GCC system_header
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 // MODIFIED
 
@@ -729,5 +731,7 @@ cv::Ptr<cv::IVideoCapture> PSEyeVideoCapture::pseyeVideoCapture_create(int index
 // MODIFIED: enable warnings again
 #ifdef _MSC_VER
 #pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
 #endif
 // MODIFIED

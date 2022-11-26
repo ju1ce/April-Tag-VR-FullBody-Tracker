@@ -3,7 +3,7 @@
 #pragma warning(push, 0)
 #pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
 #else
-#pragma GCC system_header
+#pragma GCC diagnostic push
 #endif
 
 #include <cstdlib>
@@ -220,4 +220,6 @@ void tagCustom29h10_destroy(apriltag_family_t *tf)
 
 #ifdef _MSC_VER
 #pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
 #endif
