@@ -46,6 +46,16 @@ http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/medi
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+// MODIFIED: disable all warnings when compiling
+#ifdef _MSC_VER
+#include <codeanalysis\warnings.h>
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
+#else
+#pragma GCC system_header
+#endif
+// MODIFIED
+
 #include "ps3eye.h"
 
 #include <thread>
@@ -1404,3 +1414,9 @@ void PS3EYECam::sccb_w_array(const uint8_t (*data)[2], int len)
 }
 
 } // namespace
+
+// MODIFIED: enable warnings again
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+// MODIFIED

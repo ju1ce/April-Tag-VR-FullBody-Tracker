@@ -1,3 +1,11 @@
+#ifdef _MSC_VER
+#include <codeanalysis\warnings.h>
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
+#else
+#pragma GCC system_header
+#endif
+
 #include <cstdlib>
 #include "tagCustom29h10.hpp"
 
@@ -209,3 +217,7 @@ void tagCustom29h10_destroy(apriltag_family_t *tf)
    free(tf->name);
    free(tf);
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
