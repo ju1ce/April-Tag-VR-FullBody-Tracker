@@ -90,7 +90,7 @@ void drawCalibration(
         for (const auto& gridLineInCamera : gridLinesInCamera)
         {
             cv::projectPoints(gridLineInCamera, cv::Vec3f::zeros(), cv::Vec3f::zeros(), sampleCameraMatrix, sampleDistCoeffs, gridLineInImage);
-            for (size_t j = 1; j < gridLineInImage.size(); ++j)
+            for (std::size_t j = 1; j < gridLineInImage.size(); ++j)
             {
                 const auto p1 = gridLineInImage[j - 1];
                 const auto p2 = gridLineInImage[j];

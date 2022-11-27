@@ -347,7 +347,7 @@ void Tracker::CalibrateCameraCharuco()
                             ATT_LOG_ERROR(e.what());
                         }
 
-                        size_t curI = perViewErrors.size();
+                        std::size_t curI = perViewErrors.size();
                     }
                 }
             }

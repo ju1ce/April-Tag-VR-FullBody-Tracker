@@ -49,7 +49,7 @@ size_t SendRecv(std::string_view path, std::string_view message, char* bufferPtr
         const auto [serverAddr, addrSize] = CreateAddress(path);
         SysCall(::connect, socketFD, reinterpret_cast<const sockaddr_t*>(&serverAddr), addrSize); // NOLINT: cast necessary
         SysCall(::send, socketFD, message.data(), message.size(), 0);
-        const size_t responseLength = SysCall(::recv, socketFD, bufferPtr, bufferSize, 0);
+        const std::size_t responseLength = SysCall(::recv, socketFD, bufferPtr, bufferSize, 0);
         ::close(socketFD);
         return responseLength;
     }
@@ -72,7 +72,7 @@ std::string_view UNIXSocket::SendRecv(std::string_view message)
 {
     try
     {
-        const size_t responseLength = ::SendRecv(mSocketPath, message, GetBufferPtr(), GetBufferSize());
+        const std::size_t responseLength = ::SendRecv(mSocketPath, message, GetBufferPtr(), GetBufferSize());
         return GetBufferStringView(static_cast<int>(responseLength));
     }
     catch (const std::system_error& e)
