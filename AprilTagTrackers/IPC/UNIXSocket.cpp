@@ -1,13 +1,16 @@
-#include "IPC.hpp"
+#ifdef ATT_OS_LINUX
 
-#include <cerrno>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <unistd.h>
+#    include "IPC.hpp"
 
-#include <system_error>
-#include <tuple>
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#    include <sys/un.h>
+#    include <unistd.h>
+
+#    include <cerrno>
+#    include <cstring>
+#    include <system_error>
+#    include <tuple>
 
 using std::size_t;
 using sockaddr_un_t = struct ::sockaddr_un;
@@ -161,3 +164,4 @@ void Server::init(std::string name)
     }
 
     */
+#endif
