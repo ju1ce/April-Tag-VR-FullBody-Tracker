@@ -67,12 +67,10 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage)
     ATT_ASSERT(!newImage.empty());
     if (!IsVisible()) return;
 
-    { // lock scope
-        const std::lock_guard lock{imageSwapMutex};
-        newImage.copyTo(writeImage);
-        writeImageUpdated = true;
-    }
-    UpdateRatioIfChanged();
+    ImageLock lock{imageSwapMutex};
+    newImage.copyTo(writeImage);
+    writeImageUpdated = true;
+    UpdateRatioIfChanged(std::move(lock));
 }
 
 void PreviewPane::UpdateImage(const cv::Mat& newImage, int constrainSize)
@@ -81,13 +79,11 @@ void PreviewPane::UpdateImage(const cv::Mat& newImage, int constrainSize)
     ATT_ASSERT(constrainSize > 0);
     if (!IsVisible()) return;
 
-    { // lock scope
-        const std::lock_guard lock{imageSwapMutex};
-        const cv::Size2i size = math::ConstrainSize(GetMatSize(newImage), constrainSize);
-        cv::resize(newImage, writeImage, size);
-        writeImageUpdated = true;
-    }
-    UpdateRatioIfChanged();
+    ImageLock lock{imageSwapMutex};
+    const cv::Size2i size = math::ConstrainSize(GetMatSize(newImage), constrainSize);
+    cv::resize(newImage, writeImage, size);
+    writeImageUpdated = true;
+    UpdateRatioIfChanged(std::move(lock));
 }
 
 void PreviewPane::ClearBackground(RefPtr<wxGraphicsContext> context, wxSize drawArea)
@@ -121,7 +117,7 @@ bool PreviewPane::SwapReadWriteImage()
     return false;
 }
 
-void PreviewPane::SetRatioUnsafe(float aspectRatio)
+void PreviewPane::SetRatioUnsafe(double aspectRatio)
 {
     ATT_ASSERT(panel.NotNull());
     ATT_ASSERT(utils::IsMainThread());
@@ -131,21 +127,24 @@ void PreviewPane::SetRatioUnsafe(float aspectRatio)
     {
         if (OptRefPtr<wxSizerItem> item = sizer->GetItem(panel.Get()))
         {
-            item->SetRatio(aspectRatio);
+            item->SetRatio(static_cast<float>(aspectRatio));
         }
     }
     panel->SendSizeEventToParent();
 }
 
-void PreviewPane::UpdateRatioIfChanged()
+void PreviewPane::UpdateRatioIfChanged(ImageLock&& lock)
 {
     ATT_ASSERT(panel.NotNull());
-    if (GetMatSize(writeImage) != GetMatSize(readImage))
-    {
-        const float aspectRatio = static_cast<float>(writeImage.cols) / static_cast<float>(writeImage.rows);
-        panel->CallAfter([this, aspectRatio]
-                         { this->SetRatioUnsafe(aspectRatio); });
-    }
+    cv::Size2i writeSize = GetMatSize(writeImage);
+    cv::Size2i readSize = GetMatSize(readImage);
+    lock.unlock();
+    if (writeSize == cv::Size2i(0, 0)) return;
+    if (writeSize == readSize) return;
+
+    const double aspectRatio = writeSize.aspectRatio();
+    panel->CallAfter([this, aspectRatio]
+                     { this->SetRatioUnsafe(aspectRatio); });
 }
 
 void PreviewPane::OnPanelPaint(wxPaintEvent&)

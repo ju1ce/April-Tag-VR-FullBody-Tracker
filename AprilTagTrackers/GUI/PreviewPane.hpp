@@ -39,6 +39,8 @@ class PreviewPane
         PreviewPane& parentPane;
     };
 
+    using ImageLock = std::unique_lock<std::mutex>;
+
 public:
     PreviewPane() : renderLoop(std::make_unique<RenderLoop>(*this)) {}
 
@@ -63,9 +65,9 @@ private:
     bool SwapReadWriteImage();
 
     /// sets the aspect ratio of panel for wxSHAPED
-    void SetRatioUnsafe(float aspectRatio);
+    void SetRatioUnsafe(double aspectRatio);
 
-    void UpdateRatioIfChanged();
+    void UpdateRatioIfChanged(ImageLock&& lock);
 
     /// panel.Refresh invalidates area to be painted later
     /// panel.Update triggers a repaint now, on any invalidated area
