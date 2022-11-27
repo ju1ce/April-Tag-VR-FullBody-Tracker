@@ -14,7 +14,7 @@
 #include <sstream>
 #include <type_traits>
 
-constexpr auto FrameDeleter = [](wxFrame* frame)
+inline constexpr auto FrameDeleter = [](wxFrame* frame)
 {
     frame->Destroy();
 };

@@ -28,12 +28,12 @@ public:
     virtual bool IsInit() const = 0;
 };
 
+inline constexpr auto VRContextDeleter = [](vr::IVRSystem*)
+{ vr::VR_Shutdown(); };
+using VRContextHandle = std::unique_ptr<vr::IVRSystem, decltype(VRContextDeleter)>;
+
 class OpenVRClient final : public IVRClient
 {
-    static constexpr auto VRContextDeleter = [](vr::IVRSystem*)
-    { vr::VR_Shutdown(); };
-    using VRContextHandle = std::unique_ptr<vr::IVRSystem, decltype(VRContextDeleter)>;
-
 public:
     bool CanInit() const final;
     void Init() final;
