@@ -128,7 +128,7 @@ if(ATT_ENABLE_ASAN)
 endif()
 
 # Precompiled std and library headers
-target_precompile_headers(AprilTagTrackers PRIVATE pch.hpp)
+target_precompile_headers(AprilTagTrackers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/pch.hpp")
 
 # Enable LTO
 set_target_properties(AprilTagTrackers PROPERTIES
