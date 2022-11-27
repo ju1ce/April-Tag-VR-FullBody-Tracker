@@ -1,5 +1,7 @@
 #include "Env.hpp"
 
+#include "Cross.hpp"
+
 #include <cstdlib>
 #include <mutex>
 #include <string_view>
@@ -55,8 +57,10 @@ std::optional<std::string_view> GetThisThreadName() noexcept
 std::optional<std::string> EnvVars::GetVarAsString(const std::string& key) noexcept
 {
     if (!IsMainThread()) std::abort();
-#pragma warning(suppress : 4996) // msvc warns for getenv, but there isn't a better option
+    ATT_DIAG_PUSH();
+    ATT_DIAG_MSVC_IGNORE(4996);                 // msvc warns for getenv, but there isn't a better option
     const char* val = std::getenv(key.c_str()); // NOLINT
+    ATT_DIAG_POP();
     if (val == nullptr) return std::nullopt;
     return std::string(val);
 }

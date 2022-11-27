@@ -114,8 +114,8 @@ concept NotVoid = !std::same_as<T, void>;
 } // namespace detail
 
 // use adl to find enum meta data in other namespaces
-constexpr void ATTDetailReflectEnumStringized(...);
-constexpr void ATTDetailReflectEnumValues(...);
+constexpr void ATTDetailReflectEnumStringized(...) {} // NOLINT
+constexpr void ATTDetailReflectEnumValues(...) {} // NOLINT
 
 template <typename T>
 concept Reflectable = requires {

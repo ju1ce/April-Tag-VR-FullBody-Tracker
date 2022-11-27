@@ -44,6 +44,25 @@
             ;
 #endif
 
+#define ATT_DETAIL_PRAGMA(x) _Pragma(#x)
+
+#ifdef ATT_COMP_MSVC
+#    define ATT_DIAG_PUSH() ATT_DETAIL_PRAGMA(warning(push))
+#    define ATT_DIAG_POP() ATT_DETAIL_PRAGMA(warning(pop))
+#    define ATT_DIAG_MSVC_IGNORE(p_code) ATT_DETAIL_PRAGMA(warning(disable : p_code))
+#    define ATT_DIAG_GCC_IGNORE(p_str)
+#elif defined(ATT_COMP_CLANG) || defined(ATT_COMP_GCC)
+#    define ATT_DIAG_PUSH() ATT_DETAIL_PRAGMA(GCC diagnostic push)
+#    define ATT_DIAG_POP() ATT_DETAIL_PRAGMA(GCC diagnostic pop)
+#    define ATT_DIAG_MSVC_IGNORE(p_code)
+#    define ATT_DIAG_GCC_IGNORE(p_str) ATT_DETAIL_PRAGMA(GCC diagnostic ignored #p_str)
+#else
+#    define ATT_DIAG_PUSH()
+#    define ATT_DIAG_POP()
+#    define ATT_DIAG_MSVC_IGNORE(p_code)
+#    define ATT_DIAG_GCC_IGNORE(p_str)
+#endif
+
 namespace utils
 {
 
