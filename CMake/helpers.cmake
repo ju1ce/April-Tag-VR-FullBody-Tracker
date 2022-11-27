@@ -153,6 +153,9 @@ function(att_target_strict_conformance target)
             # make msvc slightly more conformant to the standard
             /permissive-
             /Zc:inline
+            /Zc:externConstexpr
+            /Zc:preprocessor
+            /Zc:throwingNew
         )
     else()
         target_compile_options(${target} PRIVATE
