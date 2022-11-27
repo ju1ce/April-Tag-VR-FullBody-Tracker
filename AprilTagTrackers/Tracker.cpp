@@ -53,6 +53,12 @@ void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
         return;
     }
 
+    // ensure joined before creating new thread
+    if (cameraThread.joinable())
+    {
+        cameraThread.join();
+    }
+
     cameraRunning = true;
     cameraThread = std::thread(&Tracker::CameraLoop, this);
 }
@@ -176,6 +182,12 @@ void Tracker::StartCameraCalib()
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
         return;
+    }
+
+    // ensure joined before creating new thread
+    if (mainThread.joinable())
+    {
+        mainThread.join();
     }
 
     mainThreadRunning = true;
@@ -529,6 +541,11 @@ void Tracker::StartTrackerCalib()
         return;
     }
 
+    // ensure joined before creating new thread
+    if (mainThread.joinable())
+    {
+        mainThread.join();
+    }
     // start tracker calibration on another thread
     mainThreadRunning = true;
     mainThread = std::thread(&Tracker::CalibrateTracker, this);
@@ -629,6 +646,12 @@ void Tracker::Start()
     }
 
     gui->SetStatus(true, StatusItem::Tracker);
+
+    // ensure joined before creating new thread
+    if (mainThread.joinable())
+    {
+        mainThread.join();
+    }
 
     // start detection on another thread
     mainThreadRunning = true;
