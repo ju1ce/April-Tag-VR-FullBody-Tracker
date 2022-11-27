@@ -90,7 +90,7 @@ if(ATT_TEST_ENABLE_ASAN)
 endif()
 
 # precompiled headers
-target_precompile_headers(test PRIVATE "${ATT_SOURCES_BASE}/pch.hpp")
+# target_precompile_headers(test PRIVATE "${ATT_SOURCES_BASE}/pch.hpp")
 
 # Enable LTO
 set_target_properties(test PROPERTIES
