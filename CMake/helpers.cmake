@@ -170,6 +170,19 @@ function(att_target_enable_diagnostics target)
             /external:anglebrackets # any include <> is external
             # enable diagnostics
             /W4
+        )
+    else()
+        target_compile_options(${target} PRIVATE
+            # enable diagnostics
+            -Wall
+            -Wextra
+        )
+    endif()
+endfunction()
+
+function(att_target_enable_analyzer target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
             # enable analyzer
             /analyze
             /analyze:autolog- # disable log files
@@ -177,10 +190,6 @@ function(att_target_enable_diagnostics target)
         )
     else()
         target_compile_options(${target} PRIVATE
-            # enable diagnostics
-            -Wall
-            -Wextra
-            "-fconcepts-diagnostics-depth=4"
             # enable analyzer
             -fanalyzer
         )

@@ -117,6 +117,9 @@ att_exe_debug_symbols(AprilTagTrackers)
 att_target_strict_conformance(AprilTagTrackers)
 if (ATT_DEBUG)
     att_target_enable_diagnostics(AprilTagTrackers)
+    if (ATT_ENABLE_ANALYZER)
+        att_target_enable_analyzer(AprilTagTrackers)
+    endif()
 endif()
 
 # Build with Address Sanitizer
