@@ -37,7 +37,7 @@ Tracker::Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, Aruco
     SetWorldTransform(user_config.manualCalib.GetAsReal());
 }
 
-void Tracker::StartCamera(RefPtr<cfg::CameraInfo> cam)
+void Tracker::StartCamera(RefPtr<cfg::Camera> cam)
 {
     if (cameraRunning)
     {
@@ -70,7 +70,7 @@ void Tracker::StartCamera()
 
 void Tracker::CameraLoop()
 {
-    const RefPtr<cfg::CameraInfo> cam = &user_config.videoStreams[0]->camera;
+    const RefPtr<cfg::Camera> cam = &user_config.videoStreams[0]->camera;
 
     cv::Mat img;
     cv::Mat drawImg;
@@ -162,8 +162,7 @@ void Tracker::CameraLoop()
 void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
 {
     std::unique_lock lock{mCameraImageMutex};
-    mImageReadyCond.wait(lock, [&]
-                         { return mIsImageReady; });
+    mImageReadyCond.wait(lock, [&] { return mIsImageReady; });
 
     mIsImageReady = false;
     cv::swap(image, mCameraImage);
@@ -223,8 +222,7 @@ void Tracker::CalibrateCameraCharuco()
 
     bool promptSaveCalib = false;
     gui->ShowPrompt(lc.TRACKER_CAMERA_CALIBRATION_INSTRUCTIONS,
-                    [&](bool pressedOk)
-                    {
+                    [&](bool pressedOk) {
                         promptSaveCalib = pressedOk;
                         mainThreadRunning = false;
                     });
@@ -681,8 +679,7 @@ void Tracker::CalibrateTracker()
 
     bool promptSaveCalib = false;
     gui->ShowPrompt(lc.TRACKER_TRACKER_CALIBRATION_INSTRUCTIONS,
-                    [&](bool pressedOk)
-                    {
+                    [&](bool pressedOk) {
                         promptSaveCalib = pressedOk;
                         mainThreadRunning = false;
                     });
@@ -723,8 +720,7 @@ void Tracker::CalibrateTracker()
 
     // TODO: temporary make code easier by allowing returns and handling exceptions properly within loop
     // will be refactored to another class, but easier than pulling out to another function due to amount of state
-    const auto doStep = [&]
-    {
+    const auto doStep = [&] {
         CopyFreshCameraImageTo(image);
         // detect and draw all markers on image
         AprilTagWrapper::ConvertGrayscale(image, grayImage);
@@ -1034,8 +1030,7 @@ void Tracker::MainLoop()
     AprilTagWrapper april{MarkerFamily::Standard41h12, videoStream->quadDecimate, 4};
 
     // TODO: temporary lambda to make refactor easier
-    const auto doStep = [&]
-    {
+    const auto doStep = [&] {
         CopyFreshCameraImageTo(image);
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.

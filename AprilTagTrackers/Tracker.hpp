@@ -21,11 +21,28 @@
 #include <ranges>
 #include <thread>
 
-class PlayspaceCalibration
+class PlayspaceCalib
 {
 public:
+    void Set(const cv::Vec3d& posOffset, const cv::Vec3d& angleOffset, double scale)
+    {
+        cv::Matx33d rotMat = EulerAnglesToRotationMatrix(angleOffset);
+        mTransform = cv::Affine3d(rotMat, posOffset);
+        mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
+        mScale = scale;
+    }
+
+    void Transform(cv::Point3d& pos, cv::Quatd& rot) const
+    {
+        pos = mTransform * pos;
+        rot = mRotation * rot;
+    }
+    void Transform(Pose& pose) const { Transform(pose.position, pose.rotation); }
+
+    double GetScale() const { return mScale; }
+
 private:
-    cv::Affine3d mMatrix{};
+    cv::Affine3d mTransform{};
     cv::Quatd mRotation{};
     double mScale = 0;
 };
@@ -43,16 +60,16 @@ class Tracker : public ITrackerControl
 
     static inline const cv::Scalar COLOR_MARKER_DETECTED{0, 0, 255}; /// blue
     static inline const cv::Scalar COLOR_MARKER_ADDING{255, 0, 255}; /// yellow
-    static inline const cv::Scalar COLOR_MARKER_ADDED{0, 255, 0};    /// green
-    static inline const cv::Scalar COLOR_MARKER_FAR{255, 0, 255};    /// purple
-    static inline const cv::Scalar COLOR_MASK{255, 0, 0};            /// red
+    static inline const cv::Scalar COLOR_MARKER_ADDED{0, 255, 0}; /// green
+    static inline const cv::Scalar COLOR_MARKER_FAR{255, 0, 255}; /// purple
+    static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
 public:
     Tracker(const Tracker&) = delete;
     Tracker(Tracker&&) = delete;
     /// config and locale references are expected to exceed lifetime of this instance
     Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc);
-    void StartCamera(RefPtr<cfg::CameraInfo> cam);
+    void StartCamera(RefPtr<cfg::Camera> cam);
     void StartCamera() override;
     void StartCameraCalib() override;
     void StartTrackerCalib() override;
@@ -79,8 +96,8 @@ private:
     void SaveTrackerUnitsToCalib(const std::vector<tracker::TrackerUnit>&);
     bool IsTrackerUnitsCalibrated() const
     {
-        return std::all_of(mTrackerUnits.begin(), mTrackerUnits.end(), [](const auto& unit)
-                           { return unit.IsCalibrated(); });
+        return std::all_of(mTrackerUnits.begin(), mTrackerUnits.end(),
+                           [](const auto& unit) { return unit.IsCalibrated(); });
     }
 
     void StartCameraThread()

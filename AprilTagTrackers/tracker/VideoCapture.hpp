@@ -19,7 +19,7 @@ public:
     static constexpr int CAP_PS3EYE = 9100;
 
     /// instance is linked to a CameraInfo, so a list of VideoCaptures will sync with the list of cameras in gui
-    explicit VideoCapture(RefPtr<cfg::CameraInfo> cameraInfo) : mCameraInfo(cameraInfo) {}
+    explicit VideoCapture(RefPtr<cfg::Camera> cameraInfo) : mCameraInfo(cameraInfo) {}
 
     bool TryOpen();
     void Close();
@@ -33,7 +33,7 @@ private:
     void SetCaptureOptions();
     void LogCaptureOptions();
 
-    RefPtr<cfg::CameraInfo> mCameraInfo;
+    RefPtr<cfg::Camera> mCameraInfo;
     std::unique_ptr<cv::VideoCapture> mCapture = std::make_unique<cv::VideoCapture>();
 };
 
