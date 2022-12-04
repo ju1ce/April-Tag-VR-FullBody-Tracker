@@ -54,10 +54,10 @@ template <typename...>
 inline constexpr bool alwaysFalse = false;
 
 /// force `if else constexpr` chain exhaustive by causing a compile error in the else branch
-template <typename T>
+template <typename... Ts>
 consteval void Exhaustive()
 {
-    static_assert(alwaysFalse<T>, "if else constexpr chain was not exhaustive for type");
+    static_assert(alwaysFalse<Ts...>, "if else constexpr chain was not exhaustive for type");
 }
 
 } // namespace utils
