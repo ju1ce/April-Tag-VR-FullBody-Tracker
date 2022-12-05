@@ -201,14 +201,15 @@ void Tracker::CameraLoop()
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
             // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
-            // The pixel buffer from cameraImage can be reused if the size and format matches.
-            cv::swap(img, cameraImage);
+            // The pixel buffer from cameraFrame.image can be reused if the size and format matches.
+            cv::swap(img, cameraFrame.image);
             // TODO: does opencv really care if img.read is called on the wrong size of matrix?
-            if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
+            if (img.size() != cameraFrame.image.size() || img.flags != cameraFrame.image.flags)
             {
                 img.release();
             }
-            imageReady = true;
+            cameraFrame.ready = true;
+            cameraFrame.time = last_frame_time;
         }
 
         if (connection->PollQuitEvent())
@@ -219,24 +220,30 @@ void Tracker::CameraLoop()
     gui->SetStatus(false, StatusItem::Camera);
 }
 
-void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
+void Tracker::CopyFreshCameraImageTo(FrameData& frame)
 {
     /// TODO: replace with std::condition_variable
     // Sleep happens between each iteration when the mutex is not locked.
     for (;; std::this_thread::sleep_for(std::chrono::milliseconds(1)))
     {
         std::lock_guard<std::mutex> lock(cameraImageMutex);
-        if (imageReady)
+        if (cameraFrame.ready)
         {
-            imageReady = false;
+            cameraFrame.ready = false;
             // Swap metadata and pointers to pixel buffers.
-            cv::swap(image, cameraImage);
+            cv::swap(frame.image, cameraFrame.image);
             // We don't want to overwrite shared data so release the image unless we are the only user of it.
-            if (!(cameraImage.u && cameraImage.u->refcount == 1))
+            if (!(cameraFrame.image.u && cameraFrame.image.u->refcount == 1))
             {
-                cameraImage.release();
+                cameraFrame.image.release();
             }
+            frame.ready = true;
+            frame.time = cameraFrame.time;
             return;
+        }
+        else
+        {
+            frame.ready = false;
         }
     }
 }
@@ -270,7 +277,7 @@ void Tracker::StartCameraCalib()
 /// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    cv::Mat image;
+    FrameData frame;
     cv::Mat gray;
     cv::Mat drawImg;
 
@@ -311,7 +318,8 @@ void Tracker::CalibrateCameraCharuco()
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -535,7 +543,7 @@ void Tracker::CalibrateCamera()
     std::vector<cv::Point2f> corner_pts;
     bool success;
 
-    cv::Mat image;
+    FrameData frame;
     cv::Mat outImg;
 
     int i = 0;
@@ -543,13 +551,16 @@ void Tracker::CalibrateCamera()
 
     int picNum = user_config.cameraCalibSamples;
 
+    int image_cols, image_rows;
+
     while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
             return;
         }
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         int cols, rows;
         if (image.cols > image.rows)
@@ -589,11 +600,14 @@ void Tracker::CalibrateCamera()
 
         cv::resize(image, outImg, cv::Size(cols, rows));
         gui->UpdatePreview(outImg);
+
+        image_cols = image.cols;
+        image_rows = image.rows;
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
 
-    calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
+    calibrateCamera(objpoints, imgpoints, cv::Size(image_rows, image_cols), cameraMatrix, distCoeffs, R, T);
 
     RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
 
@@ -772,7 +786,7 @@ void Tracker::CalibrateTracker()
         boardRvec.push_back(cv::Vec3d());
         boardTvec.push_back(cv::Vec3d());
     }
-    cv::Mat image;
+    FrameData frame;
     cv::Mat outImg;
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
 
@@ -789,7 +803,8 @@ void Tracker::CalibrateTracker()
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
     {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
 
         std::chrono::steady_clock::time_point start;
         // clock for timing of detection
@@ -956,7 +971,8 @@ void Tracker::MainLoop()
     std::vector<std::vector<cv::Point2f>> corners;
     std::vector<cv::Point2f> centers;
 
-    cv::Mat image, drawImg, outImg, ycc, gray, cr;
+    FrameData frame;
+    cv::Mat drawImg, outImg, ycc, gray, cr;
 
     cv::Mat prevImg;
 
@@ -1057,7 +1073,8 @@ void Tracker::MainLoop()
     while (mainThreadRunning && cameraRunning) // run detection until camera is stopped or the start/stop button is pressed again
     {
 
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = image;
@@ -1090,7 +1107,7 @@ void Tracker::MainLoop()
         for (int i = 0; i < trackerNum; i++)
         {
 
-            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame_time).count();
+            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - frame.time).count();
 
             std::string word;
             std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - videoStream->latency));
@@ -1479,7 +1496,7 @@ void Tracker::MainLoop()
                 factor = 0.99;
 
             end = std::chrono::steady_clock::now();
-            double frameTime = std::chrono::duration<double>(end - last_frame_time).count();
+            double frameTime = std::chrono::duration<double>(end - frame.time).count();
 
             // Reject detected positions that are behind the camera
             if (trackerStatus[i].boardTvec[2]  < 0)
