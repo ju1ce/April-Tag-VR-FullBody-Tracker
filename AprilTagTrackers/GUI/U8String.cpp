@@ -4,7 +4,7 @@
 
 U8String::operator wxString() const
 {
-    return wxString::FromUTF8Unchecked(str);
+    return wxString::FromUTF8Unchecked(str.c_str());
 }
 
 U8StringView::operator wxString() const
