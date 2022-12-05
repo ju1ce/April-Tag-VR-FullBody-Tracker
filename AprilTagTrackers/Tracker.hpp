@@ -20,6 +20,13 @@ struct TrackerStatus
     cv::Point2d maskCenter;
 };
 
+struct FrameData
+{
+    bool ready = false;
+    cv::Mat image;
+    std::chrono::steady_clock::time_point time;
+};
+
 class Connection;
 
 class Tracker : public ITrackerControl
@@ -44,7 +51,7 @@ public:
 
 private:
     void CameraLoop();
-    void CopyFreshCameraImageTo(cv::Mat& image);
+    void CopyFreshCameraImageTo(FrameData& frame);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -64,11 +71,10 @@ private:
 
     cv::VideoCapture cap;
 
-    // cameraImage and imageReady are protected by cameraImageMutex.
+    // cameraFrame is protected by cameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
     std::mutex cameraImageMutex;
-    cv::Mat cameraImage;
-    bool imageReady = false;
+    FrameData cameraFrame;
 
     std::unique_ptr<Connection> connection;
 
