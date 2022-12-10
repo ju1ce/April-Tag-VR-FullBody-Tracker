@@ -1144,7 +1144,6 @@ void Tracker::MainLoop()
                 cv::Vec3d rvec = q.toRotVec();
                 cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
 
-                cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, rvec, tvec, 0.10f);
 
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
@@ -1422,7 +1421,7 @@ void Tracker::MainLoop()
             // convert rodriguez rotation to quaternion
             cv::Quatd q = cv::Quatd::createFromRvec(trackerStatus[i].boardRvec);
 
-            // cv::aruco::drawAxis(drawImg, user_config.camMat, user_config.distCoeffs, boardRvec[i], boardTvec[i], 0.05);
+            cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
 
             q = cv::Quatd{0, 0, 1, 0} * (wrotation * q) * cv::Quatd{0, 0, 1, 0};
 
