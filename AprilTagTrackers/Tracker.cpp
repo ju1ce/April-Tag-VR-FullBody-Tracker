@@ -1052,6 +1052,7 @@ void Tracker::MainLoop()
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = image;
+        cv::Mat drawImgMasked = cv::Mat::zeros(drawImg.size(), drawImg.type());
         april.convertToSingleChannel(image, gray);
 
         std::chrono::steady_clock::time_point start, end;
@@ -1130,6 +1131,7 @@ void Tracker::MainLoop()
             cv::projectPoints(point, rvec, tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
 
             cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
             if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
             {
@@ -1192,12 +1194,14 @@ void Tracker::MainLoop()
             {
                 cv::circle(mask, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), -1, 8, 0);
                 cv::circle(drawImg, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
+                cv::circle(drawImgMasked, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
             }
             else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
             {
                 int maskCenter = static_cast<int>(std::trunc(trackerStatus[i].maskCenter.x));
                 rectangle(mask, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), -1);
                 rectangle(drawImg, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
+                rectangle(drawImgMasked, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
             }
         }
 
@@ -1422,6 +1426,7 @@ void Tracker::MainLoop()
             cv::Quatd q = cv::Quatd::createFromRvec(trackerStatus[i].boardRvec);
 
             cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
+            cv::aruco::drawAxis(drawImgMasked, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
 
             q = cv::Quatd{0, 0, 1, 0} * (wrotation * q) * cv::Quatd{0, 0, 1, 0};
 
@@ -1516,9 +1521,27 @@ void Tracker::MainLoop()
             }
         }
 
+        // Copy only the inner white squares of detected markers into drawImgMasked
+        if (corners.size() > 0) {
+            cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+
+            for (int i = 0; i < corners.size(); i++)
+            {
+                std::vector<cv::Point> points;
+                for(int j = 0; j < corners[i].size(); j++){
+                    points.push_back(corners[i].at(j));
+                }
+                cv::fillConvexPoly(mask, points, cv::Scalar(255, 255, 255), 8, 0);
+            }
+
+            drawImg.copyTo(drawImgMasked, mask);
+        }
+
         // draw and display the detections
-        if (ids.size() > 0)
+        if (ids.size() > 0) {
             cv::aruco::drawDetectedMarkers(drawImg, corners, ids);
+            cv::aruco::drawDetectedMarkers(drawImgMasked, corners, ids);
+        }
 
         end = std::chrono::steady_clock::now();
         double frameTime = std::chrono::duration<double>(end - start).count();
@@ -1537,7 +1560,10 @@ void Tracker::MainLoop()
                 rows = image.rows * drawImgSize / image.cols;
             }
 
-            cv::resize(drawImg, outImg, cv::Size(cols, rows));
+            if (privacyMode)
+                cv::resize(drawImgMasked, outImg, cv::Size(cols, rows));
+            else
+                cv::resize(drawImg, outImg, cv::Size(cols, rows));
             cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {
