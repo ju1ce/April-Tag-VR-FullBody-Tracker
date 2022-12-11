@@ -5,7 +5,7 @@
 namespace utils
 {
 
-template <typename T, typename TResult, typename... TArgs>
+template <typename T, typename... TArgs>
 concept Callable = std::is_invocable_v<T, TArgs...>;
 template <typename T, typename TResult, typename... TArgs>
 concept CallableR = std::is_invocable_r_v<TResult, T, TArgs...>;
