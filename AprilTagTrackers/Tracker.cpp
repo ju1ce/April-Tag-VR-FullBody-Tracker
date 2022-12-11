@@ -188,6 +188,11 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, std::to_string(static_cast<int>(std::ceil(fps))), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
                 cv::putText(drawImg, resolution, cv::Point(10, 120), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
+
+                // Draw lines to identify midpoint on camera preview to help with calibration
+                cv::line(drawImg, cv::Point(img.cols/2, 0), cv::Point(img.cols/2, img.rows), cv::Scalar(0, 0, 255));
+                cv::line(drawImg, cv::Point(0, img.rows/2), cv::Point(img.cols, img.rows/2), cv::Scalar(0, 0, 255));
+
                 if (previewCameraCalibration)
                     drawCalibration(drawImg, *calib_config.cameras[0]);
                 gui->UpdatePreview(drawImg, PreviewId::Camera);
