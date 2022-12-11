@@ -81,7 +81,6 @@ void MyApp::OnUnhandledException()
 bool MyApp::OnExceptionInMainLoop()
 {
     ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnExceptionInMainLoop");
-    return true;
 }
 
 // cv::ErrorCallback
@@ -89,7 +88,6 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 {
     ATT_LOG_ERROR_AT(fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
     ATT_ABORT();
-    return 0;
 }
 
 // wxAssertHandler_t
