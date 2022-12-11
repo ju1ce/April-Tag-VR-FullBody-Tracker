@@ -173,6 +173,12 @@ function(att_target_enable_diagnostics target)
             /external:anglebrackets # any include <> is external
             # enable diagnostics
             /W4
+            # enable column numbers in diagnostics
+            /diagnostics:column
+            # various compiler and runtime checks
+            /sdl
+            # disable errors from using deprecated functions (set by /sdl)
+            /wd4996
         )
     else()
         target_compile_options(${target} PRIVATE
