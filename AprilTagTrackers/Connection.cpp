@@ -8,6 +8,8 @@
 #include <opencv2/core/affine.hpp>
 
 #include <filesystem>
+#include <ios>
+#include <sstream>
 #include <thread>
 
 Connection::Connection(const UserConfig& _user_config)
@@ -50,10 +52,12 @@ void Connection::Connect()
     {
         for (int i = 0; i < user_config.trackerNum - 1; i++)
         {
+            std::stringstream ss;
+            ss << "ApriltagTracker" << std::hex << (i + 1);
             TrackerConnection temp;
             temp.TrackerId = i + 1;
             temp.DriverId = i;
-            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            temp.Name = ss.str();
             connectedTrackers.push_back(temp);
         }
         connectedTrackers[0].Role = "TrackerRole_LeftFoot";
@@ -63,10 +67,12 @@ void Connection::Connect()
     {
         for (int i = 0; i < user_config.trackerNum - 1; i++)
         {
+            std::stringstream ss;
+            ss << "ApriltagTracker" << std::hex << (i + 1);
             TrackerConnection temp;
             temp.TrackerId = i + 1;
             temp.DriverId = i;
-            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            temp.Name = ss.str();
             temp.Role = "TrackerRole_Waist";
             connectedTrackers.push_back(temp);
         }
@@ -75,10 +81,12 @@ void Connection::Connect()
     {
         for (int i = 0; i < user_config.trackerNum; i++)
         {
+            std::stringstream ss;
+            ss << "ApriltagTracker" << std::hex << (i);
             TrackerConnection temp;
             temp.TrackerId = i;
             temp.DriverId = i;
-            temp.Name = "ApriltagTracker" + std::to_string(i);
+            temp.Name = ss.str();
             connectedTrackers.push_back(temp);
         }
         connectedTrackers[0].Role = "TrackerRole_Waist";
@@ -89,10 +97,12 @@ void Connection::Connect()
     {
         for (int i = 0; i < user_config.trackerNum; i++)
         {
+            std::stringstream ss;
+            ss << "ApriltagTracker" << std::hex << (i);
             TrackerConnection temp;
             temp.TrackerId = i;
             temp.DriverId = i;
-            temp.Name = "ApriltagTracker" + std::to_string(i);
+            temp.Name = ss.str();
             connectedTrackers.push_back(temp);
         }
         connectedTrackers[0].Role = "TrackerRole_LeftFoot";
@@ -102,10 +112,12 @@ void Connection::Connect()
     {
         for (int i = 0; i < user_config.trackerNum; i++)
         {
+            std::stringstream ss;
+            ss << "ApriltagTracker" << std::hex << (i + 1);
             TrackerConnection temp;
             temp.TrackerId = i;
             temp.DriverId = i;
-            temp.Name = "ApriltagTracker" + std::to_string(i + 1);
+            temp.Name = ss.str();
             temp.Role = "TrackerRole_Waist";
             connectedTrackers.push_back(temp);
         }
