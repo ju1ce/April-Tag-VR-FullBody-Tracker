@@ -347,3 +347,48 @@ Quaternion<double> mRot2Quat(const cv::Mat& m)
 
     return q;
 }
+
+void offsetFromBoardToCameraSpace(std::vector<cv::Point3f> points, cv::Vec3d boardRvec, cv::Vec3d boardTvec, std::vector<cv::Point3f>* out)
+{
+    //convert the board rotation vector to rotation matrix
+    cv::Mat rmat;
+    //for timing our detection
+    //start = clock();
+
+    cv::Rodrigues(boardRvec, rmat);
+
+
+    //with rotation matrix and translation vector we create the translation matrix
+    cv::Mat mtranslation = cv::Mat_<double>(4, 4);
+    for (int x = 0; x < 3; x++)
+    {
+        for (int y = 0; y < 3; y++)
+        {
+            mtranslation.at<double>(x, y) = rmat.at<double>(x, y);
+        }
+    }
+    for (int x = 0; x < 3; x++)
+    {
+        mtranslation.at<double>(x, 3) = 0;
+        mtranslation.at<double>(3, x) = 0;
+    }
+    mtranslation.at<double>(3, 3) = 1;
+
+    cv::Mat rpos = cv::Mat_<double>(4, 1);
+
+    //we transform our model marker from our marker space to board space
+    out->clear();
+    for (int y = 0; y < points.size(); y++)
+    {
+        //transform corner of model marker from vector to mat for calculation
+        rpos.at<double>(0, 0) = points[y].x;
+        rpos.at<double>(1, 0) = points[y].y;
+        rpos.at<double>(2, 0) = points[y].z;
+        rpos.at<double>(3, 0) = 1;
+
+        //multiply point in local space with the translation matrix of our board to put it into camera space
+        rpos = mtranslation * rpos;
+
+        out->push_back(cv::Point3f(rpos.at<double>(0, 0), rpos.at<double>(1, 0), rpos.at<double>(2, 0)));
+    }
+}

@@ -1002,37 +1002,42 @@ void Tracker::MainLoop()
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     std::vector<std::vector<int>> boardIds;
     std::vector<std::vector<std::vector<cv::Point3f>>> boardCorners;
+    std::vector<cv::Point3f > boardCenters;
 
     RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
     RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
+
+    for (int i = 0; i < this->trackers.size(); i++)
+    {
+        boardCorners.push_back(this->trackers[i]->objPoints);
+        boardIds.push_back(this->trackers[i]->ids);
+        boardCenters.push_back(cv::Point3f(0, 0, 0));
+
+        int numOfCorners = 0;
+        for (int j = 0; j < boardCorners[i].size(); j++)
+        {
+            for (int k = 0; k < boardCorners[i][j].size(); k++)
+            {
+                boardCenters[i].x += boardCorners[i][j][k].x;
+                boardCenters[i].y += boardCorners[i][j][k].y;
+                boardCenters[i].z += boardCorners[i][j][k].z;
+                numOfCorners++;
+            }
+        }
+        boardCenters[i] /= numOfCorners;
+    }
 
     // by default, trackers have the center at the center of the main marker. If "Use centers of trackers" is checked, we move it to the center of all marker corners.
     if (user_config.trackerCalibCenters)
     {
         for (int i = 0; i < this->trackers.size(); i++)
         {
-            boardCorners.push_back(this->trackers[i]->objPoints);
-            boardIds.push_back(this->trackers[i]->ids);
-
-            cv::Point3f boardCenter = cv::Point3f(0, 0, 0);
-            int numOfCorners = 0;
             for (int j = 0; j < boardCorners[i].size(); j++)
             {
                 for (int k = 0; k < boardCorners[i][j].size(); k++)
                 {
-                    boardCenter.x += boardCorners[i][j][k].x;
-                    boardCenter.y += boardCorners[i][j][k].y;
-                    boardCenter.z += boardCorners[i][j][k].z;
-                    numOfCorners++;
-                }
-            }
-            boardCenter /= numOfCorners;
-
-            for (int j = 0; j < boardCorners[i].size(); j++)
-            {
-                for (int k = 0; k < boardCorners[i][j].size(); k++)
-                {
-                    boardCorners[i][j][k] -= boardCenter;
+                    boardCorners[i][j][k] -= boardCenters[i];
+                    boardCenters[i] = cv::Point3f(0, 0, 0);
                 }
             }
 
@@ -1120,20 +1125,11 @@ void Tracker::MainLoop()
             // transform boards position from steamvr space to camera space based on our calibration data
 
             rpos = wtransform.inv() * rpos;
-            std::vector<cv::Point3d> point;
-            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]));
-            point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
 
-            std::vector<cv::Point2d> projected;
-            cv::Vec3d rvec, tvec;
+            cv::Vec3d rvec;
+            cv::Vec3d tvec;
 
-            // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
-            cv::projectPoints(point, rvec, tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
-
-            cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
-            cv::circle(drawImgMasked, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
-
-            if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
+            if (tracker_pose_valid == 0)
             {
                 cv::Quatd q{qw, qx, qy, qz};
 
@@ -1143,17 +1139,46 @@ void Tracker::MainLoop()
                     q.normalize() *
                     cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
 
-                cv::Vec3d rvec = q.toRotVec();
-                cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
+                rvec = q.toRotVec();
+                tvec = cv::Vec3d(rpos[0], rpos[1], rpos[2]);
+            }
+            else {
+                tvec = trackerStatus[i].boardTvec;
+                rvec = trackerStatus[i].boardRvec;
+            }
 
+            std::vector<cv::Point3f> offsetin, offsetout;
+            offsetin.push_back(boardCenters[i]);
+            offsetFromBoardToCameraSpace(offsetin, rvec, tvec, &offsetout);
 
+            std::vector<cv::Point3d> point;
+            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]));
+            point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
+            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]) + cv::Point3d(offsetout[0]));
+            point.push_back(cv::Point3d(trackerStatus[i].boardTvec) + cv::Point3d(offsetout[0]));
+
+            std::vector<cv::Point2d> projected;
+            cv::Vec3d identity_rvec, identity_tvec;
+
+            // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
+            cv::projectPoints(point, identity_rvec, identity_tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
+
+            cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+            cv::circle(drawImg, projected[2], 5, cv::Scalar(0, 255, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[2], 5, cv::Scalar(0, 255, 255), 2, 8, 0);
+            cv::circle(drawImg, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
+
+            if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
+            {
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
-                    trackerStatus[i].maskCenter = projected[0];
+                    trackerStatus[i].maskCenter = projected[2];
                 }
                 else
                 {
-                    trackerStatus[i].maskCenter = projected[1];
+                    trackerStatus[i].maskCenter = projected[3];
                 }
 
                 trackerStatus[i].boardFound = true;
@@ -1166,7 +1191,7 @@ void Tracker::MainLoop()
             {
                 if (trackerStatus[i].boardFound) // if pose is not valid, set everything based on previous known position
                 {
-                    trackerStatus[i].maskCenter = projected[1];
+                    trackerStatus[i].maskCenter = projected[3];
                 }
 
                 trackerStatus[i].boardFoundDriver = false; // do we really need to do this? might be unnecessary
