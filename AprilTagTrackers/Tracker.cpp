@@ -966,6 +966,7 @@ void Tracker::MainLoop()
         trackerStatus[i].boardRvec = cv::Vec3d(0, 0, 0);
         trackerStatus[i].boardTvec = cv::Vec3d(0, 0, 0);
         trackerStatus[i].prevLocValues = std::vector<std::vector<double>>(7, std::vector<double>());
+        trackerStatus[i].last_update_timestamp = std::chrono::milliseconds(0);
     }
 
     // previous values, used for moving median to remove any outliers.
@@ -1066,6 +1067,9 @@ void Tracker::MainLoop()
 
         bool circularWindow = videoStream->circularWindow;
 
+        //last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
+        std::vector<int> tracker_pose_valid = std::vector<int>(trackerNum, -1);
+
         // if any tracker was lost for longer than 20 frames, mark circularWindow as false
         for (int i = 0; i < trackerNum; i++)
         {
@@ -1105,9 +1109,6 @@ void Tracker::MainLoop()
             double qy;
             double qz;
 
-            // last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
-            int tracker_pose_valid;
-
             // read to our variables
             ret >> idx;
             ret >> a;
@@ -1117,7 +1118,7 @@ void Tracker::MainLoop()
             ret >> qx;
             ret >> qy;
             ret >> qz;
-            ret >> tracker_pose_valid;
+            ret >> tracker_pose_valid[i];
 
             cv::Vec3d rpos{a, b, c};
             CoordTransformOVR(rpos);
@@ -1129,7 +1130,7 @@ void Tracker::MainLoop()
             cv::Vec3d rvec;
             cv::Vec3d tvec;
 
-            if (tracker_pose_valid == 0)
+            if (tracker_pose_valid[i] == 0)
             {
                 cv::Quatd q{qw, qx, qy, qz};
 
@@ -1170,7 +1171,7 @@ void Tracker::MainLoop()
             cv::circle(drawImg, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
             cv::circle(drawImgMasked, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
 
-            if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
+            if (tracker_pose_valid[i] == 0) // if the pose from steamvr was valid, save the predicted position and rotation
             {
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
@@ -1352,6 +1353,7 @@ void Tracker::MainLoop()
             calibControllerLastPress = std::chrono::steady_clock::now();
         }
         april.detectMarkers(gray, &corners, &ids, &centers, trackers);
+        std::chrono::milliseconds current_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
         for (int i = 0; i < trackerNum; ++i)
         {
 
@@ -1371,6 +1373,14 @@ void Tracker::MainLoop()
                     trackerStatus[i].boardFound = false;
 
                     continue;
+                }
+                else
+                {
+                    if ((tracker_pose_valid[i] != 0) || ((current_timestamp.count() - trackerStatus[i].last_update_timestamp.count()) <= 100.0))
+                    {
+                        trackerStatus[i].last_update_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+                    }
+
                 }
             }
             catch (const std::exception& e)
@@ -1496,6 +1506,10 @@ void Tracker::MainLoop()
                     continue;
                 }
             }
+
+            // Don't send tracker if more than 100 miliseconds have passed since tracker was last detected
+            if ((current_timestamp.count() - trackerStatus[i].last_update_timestamp.count()) > 100.0)
+                continue;
 
             // send all the values
             // frame time is how much time passed since frame was acquired.
