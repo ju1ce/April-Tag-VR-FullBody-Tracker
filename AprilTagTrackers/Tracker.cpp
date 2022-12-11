@@ -969,6 +969,7 @@ void Tracker::MainLoop()
         trackerStatus[i].boardTvec = cv::Vec3d(0, 0, 0);
         trackerStatus[i].prevLocValues = std::vector<std::vector<double>>(7, std::vector<double>());
         trackerStatus[i].last_update_timestamp = std::chrono::milliseconds(0);
+        trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0));
     }
 
     // previous values, used for moving median to remove any outliers.
@@ -1178,10 +1179,12 @@ void Tracker::MainLoop()
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
                     trackerStatus[i].maskCenter = projected[2];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[2].z);
                 }
                 else
                 {
                     trackerStatus[i].maskCenter = projected[3];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[3].z);
                 }
 
                 trackerStatus[i].boardFound = true;
@@ -1195,6 +1198,7 @@ void Tracker::MainLoop()
                 if (trackerStatus[i].boardFound) // if pose is not valid, set everything based on previous known position
                 {
                     trackerStatus[i].maskCenter = projected[3];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[3].z);
                 }
 
                 trackerStatus[i].boardFoundDriver = false; // do we really need to do this? might be unnecessary
@@ -1205,8 +1209,6 @@ void Tracker::MainLoop()
         cv::Mat mask = cv::Mat::zeros(gray.size(), gray.type());
 
         cv::Mat dstImage = cv::Mat::zeros(gray.size(), gray.type());
-
-        int size = static_cast<int>(std::trunc(gray.rows * videoStream->searchWindow));
 
         bool doMasking = false;
 
@@ -1220,16 +1222,18 @@ void Tracker::MainLoop()
             doMasking = true;
             if (circularWindow) // if circular window is set mask a circle around the predicted tracker point
             {
-                cv::circle(mask, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), -1, 8, 0);
-                cv::circle(drawImg, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
-                cv::circle(drawImgMasked, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
+                cv::circle(mask, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), -1, 8, 0);
+                cv::circle(drawImg, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), 2, 8, 0);
+                cv::circle(drawImgMasked, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), 2, 8, 0);
             }
             else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
             {
                 int maskCenter = static_cast<int>(std::trunc(trackerStatus[i].maskCenter.x));
-                rectangle(mask, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), -1);
-                rectangle(drawImg, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
-                rectangle(drawImgMasked, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
+                auto lefttop = cv::Point(maskCenter - trackerStatus[i].searchSize, 0);
+                auto bottomright = cv::Point(maskCenter + trackerStatus[i].searchSize, image.rows);
+                rectangle(mask, lefttop, bottomright, cv::Scalar(255, 0, 0), -1);
+                rectangle(drawImg, lefttop, bottomright, cv::Scalar(255, 0, 0), 3);
+                rectangle(drawImgMasked, lefttop, bottomright, cv::Scalar(255, 0, 0), 3);
             }
         }
 
