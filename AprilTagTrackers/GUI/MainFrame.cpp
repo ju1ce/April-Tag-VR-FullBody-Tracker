@@ -248,7 +248,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
             {
                 tracker->Start();
             }})
-        .Add(Button{"Preview output", [this](auto& evt)
+        .Add(Button{"Preview output", [this](auto&)
             {
                 SetPreviewVisible(true);
             }});
