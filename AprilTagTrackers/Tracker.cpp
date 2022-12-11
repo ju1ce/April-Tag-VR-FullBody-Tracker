@@ -380,13 +380,8 @@ void Tracker::CalibrateCameraCharuco()
         preview.Update(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
-        // framesSinceLast++;
         if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 1)
         {
-            // framesSinceLast = 0;
-            timeOfLast = std::chrono::steady_clock::now();
-            // if any button was pressed
-
             // detect our markers
             cv::aruco::refineDetectedMarkers(gray, board, markerCorners, markerIds, rejectedCorners);
 
@@ -424,6 +419,8 @@ void Tracker::CalibrateCameraCharuco()
                     }
                 }
             }
+
+            timeOfLast = std::chrono::steady_clock::now();
         }
     }
 
