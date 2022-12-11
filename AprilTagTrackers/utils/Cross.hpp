@@ -44,6 +44,14 @@
             ;
 #endif
 
+#if defined(ATT_COMP_MSVC)
+#   define ATT_ALWAYS_INLINE(p_proto) __forceinline p_proto
+#elif defined(ATT_COMP_GCC) || defined(ATT_COMP_CLANG)
+#   define ATT_ALWAYS_INLINE(p_proto) p_proto __attribute__((always_inline))
+#else
+#   define ATT_ALWAYS_INLINE(p_proto) p_proto
+#endif
+
 #define ATT_DETAIL_PRAGMA(x) _Pragma(#x)
 
 #ifdef ATT_COMP_MSVC
