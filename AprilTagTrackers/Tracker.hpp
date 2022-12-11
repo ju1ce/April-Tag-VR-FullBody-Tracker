@@ -61,7 +61,7 @@ private:
     cv::Quatd wrotation;
     double wscale = 1;
 
-    int drawImgSize = 480;
+    int drawImgSize = 1385;
 
     cv::VideoCapture cap;
 
