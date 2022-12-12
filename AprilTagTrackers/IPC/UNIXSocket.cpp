@@ -38,7 +38,7 @@ bool UNIXSocket::send(const std::string& msg, std::string& resp)
         return false;
     }
 
-    if (::send(socket, msg.c_str(), msg.size(), 0) == -1)
+    if (::send(socket, msg.c_str(), msg.size() + 1, 0) == -1)
     {
         std::cerr << "Failed to send buffer to socket " << this->socket_path << std::endl;
         close(socket);

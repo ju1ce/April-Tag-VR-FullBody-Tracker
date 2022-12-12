@@ -50,6 +50,7 @@ public:
     REFLECTABLE_FIELD(cfg::Validated<int>, markersPerTracker){45, cfg::GreaterEqual(1)};
     REFLECTABLE_FIELD(bool, disableOpenVrApi) = false;
     REFLECTABLE_FIELD(cfg::List<cfg::VideoStream>, videoStreams){1};
+    REFLECTABLE_FIELD(std::string, ipcAddr) = "ApriltagPipeIn";
     REFLECTABLE_END;
 };
 

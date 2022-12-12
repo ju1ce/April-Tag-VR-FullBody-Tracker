@@ -31,6 +31,7 @@ public:
     bool manualRecalibrate = false;
     bool multicamAutocalib = false;
     bool lockHeightCalib = false;
+    bool privacyMode = false;
 
 protected:
     /// Not set during tracker contstruction

@@ -188,6 +188,11 @@ void Tracker::CameraLoop()
                 cv::putText(drawImg, std::to_string(static_cast<int>(std::ceil(fps))), cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
                 cv::putText(drawImg, resolution, cv::Point(10, 120), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
+
+                // Draw lines to identify midpoint on camera preview to help with calibration
+                cv::line(drawImg, cv::Point(img.cols/2, 0), cv::Point(img.cols/2, img.rows), cv::Scalar(0, 0, 255));
+                cv::line(drawImg, cv::Point(0, img.rows/2), cv::Point(img.cols, img.rows/2), cv::Scalar(0, 0, 255));
+
                 if (previewCameraCalibration)
                     drawCalibration(drawImg, *calib_config.cameras[0]);
                 gui->UpdatePreview(drawImg, PreviewId::Camera);
@@ -196,14 +201,15 @@ void Tracker::CameraLoop()
         {
             std::lock_guard<std::mutex> lock(cameraImageMutex);
             // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
-            // The pixel buffer from cameraImage can be reused if the size and format matches.
-            cv::swap(img, cameraImage);
+            // The pixel buffer from cameraFrame.image can be reused if the size and format matches.
+            cv::swap(img, cameraFrame.image);
             // TODO: does opencv really care if img.read is called on the wrong size of matrix?
-            if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
+            if (img.size() != cameraFrame.image.size() || img.flags != cameraFrame.image.flags)
             {
                 img.release();
             }
-            imageReady = true;
+            cameraFrame.ready = true;
+            cameraFrame.time = last_frame_time;
         }
 
         if (connection->PollQuitEvent())
@@ -214,24 +220,30 @@ void Tracker::CameraLoop()
     gui->SetStatus(false, StatusItem::Camera);
 }
 
-void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
+void Tracker::CopyFreshCameraImageTo(FrameData& frame)
 {
     /// TODO: replace with std::condition_variable
     // Sleep happens between each iteration when the mutex is not locked.
     for (;; std::this_thread::sleep_for(std::chrono::milliseconds(1)))
     {
         std::lock_guard<std::mutex> lock(cameraImageMutex);
-        if (imageReady)
+        if (cameraFrame.ready)
         {
-            imageReady = false;
+            cameraFrame.ready = false;
             // Swap metadata and pointers to pixel buffers.
-            cv::swap(image, cameraImage);
+            cv::swap(frame.image, cameraFrame.image);
             // We don't want to overwrite shared data so release the image unless we are the only user of it.
-            if (!(cameraImage.u && cameraImage.u->refcount == 1))
+            if (!(cameraFrame.image.u && cameraFrame.image.u->refcount == 1))
             {
-                cameraImage.release();
+                cameraFrame.image.release();
             }
+            frame.ready = true;
+            frame.time = cameraFrame.time;
             return;
+        }
+        else
+        {
+            frame.ready = false;
         }
     }
 }
@@ -265,7 +277,7 @@ void Tracker::StartCameraCalib()
 /// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    cv::Mat image;
+    FrameData frame;
     cv::Mat gray;
     cv::Mat drawImg;
 
@@ -306,7 +318,8 @@ void Tracker::CalibrateCameraCharuco()
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         int cols, rows;
         if (image.cols > image.rows)
         {
@@ -380,13 +393,8 @@ void Tracker::CalibrateCameraCharuco()
         preview.Update(outImg);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
-        // framesSinceLast++;
         if (std::chrono::duration<double>(std::chrono::steady_clock::now() - timeOfLast).count() > 1)
         {
-            // framesSinceLast = 0;
-            timeOfLast = std::chrono::steady_clock::now();
-            // if any button was pressed
-
             // detect our markers
             cv::aruco::refineDetectedMarkers(gray, board, markerCorners, markerIds, rejectedCorners);
 
@@ -424,6 +432,8 @@ void Tracker::CalibrateCameraCharuco()
                     }
                 }
             }
+
+            timeOfLast = std::chrono::steady_clock::now();
         }
     }
 
@@ -533,7 +543,7 @@ void Tracker::CalibrateCamera()
     std::vector<cv::Point2f> corner_pts;
     bool success;
 
-    cv::Mat image;
+    FrameData frame;
     cv::Mat outImg;
 
     int i = 0;
@@ -541,13 +551,16 @@ void Tracker::CalibrateCamera()
 
     int picNum = user_config.cameraCalibSamples;
 
+    int image_cols, image_rows;
+
     while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
             return;
         }
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         int cols, rows;
         if (image.cols > image.rows)
@@ -587,11 +600,14 @@ void Tracker::CalibrateCamera()
 
         cv::resize(image, outImg, cv::Size(cols, rows));
         gui->UpdatePreview(outImg);
+
+        image_cols = image.cols;
+        image_rows = image.rows;
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
 
-    calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
+    calibrateCamera(objpoints, imgpoints, cv::Size(image_rows, image_cols), cameraMatrix, distCoeffs, R, T);
 
     RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
 
@@ -770,7 +786,7 @@ void Tracker::CalibrateTracker()
         boardRvec.push_back(cv::Vec3d());
         boardTvec.push_back(cv::Vec3d());
     }
-    cv::Mat image;
+    FrameData frame;
     cv::Mat outImg;
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
 
@@ -787,7 +803,8 @@ void Tracker::CalibrateTracker()
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
     {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
 
         std::chrono::steady_clock::time_point start;
         // clock for timing of detection
@@ -954,7 +971,8 @@ void Tracker::MainLoop()
     std::vector<std::vector<cv::Point2f>> corners;
     std::vector<cv::Point2f> centers;
 
-    cv::Mat image, drawImg, outImg, ycc, gray, cr;
+    FrameData frame;
+    cv::Mat drawImg, outImg, ycc, gray, cr;
 
     cv::Mat prevImg;
 
@@ -966,6 +984,8 @@ void Tracker::MainLoop()
         trackerStatus[i].boardRvec = cv::Vec3d(0, 0, 0);
         trackerStatus[i].boardTvec = cv::Vec3d(0, 0, 0);
         trackerStatus[i].prevLocValues = std::vector<std::vector<double>>(7, std::vector<double>());
+        trackerStatus[i].last_update_timestamp = std::chrono::milliseconds(0);
+        trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0));
     }
 
     // previous values, used for moving median to remove any outliers.
@@ -1002,37 +1022,42 @@ void Tracker::MainLoop()
     std::vector<cv::Ptr<cv::aruco::Board>> trackers;
     std::vector<std::vector<int>> boardIds;
     std::vector<std::vector<std::vector<cv::Point3f>>> boardCorners;
+    std::vector<cv::Point3f > boardCenters;
 
     RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
     RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
+
+    for (int i = 0; i < this->trackers.size(); i++)
+    {
+        boardCorners.push_back(this->trackers[i]->objPoints);
+        boardIds.push_back(this->trackers[i]->ids);
+        boardCenters.push_back(cv::Point3f(0, 0, 0));
+
+        int numOfCorners = 0;
+        for (int j = 0; j < boardCorners[i].size(); j++)
+        {
+            for (int k = 0; k < boardCorners[i][j].size(); k++)
+            {
+                boardCenters[i].x += boardCorners[i][j][k].x;
+                boardCenters[i].y += boardCorners[i][j][k].y;
+                boardCenters[i].z += boardCorners[i][j][k].z;
+                numOfCorners++;
+            }
+        }
+        boardCenters[i] /= numOfCorners;
+    }
 
     // by default, trackers have the center at the center of the main marker. If "Use centers of trackers" is checked, we move it to the center of all marker corners.
     if (user_config.trackerCalibCenters)
     {
         for (int i = 0; i < this->trackers.size(); i++)
         {
-            boardCorners.push_back(this->trackers[i]->objPoints);
-            boardIds.push_back(this->trackers[i]->ids);
-
-            cv::Point3f boardCenter = cv::Point3f(0, 0, 0);
-            int numOfCorners = 0;
             for (int j = 0; j < boardCorners[i].size(); j++)
             {
                 for (int k = 0; k < boardCorners[i][j].size(); k++)
                 {
-                    boardCenter.x += boardCorners[i][j][k].x;
-                    boardCenter.y += boardCorners[i][j][k].y;
-                    boardCenter.z += boardCorners[i][j][k].z;
-                    numOfCorners++;
-                }
-            }
-            boardCenter /= numOfCorners;
-
-            for (int j = 0; j < boardCorners[i].size(); j++)
-            {
-                for (int k = 0; k < boardCorners[i][j].size(); k++)
-                {
-                    boardCorners[i][j][k] -= boardCenter;
+                    boardCorners[i][j][k] -= boardCenters[i];
+                    boardCenters[i] = cv::Point3f(0, 0, 0);
                 }
             }
 
@@ -1048,10 +1073,12 @@ void Tracker::MainLoop()
     while (mainThreadRunning && cameraRunning) // run detection until camera is stopped or the start/stop button is pressed again
     {
 
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = image;
+        cv::Mat drawImgMasked = cv::Mat::zeros(drawImg.size(), drawImg.type());
         april.convertToSingleChannel(image, gray);
 
         std::chrono::steady_clock::time_point start, end;
@@ -1059,6 +1086,9 @@ void Tracker::MainLoop()
         start = std::chrono::steady_clock::now();
 
         bool circularWindow = videoStream->circularWindow;
+
+        //last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
+        std::vector<int> tracker_pose_valid = std::vector<int>(trackerNum, -1);
 
         // if any tracker was lost for longer than 20 frames, mark circularWindow as false
         for (int i = 0; i < trackerNum; i++)
@@ -1077,7 +1107,7 @@ void Tracker::MainLoop()
         for (int i = 0; i < trackerNum; i++)
         {
 
-            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - last_frame_time).count();
+            double frameTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - frame.time).count();
 
             std::string word;
             std::istringstream ret = connection->Send("gettrackerpose " + std::to_string(i) + " " + std::to_string(-frameTime - videoStream->latency));
@@ -1099,9 +1129,6 @@ void Tracker::MainLoop()
             double qy;
             double qz;
 
-            // last is if pose is valid: 0 is valid, 1 is late (hasnt been updated for more than 0.2 secs), -1 means invalid and is only zeros
-            int tracker_pose_valid;
-
             // read to our variables
             ret >> idx;
             ret >> a;
@@ -1111,7 +1138,7 @@ void Tracker::MainLoop()
             ret >> qx;
             ret >> qy;
             ret >> qz;
-            ret >> tracker_pose_valid;
+            ret >> tracker_pose_valid[i];
 
             cv::Vec3d rpos{a, b, c};
             CoordTransformOVR(rpos);
@@ -1119,19 +1146,11 @@ void Tracker::MainLoop()
             // transform boards position from steamvr space to camera space based on our calibration data
 
             rpos = wtransform.inv() * rpos;
-            std::vector<cv::Point3d> point;
-            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]));
-            point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
 
-            std::vector<cv::Point2d> projected;
-            cv::Vec3d rvec, tvec;
+            cv::Vec3d rvec;
+            cv::Vec3d tvec;
 
-            // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
-            cv::projectPoints(point, rvec, tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
-
-            cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
-
-            if (tracker_pose_valid == 0) // if the pose from steamvr was valid, save the predicted position and rotation
+            if (tracker_pose_valid[i] == 0)
             {
                 cv::Quatd q{qw, qx, qy, qz};
 
@@ -1141,18 +1160,48 @@ void Tracker::MainLoop()
                     q.normalize() *
                     cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
 
-                cv::Vec3d rvec = q.toRotVec();
-                cv::Vec3d tvec{rpos[0], rpos[1], rpos[2]};
+                rvec = q.toRotVec();
+                tvec = cv::Vec3d(rpos[0], rpos[1], rpos[2]);
+            }
+            else {
+                tvec = trackerStatus[i].boardTvec;
+                rvec = trackerStatus[i].boardRvec;
+            }
 
-                cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, rvec, tvec, 0.10f);
+            std::vector<cv::Point3f> offsetin, offsetout;
+            offsetin.push_back(boardCenters[i]);
+            offsetFromBoardToCameraSpace(offsetin, rvec, tvec, &offsetout);
 
+            std::vector<cv::Point3d> point;
+            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]));
+            point.push_back(cv::Point3d(trackerStatus[i].boardTvec));
+            point.push_back(cv::Point3d(rpos[0], rpos[1], rpos[2]) + cv::Point3d(offsetout[0]));
+            point.push_back(cv::Point3d(trackerStatus[i].boardTvec) + cv::Point3d(offsetout[0]));
+
+            std::vector<cv::Point2d> projected;
+            cv::Vec3d identity_rvec, identity_tvec;
+
+            // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
+            cv::projectPoints(point, identity_rvec, identity_tvec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
+
+            cv::circle(drawImg, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[0], 5, cv::Scalar(0, 0, 255), 2, 8, 0);
+            cv::circle(drawImg, projected[2], 5, cv::Scalar(0, 255, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[2], 5, cv::Scalar(0, 255, 255), 2, 8, 0);
+            cv::circle(drawImg, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
+            cv::circle(drawImgMasked, projected[3], 5, cv::Scalar(255, 0, 255), 2, 8, 0);
+
+            if (tracker_pose_valid[i] == 0) // if the pose from steamvr was valid, save the predicted position and rotation
+            {
                 if (!trackerStatus[i].boardFound) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
-                    trackerStatus[i].maskCenter = projected[0];
+                    trackerStatus[i].maskCenter = projected[2];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[2].z);
                 }
                 else
                 {
-                    trackerStatus[i].maskCenter = projected[1];
+                    trackerStatus[i].maskCenter = projected[3];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[3].z);
                 }
 
                 trackerStatus[i].boardFound = true;
@@ -1165,7 +1214,8 @@ void Tracker::MainLoop()
             {
                 if (trackerStatus[i].boardFound) // if pose is not valid, set everything based on previous known position
                 {
-                    trackerStatus[i].maskCenter = projected[1];
+                    trackerStatus[i].maskCenter = projected[3];
+                    trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0)/point[3].z);
                 }
 
                 trackerStatus[i].boardFoundDriver = false; // do we really need to do this? might be unnecessary
@@ -1176,8 +1226,6 @@ void Tracker::MainLoop()
         cv::Mat mask = cv::Mat::zeros(gray.size(), gray.type());
 
         cv::Mat dstImage = cv::Mat::zeros(gray.size(), gray.type());
-
-        int size = static_cast<int>(std::trunc(gray.rows * videoStream->searchWindow));
 
         bool doMasking = false;
 
@@ -1191,14 +1239,18 @@ void Tracker::MainLoop()
             doMasking = true;
             if (circularWindow) // if circular window is set mask a circle around the predicted tracker point
             {
-                cv::circle(mask, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), -1, 8, 0);
-                cv::circle(drawImg, trackerStatus[i].maskCenter, size, cv::Scalar(255, 0, 0), 2, 8, 0);
+                cv::circle(mask, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), -1, 8, 0);
+                cv::circle(drawImg, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), 2, 8, 0);
+                cv::circle(drawImgMasked, trackerStatus[i].maskCenter, trackerStatus[i].searchSize, cv::Scalar(255, 0, 0), 2, 8, 0);
             }
             else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
             {
                 int maskCenter = static_cast<int>(std::trunc(trackerStatus[i].maskCenter.x));
-                rectangle(mask, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), -1);
-                rectangle(drawImg, cv::Point(maskCenter - size, 0), cv::Point(maskCenter + size, image.rows), cv::Scalar(255, 0, 0), 3);
+                auto lefttop = cv::Point(maskCenter - trackerStatus[i].searchSize, 0);
+                auto bottomright = cv::Point(maskCenter + trackerStatus[i].searchSize, image.rows);
+                rectangle(mask, lefttop, bottomright, cv::Scalar(255, 0, 0), -1);
+                rectangle(drawImg, lefttop, bottomright, cv::Scalar(255, 0, 0), 3);
+                rectangle(drawImgMasked, lefttop, bottomright, cv::Scalar(255, 0, 0), 3);
             }
         }
 
@@ -1324,6 +1376,7 @@ void Tracker::MainLoop()
             calibControllerLastPress = std::chrono::steady_clock::now();
         }
         april.detectMarkers(gray, &corners, &ids, &centers, trackers);
+        std::chrono::milliseconds current_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
         for (int i = 0; i < trackerNum; ++i)
         {
 
@@ -1343,6 +1396,14 @@ void Tracker::MainLoop()
                     trackerStatus[i].boardFound = false;
 
                     continue;
+                }
+                else
+                {
+                    if ((tracker_pose_valid[i] != 0) || ((current_timestamp.count() - trackerStatus[i].last_update_timestamp.count()) <= 100.0))
+                    {
+                        trackerStatus[i].last_update_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+                    }
+
                 }
             }
             catch (const std::exception& e)
@@ -1422,7 +1483,8 @@ void Tracker::MainLoop()
             // convert rodriguez rotation to quaternion
             cv::Quatd q = cv::Quatd::createFromRvec(trackerStatus[i].boardRvec);
 
-            // cv::aruco::drawAxis(drawImg, user_config.camMat, user_config.distCoeffs, boardRvec[i], boardTvec[i], 0.05);
+            cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
+            cv::aruco::drawAxis(drawImgMasked, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
 
             q = cv::Quatd{0, 0, 1, 0} * (wrotation * q) * cv::Quatd{0, 0, 1, 0};
 
@@ -1434,7 +1496,7 @@ void Tracker::MainLoop()
                 factor = 0.99;
 
             end = std::chrono::steady_clock::now();
-            double frameTime = std::chrono::duration<double>(end - last_frame_time).count();
+            double frameTime = std::chrono::duration<double>(end - frame.time).count();
 
             // Reject detected positions that are behind the camera
             if (trackerStatus[i].boardTvec[2]  < 0)
@@ -1467,6 +1529,10 @@ void Tracker::MainLoop()
                     continue;
                 }
             }
+
+            // Don't send tracker if more than 100 miliseconds have passed since tracker was last detected
+            if ((current_timestamp.count() - trackerStatus[i].last_update_timestamp.count()) > 100.0)
+                continue;
 
             // send all the values
             // frame time is how much time passed since frame was acquired.
@@ -1517,9 +1583,27 @@ void Tracker::MainLoop()
             }
         }
 
+        // Copy only the inner white squares of detected markers into drawImgMasked
+        if (corners.size() > 0) {
+            cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
+
+            for (int i = 0; i < corners.size(); i++)
+            {
+                std::vector<cv::Point> points;
+                for(int j = 0; j < corners[i].size(); j++){
+                    points.push_back(corners[i].at(j));
+                }
+                cv::fillConvexPoly(mask, points, cv::Scalar(255, 255, 255), 8, 0);
+            }
+
+            drawImg.copyTo(drawImgMasked, mask);
+        }
+
         // draw and display the detections
-        if (ids.size() > 0)
+        if (ids.size() > 0) {
             cv::aruco::drawDetectedMarkers(drawImg, corners, ids);
+            cv::aruco::drawDetectedMarkers(drawImgMasked, corners, ids);
+        }
 
         end = std::chrono::steady_clock::now();
         double frameTime = std::chrono::duration<double>(end - start).count();
@@ -1538,7 +1622,10 @@ void Tracker::MainLoop()
                 rows = image.rows * drawImgSize / image.cols;
             }
 
-            cv::resize(drawImg, outImg, cv::Size(cols, rows));
+            if (privacyMode)
+                cv::resize(drawImgMasked, outImg, cv::Size(cols, rows));
+            else
+                cv::resize(drawImg, outImg, cv::Size(cols, rows));
             cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {

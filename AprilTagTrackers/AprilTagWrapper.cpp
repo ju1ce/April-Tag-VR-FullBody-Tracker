@@ -14,7 +14,7 @@ AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfi
     : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
 {
     td->quad_decimate = user_config.videoStreams[0]->quadDecimate;
-    td->nthreads = 4; // TODO: make nthreads a parameter or calculate it somehow
+    td->nthreads = 1; // TODO: make nthreads a parameter or calculate it somehow
     apriltag_family_t* tf;
     if (user_config.markerLibrary == APRILTAG_CIRCULAR)
         tf = tagCircle21h7_create();

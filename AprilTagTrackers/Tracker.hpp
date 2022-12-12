@@ -18,6 +18,15 @@ struct TrackerStatus
     bool boardFound, boardFoundDriver;
     std::vector<std::vector<double>> prevLocValues;
     cv::Point2d maskCenter;
+    std::chrono::milliseconds last_update_timestamp;
+    int searchSize;
+};
+
+struct FrameData
+{
+    bool ready = false;
+    cv::Mat image;
+    std::chrono::steady_clock::time_point time;
 };
 
 class Connection;
@@ -44,7 +53,7 @@ public:
 
 private:
     void CameraLoop();
-    void CopyFreshCameraImageTo(cv::Mat& image);
+    void CopyFreshCameraImageTo(FrameData& frame);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -60,15 +69,14 @@ private:
     cv::Quatd wrotation;
     double wscale = 1;
 
-    int drawImgSize = 480;
+    int drawImgSize = 1385;
 
     cv::VideoCapture cap;
 
-    // cameraImage and imageReady are protected by cameraImageMutex.
+    // cameraFrame is protected by cameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
     std::mutex cameraImageMutex;
-    cv::Mat cameraImage;
-    bool imageReady = false;
+    FrameData cameraFrame;
 
     std::unique_ptr<Connection> connection;
 

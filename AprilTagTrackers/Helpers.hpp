@@ -27,6 +27,7 @@ bool isRotationMatrix(cv::Mat& R);
 cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
 Quaternion<double> mRot2Quat(const cv::Mat& m);
 cv::Vec3d quat2rodr(double qw, double qx, double qy, double qz);
+void offsetFromBoardToCameraSpace(std::vector<cv::Point3f> points, cv::Vec3d boardRvec, cv::Vec3d boardTvec, std::vector<cv::Point3f>* out);
 
 template <typename T>
 inline void RotateVecByQuat(cv::Vec<T, 3>& out_pos, const cv::Quat<T>& rot)

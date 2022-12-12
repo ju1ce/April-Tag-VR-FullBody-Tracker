@@ -157,7 +157,7 @@ inline bool FromWXString(const wxString& str, double& out_val)
 }
 inline bool FromWXString(const wxString& str, std::string& out_val)
 {
-    out_val = str.utf8_string();
+    out_val = str.utf8_str();
     return true;
 }
 inline bool FromWXString(const wxString& str, wxString& out_val)
@@ -193,7 +193,7 @@ inline wxString ToWXString(float val)
 }
 inline wxString ToWXString(const std::string& val)
 {
-    return wxString::FromUTF8Unchecked(val);
+    return wxString::FromUTF8Unchecked(val.c_str());
 }
 inline wxString ToWXString(const wxString& val)
 {

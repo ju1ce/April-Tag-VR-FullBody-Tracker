@@ -26,7 +26,7 @@ bool WindowsNamedPipe::send(const std::string& msg, std::string& resp)
     if (FAILED(CallNamedPipeA(
             this->pipe_name.c_str(), // pipe name
             msg_cstr,                // message
-            msg.size(),              // message size
+            msg.size() + 1,              // message size
             response_buffer,         // response
             BUFFER_SIZE,             // response max size
             &response_length,        // response size
