@@ -96,6 +96,12 @@ void GUI::MainFrame::UpdatePreview(const cv::Mat& image, PreviewId id)
     previews[idx].UpdateImage(image);
 }
 
+void GUI::MainFrame::UpdatePreview(const cv::Mat& image, int constrainSize, PreviewId id)
+{
+    int idx = static_cast<int>(id);
+    previews[idx].UpdateImage(image, constrainSize);
+}
+
 bool GUI::MainFrame::IsPreviewVisible(PreviewId id)
 {
     int idx = static_cast<int>(id);
@@ -242,7 +248,7 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
             {
                 tracker->Start();
             }})
-        .Add(Button{"Preview output", [this](auto& evt)
+        .Add(Button{"Preview output", [this](auto&)
             {
                 SetPreviewVisible(true);
             }});

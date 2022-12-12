@@ -1,95 +1,117 @@
-#include "IPC.hpp"
-#include "utils/Assert.hpp"
+#ifdef ATT_OS_WINDOWS
 
-#include <Windows.h>
+#    include "IPC.hpp"
+#    include "utils/Error.hpp"
+#    include "utils/Log.hpp"
 
-#include <iostream>
+#    define WIN32_LEAN_AND_MEAN
+#    define NOMINMAX
+#    include <Windows.h>
 
 namespace IPC
 {
 
-constexpr int BUFFER_SIZE = 512;
 constexpr int SEC_TO_MS = 1000;
 
-WindowsNamedPipe::WindowsNamedPipe(const std::string& pipe_name)
+WindowsNamedPipe::WindowsNamedPipe(std::string pipeName)
+    : mPipeName(R"(\\.\pipe\)" + std::move(pipeName)) {}
+
+std::string_view WindowsNamedPipe::SendRecv(std::string_view message)
 {
-    this->pipe_name = R"(\\.\pipe\)" + pipe_name;
+    // NOLINTNEXTLINE: Remove const-ness as callnamedpipe expects a void*, but it will not be modified
+    LPVOID messagePtr = reinterpret_cast<LPVOID>(const_cast<char*>(message.data()));
+    DWORD responseLength = 0;
+    if (FAILED(CallNamedPipeA(
+            mPipeName.c_str(),
+            messagePtr,
+            message.size(),
+            GetBufferPtr(),
+            GetBufferSize(),
+            &responseLength,
+            2 * SEC_TO_MS)))
+    {
+        ATT_LOG_ERROR("named pipe send error: ", GetLastError());
+        throw std::system_error(static_cast<int>(GetLastError()), std::system_category());
+    }
+    return GetBufferStringView(static_cast<int>(responseLength));
 }
 
-bool WindowsNamedPipe::send(const std::string& msg, std::string& resp)
+namespace
 {
-    char response_buffer[BUFFER_SIZE];
-    DWORD response_length = 0;
-    // Remove const-ness as callnamedpipe expects a void*, it will not change the inbuffer.
-    auto msg_cstr = reinterpret_cast<LPVOID>(const_cast<char*>(msg.c_str()));
-    // success will be zero if failed
-    if (FAILED(CallNamedPipeA(
-            this->pipe_name.c_str(), // pipe name
-            msg_cstr,                // message
-            msg.size(),              // message size
-            response_buffer,         // response
-            BUFFER_SIZE,             // response max size
-            &response_length,        // response size
-            2 * SEC_TO_MS)))         // timeout in ms
+
+class WindowsNamedPipeConnection final : public IConnection
+{
+public:
+    explicit WindowsNamedPipeConnection(HANDLE pipe) : mPipe(pipe) {}
+    ~WindowsNamedPipeConnection() final
     {
-        ATT_LOG_ERROR("Named pipe (", this->pipe_name, ") send error: ", GetLastError());
-        return false;
+        if (mPipe == nullptr) return;
+        if (FAILED(DisconnectNamedPipe(mPipe))) ATT_LOG_ERROR("disconnect named pipe: ", GetLastError());
     }
 
-    resp = std::string(response_buffer, response_length);
-    return true;
+    void Send(std::string_view message) final
+    {
+        DWORD bytesWritten = 0;
+        if (FAILED(WriteFile(mPipe, message.data(), message.size(), &bytesWritten, nullptr)))
+        {
+            throw utils::MakeError("named pipe write file: ", GetLastError());
+        }
+    }
+
+    std::string_view Recv() final
+    {
+        DWORD bytesRead = 0;
+        if (FAILED(ReadFile(mPipe, GetBufferPtr(), GetBufferSize(), &bytesRead, nullptr)))
+        {
+            throw utils::MakeError("named pipe read file: ", GetLastError());
+        }
+        // ATT_LOG_DEBUG("recv(", bytesRead, "): ", std::string_view(GetBufferPtr(), 20));
+        return GetBufferStringView(bytesRead);
+    }
+
+private:
+    HANDLE mPipe = nullptr;
+};
+
+class WindowsNamedPipeServer final : public IServer
+{
+public:
+    explicit WindowsNamedPipeServer(std::string pipeName)
+    {
+        pipeName = R"(\\.\pipe\)" + pipeName;
+        // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+        mPipe = CreateNamedPipeA(pipeName.c_str(),
+                                 PIPE_ACCESS_DUPLEX,
+                                 // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
+                                 PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+                                 1,
+                                 1024 * 16,
+                                 1024 * 16,
+                                 NMPWAIT_USE_DEFAULT_WAIT,
+                                 nullptr);
+        if (mPipe == nullptr) throw utils::MakeError("create named pipe: ", GetLastError());
+    }
+
+    /// connection is only valid for one recv and send, then disconnect must be called and a new connection accepted
+    std::unique_ptr<IConnection> Accept() final
+    {
+        if (FAILED(ConnectNamedPipe(mPipe, nullptr))) throw utils::MakeError("connect named pipe: ", GetLastError());
+        return std::make_unique<WindowsNamedPipeConnection>(mPipe);
+    }
+
+private:
+    HANDLE mPipe = nullptr;
+};
+
+} // namespace
+
+[[nodiscard]] std::unique_ptr<IServer> CreateDriverServer()
+{
+    return std::make_unique<WindowsNamedPipeServer>("AprilTagPipeIn");
 }
 
 } // namespace IPC
 
-/*
-
-    bool Connection::send(const char *buffer, size_t length)
-    {
-        DWORD dwWritten;
-
-        if (WriteFile(inPipe, buffer, length, &dwWritten, NULL) != FALSE)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    bool Connection::recv(char *buffer, size_t length)
-    {
-        DWORD dwRead;
-
-        if (ReadFile(inPipe, buffer, length - 1, &dwRead, NULL) != FALSE)
-        {
-            buffer[dwRead] = '\0'; //add terminating zero
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-
-    Server::Server() { }
-
-    void Server::init(std::string name)
-    {
-        std::stringstream ss;
-        ss << "\\\\.\\pipe\\" << name;
-        std::string inPipeName = ss.str();
-
-        inPipe = CreateNamedPipeA(inPipeName.c_str(),
-            PIPE_ACCESS_DUPLEX,
-            PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,   // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
-            1,
-            1024 * 16,
-            1024 * 16,
-            NMPWAIT_USE_DEFAULT_WAIT,
-            NULL);
-    }
-
-    */
+#else
+#    error WindowsNamedPipe.cpp only compiled on windows
+#endif

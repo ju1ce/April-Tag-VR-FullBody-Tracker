@@ -13,7 +13,7 @@ void drawCalibration(
     const std::vector<std::vector<cv::Point2f>>& allCharucoCorners,
     const std::vector<std::vector<int>>& allCharucoIds);
 
-inline void drawCalibration(cv::Mat& drawImg, const cfg::CameraCalibration& calib)
+inline void drawCalibration(cv::Mat& drawImg, const cfg::CameraCalib& calib)
 {
     drawCalibration(drawImg,
         calib.cameraMatrix,

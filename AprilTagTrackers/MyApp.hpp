@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Config.hpp"
-#include "Connection.hpp"
 #include "GUI.hpp"
 #include "Localization.hpp"
 #include "Tracker.hpp"
 #include "utils/Env.hpp"
 #include "utils/Log.hpp"
+#include "utils/LogFileHandler.hpp"
 
 #include <wx/app.h>
 

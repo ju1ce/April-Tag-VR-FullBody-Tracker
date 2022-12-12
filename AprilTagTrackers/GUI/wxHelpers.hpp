@@ -14,7 +14,7 @@
 #include <sstream>
 #include <type_traits>
 
-constexpr auto FrameDeleter = [](wxFrame* frame)
+inline constexpr auto FrameDeleter = [](wxFrame* frame)
 {
     frame->Destroy();
 };
@@ -183,6 +183,10 @@ inline wxString ToWXString(int val)
 {
     return wxString::Format("%i", val);
 }
+inline wxString ToWXString(long long val)
+{
+    return wxString::Format("%i", val);
+}
 inline wxString ToWXString(double val)
 {
     return wxString::FromDouble(val);
@@ -199,7 +203,12 @@ inline wxString ToWXString(const wxString& val)
 {
     return val;
 }
-template <typename T, typename = typename T::IsProxyTag>
+inline wxString ToWXString(bool val)
+{
+    return val ? "true" : "false";
+}
+template <typename T>
+    requires requires { typename T::IsProxyTag; }
 inline wxString ToWXString(const T& val)
 {
     return ToWXString(static_cast<const typename T::ValueType&>(val));

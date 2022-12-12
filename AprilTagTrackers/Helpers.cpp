@@ -1,11 +1,45 @@
 #include "Helpers.hpp"
 
+#include "utils/Types.hpp"
+
 void drawMarker(cv::Mat frame, std::vector<cv::Point2f> corners, cv::Scalar color)
 {
     cv::line(frame, cv::Point2i(int(corners[0].x), int(corners[0].y)), cv::Point2i(int(corners[1].x), int(corners[1].y)), color, 2);
     cv::line(frame, cv::Point2i(int(corners[1].x), int(corners[1].y)), cv::Point2i(int(corners[2].x), int(corners[2].y)), color, 2);
     cv::line(frame, cv::Point2i(int(corners[2].x), int(corners[2].y)), cv::Point2i(int(corners[3].x), int(corners[3].y)), color, 2);
     cv::line(frame, cv::Point2i(int(corners[3].x), int(corners[3].y)), cv::Point2i(int(corners[0].x), int(corners[0].y)), color, 2);
+}
+
+void DrawMarker(const cv::Mat& frame, const MarkerCorners2f& corners, const cv::Scalar& color)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        const int j = (i + 1) % 4;
+        cv::line(frame, cv::Point2i(corners[i]), cv::Point2i(corners[j]), color, 2);
+    }
+}
+
+void TransformMarkerSpace(const MarkerCorners3f& modelMarker, const RodrPose& boardToCam, const RodrPose& markerToCam, MarkerCorners3f& outMarker)
+{
+    const auto boardTransformInv = boardToCam.ToAffine3d().inv();
+    const auto targetTransform = markerToCam.ToAffine3d();
+
+    ATT_ASSERT(modelMarker.size() == math::NUM_CORNERS);
+    outMarker.resize(math::NUM_CORNERS);
+    for (auto outCorner = outMarker.begin(); const auto& modelCorner : modelMarker)
+    {
+        cv::Vec3d corner{modelCorner.x, modelCorner.y, modelCorner.z};
+        // multiply model marker corner with markers translation matrix to get its position in camera(global) space
+        corner = targetTransform * corner;
+        // multiply marker corner in camera space with the inverse of the translation matrix of our board to put it into local space of our board
+        corner = boardTransformInv * corner;
+
+        *outCorner = cv::Point3f(
+            static_cast<float>(corner[X]),
+            static_cast<float>(corner[Y]),
+            static_cast<float>(corner[Z]));
+        ++outCorner;
+    }
 }
 
 void transformMarkerSpace(std::vector<cv::Point3f> modelMarker, cv::Vec3d boardRvec, cv::Vec3d boardTvec, cv::Vec3d rvec, cv::Vec3d tvec, std::vector<cv::Point3f>* out)
@@ -99,6 +133,40 @@ void getMedianMarker(std::vector<std::vector<cv::Point3f>> markerList, std::vect
         std::sort(pointsz.begin(), pointsz.end());
 
         median->push_back(cv::Point3f(pointsx[pointsx.size() / 2], pointsy[pointsy.size() / 2], pointsz[pointsz.size() / 2]));
+    }
+}
+
+namespace
+{
+template <std::ranges::range T>
+std::ranges::iterator_t<T> FindMedian(T& range)
+{
+    ATT_ASSERT(!std::empty(range));
+    auto middleIt = std::begin(range) + (std::size(range) / 2);
+    std::nth_element(std::begin(range), middleIt, std::end(range));
+    return middleIt;
+}
+} // namespace
+
+void FindMedianMarker(const std::vector<MarkerCorners3f>& markerList, MarkerCorners3f& outMedianMarker)
+{
+    std::vector<float> xComps(markerList.size());
+    std::vector<float> yComps(markerList.size());
+    std::vector<float> zComps(markerList.size());
+
+    outMedianMarker.resize(math::NUM_CORNERS);
+    for (Index cornerIdx = 0; cornerIdx < math::NUM_CORNERS; ++cornerIdx)
+    {
+        for (Index i = 0; i < static_cast<Index>(markerList.size()); ++i)
+        {
+            xComps[i] = markerList[i][cornerIdx].x;
+            yComps[i] = markerList[i][cornerIdx].y;
+            zComps[i] = markerList[i][cornerIdx].z;
+        }
+        outMedianMarker[cornerIdx] = cv::Point3f(
+            *FindMedian(xComps),
+            *FindMedian(yComps),
+            *FindMedian(zComps));
     }
 }
 
@@ -199,18 +267,18 @@ cv::Mat eulerAnglesToRotationMatrix(cv::Vec3f theta)
 {
     // Calculate rotation about x axis
     cv::Mat R_x = (cv::Mat_<double>(3, 3) << 1, 0, 0,
-        0, cos(theta[0]), -sin(theta[0]),
-        0, sin(theta[0]), cos(theta[0]));
+                   0, cos(theta[0]), -sin(theta[0]),
+                   0, sin(theta[0]), cos(theta[0]));
 
     // Calculate rotation about y axis
     cv::Mat R_y = (cv::Mat_<double>(3, 3) << cos(theta[1]), 0, sin(theta[1]),
-        0, 1, 0,
-        -sin(theta[1]), 0, cos(theta[1]));
+                   0, 1, 0,
+                   -sin(theta[1]), 0, cos(theta[1]));
 
     // Calculate rotation about z axis
     cv::Mat R_z = (cv::Mat_<double>(3, 3) << cos(theta[2]), -sin(theta[2]), 0,
-        sin(theta[2]), cos(theta[2]), 0,
-        0, 0, 1);
+                   sin(theta[2]), cos(theta[2]), 0,
+                   0, 0, 1);
 
     // Combined rotation matrix
     cv::Mat R = R_y * R_x * R_z;

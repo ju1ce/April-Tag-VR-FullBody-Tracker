@@ -9,7 +9,9 @@
             "features": [
                 "contrib-aruco",
                 "ffmpeg",
-                "ipp"
+                "ipp",
+                "opengl",
+                "jpeg"
             ]
         },
         {
@@ -27,7 +29,8 @@
         "libusb",
         "apriltag",
         "openvr",
-        "doctest"
+        "doctest",
+        "taskflow"
     ],
     "builtin-baseline": "f93ba152d55e1d243160e690bc302ffe8638358e"
 }

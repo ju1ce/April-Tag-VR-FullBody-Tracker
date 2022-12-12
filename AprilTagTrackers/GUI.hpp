@@ -62,18 +62,7 @@ enum class PreviewId
     Camera
 };
 
-class PreviewControl
-{
-public:
-    PreviewControl(RefPtr<GUI> _gui, PreviewId _id);
-    ~PreviewControl();
-    void Update(const cv::Mat& image);
-    bool IsVisible();
-
-private:
-    RefPtr<GUI> gui;
-    PreviewId id;
-};
+class PreviewControl;
 
 /// Thread safe GUI interface, anything that needs to happen
 /// on the main thread will get wrapped in a CallAfter here.
@@ -91,6 +80,7 @@ public:
     PreviewControl CreatePreviewControl(PreviewId id = PreviewId::Main);
     void SetPreviewVisible(bool visible = true, PreviewId id = PreviewId::Main, bool userCanDestroy = true);
     void UpdatePreview(const cv::Mat& image, PreviewId id = PreviewId::Main);
+    void UpdatePreview(const cv::Mat& image, int constrainSize, PreviewId id = PreviewId::Main);
     bool IsPreviewVisible(PreviewId id = PreviewId::Main);
 
     /// Get the manual calibration currently shown in the UI
@@ -106,4 +96,18 @@ public:
 private:
     // wxWidgets owns and will free in close window event
     RefPtr<MainFrame> impl;
+};
+
+class PreviewControl
+{
+public:
+    PreviewControl(RefPtr<GUI> gui, PreviewId id) : mGui(gui), mId(id) { mGui->SetPreviewVisible(true, mId, false); }
+    ~PreviewControl() { mGui->SetPreviewVisible(false, mId); }
+    void Update(const cv::Mat& image) { mGui->UpdatePreview(image, mId); }
+    void Update(const cv::Mat& image, int constrainSize) { mGui->UpdatePreview(image, constrainSize, mId); }
+    bool IsVisible() const { return mGui->IsPreviewVisible(mId); }
+
+private:
+    RefPtr<GUI> mGui;
+    PreviewId mId;
 };

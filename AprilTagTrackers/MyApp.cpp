@@ -20,6 +20,8 @@ int MyApp::OnExit()
 
 bool MyApp::OnInit()
 {
+    utils::RegisterThisThreadName("Main");
+
     // OnAssertFailure(const wxChar* file, int line, const wxChar* func, const wxChar* cond, const wxChar* msg);
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_INFO);
 
@@ -79,7 +81,6 @@ void MyApp::OnUnhandledException()
 bool MyApp::OnExceptionInMainLoop()
 {
     ATT_FATAL_EXCEPTION(RethrowStoredException(), "wxApp::OnExceptionInMainLoop");
-    return true;
 }
 
 // cv::ErrorCallback
@@ -87,7 +88,6 @@ static int OpenCVErrorHandler(int status, const char* funcName, const char* errM
 {
     ATT_LOG_ERROR_AT(fileName, line, "OpenCV Error(", status, "): ", errMsg, "\nin  ", funcName);
     ATT_ABORT();
-    return 0;
 }
 
 // wxAssertHandler_t

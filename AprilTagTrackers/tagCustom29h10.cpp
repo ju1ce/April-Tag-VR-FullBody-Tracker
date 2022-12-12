@@ -1,3 +1,9 @@
+#ifdef _MSC_VER
+#pragma warning(push, 0)
+#else
+#pragma GCC diagnostic push
+#endif
+
 #include <cstdlib>
 #include "tagCustom29h10.hpp"
 
@@ -131,13 +137,29 @@ static uint64_t codedata[125] = {
 apriltag_family_t *tagCustom29h10_create()
 {
    apriltag_family_t *tf = (apriltag_family_t*)std::calloc(1, sizeof(apriltag_family_t));
+   if (tf == nullptr) return nullptr;
    tf->name = strdup("tagCustom29h10");
+   if (tf->name == nullptr)
+   {
+      tagCustom29h10_destroy(tf);
+      return nullptr;
+   }
    tf->h = 10;
    tf->ncodes = 125;
    tf->codes = codedata;
    tf->nbits = 29;
    tf->bit_x = (uint32_t*)std::calloc(29, sizeof(uint32_t));
+   if (tf->bit_x == nullptr)
+   {
+      tagCustom29h10_destroy(tf);
+      return nullptr;
+   }
    tf->bit_y = (uint32_t*)std::calloc(29, sizeof(uint32_t));
+   if (tf->bit_y == nullptr)
+   {
+      tagCustom29h10_destroy(tf);
+      return nullptr;
+   }
    tf->bit_x[0] = 0;
    tf->bit_y[0] = -2;
    tf->bit_x[1] = 1;
@@ -204,8 +226,15 @@ apriltag_family_t *tagCustom29h10_create()
 
 void tagCustom29h10_destroy(apriltag_family_t *tf)
 {
-   free(tf->bit_x);
-   free(tf->bit_y);
-   free(tf->name);
+   if (tf == nullptr) return;
+   if (tf->bit_x != nullptr) free(tf->bit_x);
+   if (tf->bit_y != nullptr) free(tf->bit_y);
+   if (tf->name != nullptr) free(tf->name);
    free(tf);
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
+#endif

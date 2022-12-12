@@ -2,34 +2,74 @@
 
 #include "Config.hpp"
 #include "GUI.hpp"
-#include "Quaternion.hpp"
 #include "RefPtr.hpp"
+#include "tracker/OpenVRClient.hpp"
+#include "tracker/TrackerUnit.hpp"
+#include "tracker/VideoCapture.hpp"
+#include "tracker/VRDriver.hpp"
+#include "utils/Error.hpp"
+#include "utils/SteadyTimer.hpp"
+#include "utils/StrongType.hpp"
+#include "utils/Types.hpp"
 
 #include <opencv2/core/affine.hpp>
 #include <opencv2/videoio.hpp>
 
-#include <chrono>
+#include <condition_variable>
 #include <mutex>
+#include <optional>
+#include <ranges>
 #include <thread>
+
+class PlayspaceCalib
+{
+public:
+    void Set(const cv::Vec3d& posOffset, const cv::Vec3d& angleOffset, double scale)
+    {
+        cv::Matx33d rotMat = EulerAnglesToRotationMatrix(angleOffset);
+        mTransform = cv::Affine3d(rotMat, posOffset);
+        mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
+        mScale = scale;
+    }
+
+    void Transform(cv::Point3d& pos, cv::Quatd& rot) const
+    {
+        pos = mTransform * pos;
+        rot = mRotation * rot;
+    }
+    void Transform(Pose& pose) const { Transform(pose.position, pose.rotation); }
+
+    double GetScale() const { return mScale; }
+
+private:
+    cv::Affine3d mTransform{};
+    cv::Quatd mRotation{};
+    double mScale = 0;
+};
 
 struct TrackerStatus
 {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;
     bool boardFound, boardFoundDriver;
-    std::vector<std::vector<double>> prevLocValues;
     cv::Point2d maskCenter;
 };
 
-class Connection;
-
 class Tracker : public ITrackerControl
 {
+    static constexpr int DRAW_IMG_SIZE = 480;
+
+    static inline const cv::Scalar COLOR_MARKER_DETECTED{0, 0, 255}; /// blue
+    static inline const cv::Scalar COLOR_MARKER_ADDING{255, 0, 255}; /// yellow
+    static inline const cv::Scalar COLOR_MARKER_ADDED{0, 255, 0}; /// green
+    static inline const cv::Scalar COLOR_MARKER_FAR{255, 0, 255}; /// purple
+    static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
+
 public:
     Tracker(const Tracker&) = delete;
     Tracker(Tracker&&) = delete;
     /// config and locale references are expected to exceed lifetime of this instance
     Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, ArucoConfig& _arucoConfig, const Localization& _lc);
-    void StartCamera(RefPtr<cfg::CameraInfo> cam);
+    void StartCamera(RefPtr<cfg::Camera> cam);
     void StartCamera() override;
     void StartCameraCalib() override;
     void StartTrackerCalib() override;
@@ -48,11 +88,46 @@ private:
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
+    void UpdatePlayspaceCalibrator(bool& posActive, bool& angleActive, cv::Vec3d& posOffset, cv::Vec3d& angleOffset, utils::SteadyTimer& timer);
+    void UpdateMulticamPlayspaceCalibrator(const tracker::TrackerUnit& unit);
     void MainLoop();
 
-    void HandleConnectionErrors();
+    void SetTrackerUnitsFromConfig();
+    void SaveTrackerUnitsToCalib(const std::vector<tracker::TrackerUnit>&);
+    bool IsTrackerUnitsCalibrated() const
+    {
+        return std::all_of(mTrackerUnits.begin(), mTrackerUnits.end(),
+                           [](const auto& unit) { return unit.IsCalibrated(); });
+    }
+
+    void StartCameraThread()
+    {
+        ATT_ASSERT(utils::IsMainThread());
+        StopWorkThread();
+        cameraRunning = true;
+        cameraThread = std::thread(&Tracker::CameraLoop, this);
+    }
+    void StopCameraThread()
+    {
+        ATT_ASSERT(utils::IsMainThread());
+        StopWorkThread();
+        cameraRunning = false;
+        if (cameraThread.joinable()) cameraThread.join();
+    }
+    void StartWorkThread()
+    {
+    }
+    void StopWorkThread()
+    {
+    }
+    void WorkThreadError(const U8String& msg)
+    {
+        mainThreadRunning = false;
+        gui->ShowPopup(msg, PopupStyle::Error);
+    }
 
     /// Sets the wtransform, wrotation, and wscale
+    // TODO: rename uses of world transform and manual calib to playspace calibration
     void SetWorldTransform(const cfg::ManualCalib::Real& calib);
     /// Calibration transformation
     cv::Affine3d wtransform;
@@ -60,17 +135,14 @@ private:
     cv::Quatd wrotation;
     double wscale = 1;
 
-    int drawImgSize = 480;
-
-    cv::VideoCapture cap;
+    tracker::VideoCapture mCapture;
 
     // cameraImage and imageReady are protected by cameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
-    std::mutex cameraImageMutex;
-    cv::Mat cameraImage;
-    bool imageReady = false;
-
-    std::unique_ptr<Connection> connection;
+    std::mutex mCameraImageMutex{};
+    cv::Mat mCameraImage{};
+    std::condition_variable mImageReadyCond{};
+    bool mIsImageReady = false;
 
     UserConfig& user_config;
     CalibrationConfig& calib_config;
@@ -80,8 +152,10 @@ private:
     std::thread cameraThread;
     std::thread mainThread;
 
-    std::vector<cv::Ptr<cv::aruco::Board>> trackers;
-    bool trackersCalibrated = false;
+    utils::SteadyTimer mFrameTimer{};
 
-    std::chrono::steady_clock::time_point last_frame_time;
+    std::unique_ptr<tracker::IVRClient> mVRClient{};
+    std::optional<tracker::VRDriver> mVRDriver{};
+
+    std::vector<tracker::TrackerUnit> mTrackerUnits;
 };

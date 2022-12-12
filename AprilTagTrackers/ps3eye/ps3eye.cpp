@@ -46,6 +46,21 @@ http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/medi
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+// MODIFIED: disable all warnings when compiling
+#ifdef _MSC_VER
+#include <codeanalysis\warnings.h>
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
+#pragma GCC diagnostic ignored "-Wanalyzer-possible-null-argument"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+// MODIFIED
+
 #include "ps3eye.h"
 
 #include <thread>
@@ -1404,3 +1419,11 @@ void PS3EYECam::sccb_w_array(const uint8_t (*data)[2], int len)
 }
 
 } // namespace
+
+// MODIFIED: enable warnings again
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
+#endif
+// MODIFIED

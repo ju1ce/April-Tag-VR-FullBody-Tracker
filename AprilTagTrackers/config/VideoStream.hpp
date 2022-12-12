@@ -8,7 +8,7 @@ namespace cfg
 {
 
 // info to open a camera
-struct CameraInfo
+struct Camera
 {
     struct Extra
     {
@@ -36,7 +36,7 @@ struct CameraInfo
 struct VideoStream
 {
     REFLECTABLE_BEGIN;
-    REFLECTABLE_FIELD(CameraInfo, camera){};
+    REFLECTABLE_FIELD(Camera, camera){};
     REFLECTABLE_FIELD(double, latency) = 0;
     REFLECTABLE_FIELD(double, quadDecimate) = 1;
     REFLECTABLE_FIELD(bool, circularWindow) = true;
@@ -44,7 +44,7 @@ struct VideoStream
     REFLECTABLE_END;
 };
 
-struct CameraCalibration
+struct CameraCalib
 {
     REFLECTABLE_BEGIN;
     REFLECTABLE_FIELD(cv::Mat, cameraMatrix){};

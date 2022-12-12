@@ -69,6 +69,11 @@ void GUI::UpdatePreview(const cv::Mat& image, PreviewId id)
     impl->UpdatePreview(image, id);
 }
 
+void GUI::UpdatePreview(const cv::Mat& image, int constrainSize, PreviewId id)
+{
+    impl->UpdatePreview(image, constrainSize, id);
+}
+
 bool GUI::IsPreviewVisible(PreviewId id)
 {
     return impl->IsPreviewVisible(id);
@@ -87,25 +92,4 @@ void GUI::SetManualCalib(const cfg::ManualCalib::Real& calib)
 void GUI::SetManualCalibVisible(bool visible)
 {
     ForwardToMainThread(impl, &MainFrame::SetManualCalibVisible, std::move(visible));
-}
-
-PreviewControl::PreviewControl(RefPtr<GUI> _gui, PreviewId _id)
-    : gui(_gui), id(_id)
-{
-    gui->SetPreviewVisible(true, id, false);
-}
-
-PreviewControl::~PreviewControl()
-{
-    gui->SetPreviewVisible(false, id);
-}
-
-void PreviewControl::Update(const cv::Mat& image)
-{
-    gui->UpdatePreview(image, id);
-}
-
-bool PreviewControl::IsVisible()
-{
-    return gui->IsPreviewVisible(id);
 }

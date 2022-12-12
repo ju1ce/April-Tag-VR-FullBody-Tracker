@@ -14,6 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// MODIFIED: disable all warnings when compiling
+#ifdef _MSC_VER
+#include <codeanalysis\warnings.h>
+#pragma warning(push, 0)
+#pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS)
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+// MODIFIED
+
 // MODIFIED: Only want ps3eye driver functionality
 #define HAVE_PS3EYE
 // MODIFIED
@@ -715,3 +728,11 @@ cv::Ptr<cv::IVideoCapture> PSEyeVideoCapture::pseyeVideoCapture_create(int index
     // failed to open a camera
     return cv::Ptr<cv::IVideoCapture>();
 }
+
+// MODIFIED: enable warnings again
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
+#endif
+// MODIFIED

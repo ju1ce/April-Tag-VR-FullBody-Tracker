@@ -36,6 +36,8 @@ public:
     /// thread safe.
     void UpdatePreview(const cv::Mat& image, PreviewId id = PreviewId::Main);
     /// thread safe.
+    void UpdatePreview(const cv::Mat& image, int constrainSize, PreviewId id = PreviewId::Main);
+    /// thread safe.
     bool IsPreviewVisible(PreviewId id = PreviewId::Main);
     void SetPreviewVisible(bool visible = true, PreviewId id = PreviewId::Main, bool userCanDestroy = true);
 

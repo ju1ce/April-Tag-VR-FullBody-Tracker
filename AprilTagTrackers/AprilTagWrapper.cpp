@@ -1,6 +1,8 @@
 #include "AprilTagWrapper.hpp"
 
 #include "tagCustom29h10.hpp"
+#include "utils/Assert.hpp"
+#include "utils/Cross.hpp"
 
 #include <apriltag/apriltag.h>
 #include <apriltag/tagCircle21h7.h>
@@ -10,141 +12,128 @@
 
 #include <vector>
 
-AprilTagWrapper::AprilTagWrapper(const UserConfig& user_config, const ArucoConfig& aruco_config)
-    : td{apriltag_detector_create()}, user_config(user_config), aruco_config(aruco_config)
+AprilTagWrapper::AprilTagWrapper(MarkerFamily family, double quadDecimate, int threadCount)
+    : mDetector(apriltag_detector_create()), mFamilyType(family)
 {
-    td->quad_decimate = user_config.videoStreams[0]->quadDecimate;
-    td->nthreads = 4; // TODO: make nthreads a parameter or calculate it somehow
-    apriltag_family_t* tf;
-    if (user_config.markerLibrary == APRILTAG_CIRCULAR)
-        tf = tagCircle21h7_create();
-    else if (user_config.markerLibrary == APRILTAG_CUSTOM29H10)
-        tf = tagCustom29h10_create();
-    else
-        tf = tagStandard41h12_create();
+    mDetector->quad_decimate = static_cast<float>(quadDecimate);
+    mDetector->nthreads = threadCount;
 
-    if (user_config.markerLibrary == ARUCO_4X4)
+    if (mFamilyType == MarkerFamily::Standard41h12)
     {
-        aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
+        mFamilyPtr = tagStandard41h12_create();
     }
-
-    apriltag_detector_add_family(td, tf);
+    else if (mFamilyType == MarkerFamily::Circle21h7)
+    {
+        mFamilyPtr = tagCircle21h7_create();
+    }
+    else if (mFamilyType == MarkerFamily::Custom29h10)
+    {
+        mFamilyPtr = tagCustom29h10_create();
+    }
+    else
+    {
+        utils::Unreachable();
+    }
+    apriltag_detector_add_family(mDetector, mFamilyPtr);
 }
 
 AprilTagWrapper::~AprilTagWrapper()
 {
-    apriltag_detector_destroy(td);
-}
-
-void AprilTagWrapper::convertToSingleChannel(const cv::Mat& src, cv::Mat& dst)
-{
-    if (user_config.markerLibrary == APRILTAG_COLOR)
+    if (mDetector != nullptr)
     {
-        cv::Mat ycc;
-        cv::cvtColor(src, ycc, cv::COLOR_BGR2YCrCb);
-        dst.create(src.size(), CV_8U);
-        int fromTo[] = {1, 0};
-        cv::mixChannels(&ycc, 1, &dst, 1, fromTo, 1);
+        apriltag_detector_destroy(mDetector);
+        mDetector = nullptr;
     }
-    else
+    if (mFamilyPtr != nullptr)
     {
-        cv::cvtColor(src, dst, cv::COLOR_BGR2GRAY);
-    }
-}
-
-void AprilTagWrapper::detectMarkers(
-    const cv::Mat& image,
-    std::vector<std::vector<cv::Point2f>>* corners,
-    std::vector<int>* ids,
-    std::vector<cv::Point2f>* centers,
-    std::vector<cv::Ptr<cv::aruco::Board>> trackers)
-{
-    cv::Mat gray;
-    if (image.type() != CV_8U)
-    {
-        convertToSingleChannel(image, gray);
-    }
-    else
-    {
-        gray = image;
-    }
-
-    corners->clear();
-    ids->clear();
-    centers->clear();
-
-    if (user_config.markerLibrary == ARUCO_4X4)
-    {
-        std::vector<std::vector<cv::Point2f>> rejectedCorners;
-        cv::aruco::detectMarkers(gray, aruco_dictionary, *corners, *ids, aruco_config.params, rejectedCorners);
-        // for(int i = 0; i<trackers.size();i++)
-        //     cv::aruco::refineDetectedMarkers(gray, trackers[i], *corners, *ids, rejectedCorners);
-
-        return;
-    }
-
-    image_u8_t im = {
-        gray.cols,
-        gray.rows,
-        static_cast<int32_t>(gray.step1()),
-        gray.data,
-    };
-
-    zarray_t* detections = apriltag_detector_detect(td, &im);
-
-    for (int i = 0; i < zarray_size(detections); i++)
-    {
-        apriltag_detection_t* det;
-        zarray_get(detections, i, &det);
-
-        ids->push_back(det->id);
-        centers->push_back(cv::Point2f(det->c[0], det->c[1]));
-
-        std::vector<cv::Point2f> temp;
-
-        for (int j = 3; j >= 0; j--)
+        if (mFamilyType == MarkerFamily::Standard41h12)
         {
-            temp.push_back(cv::Point2f(det->p[j][0], det->p[j][1]));
+            tagStandard41h12_destroy(mFamilyPtr);
         }
+        else if (mFamilyType == MarkerFamily::Circle21h7)
+        {
+            tagCircle21h7_destroy(mFamilyPtr);
+        }
+        else if (mFamilyType == MarkerFamily::Custom29h10)
+        {
+            tagCustom29h10_destroy(mFamilyPtr);
+        }
+        else
+        {
+            utils::Unreachable();
+        }
+        mFamilyPtr = nullptr;
+    }
+}
 
-        corners->push_back(temp);
+void AprilTagWrapper::DetectMarkers(cv::Mat& frame, MarkerDetectionList& outList)
+{
+    ATT_ASSERT(frame.type() == CV_8U);
+    image_u8_t frameRef{
+        frame.cols,
+        frame.rows,
+        frame.cols, // stride = bytes per line
+        frame.data};
+
+    zarray_t* const detections = apriltag_detector_detect(mDetector, &frameRef);
+    const int size = zarray_size(detections);
+    outList.ids.resize(size);
+    outList.corners.resize(size);
+    outList.centers.resize(size);
+
+    for (int i = 0; i < size; ++i)
+    {
+        apriltag_detection_t* det = nullptr;
+        zarray_get(detections, i, &det);
+        ATT_ASSERT(det != nullptr);
+
+        outList.ids[i] = det->id;
+        outList.centers[i] = cv::Point2d(det->c[0], det->c[1]);
+
+        constexpr int numCorners = 4;
+        outList.corners[i].resize(numCorners);
+        for (int cornerIdx = 0; cornerIdx < numCorners; ++cornerIdx)
+        {
+            /// apriltag returns CCW order, while we need CW for opencv
+            const int detCornerIdx = (numCorners - 1) - cornerIdx;
+            outList.corners[i][cornerIdx] = cv::Point2d(
+                det->p[detCornerIdx][0], det->p[detCornerIdx][1]);
+        }
     }
     apriltag_detections_destroy(detections);
 }
 
-std::vector<std::string> AprilTagWrapper::getTimeProfile()
+std::vector<std::string> AprilTagWrapper::GetTimeProfile()
 {
-    const auto tp = td->tp;
-    if (tp == nullptr)
-    {
-        return {};
-    }
+    const timeprofile_t* const tp = mDetector->tp;
+    if (tp == nullptr) return {};
 
     std::vector<std::string> rows;
     int64_t lastutime = tp->utime;
 
     for (int i = 0; i < zarray_size(tp->stamps); i++)
     {
-        timeprofile_entry* stamp;
+        timeprofile_entry* stamp = nullptr;
         zarray_get_volatile(tp->stamps, i, &stamp);
-        double cumtime = (stamp->utime - tp->utime) / 1000000.0;
-        double parttime = (stamp->utime - lastutime) / 1000000.0;
-        char buffer[128];
-        snprintf(buffer, sizeof(buffer), "%2d %32s %15f ms %15f ms", i, stamp->name, parttime * 1000, cumtime * 1000);
-        rows.push_back(buffer);
+        const double cumtime = static_cast<double>(stamp->utime - tp->utime) / 1000000.0;
+        const double parttime = static_cast<double>(stamp->utime - lastutime) / 1000000.0;
+        std::array<char, 128> buffer{};
+        std::snprintf(buffer.data(), buffer.size(), "%2d %32s %15f ms %15f ms", i, stamp->name, parttime * 1000, cumtime * 1000);
+        rows.emplace_back(buffer.data());
         lastutime = stamp->utime;
     }
     return rows;
 }
 
-void AprilTagWrapper::drawTimeProfile(cv::Mat& image, const cv::Point& textOrigin)
+void AprilTagWrapper::DrawTimeProfile(cv::Mat& image, const cv::Point2d& textOrigin)
 {
     const auto font = cv::FONT_HERSHEY_SIMPLEX;
     const auto color = cv::Scalar(255, 255, 255);
     const auto fontScale = 0.5;
-    const int dy = cv::getTextSize(" ", font, fontScale, 1, nullptr).height * 1.5;
+    const int textHeight = cv::getTextSize(" ", font, fontScale, 1, nullptr).height;
+    const int dy = static_cast<int>(1.5 * textHeight);
     cv::Point cursor = textOrigin;
-    for (const auto& row : getTimeProfile())
+    for (const auto& row : GetTimeProfile())
     {
         cv::putText(image, row, cursor, font, fontScale, color);
         cursor.y += dy;

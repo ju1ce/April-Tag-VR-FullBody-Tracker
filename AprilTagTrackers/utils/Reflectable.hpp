@@ -2,18 +2,21 @@
 
 #include "Macros.hpp"
 
+#include <concepts>
+#include <cstddef>
 #include <type_traits>
+#include <utility>
 
 /// Placed in a class before a list of REFLECTABLE_FIELDs
-#define REFLECTABLE_BEGIN                \
-    friend class ::Reflect;              \
-    template <size_t N, typename = void> \
-    struct _rfl_FieldData;               \
-    static constexpr size_t _rfl_fieldOffset = __COUNTER__
+#define REFLECTABLE_BEGIN                     \
+    friend class ::Reflect;                   \
+    template <std::size_t N, typename = void> \
+    struct _rfl_FieldData;                    \
+    static constexpr std::size_t _rfl_fieldOffset = __COUNTER__
 
 /// Placed in a class after a list of REFLECTABLE_FIELDS
 #define REFLECTABLE_END \
-    static constexpr size_t _rfl_fieldCount = __COUNTER__ - _rfl_fieldOffset - 1
+    static constexpr std::size_t _rfl_fieldCount = __COUNTER__ - _rfl_fieldOffset - 1
 
 #define REFLECTABLE_FIELD_DATA_COUNTER_(a_type, a_fieldName, a_counter) \
     template <typename _unused_>                                        \
@@ -61,20 +64,20 @@ public:
 
     template <typename RT>
     struct IsReflectable<RT,
-        std::void_t<typename RT::template _rfl_FieldData<0>,
-            decltype(RT::_rfl_fieldOffset),
-            decltype(RT::_rfl_fieldCount)>> : std::true_type
+                         std::void_t<typename RT::template _rfl_FieldData<0>,
+                                     decltype(RT::_rfl_fieldOffset),
+                                     decltype(RT::_rfl_fieldCount)>> : std::true_type
     {
     };
 
-    template <typename RT, size_t I, typename = void>
+    template <typename RT, std::size_t I, typename = void>
     struct IsReflectableIndex : std::false_type
     {
     };
 
-    template <typename RT, size_t I>
+    template <typename RT, std::size_t I>
     struct IsReflectableIndex<RT, I,
-        std::void_t<decltype(RT::template _rfl_FieldData<I>::name)>> : std::true_type
+                              std::void_t<decltype(RT::template _rfl_FieldData<I>::name)>> : std::true_type
     {
     };
 
@@ -82,13 +85,13 @@ public:
     /// eg. template <typename T> std::enable_if_t<Reflect::IsReflectable<T>> MyFunc() {}
     template <typename RT>
     static constexpr bool IsReflectableV = IsReflectable<RT>::value;
-    template <typename RT, size_t I>
+    template <typename RT, std::size_t I>
     static constexpr bool IsReflectableIndexV = IsReflectableIndex<RT, I>::value;
     template <typename RT>
-    static constexpr size_t FieldCount = RT::_rfl_fieldCount;
+    static constexpr std::size_t FieldCount = RT::_rfl_fieldCount;
 
 private:
-    template <typename RT, typename F, size_t I>
+    template <typename RT, typename F, std::size_t I>
     static constexpr void ForEachCall(RT& reflType, F&& func)
     {
         if constexpr (IsReflectableIndexV<RT, I>)
@@ -98,7 +101,7 @@ private:
         }
     }
 
-    template <typename RT, typename F, size_t... Is>
+    template <typename RT, typename F, std::size_t... Is>
     static constexpr void ForEachFold(RT& reflType, F&& func, std::index_sequence<Is...>)
     {
         // Fold into list of func calls using field data at each index.
@@ -114,8 +117,8 @@ public:
     static void ForEach(RT& reflType, F&& func)
     {
         ForEachFold(reflType,
-            std::forward<F>(func),
-            std::make_index_sequence<RT::_rfl_fieldCount>());
+                    std::forward<F>(func),
+                    std::make_index_sequence<RT::_rfl_fieldCount>());
     }
 
     /// To help with static polymorphism when calling ForEach.
@@ -136,3 +139,11 @@ public:
         return static_cast<const DerT&>(baseThis);
     }
 };
+
+template <typename T, std::size_t Index>
+concept ReflectableAtIndex = requires {
+        typename T::template _rfl_FieldData<Index>;
+        { T::_rfl_fieldOffset } -> std::same_as<std::size_t>;
+        { T::_rfl_fieldCount } -> std::same_as<std::size_t>; };
+template <typename T>
+concept Reflectable = ReflectableAtIndex<T, 0>;

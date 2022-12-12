@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "serial/ReaderWriter.hpp"
+#include "serial/Serial.hpp"
 
 #include <string>
 #include <string_view>
@@ -14,6 +14,8 @@ class wxString;
 class U8String
 {
 public:
+    friend struct serial::Serial<U8String>;
+
     U8String() = default;
     U8String(const char* const _str) : str(_str) {}
     U8String(std::string _str) : str(std::move(_str)) {}
@@ -33,15 +35,6 @@ public:
     friend U8String operator+(const U8String& lhs, const std::string& rhs) { return lhs.str + rhs; }
     friend U8String operator+(const std::string& lhs, const U8String& rhs) { return lhs + rhs.str; }
 
-    void ReadSelf(serial::Reader& reader)
-    {
-        serial::Read(reader, str);
-    }
-    void WriteSelf(serial::Writer& writer) const
-    {
-        serial::Write(writer, str);
-    }
-
 private:
     std::string str;
 };
@@ -55,4 +48,17 @@ public:
 
 private:
     std::string_view str;
+};
+
+template <>
+struct serial::Serial<U8String>
+{
+    static void Parse(auto& ctx, U8String& value)
+    {
+        ctx.Read(value.str);
+    }
+    static void Format(auto& ctx, const U8String& value)
+    {
+        ctx.Write(value.str);
+    }
 };

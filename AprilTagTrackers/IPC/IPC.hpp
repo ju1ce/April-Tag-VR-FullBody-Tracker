@@ -1,48 +1,92 @@
 #pragma once
 
+#include "utils/Assert.hpp"
+#include "utils/Types.hpp"
+
+#include <array>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace IPC
 {
+
+template <Index NSize>
+class IOBuffer
+{
+public:
+protected:
+    constexpr std::string_view GetBufferStringView(Index stringLength) const
+    {
+        ATT_ASSERT(stringLength >= 0);
+        ATT_ASSERT(stringLength <= NSize);
+        return std::string_view(mBuffer.data(), stringLength);
+    }
+    constexpr char* GetBufferPtr() { return mBuffer.data(); }
+    constexpr Index GetBufferSize() const { return NSize - 1; }
+
+private:
+    std::array<char, NSize> mBuffer{};
+};
+
+class IConnection : public IOBuffer<1024>
+{
+public:
+    virtual ~IConnection() = default;
+    virtual void Send(std::string_view message) = 0;
+    /// @return temporary view of buffer, invalidated when SendRecv is called again
+    [[nodiscard]] virtual std::string_view Recv() = 0;
+};
 
 // Interface for inter-process-communication, be that over network, udp, or pipes, multithreaded or not
 class IServer
 {
 public:
     virtual ~IServer() = default;
-    void (*on_message)(std::string message) = nullptr;
+    [[nodiscard]] virtual std::unique_ptr<IConnection> Accept() = 0;
 };
 
 // Interface for inter-process-communication, be that over network, udp, or pipes, multithreaded or not
-class IClient
+class IClient : public IOBuffer<1024>
 {
 public:
     virtual ~IClient() = default;
-    // returns true on success
-    virtual bool send(const std::string &message, std::string &out_response) = 0;
+    /// @return temporary view of buffer, invalidated when SendRecv is called again
+    [[nodiscard]] virtual std::string_view SendRecv(std::string_view message) = 0;
 };
 
 class WindowsNamedPipe : public IClient
 {
 public:
-    explicit WindowsNamedPipe(const std::string &pipe_name);
+    explicit WindowsNamedPipe(std::string pipeName);
 
-    bool send(const std::string &msg, std::string &resp) override;
+    std::string_view SendRecv(std::string_view message) final;
 
 private:
-    std::string pipe_name;
+    std::string mPipeName;
 };
 
 class UNIXSocket : public IClient
 {
 public:
-    explicit UNIXSocket(const std::string &socket_name);
+    explicit UNIXSocket(std::string socketName);
 
-    bool send(const std::string &msg, std::string &resp) override;
+    std::string_view SendRecv(std::string_view message) final;
 
 private:
-    std::string socket_path;
+    std::string mSocketPath;
 };
 
-};
+inline std::unique_ptr<IClient> CreateDriverClient()
+{
+    const std::string driverPath = "AprilTagPipeIn";
+#ifdef ATT_OS_WINDOWS
+    return std::make_unique<WindowsNamedPipe>(driverPath);
+#else
+    return std::make_unique<UNIXSocket>(driverPath);
+#endif
+}
+
+[[nodiscard]] std::unique_ptr<IServer> CreateDriverServer();
+
+}; // namespace IPC
