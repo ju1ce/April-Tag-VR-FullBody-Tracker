@@ -143,7 +143,7 @@ private:
 
     tracker::VideoCapture mCapture;
 
-    // cameraFrame is protected by cameraImageMutex.
+    // mImageReadyCond, mIsImageReady, and mCameraFrame are protected by mCameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
     std::mutex mCameraImageMutex{};
     std::condition_variable mImageReadyCond{};
