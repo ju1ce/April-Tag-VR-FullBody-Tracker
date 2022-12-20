@@ -54,6 +54,12 @@ struct TrackerStatus
     cv::Point2d maskCenter;
 };
 
+struct CapturedFrame
+{
+    cv::Mat image;
+    utils::SteadyTimer::TimePoint timestamp;
+};
+
 class Tracker : public ITrackerControl
 {
     static constexpr int DRAW_IMG_SIZE = 480;
@@ -84,7 +90,7 @@ public:
 
 private:
     void CameraLoop();
-    void CopyFreshCameraImageTo(cv::Mat& image);
+    void CopyFreshCameraImageTo(CapturedFrame& frame);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -137,12 +143,12 @@ private:
 
     tracker::VideoCapture mCapture;
 
-    // cameraImage and imageReady are protected by cameraImageMutex.
+    // mImageReadyCond, mIsImageReady, and mCameraFrame are protected by mCameraImageMutex.
     // Use CopyFreshCameraImageTo in order to get the latest camera image.
     std::mutex mCameraImageMutex{};
-    cv::Mat mCameraImage{};
     std::condition_variable mImageReadyCond{};
     bool mIsImageReady = false;
+    CapturedFrame mCameraFrame{};
 
     UserConfig& user_config;
     CalibrationConfig& calib_config;

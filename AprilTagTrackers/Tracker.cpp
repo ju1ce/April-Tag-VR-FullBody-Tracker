@@ -140,7 +140,8 @@ void Tracker::CameraLoop()
             std::lock_guard lock{mCameraImageMutex};
             // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
             // The pixel buffer from cameraImage can be reused if the size and format matches.
-            cv::swap(img, mCameraImage);
+            cv::swap(img, mCameraFrame.image);
+            mCameraFrame.timestamp = stampAfterCap;
             // TODO: does opencv really care if img.read is called on the wrong size of matrix?
             // if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
             // {
@@ -159,13 +160,14 @@ void Tracker::CameraLoop()
     gui->SetStatus(false, StatusItem::Camera);
 }
 
-void Tracker::CopyFreshCameraImageTo(cv::Mat& image)
+void Tracker::CopyFreshCameraImageTo(CapturedFrame& frame)
 {
     std::unique_lock lock{mCameraImageMutex};
     mImageReadyCond.wait(lock, [&] { return mIsImageReady; });
 
     mIsImageReady = false;
-    cv::swap(image, mCameraImage);
+    cv::swap(frame.image, mCameraFrame.image);
+    frame.timestamp = mCameraFrame.timestamp;
 }
 
 void Tracker::StartCameraCalib()
@@ -203,7 +205,7 @@ void Tracker::StartCameraCalib()
 /// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    cv::Mat image;
+    CapturedFrame frame;
     cv::Mat gray;
     cv::Mat drawImg;
 
@@ -243,9 +245,9 @@ void Tracker::CalibrateCameraCharuco()
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
-        CopyFreshCameraImageTo(image);
-        const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(image), DRAW_IMG_SIZE);
-        image.copyTo(drawImg);
+        CopyFreshCameraImageTo(frame);
+        const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(frame.image), DRAW_IMG_SIZE);
+        frame.image.copyTo(drawImg);
         cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
         drawCalibration(
@@ -280,7 +282,7 @@ void Tracker::CalibrateCameraCharuco()
                 allCharucoIds.erase(allCharucoIds.begin() + maxPerViewErrorIdx);
 
                 // recalibrate camera without the problematic frame
-                cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, math::GetMatSize(frame.image),
                                                   cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
                                                   cv::CALIB_USE_LU);
 
@@ -288,7 +290,7 @@ void Tracker::CalibrateCameraCharuco()
             }
         }
 
-        cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+        cvtColor(frame.image, gray, cv::COLOR_BGR2GRAY);
         cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, params, rejectedCorners);
 
         // TODO: If markers are detected, the image gets updated, and then the calibration timer below
@@ -336,7 +338,7 @@ void Tracker::CalibrateCameraCharuco()
                         try
                         {
                             // Calibrate camera using our data
-                            cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, cv::Size(image.rows, image.cols),
+                            cv::aruco::calibrateCameraCharuco(allCharucoCorners, allCharucoIds, board, math::GetMatSize(frame.image),
                                                               cameraMatrix, distCoeffs, R, T, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors,
                                                               cv::CALIB_USE_LU);
                         }
@@ -458,7 +460,7 @@ void Tracker::CalibrateCamera()
     std::vector<cv::Point2f> corner_pts;
     bool success;
 
-    cv::Mat image;
+    CapturedFrame frame;
     cv::Mat outImg;
 
     int i = 0;
@@ -466,13 +468,16 @@ void Tracker::CalibrateCamera()
 
     int picNum = user_config.cameraCalibSamples;
 
+    cv::Size2i imageSize;
+
     while (i < picNum)
     {
         if (!mainThreadRunning || !cameraRunning)
         {
             return;
         }
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
+        cv::Mat& image = frame.image;
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(image), DRAW_IMG_SIZE);
 
@@ -502,11 +507,13 @@ void Tracker::CalibrateCamera()
 
         cv::resize(image, outImg, drawSize);
         gui->UpdatePreview(outImg);
+
+        imageSize = math::GetMatSize(frame.image);
     }
 
     cv::Mat cameraMatrix, distCoeffs, R, T;
 
-    calibrateCamera(objpoints, imgpoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, R, T);
+    calibrateCamera(objpoints, imgpoints, imageSize, cameraMatrix, distCoeffs, R, T);
 
     RefPtr<cfg::CameraCalib> camCalib = calib_config.cameras[0];
 
@@ -711,7 +718,7 @@ void Tracker::CalibrateTracker()
         trackerUnits.push_back(std::move(unit));
     }
 
-    cv::Mat image;
+    CapturedFrame frame;
     cv::Mat grayImage;
 
     math::EstimatePoseSingleMarkersResult markerPoses;
@@ -721,16 +728,16 @@ void Tracker::CalibrateTracker()
     // TODO: temporary make code easier by allowing returns and handling exceptions properly within loop
     // will be refactored to another class, but easier than pulling out to another function due to amount of state
     const auto doStep = [&] {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
         // detect and draw all markers on image
-        AprilTagWrapper::ConvertGrayscale(image, grayImage);
+        AprilTagWrapper::ConvertGrayscale(frame.image, grayImage);
         april.DetectMarkers(grayImage, dets);
         if (showTimeProfile)
         {
-            april.DrawTimeProfile(image, cv::Point(10, 60));
+            april.DrawTimeProfile(frame.image, cv::Point(10, 60));
         }
         // draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
-        cv::aruco::drawDetectedMarkers(image, dets.corners, dets.ids, COLOR_MARKER_DETECTED);
+        cv::aruco::drawDetectedMarkers(frame.image, dets.corners, dets.ids, COLOR_MARKER_DETECTED);
 
         math::EstimatePoseSingleMarkers(dets.corners, markerSize, *camCalib, markerPoses);
         ATT_ASSERT(markerPoses.positions.size() == dets.ids.size());
@@ -746,7 +753,7 @@ void Tracker::CalibrateTracker()
             auto [boardPose, estimated] = math::EstimatePoseTracker(dets.corners, dets.ids, unit.GetArucoBoard(), *camCalib);
             if (estimated == 0) continue; // no existing markers in this tracker were detected, can't add new ones to it
 
-            cv::drawFrameAxes(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardPose.rotation.value, boardPose.position, 0.1F);
+            cv::drawFrameAxes(frame.image, camCalib->cameraMatrix, camCalib->distortionCoeffs, boardPose.rotation.value, boardPose.position, 0.1F);
 
             bool foundMarkerToCalibrate = false;
             for (Index detIndex = 0; detIndex < static_cast<Index>(dets.ids.size()); ++detIndex)
@@ -764,7 +771,7 @@ void Tracker::CalibrateTracker()
                 // the main markers are already added above
                 if (unit.HasMarkerId(detId)) // already added to a tracker, draw it green and continue to next detection
                 {
-                    DrawMarker(image, detCorners, COLOR_MARKER_ADDED);
+                    DrawMarker(frame.image, detCorners, COLOR_MARKER_ADDED);
                     continue;
                 }
                 ATT_ASSERT(detId % markersPerTracker != 0, "main marker already added");
@@ -772,11 +779,11 @@ void Tracker::CalibrateTracker()
                 // if marker is too far away from camera, paint it purple, as adding it could have too much error
                 if (Length(detMarkerPose.position) > maxDist)
                 {
-                    DrawMarker(image, detCorners, COLOR_MARKER_FAR);
+                    DrawMarker(frame.image, detCorners, COLOR_MARKER_FAR);
                     continue;
                 }
 
-                DrawMarker(image, detCorners, COLOR_MARKER_ADDING);
+                DrawMarker(frame.image, detCorners, COLOR_MARKER_ADDING);
 
                 if (foundMarkerToCalibrate) continue;
                 foundMarkerToCalibrate = true;
@@ -795,7 +802,7 @@ void Tracker::CalibrateTracker()
             }
         }
 
-        if (preview.IsVisible()) preview.Update(image, DRAW_IMG_SIZE);
+        if (preview.IsVisible()) preview.Update(frame.image, DRAW_IMG_SIZE);
     };
 
     // run loop until we stop it
@@ -993,13 +1000,12 @@ void Tracker::MainLoop()
 
     MarkerDetectionList dets{};
 
-    cv::Mat image;
+    CapturedFrame frame;
     cv::Mat drawImg;
     cv::Mat outImg;
     cv::Mat grayAprilImg;
     cv::Mat maskSearchImg;
     cv::Mat tempGrayMaskedImg;
-
     // setup all variables that need to be stored for each tracker and initialize them
 
     int framesSinceLastSeen = 0;
@@ -1031,14 +1037,15 @@ void Tracker::MainLoop()
 
     // TODO: temporary lambda to make refactor easier
     const auto doStep = [&] {
-        CopyFreshCameraImageTo(image);
+        CopyFreshCameraImageTo(frame);
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
-        drawImg = image;
-        AprilTagWrapper::ConvertGrayscale(image, grayAprilImg);
+        drawImg = frame.image;
+        AprilTagWrapper::ConvertGrayscale(frame.image, grayAprilImg);
         const bool previewIsVisible = gui->IsPreviewVisible();
 
-        detectionTimer.Restart();
+        const auto stampBeforeDetect = utils::SteadyTimer::Now();
+        detectionTimer.Restart(stampBeforeDetect);
 
         bool circularWindow = videoStream->circularWindow;
 
@@ -1063,12 +1070,11 @@ void Tracker::MainLoop()
         const int searchRadius = static_cast<int>(static_cast<double>(grayAprilImg.rows) * videoStream->searchWindow);
         bool atleastOneTrackerVisible = false;
 
+        const double frameTimeBeforeDetect = duration_cast<utils::FSeconds>(stampBeforeDetect - frame.timestamp).count();
         for (int i = 0; i < trackerNum; i++)
         {
             auto& unit = mTrackerUnits[i];
-            const double frameTime = duration_cast<utils::FSeconds>(mFrameTimer.Get()).count();
-
-            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTime - videoStream->latency);
+            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
             CoordTransformOVR(pose.position);
             // transform boards position from steamvr space to camera space based on our calibration data
             pose.position = wtransform.inv() * pose.position;
@@ -1116,7 +1122,7 @@ void Tracker::MainLoop()
                 }
             }
 
-            if (maskCenter.inside(cv::Rect2d(0, 0, image.cols, image.rows)))
+            if (maskCenter.inside(cv::Rect2d(0, 0, frame.image.cols, frame.image.rows)))
             {
                 atleastOneTrackerVisible = true;
                 if (circularWindow) // if circular window is set mask a circle around the predicted tracker point
@@ -1127,7 +1133,7 @@ void Tracker::MainLoop()
                 else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
                 {
                     const int maskX = static_cast<int>(maskCenter.x);
-                    const cv::Rect2i maskRect{cv::Point(maskX - searchRadius, 0), cv::Point2i(maskX + searchRadius, image.rows)};
+                    const cv::Rect2i maskRect{cv::Point(maskX - searchRadius, 0), cv::Point2i(maskX + searchRadius, frame.image.rows)};
                     cv::rectangle(maskSearchImg, maskRect, cv::Scalar(255), -1);
                     if (previewIsVisible) cv::rectangle(drawImg, maskRect, COLOR_MASK, 3);
                 }
@@ -1156,7 +1162,7 @@ void Tracker::MainLoop()
 
         april.DetectMarkers(grayAprilImg, dets);
         // frame time is how much time passed since frame was acquired.
-        const double frameTime = duration_cast<utils::FSeconds>(mFrameTimer.Get()).count();
+        const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame.timestamp).count();
         for (int index = 0; index < mTrackerUnits.size(); ++index)
         {
             auto& unit = mTrackerUnits[index];
@@ -1213,9 +1219,9 @@ void Tracker::MainLoop()
                 }
 
                 // Figure out the camera aspect ratio, XZ and YZ ratio limits
-                const double aspectRatio = GetMatSize(image).aspectRatio();
-                const double xzRatioLimit = 0.5 * static_cast<double>(image.cols) / camCalib->cameraMatrix.at<double>(0, 0);
-                const double yzRatioLimit = 0.5 * static_cast<double>(image.rows) / camCalib->cameraMatrix.at<double>(1, 1);
+                const double aspectRatio = GetMatSize(frame.image).aspectRatio();
+                const double xzRatioLimit = 0.5 * static_cast<double>(frame.image.cols) / camCalib->cameraMatrix.at<double>(0, 0);
+                const double yzRatioLimit = 0.5 * static_cast<double>(frame.image.rows) / camCalib->cameraMatrix.at<double>(1, 1);
 
                 // Figure out whether X or Y dimension is most likely to go outside the camera field of view
                 if (std::abs(position.x / position.y) > aspectRatio)
@@ -1252,16 +1258,16 @@ void Tracker::MainLoop()
             CoordTransformOVR(poseToSend.rotation);
 
             // send all the values
-            mVRDriver->UpdateTracker(index, poseToSend, -frameTime - videoStream->latency, user_config.smoothingFactor);
+            mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, user_config.smoothingFactor);
         }
 
         if (gui->IsPreviewVisible())
         {
             // draw and display the detections
             if (!dets.ids.empty()) cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids);
-            const cv::Size2i drawSize = ConstrainSize(GetMatSize(image), DRAW_IMG_SIZE);
+            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame.image), DRAW_IMG_SIZE);
             cv::resize(drawImg, outImg, drawSize);
-            cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            cv::putText(outImg, std::to_string(frameTimeAfterDetect).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {
                 april.DrawTimeProfile(outImg, cv::Point(10, 60));
