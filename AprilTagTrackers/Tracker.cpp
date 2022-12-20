@@ -687,7 +687,7 @@ void Tracker::CalibrateTracker()
     // initialize all parameters needed for tracker calibration
     std::vector<tracker::TrackerUnit> trackerUnits;
 
-    AprilTagWrapper april{AprilTagWrapper::ConvertFamily(user_config.markerLibrary), user_config.videoStreams[0]->quadDecimate, 4};
+    AprilTagWrapper april{AprilTagWrapper::ConvertFamily(user_config.markerLibrary), user_config.videoStreams[0]->quadDecimate, user_config.detectorThreads};
     MarkerDetectionList dets{};
 
     const Index trackerNum = user_config.trackerNum;
@@ -1027,7 +1027,7 @@ void Tracker::MainLoop()
     const RefPtr<cfg::CameraCalib> camCalib = calib_config.cameras[0];
     const RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
     // TODO: support other marker families
-    AprilTagWrapper april{MarkerFamily::Standard41h12, videoStream->quadDecimate, 4};
+    AprilTagWrapper april{MarkerFamily::Standard41h12, videoStream->quadDecimate, user_config.detectorThreads};
 
     // TODO: temporary lambda to make refactor easier
     const auto doStep = [&] {

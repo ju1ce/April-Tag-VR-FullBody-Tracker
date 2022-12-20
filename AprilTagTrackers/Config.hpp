@@ -51,6 +51,7 @@ public:
     REFLECTABLE_FIELD(cfg::Validated<int>, apriltagThreadCount){4, cfg::Clamp(1, 32)};
     REFLECTABLE_FIELD(cfg::List<cfg::VideoStream>, videoStreams){1};
     REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnit>, trackers){3};
+    REFLECTABLE_FIELD(cfg::Validated<int>, detectorThreads){4, cfg::GreaterEqual(1)};
     REFLECTABLE_END;
 };
 
