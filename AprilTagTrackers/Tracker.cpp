@@ -991,58 +991,32 @@ void Tracker::UpdateMulticamPlayspaceCalibrator(const tracker::TrackerUnit& unit
     SetWorldTransform(calib);
 }
 
-void Tracker::MainLoop()
+class MainLoopRunner
 {
-    const Index trackerNum = mTrackerUnits.size();
-    SetWorldTransform(user_config.manualCalib.GetAsReal());
-
-    // these variables are used to save detections of apriltags, so we dont define them every frame
-
-    MarkerDetectionList dets{};
-
-    CapturedFrame frame;
-    cv::Mat drawImg;
-    cv::Mat outImg;
-    cv::Mat grayAprilImg;
-    cv::Mat maskSearchImg;
-    cv::Mat tempGrayMaskedImg;
-    // setup all variables that need to be stored for each tracker and initialize them
-
-    int framesSinceLastSeen = 0;
-    constexpr int framesToCheckAll = 20;
-
-    // calculate position of camera from calibration data and send its position to steamvr
+public:
+    explicit MainLoopRunner(RefPtr<Tracker> tracker)
+        : mTracker(tracker),
+          camCalib(mTracker->calib_config.cameras[0]),
+          videoStream(mTracker->user_config.videoStreams[0]),
+          april(AprilTagWrapper::ConvertFamily(mTracker->user_config.markerLibrary), videoStream->quadDecimate, mTracker->user_config.apriltagThreadCount),
+          trackerNum(mTracker->user_config.trackerNum)
     {
-        cv::Vec3d stationPos = wtransform.translation();
+        mTracker->SetWorldTransform(mTracker->user_config.manualCalib.GetAsReal());
+        // calculate position of camera from calibration data and send its position to steamvr
+        cv::Vec3d stationPos = mTracker->wtransform.translation();
         CoordTransformOVR(stationPos);
-        const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (wrotation * cv::Quatd(1, 0, 0, 0));
-        mVRDriver->UpdateStation(Pose(stationPos, stationQ));
+        const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (mTracker->wrotation * cv::Quatd(1, 0, 0, 0));
+        mTracker->mVRDriver->UpdateStation(Pose(stationPos, stationQ));
     }
 
-    // initialize variables for playspace calibration
-    bool calibControllerPosActive = false;
-    bool calibControllerAngleActive = false;
-    /// offset of controller to virtual camera, set when button is pressed
-    cv::Vec3d calibControllerPosOffset = {0, 0, 0};
-    /// (pitch, yaw) in radians, 3rd component is distance
-    cv::Vec3d calibControllerAngleOffset = {0, 0, 0};
-
-    utils::SteadyTimer calibControllerTimer{};
-    utils::SteadyTimer detectionTimer{};
-
-    const RefPtr<cfg::CameraCalib> camCalib = calib_config.cameras[0];
-    const RefPtr<cfg::VideoStream> videoStream = user_config.videoStreams[0];
-    // TODO: support other marker families
-    AprilTagWrapper april{MarkerFamily::Standard41h12, videoStream->quadDecimate, user_config.detectorThreads};
-
-    // TODO: temporary lambda to make refactor easier
-    const auto doStep = [&] {
-        CopyFreshCameraImageTo(frame);
+    void Update()
+    {
+        mTracker->CopyFreshCameraImageTo(frame);
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = frame.image;
         AprilTagWrapper::ConvertGrayscale(frame.image, grayAprilImg);
-        const bool previewIsVisible = gui->IsPreviewVisible();
+        const bool previewIsVisible = mTracker->gui->IsPreviewVisible();
 
         const auto stampBeforeDetect = utils::SteadyTimer::Now();
         detectionTimer.Restart(stampBeforeDetect);
@@ -1050,7 +1024,7 @@ void Tracker::MainLoop()
         bool circularWindow = videoStream->circularWindow;
 
         // if any tracker was lost for longer than 20 frames, mark circularWindow as false
-        for (const auto& unit : mTrackerUnits)
+        for (const auto& unit : mTracker->mTrackerUnits)
         {
             if (!unit.WasVisibleLastFrame())
             {
@@ -1073,11 +1047,11 @@ void Tracker::MainLoop()
         const double frameTimeBeforeDetect = duration_cast<utils::FSeconds>(stampBeforeDetect - frame.timestamp).count();
         for (int i = 0; i < trackerNum; i++)
         {
-            auto& unit = mTrackerUnits[i];
-            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
+            auto& unit = mTracker->mTrackerUnits[i];
+            auto [pose, isValid] = mTracker->mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
             CoordTransformOVR(pose.position);
             // transform boards position from steamvr space to camera space based on our calibration data
-            pose.position = wtransform.inv() * pose.position;
+            pose.position = mTracker->wtransform.inv() * pose.position;
 
             std::array<cv::Point2d, 2> projected;
             {
@@ -1096,7 +1070,7 @@ void Tracker::MainLoop()
             if (isValid) // if the pose from steamvr was valid, save the predicted position and rotation
             {
                 /// TODO: What is this?
-                pose.rotation = wrotation.inv(cv::QUAT_ASSUME_UNIT) *
+                pose.rotation = mTracker->wrotation.inv(cv::QUAT_ASSUME_UNIT) *
                                 cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT) *
                                 pose.rotation.normalize() *
                                 cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
@@ -1128,14 +1102,14 @@ void Tracker::MainLoop()
                 if (circularWindow) // if circular window is set mask a circle around the predicted tracker point
                 {
                     cv::circle(maskSearchImg, maskCenter, searchRadius, cv::Scalar(255), -1, 8, 0);
-                    if (previewIsVisible) cv::circle(drawImg, maskCenter, searchRadius, COLOR_MASK, 2, 8, 0);
+                    if (previewIsVisible) cv::circle(drawImg, maskCenter, searchRadius, mTracker->COLOR_MASK, 2, 8, 0);
                 }
                 else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
                 {
                     const int maskX = static_cast<int>(maskCenter.x);
                     const cv::Rect2i maskRect{cv::Point(maskX - searchRadius, 0), cv::Point2i(maskX + searchRadius, frame.image.rows)};
                     cv::rectangle(maskSearchImg, maskRect, cv::Scalar(255), -1);
-                    if (previewIsVisible) cv::rectangle(drawImg, maskRect, COLOR_MASK, 3);
+                    if (previewIsVisible) cv::rectangle(drawImg, maskRect, mTracker->COLOR_MASK, 3);
                 }
             }
             else
@@ -1151,9 +1125,9 @@ void Tracker::MainLoop()
             grayAprilImg = tempGrayMaskedImg;
         }
 
-        if (manualRecalibrate) // playspace calibration loop
+        if (mTracker->manualRecalibrate) // playspace calibration loop
         {
-            UpdatePlayspaceCalibrator(calibControllerPosActive, calibControllerAngleActive, calibControllerPosOffset, calibControllerAngleOffset, calibControllerTimer);
+            mTracker->UpdatePlayspaceCalibrator(calibControllerPosActive, calibControllerAngleActive, calibControllerPosOffset, calibControllerAngleOffset, calibControllerTimer);
         }
         else
         {
@@ -1163,17 +1137,17 @@ void Tracker::MainLoop()
         april.DetectMarkers(grayAprilImg, dets);
         // frame time is how much time passed since frame was acquired.
         const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame.timestamp).count();
-        for (int index = 0; index < mTrackerUnits.size(); ++index)
+        for (int index = 0; index < mTracker->mTrackerUnits.size(); ++index)
         {
-            auto& unit = mTrackerUnits[index];
+            auto& unit = mTracker->mTrackerUnits[index];
             // estimate the pose of current board
-            const RodrPose scaledPoseFromDriver{unit.GetPoseFromDriver().position / wscale, unit.GetPoseFromDriver().rotation};
+            const RodrPose scaledPoseFromDriver{unit.GetPoseFromDriver().position / mTracker->wscale, unit.GetPoseFromDriver().rotation};
             // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
             auto [estimatedPose, numEstimated] = math::EstimatePoseTracker(
                 dets.corners, dets.ids, unit.GetArucoBoard(), *camCalib,
-                unit.WasVisibleLastFrame() && user_config.usePredictive,
+                unit.WasVisibleLastFrame() && mTracker->user_config.usePredictive,
                 scaledPoseFromDriver);
-            estimatedPose.position *= wscale; // unscale returned estimation;
+            estimatedPose.position *= mTracker->wscale; // unscale returned estimation;
             unit.SetEstimatedPose(estimatedPose);
 
             ATT_ASSERT(!std::isnan(estimatedPose.position[X]));
@@ -1185,7 +1159,7 @@ void Tracker::MainLoop()
             }
             unit.SetWasVisibleLastFrame(true);
 
-            if (user_config.depthSmoothing > 0 && unit.WasVisibleToDriverLastFrame() && !manualRecalibrate)
+            if (mTracker->user_config.depthSmoothing > 0 && unit.WasVisibleToDriverLastFrame() && !mTracker->manualRecalibrate)
             {
                 // depth estimation is noisy, so try to smooth it more, especialy if using multiple cameras
                 // if position is close to the position predicted by the driver, take the depth of the driver.
@@ -1199,7 +1173,7 @@ void Tracker::MainLoop()
                 const cv::Vec3d normPredict = pose.position / distPredict;
 
                 double dist = std::abs(distPredict - distDriver);
-                dist = (dist / static_cast<double>(user_config.depthSmoothing)) + 0.1;
+                dist = (dist / static_cast<double>(mTracker->user_config.depthSmoothing)) + 0.1;
                 dist = std::clamp(dist, 0.0, 1.0);
 
                 const double distFinal = (dist * distPredict) + (1 - dist) * distDriver;
@@ -1244,45 +1218,79 @@ void Tracker::MainLoop()
                 }
             }
 
-            if (multicamAutocalib && unit.WasVisibleToDriverLastFrame())
+            if (mTracker->multicamAutocalib && unit.WasVisibleToDriverLastFrame())
             {
-                UpdateMulticamPlayspaceCalibrator(unit);
+                mTracker->UpdateMulticamPlayspaceCalibrator(unit);
                 continue; // skip sending to driver
             }
 
             // transform boards position based on our calibration data
             Pose poseToSend{unit.GetEstimatedPose()};
-            poseToSend.position = wtransform * poseToSend.position;
-            poseToSend.rotation = wrotation * poseToSend.rotation;
+            poseToSend.position = mTracker->wtransform * poseToSend.position;
+            poseToSend.rotation = mTracker->wrotation * poseToSend.rotation;
             CoordTransformOVR(poseToSend.position);
             CoordTransformOVR(poseToSend.rotation);
 
             // send all the values
-            mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, user_config.smoothingFactor);
+            mTracker->mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mTracker->user_config.smoothingFactor);
         }
 
-        if (gui->IsPreviewVisible())
+        if (mTracker->gui->IsPreviewVisible())
         {
             // draw and display the detections
             if (!dets.ids.empty()) cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids);
-            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame.image), DRAW_IMG_SIZE);
+            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame.image), mTracker->DRAW_IMG_SIZE);
             cv::resize(drawImg, outImg, drawSize);
             cv::putText(outImg, std::to_string(frameTimeAfterDetect).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-            if (showTimeProfile)
+            if (mTracker->showTimeProfile)
             {
                 april.DrawTimeProfile(outImg, cv::Point(10, 60));
             }
-            gui->UpdatePreview(outImg);
+            mTracker->gui->UpdatePreview(outImg);
         }
         // time of marker detection
-    };
+    }
+
+private:
+    RefPtr<Tracker> mTracker;
+    RefPtr<const cfg::CameraCalib> camCalib{};
+    RefPtr<const cfg::VideoStream> videoStream{};
+    AprilTagWrapper april;
+    Index trackerNum;
+
+    MarkerDetectionList dets{};
+
+    CapturedFrame frame{};
+    cv::Mat drawImg{};
+    cv::Mat outImg{};
+    cv::Mat grayAprilImg{};
+    cv::Mat maskSearchImg{};
+    cv::Mat tempGrayMaskedImg{};
+
+    int framesSinceLastSeen = 0;
+    static constexpr int framesToCheckAll = 20;
+
+    bool calibControllerPosActive = false;
+    bool calibControllerAngleActive = false;
+    /// offset of controller to virtual camera, set when button is pressed
+    cv::Vec3d calibControllerPosOffset = {0, 0, 0};
+    /// (pitch, yaw) in radians, 3rd component is distance
+    cv::Vec3d calibControllerAngleOffset = {0, 0, 0};
+
+    utils::SteadyTimer calibControllerTimer{};
+    utils::SteadyTimer detectionTimer{};
+};
+
+void Tracker::MainLoop()
+{
+    MainLoopRunner runner(this);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
     {
         try
         {
-            doStep();
+            runner.Update();
         }
         catch (const std::exception& e)
         {

@@ -60,6 +60,8 @@ struct CapturedFrame
     utils::SteadyTimer::TimePoint timestamp;
 };
 
+class MainLoopRunner;
+
 class Tracker : public ITrackerControl
 {
     static constexpr int DRAW_IMG_SIZE = 480;
@@ -71,6 +73,8 @@ class Tracker : public ITrackerControl
     static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
 public:
+    friend class MainLoopRunner;
+
     Tracker(const Tracker&) = delete;
     Tracker(Tracker&&) = delete;
     /// config and locale references are expected to exceed lifetime of this instance
