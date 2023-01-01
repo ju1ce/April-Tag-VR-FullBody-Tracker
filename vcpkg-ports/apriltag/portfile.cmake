@@ -36,8 +36,8 @@ endif()
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO AprilRobotics/apriltag
-    REF 76dce4c36132a342c36c4d296a6752c6b22a946b
-    SHA512 1777b5ab90180ed750d56bf12cd000b5901e87cbc5da1162d5e6d7d4e9a06c12157338e300884d66242d4823b51b8837bfecce3e6ed5ab1443e147a4c18fbb3d
+    REF 3e8e974d0d8d6ab318abf56d87506d15d7f2cc35
+    SHA512 ef313ccaf0fb89a8720ff63ce9a2840287c5da8bd9bdb6af1e752e01308e76b08f4465cb9c284f3dbd95aacb2a5cdbb054aaef54272f9c67d236e602ea7fa161
     HEAD_REF master
     PATCHES
         0001-disable-build-examples.patch
