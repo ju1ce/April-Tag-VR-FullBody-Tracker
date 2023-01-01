@@ -7,7 +7,7 @@
             "name": "opencv4",
             "default-features": false,
             "features": [
-                "contrib-aruco",
+                "contrib",
                 "ffmpeg",
                 "ipp",
                 "opengl",
