@@ -4,18 +4,29 @@
 
 # suppressing incorrect or ignored checks in code: https://clang.llvm.org/extra/clang-tidy/#id3
 
+# compiler flags to add to clang tidy
+#  -clang:-Wdocumentation
+#  -DATT_TESTING  (enable warnings in tests)
+# on windows in clang-cl mode
+#  -fno-delayed-template-parsing
+#  -Werror=microsoft-template
+#  /W4
+#  -Wno-c++98-compat
+#  -Wno-c++98-compat-pedantic
+#  -D__cpp_consteval  (fix source_location)
+
 ---
-# before space is style guide
+# readability-* is style guide
 # the rest are good checks to conform to
 # - prefix disables that check globally
 Checks: >-
-    llvm-namespace-comment,
     readability-*,
     -readability-named-parameter,
     -readability-identifier-length,
-
+    -readability-magic-numbers,
     bugprone-*,
     -bugprone-easily-swappable-parameters,
+    -bugprone-narrowing-conversions,
     concurrency-*,
     performance-*,
     portability-*,
@@ -56,15 +67,23 @@ CheckOptions:
       value: camelBack
     - key: readability-identifier-naming.ParameterCase
       value: camelBack
-    - key: readability-identifier-naming.MemberCase
+    - key: readability-identifier-naming.PrivateMemberCase
       value: CamelCase # technically camelBack, but m prefix is always the first lower case
-    - key: readability-identifier-naming.MemberPrefix
+    - key: readability-identifier-naming.PrivateMemberPrefix
       value: m
     - key: readability-identifier-naming.ClassConstantCase # static class variables
       value: aNy_CasE # mostly upper case
     - key: readability-identifier-naming.GlobalConstantCase
-      value: aNy_CasE # mostly upper case
+      value: UPPER_CASE
     - key: readability-identifier-naming.MacroDefinitionCase
       value: UPPER_CASE
     - key: readability-identifier-naming.MacroDefinitionPrefix
       value: ATT_
+    - key: readability-braces-around-statements.ShortStatementLines
+      value: 1
+    - key: bugprone-assert-side-effect.AssertMacros
+      value: assert;ATT_ASSERT;ATT_REQUIRE
+    - key: readability-function-cognitive-complexity.IgnoreMacros
+      value: true
+    - key: cppcoreguidelines-narrowing-conversions.IgnoreConversionFromTypes
+      value: size_t;size_type
