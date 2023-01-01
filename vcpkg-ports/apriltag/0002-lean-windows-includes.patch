@@ -1,0 +1,48 @@
+diff --git a/common/pthreads_cross.h b/common/pthreads_cross.h
+index 897a333..f982175 100644
+--- a/common/pthreads_cross.h
++++ b/common/pthreads_cross.h
+@@ -25,7 +25,11 @@ SOFTWARE.
+ 
+ #ifdef _WIN32
+ #include <stdbool.h>
++#define NOMINMAX
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef NOMINMAX
++#undef WIN32_LEAN_AND_MEAN
+ #else
+ #include <pthread.h>
+ #include <sched.h>
+diff --git a/common/time_util.h b/common/time_util.h
+index 207e958..2200620 100644
+--- a/common/time_util.h
++++ b/common/time_util.h
+@@ -32,7 +32,11 @@ either expressed or implied, of the Regents of The University of Michigan.
+ #include <time.h>
+ 
+ #ifdef _WIN32
++#define NOMINMAX
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef NOMINMAX
++#undef WIN32_LEAN_AND_MEAN
+ typedef long long suseconds_t;
+ #endif
+ 
+diff --git a/common/workerpool.c b/common/workerpool.c
+index a0170ef..8ec2480 100644
+--- a/common/workerpool.c
++++ b/common/workerpool.c
+@@ -33,7 +33,11 @@ either expressed or implied, of the Regents of The University of Michigan.
+ #include <stdio.h>
+ #include <stdlib.h>
+ #ifdef _WIN32
++#define NOMINMAX
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef NOMINMAX
++#undef WIN32_LEAN_AND_MEAN
+ #else
+ #include <unistd.h>
+ #endif

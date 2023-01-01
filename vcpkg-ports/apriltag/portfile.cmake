@@ -41,7 +41,7 @@ vcpkg_from_github(
     HEAD_REF master
     PATCHES
         0001-disable-build-examples.patch
-        0002-hide-windows-h.patch
+        0002-lean-windows-includes.patch
 )
 
 # Check if one or more features are a part of a package installation.
