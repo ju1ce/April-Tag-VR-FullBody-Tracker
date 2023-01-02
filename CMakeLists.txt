@@ -12,7 +12,7 @@ att_default_triplet(ATT_TRIPLET)
 set(VCPKG_TARGET_TRIPLET "${ATT_TRIPLET}" CACHE STRING "")
 set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-ports")
 set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-triplets")
-set(VCPKG_INSTALL_OPTIONS "--clean-after-build" CACHE STRING "")
+set(VCPKG_INSTALL_OPTIONS "--clean-after-build" "--x-abi-tools-use-exact-versions" CACHE STRING "")
 
 # clone a local vcpkg install if user doesn't already have
 # set the toolchain file to vcpkg.cmake
