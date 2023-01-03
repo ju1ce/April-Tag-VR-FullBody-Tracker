@@ -31,6 +31,10 @@ public:
         mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
         mScale = scale;
     }
+    void Set(cfg::ManualCalib::Real calib)
+    {
+        Set(calib.posOffset, calib.angleOffset, calib.scale);
+    }
 
     void Transform(cv::Point3d& pos, cv::Quatd& rot) const
     {
