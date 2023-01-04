@@ -8,7 +8,7 @@ BasedOnStyle: LLVM
 
 UseTab: Never
 IndentWidth: 4
-ColumnLimit: 100
+ColumnLimit: 0
 AccessModifierOffset: -4
 MaxEmptyLinesToKeep: 1
 FixNamespaceComments: true
