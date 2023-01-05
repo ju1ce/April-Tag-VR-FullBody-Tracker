@@ -62,6 +62,14 @@ public:
         return p;
     }
 
+    Pose GetStationPose() const { return {mTransform.translation(), mRotation}; }
+    Pose GetStationPoseOVR() const
+    {
+        Pose pose = GetStationPose();
+        CoordTransformOVR(pose.position);
+        CoordTransformOVR(pose.rotation);
+        return pose;
+    }
     double GetScale() const { return mScale; }
 
 private:
