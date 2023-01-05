@@ -48,6 +48,20 @@ public:
     }
     cv::Point3d Transform(const cv::Point3d& pos) const { return mTransform * pos; }
 
+    Pose TransformToOVR(Pose pose) const
+    {
+        CoordTransformOVR(pose.position);
+        CoordTransformOVR(pose.rotation);
+        return Transform(pose);
+    }
+    Pose InvTransformFromOVR(const Pose& pose) const
+    {
+        Pose p = InvTransform(pose);
+        CoordTransformOVR(p.position);
+        CoordTransformOVR(p.rotation);
+        return p;
+    }
+
     double GetScale() const { return mScale; }
 
 private:
