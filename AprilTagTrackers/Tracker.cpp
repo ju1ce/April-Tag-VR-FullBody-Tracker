@@ -34,7 +34,7 @@ Tracker::Tracker(UserConfig& _userConfig, CalibrationConfig& _calibConfig, Aruco
       user_config(_userConfig), calib_config(_calibConfig), aruco_config(_arucoConfig), lc(_lc)
 {
     SetTrackerUnitsFromConfig();
-    SetWorldTransform(user_config.manualCalib.GetAsReal());
+    mPlayspace.Set(user_config.manualCalib.GetAsReal());
 }
 
 void Tracker::StartCamera(RefPtr<cfg::Camera> cam)
@@ -602,14 +602,6 @@ void Tracker::StartConnection()
 //     else // if (code == Code::SOMETHING_WRONG)
 //         gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);
 // }
-// TODO: rename to SetPlayspaceCalib
-void Tracker::SetWorldTransform(const cfg::ManualCalib::Real& calib)
-{
-    cv::Matx33d rmat = EulerAnglesToRotationMatrix(calib.angleOffset);
-    wtransform = cv::Affine3d(rmat, calib.posOffset);
-    wrotation = cv::Quatd::createFromRotMat(rmat).normalize();
-    wscale = calib.scale;
-}
 
 void Tracker::Start()
 {
@@ -837,6 +829,7 @@ public:
         RefPtr<tracker::IVRClient> mVRClient = state->mVRClient;
         RefPtr<GUI> gui = state->gui;
         bool lockHeightCalib = state->lockHeightCalib;
+        RefPtr<PlayspaceCalib> playspace = &state->mPlayspace;
 
         if (!state->manualRecalibrate)
         {
@@ -943,20 +936,14 @@ public:
             gui->SetManualCalib(calib);
         }
         // update the pre calculated calibration transformations
-        state->SetWorldTransform(gui->GetManualCalib());
-
-        cv::Vec3d stationPos = state->wtransform.translation();
-        CoordTransformOVR(stationPos);
-        // rotate y axis by 180 degrees, aka, reflect across xz plane
-        const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * state->wrotation;
-
-        // move the camera in steamvr to new calibration
-        state->mVRDriver->UpdateStation(Pose(stationPos, stationQ));
+        playspace->Set(gui->GetManualCalib());
+        state->mVRDriver->UpdateStation(playspace->GetStationPoseOVR());
     }
 
     static void UpdateMulticam(RefPtr<Tracker> state, tracker::TrackerUnit& unit)
     {
         RefPtr<GUI> gui = state->gui;
+        RefPtr<PlayspaceCalib> playspace = &state->mPlayspace;
 
         // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
         // instead, refine the calibration data with gradient descent
@@ -973,8 +960,8 @@ public:
         cv::Vec2d driverAngles = EulerAnglesFromPos(driverPos);
         const double driverLength = Length(driverPos);
 
-        pos = state->wtransform * pos;
-        driverPos = state->wtransform * driverPos;
+        pos = playspace->Transform(pos);
+        driverPos = playspace->Transform(driverPos);
 
         CoordTransformOVR(pos);
         CoordTransformOVR(driverPos);
@@ -1003,7 +990,7 @@ public:
         calib.scale -= (1 - (driverLength / length)) * 0.1;
 
         gui->SetManualCalib(calib);
-        state->SetWorldTransform(calib);
+        playspace->Set(calib);
     }
 
 private:
@@ -1024,14 +1011,12 @@ public:
           camCalib(mTracker->calib_config.cameras[0]),
           videoStream(mTracker->user_config.videoStreams[0]),
           april(AprilTagWrapper::ConvertFamily(mTracker->user_config.markerLibrary), videoStream->quadDecimate, mTracker->user_config.apriltagThreadCount),
-          trackerNum(mTracker->user_config.trackerNum)
+          trackerNum(mTracker->user_config.trackerNum),
+          mPlayspace(&mTracker->mPlayspace)
     {
-        mTracker->SetWorldTransform(mTracker->user_config.manualCalib.GetAsReal());
+        mPlayspace->Set(mTracker->user_config.manualCalib.GetAsReal());
         // calculate position of camera from calibration data and send its position to steamvr
-        cv::Vec3d stationPos = mTracker->wtransform.translation();
-        CoordTransformOVR(stationPos);
-        const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * (mTracker->wrotation * cv::Quatd(1, 0, 0, 0));
-        mTracker->mVRDriver->UpdateStation(Pose(stationPos, stationQ));
+        mTracker->mVRDriver->UpdateStation(mPlayspace->GetStationPoseOVR());
     }
 
     void Update()
@@ -1074,9 +1059,7 @@ public:
         {
             auto& unit = mTracker->mTrackerUnits[i];
             auto [pose, isValid] = mTracker->mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
-            CoordTransformOVR(pose.position);
-            // transform boards position from steamvr space to camera space based on our calibration data
-            pose.position = mTracker->wtransform.inv() * pose.position;
+            pose = mPlayspace->InvTransformFromOVR(pose);
 
             std::array<cv::Point2d, 2> projected;
             {
@@ -1094,19 +1077,8 @@ public:
             cv::Point2d maskCenter;
             if (isValid) // if the pose from steamvr was valid, save the predicted position and rotation
             {
-                /// TODO: What is this?
-                pose.rotation = mTracker->wrotation.inv(cv::QUAT_ASSUME_UNIT) *
-                                cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT) *
-                                pose.rotation.normalize() *
-                                cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
-                if (previewIsVisible) {
-                    cv::drawFrameAxes(drawImg,
-                        camCalib->cameraMatrix,
-                        camCalib->distortionCoeffs,
-                        pose.rotation.toRotVec(),
-                        math::ToVec(pose.position),
-                        0.1F);
-                }
+                if (previewIsVisible) cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, pose.rotation.toRotVec(), math::ToVec(pose.position), 0.10F);
+
                 if (!unit.WasVisibleLastFrame()) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
                     maskCenter = driverCenter;
@@ -1164,13 +1136,13 @@ public:
         {
             auto& unit = mTracker->mTrackerUnits[index];
             // estimate the pose of current board
-            const RodrPose scaledPoseFromDriver{unit.GetPoseFromDriver().position / mTracker->wscale, unit.GetPoseFromDriver().rotation};
+            const RodrPose scaledPoseFromDriver{unit.GetPoseFromDriver().position / mPlayspace->GetScale(), unit.GetPoseFromDriver().rotation};
             // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
             auto [estimatedPose, numEstimated] = math::EstimatePoseTracker(
                 dets.corners, dets.ids, unit.GetArucoBoard(), *camCalib,
                 unit.WasVisibleLastFrame() && mTracker->user_config.usePredictive,
                 scaledPoseFromDriver);
-            estimatedPose.position *= mTracker->wscale; // unscale returned estimation;
+            estimatedPose.position *= mPlayspace->GetScale(); // unscale returned estimation;
             unit.SetEstimatedPose(estimatedPose);
 
             ATT_ASSERT(!std::isnan(estimatedPose.position[X]));
@@ -1248,11 +1220,7 @@ public:
             }
 
             // transform boards position based on our calibration data
-            Pose poseToSend{unit.GetEstimatedPose()};
-            poseToSend.position = mTracker->wtransform * poseToSend.position;
-            poseToSend.rotation = mTracker->wrotation * poseToSend.rotation;
-            CoordTransformOVR(poseToSend.position);
-            CoordTransformOVR(poseToSend.rotation);
+            Pose poseToSend = mPlayspace->TransformToOVR(Pose(unit.GetEstimatedPose()));
 
             // send all the values
             mTracker->mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mTracker->user_config.smoothingFactor);
@@ -1280,6 +1248,7 @@ private:
     RefPtr<const cfg::VideoStream> videoStream{};
     AprilTagWrapper april;
     Index trackerNum;
+    RefPtr<PlayspaceCalib> mPlayspace;
 
     MarkerDetectionList dets{};
 

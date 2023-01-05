@@ -169,14 +169,7 @@ private:
         gui->ShowPopup(msg, PopupStyle::Error);
     }
 
-    /// Sets the wtransform, wrotation, and wscale
-    // TODO: rename uses of world transform and manual calib to playspace calibration
-    void SetWorldTransform(const cfg::ManualCalib::Real& calib);
-    /// Calibration transformation
-    cv::Affine3d wtransform;
-    /// wtransform rotation part as a quaternion
-    cv::Quatd wrotation;
-    double wscale = 1;
+    PlayspaceCalib mPlayspace;
 
     tracker::VideoCapture mCapture;
 
