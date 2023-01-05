@@ -33,7 +33,7 @@ public:
         mInvRotation = mRotation.inv();
         mScale = scale;
     }
-    void Set(cfg::ManualCalib::Real calib)
+    void Set(const cfg::ManualCalib::Real& calib)
     {
         Set(calib.posOffset, calib.angleOffset, calib.scale);
     }
