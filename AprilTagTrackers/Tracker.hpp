@@ -40,6 +40,8 @@ public:
 
     Pose Transform(const Pose& pose) const
     {
+        return {mTransform * pose.position, mRotation * pose.rotation};
+    }
     Pose InvTransform(const Pose& pose) const
     {
         return {mInvTransform * pose.position, mInvRotation * pose.rotation};
