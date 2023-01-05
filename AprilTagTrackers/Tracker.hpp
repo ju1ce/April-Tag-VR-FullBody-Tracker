@@ -36,12 +36,11 @@ public:
         Set(calib.posOffset, calib.angleOffset, calib.scale);
     }
 
-    void Transform(cv::Point3d& pos, cv::Quatd& rot) const
+    Pose Transform(const Pose& pose) const
     {
-        pos = mTransform * pos;
-        rot = mRotation * rot;
+        return { mTransform * pose.position, mRotation * pose.rotation };
     }
-    void Transform(Pose& pose) const { Transform(pose.position, pose.rotation); }
+    cv::Point3d Transform(const cv::Point3d& pos) const { return mTransform * pos; }
 
     double GetScale() const { return mScale; }
 
