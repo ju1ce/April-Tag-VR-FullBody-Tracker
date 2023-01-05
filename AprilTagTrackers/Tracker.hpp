@@ -29,6 +29,8 @@ public:
         cv::Matx33d rotMat = EulerAnglesToRotationMatrix(angleOffset);
         mTransform = cv::Affine3d(rotMat, posOffset);
         mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
+        mInvTransform = mTransform.inv();
+        mInvRotation = mRotation.inv();
         mScale = scale;
     }
     void Set(cfg::ManualCalib::Real calib)
@@ -38,7 +40,9 @@ public:
 
     Pose Transform(const Pose& pose) const
     {
-        return { mTransform * pose.position, mRotation * pose.rotation };
+    Pose InvTransform(const Pose& pose) const
+    {
+        return {mInvTransform * pose.position, mInvRotation * pose.rotation};
     }
     cv::Point3d Transform(const cv::Point3d& pos) const { return mTransform * pos; }
 
@@ -47,6 +51,8 @@ public:
 private:
     cv::Affine3d mTransform{};
     cv::Quatd mRotation{};
+    cv::Affine3d mInvTransform{};
+    cv::Quatd mInvRotation{};
     double mScale = 0;
 };
 
