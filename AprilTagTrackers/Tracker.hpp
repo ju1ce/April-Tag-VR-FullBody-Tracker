@@ -42,6 +42,7 @@ public:
     void StartCamera() override;
     void StartCameraCalib() override;
     void StartTrackerCalib() override;
+    void StartTrackerRefine() override;
     void StartConnection() override;
     void Start() override;
     void Stop() override;
@@ -57,6 +58,7 @@ private:
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
+    void RefineTracker();
     void MainLoop();
 
     void HandleConnectionErrors();

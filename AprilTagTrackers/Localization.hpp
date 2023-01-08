@@ -121,6 +121,7 @@ public:
     T(CAMERA_START_CAMERA) = "1. Start/Stop camera";
     T(CAMERA_CALIBRATE_CAMERA) = "2. Calibrate camera";
     T(CAMERA_CALIBRATE_TRACKERS) = "3. Calibrate trackers";
+    T(CAMERA_REFINE_TRACKERS) = "(optional) Refine trackers";
     T(CAMERA_START_STEAMVR) = "4. Start up SteamVR!";
     T(CAMERA_CONNECT) = "5. Connect to SteamVR";
     T(CAMERA_START_DETECTION) = "6. Start/Stop";
@@ -250,6 +251,13 @@ Red: This marker cannot be calibrated as no green markers are seen. Rotate the t
 Yellow: The marker is being calibrated. Hold it still for a second.
 
 When all the markers on all trackers are shown as green, press OK to finish calibration.)";
+
+    T(TRACKER_TRACKER_REFINE_INSTRUCTIONS) =
+        R"(Tracker refinement started!
+
+Optional tracker calibration refinement using Ceres solver.
+Show each tracker to the camera from different angles until each marker turns green, then hit the OK button.)";
+
 
     T(TRACKER_TRACKER_NOTCALIBRATED) = "Trackers not calibrated";
 

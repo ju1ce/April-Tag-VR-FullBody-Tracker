@@ -226,7 +226,10 @@ void GUI::MainFrame::CreateCameraPage(RefPtr<wxNotebook> pages)
             {
                 tracker->StartTrackerCalib();
             }})
-        .Add(StretchSpacer{})
+        .Add(Button{lc.CAMERA_REFINE_TRACKERS, [this](auto&)
+            {
+                tracker->StartTrackerRefine();
+            }})
         .Add(Label{lc.CAMERA_START_STEAMVR})
         .Add(CheckBoxButton{lc.CAMERA_DISABLE_OPENVR_API, [this](auto& evt)
             {

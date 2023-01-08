@@ -651,6 +651,45 @@ void Tracker::StartTrackerCalib()
                     });
 }
 
+void Tracker::StartTrackerRefine()
+{
+    // check that no other process is running on main thread, check that camera is running and calibrated
+    if (mainThreadRunning)
+    {
+        mainThreadRunning = false;
+        return;
+    }
+    if (!cameraRunning)
+    {
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
+        mainThreadRunning = false;
+        return;
+    }
+    if (calib_config.cameras[0]->cameraMatrix.empty())
+    {
+        gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
+        mainThreadRunning = false;
+        return;
+    }
+    if (!trackersCalibrated)
+    {
+        gui->ShowPopup(lc.TRACKER_TRACKER_NOTCALIBRATED, PopupStyle::Error);
+        mainThreadRunning = false;
+        return;
+    }
+
+    // start tracker calibration on another thread
+    mainThreadRunning = true;
+    mainThread = std::thread(&Tracker::RefineTracker, this);
+    mainThread.detach();
+
+    gui->ShowPrompt(lc.TRACKER_TRACKER_REFINE_INSTRUCTIONS,
+                    [&](bool)
+                    {
+                        mainThreadRunning = false;
+                    });
+}
+
 void Tracker::StartConnection()
 {
     connection->StartConnection();
@@ -954,6 +993,17 @@ void Tracker::CalibrateTracker()
     calib_config.Save();
     trackersCalibrated = true;
 
+    mainThreadRunning = false;
+}
+
+void Tracker::RefineTracker()
+{
+    // run loop until we stop it
+    while (cameraRunning && mainThreadRunning)
+    {
+        // TODO: Implement me
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
     mainThreadRunning = false;
 }
 
