@@ -33,6 +33,7 @@ target_sources(AprilTagTrackers PRIVATE
     ps3eye/PSEyeVideoCapture.cpp
 
     ceres/bal_problem.cpp
+    ceres/bundle_adjuster.cpp
 )
 
 if (WIN32)

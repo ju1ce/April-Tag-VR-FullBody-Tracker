@@ -7,6 +7,7 @@
 #include "utils/Assert.hpp"
 
 #include <bal_problem.hpp>
+#include <bundle_adjuster.hpp>
 #include <opencv2/aruco/charuco.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -1268,6 +1269,7 @@ void Tracker::RefineTracker()
         bal_problem.WriteToFile("bal_problem.txt");
 #endif
 
+        ceres::examples::SolveProblem(bal_problem);
     }
 
     mainThreadRunning = false;
