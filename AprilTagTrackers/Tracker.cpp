@@ -945,7 +945,8 @@ public:
             grayAprilImg = tempGrayMaskedImg;
         }
 
-        mCalibrator.Update(mTracker);
+        mCalibrator.Update(mTracker->mVRClient, mTracker->mVRDriver, mTracker->gui,
+                           mPlayspace, mTracker->lockHeightCalib, mTracker->manualRecalibrate);
 
         april.DetectMarkers(grayAprilImg, dets);
         // frame time is how much time passed since frame was acquired.
@@ -1033,7 +1034,7 @@ public:
 
             if (mTracker->multicamAutocalib && unit.WasVisibleToDriverLastFrame())
             {
-                PlayspaceCalibrator::UpdateMulticam(mTracker, unit);
+                tracker::PlayspaceCalibrator::UpdateMulticam(mTracker->gui, mPlayspace, unit);
                 continue; // skip sending to driver
             }
 
@@ -1066,7 +1067,7 @@ private:
     RefPtr<const cfg::VideoStream> videoStream{};
     AprilTagWrapper april;
     Index trackerNum;
-    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<tracker::PlayspaceCalib> mPlayspace;
 
     MarkerDetectionList dets{};
 
@@ -1079,7 +1080,7 @@ private:
 
     int framesSinceLastSeen = 0;
     static constexpr int framesToCheckAll = 20;
-    PlayspaceCalibrator mCalibrator{};
+    tracker::PlayspaceCalibrator mCalibrator{};
 
     utils::SteadyTimer detectionTimer{};
 };

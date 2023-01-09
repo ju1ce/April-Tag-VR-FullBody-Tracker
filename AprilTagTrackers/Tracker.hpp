@@ -4,6 +4,7 @@
 #include "GUI.hpp"
 #include "RefPtr.hpp"
 #include "tracker/OpenVRClient.hpp"
+#include "tracker/PlayspaceCalib.hpp"
 #include "tracker/TrackerUnit.hpp"
 #include "tracker/VideoCapture.hpp"
 #include "tracker/VRDriver.hpp"
@@ -110,7 +111,7 @@ private:
         gui->ShowPopup(msg, PopupStyle::Error);
     }
 
-    PlayspaceCalib mPlayspace;
+    tracker::PlayspaceCalib mPlayspace;
 
     tracker::VideoCapture mCapture;
 
