@@ -7,8 +7,11 @@ out*/
 .vs/
 .vscode/
 
-# .clangd, .clang-format, .clang-tidy
+# .clangd
 .clang*
+# allowed clang configs for style
+!/.clang-format
+!/.clang-tidy
 
 # installed by cmake
 vcpkg/

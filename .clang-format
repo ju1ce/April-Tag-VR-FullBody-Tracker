@@ -1,0 +1,62 @@
+# allowing custom formatting
+# // clang-format off
+# some code;
+# // clang-format on
+
+---
+BasedOnStyle: LLVM
+
+UseTab: Never
+IndentWidth: 4
+ColumnLimit: 0
+AccessModifierOffset: -4
+MaxEmptyLinesToKeep: 1
+FixNamespaceComments: true
+ReflowComments: false
+
+PointerAlignment: Left
+QualifierAlignment: Left
+IndentPPDirectives: AfterHash
+
+AlignTrailingComments: false
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Headers in <> without extension.
+  - Regex: '<([[:alnum:]\Q/-_\E])+>'
+    Priority: 3
+  # Headers in <> with extension.
+  - Regex: '<([[:alnum:].\Q/-_\E])+>'
+    Priority: 2
+  # Headers in "" with extension.
+  - Regex: '"([[:alnum:].\Q/-_\E])+"'
+    Priority: 1
+
+ForEachMacros: ["TEST_CASE"]
+StatementMacros: []
+WhitespaceSensitiveMacros: ["ATT_STRINGIZE"]
+
+BreakBeforeBraces: Custom # nearly identical to Allman, but slightly better c++20 support
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false # default: true
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false # default: true
+  SplitEmptyRecord: false # default: true
+  SplitEmptyNamespace: false # default: true

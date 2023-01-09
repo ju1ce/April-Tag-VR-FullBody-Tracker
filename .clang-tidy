@@ -1,0 +1,89 @@
+# if you want to make changes to this without affecting upstream
+# run `git update-index --skip-worktree .clang-tidy`
+# read more about command: https://stackoverflow.com/a/8327571/18158409
+
+# suppressing incorrect or ignored checks in code: https://clang.llvm.org/extra/clang-tidy/#id3
+
+# compiler flags to add to clang tidy
+#  -clang:-Wdocumentation
+#  -DATT_TESTING  (enable warnings in tests)
+# on windows in clang-cl mode
+#  -fno-delayed-template-parsing
+#  -Werror=microsoft-template
+#  /W4
+#  -Wno-c++98-compat
+#  -Wno-c++98-compat-pedantic
+#  -D__cpp_consteval  (fix source_location)
+
+---
+# readability-* is style guide
+# the rest are good checks to conform to
+# - prefix disables that check globally
+Checks: >-
+    readability-*,
+    -readability-named-parameter,
+    -readability-identifier-length,
+    -readability-magic-numbers,
+    bugprone-*,
+    -bugprone-easily-swappable-parameters,
+    -bugprone-narrowing-conversions,
+    concurrency-*,
+    performance-*,
+    portability-*,
+    modernize-*,
+    -modernize-use-trailing-return-type,
+    -modernize-use-nodiscard,
+    cert-*,
+    misc-*,
+    -misc-non-private-member-variables-in-classes,
+    fuchsia-trailing-return,
+    google-build-using-namespace,
+    google-explicit-constructor,
+    hicpp-exception-baseclass,
+    hicpp-multiway-paths-covered,
+    hicpp-no-assembler,
+    hicpp-signed-bitwise,
+    cppcoreguidelines-avoid-goto,
+    cppcoreguidelines-avoid-non-const-global-variables,
+    cppcoreguidelines-init-variables,
+    cppcoreguidelines-interfaces-global-init,
+    cppcoreguidelines-macro-usage,
+    cppcoreguidelines-narrowing-conversions,
+    cppcoreguidelines-no-malloc,
+    cppcoreguidelines-prefer-member-initializer,
+    cppcoreguidelines-pro-type-*,
+    cppcoreguidelines-slicing,
+    cppcoreguidelines-virtual-class-destructor,
+CheckOptions:
+    - key: readability-identifier-naming.ClassCase
+      value: CamelCase
+    - key: readability-identifier-naming.EnumCase
+      value: CamelCase
+    - key: readability-identifier-naming.EnumConstantCase
+      value: CamelCase
+    - key: readability-identifier-naming.FunctionCase
+      value: CamelCase
+    - key: readability-identifier-naming.VariableCase
+      value: camelBack
+    - key: readability-identifier-naming.ParameterCase
+      value: camelBack
+    - key: readability-identifier-naming.PrivateMemberCase
+      value: CamelCase # technically camelBack, but m prefix is always the first lower case
+    - key: readability-identifier-naming.PrivateMemberPrefix
+      value: m
+    - key: readability-identifier-naming.ClassConstantCase # static class variables
+      value: aNy_CasE # mostly upper case
+    - key: readability-identifier-naming.GlobalConstantCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.MacroDefinitionCase
+      value: UPPER_CASE
+    - key: readability-identifier-naming.MacroDefinitionPrefix
+      value: ATT_
+    - key: readability-braces-around-statements.ShortStatementLines
+      value: 1
+    - key: bugprone-assert-side-effect.AssertMacros
+      value: assert;ATT_ASSERT;ATT_REQUIRE
+    - key: readability-function-cognitive-complexity.IgnoreMacros
+      value: true
+    - key: cppcoreguidelines-narrowing-conversions.IgnoreConversionFromTypes
+      value: size_t;size_type
