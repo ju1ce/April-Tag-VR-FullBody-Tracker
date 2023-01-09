@@ -131,7 +131,7 @@ struct Serial<cv::Ptr<cv::aruco::DetectorParameters>>
 {
     static void Parse(FileStorageReader& ctx, cv::Ptr<cv::aruco::DetectorParameters>& value)
     {
-        cv::aruco::DetectorParameters::readDetectorParameters(ctx.GetReader(), value);
+        value->readDetectorParameters(ctx.GetReader());
     }
     static void Format(FileStorageWriter& ctx, const cv::Ptr<cv::aruco::DetectorParameters>& value);
 };

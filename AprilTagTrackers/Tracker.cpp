@@ -1099,9 +1099,14 @@ public:
                                 cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT) *
                                 pose.rotation.normalize() *
                                 cv::Quatd(0, 0, 1, 0).inv(cv::QUAT_ASSUME_UNIT);
-
-                if (previewIsVisible) cv::aruco::drawAxis(drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, pose.rotation.toRotVec(), math::ToVec(pose.position), 0.10F);
-
+                if (previewIsVisible) {
+                    cv::drawFrameAxes(drawImg,
+                        camCalib->cameraMatrix,
+                        camCalib->distortionCoeffs,
+                        pose.rotation.toRotVec(),
+                        math::ToVec(pose.position),
+                        0.1F);
+                }
                 if (!unit.WasVisibleLastFrame()) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
                     maskCenter = driverCenter;
