@@ -829,167 +829,192 @@ void Tracker::CalibrateTracker()
     }
 }
 
-void Tracker::UpdatePlayspaceCalibrator(bool& posActive, bool& angleActive, cv::Vec3d& posOffset, cv::Vec3d& angleOffset, utils::SteadyTimer& timer)
+class PlayspaceCalibrator
 {
-    ATT_ASSERT(mVRClient->IsInit());
-    mVRClient->UpdateInputActions();
-    const tracker::ButtonAction inputButton = mVRClient->GetButtonAction();
-    cfg::ManualCalib::Real calib = gui->GetManualCalib();
-
-    const auto now = utils::SteadyTimer::Now();
-
-    if (timer.Get(now) > utils::Seconds(60)) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
+public:
+    void Update(RefPtr<Tracker> state)
     {
-        ATT_LOG_INFO("auto timeout of playspace calibration");
-        gui->SetManualCalibVisible(false);
-    }
+        RefPtr<tracker::IVRClient> mVRClient = state->mVRClient;
+        RefPtr<GUI> gui = state->gui;
+        bool lockHeightCalib = state->lockHeightCalib;
 
-    if (inputButton == tracker::ButtonAction::GrabCamera) // logic for position button
-    {
-        // to prevent accidental double presses, 0.2 seconds must pass between presses.
-        if (timer.Get(now) > utils::MilliS(200))
+        if (!state->manualRecalibrate)
         {
-            if (!posActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
-            {
-                posActive = true;
-                const Pose pose = mVRClient->GetControllerPoseAction();
-                posOffset = cv::Vec3d(pose.position) - calib.posOffset;
-
-                RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
-            }
-            else // else, deactivate it
-            {
-                posActive = false;
-            }
-            ATT_LOG_DEBUG("pos button pressed: ", posActive);
+            timer.Restart();
+            return;
         }
-        timer.Restart(now);
-    }
-    else if (inputButton == tracker::ButtonAction::GrabTrackers) // logic for rotation button
-    {
-        // to prevent accidental double presses, 0.2 seconds must pass between presses.
-        if (timer.Get(now) > utils::MilliS(200))
+
+        ATT_ASSERT(mVRClient->IsInit());
+        mVRClient->UpdateInputActions();
+        const tracker::ButtonAction inputButton = mVRClient->GetButtonAction();
+        cfg::ManualCalib::Real calib = gui->GetManualCalib();
+
+        const auto now = utils::SteadyTimer::Now();
+
+        if (timer.Get(now) > utils::Seconds(60)) // we exit playspace calibration after 60 seconds of no input detected, to try to prevent accidentaly ruining calibration
         {
-            if (!angleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
-            {
-                angleActive = true;
-                const Pose pose = mVRClient->GetControllerPoseAction();
-
-                cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
-                const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
-
-                angleOffset[0] = angle[0] - calib.angleOffset[0];
-                angleOffset[1] = angle[1] - calib.angleOffset[1];
-                angleOffset[2] = distance / calib.scale;
-            }
-            else // else, deactivate it
-            {
-                angleActive = false;
-            }
-            ATT_LOG_DEBUG("angle button pressed: ", angleActive);
+            ATT_LOG_INFO("auto timeout of playspace calibration");
+            gui->SetManualCalibVisible(false);
         }
-        timer.Restart(now);
-    }
 
-    if (posActive) // while position calibration is active, apply the camera to controller offset to X, Y and Z values
-    {
-        const Pose pose = mVRClient->GetControllerPoseAction();
-
-        RotateVecByQuat(posOffset, pose.rotation);
-
-        calib.posOffset[0] = pose.position.x - posOffset[0];
-        if (!lockHeightCalib)
+        if (inputButton == tracker::ButtonAction::GrabCamera) // logic for position button
         {
-            calib.posOffset[1] = pose.position.y - posOffset[1];
+            // to prevent accidental double presses, 0.2 seconds must pass between presses.
+            if (timer.Get(now) > utils::MilliS(200))
+            {
+                if (!posActive) // if position calibration is inactive, set it to active and calculate offsets between the camera and controller
+                {
+                    posActive = true;
+                    const Pose pose = mVRClient->GetControllerPoseAction();
+                    posOffset = cv::Vec3d(pose.position) - calib.posOffset;
+
+                    RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
+                }
+                else // else, deactivate it
+                {
+                    posActive = false;
+                }
+                ATT_LOG_DEBUG("pos button pressed: ", posActive);
+            }
+            timer.Restart(now);
         }
-        calib.posOffset[2] = pose.position.z - posOffset[2];
-
-        RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
-    }
-
-    if (angleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
-    {
-        const Pose pose = mVRClient->GetControllerPoseAction();
-        cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
-        const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
-
-        calib.angleOffset[1] = angle[1] - angleOffset[1];
-        if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale
+        else if (inputButton == tracker::ButtonAction::GrabTrackers) // logic for rotation button
         {
-            calib.angleOffset[0] = angle[0] - angleOffset[0];
-            calib.scale = distance / angleOffset[2];
+            // to prevent accidental double presses, 0.2 seconds must pass between presses.
+            if (timer.Get(now) > utils::MilliS(200))
+            {
+                if (!angleActive) // if rotation calibration is inactive, set it to active and calculate angle offsets and distance
+                {
+                    angleActive = true;
+                    const Pose pose = mVRClient->GetControllerPoseAction();
+
+                    cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+                    const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
+
+                    angleOffset[0] = angle[0] - calib.angleOffset[0];
+                    angleOffset[1] = angle[1] - calib.angleOffset[1];
+                    angleOffset[2] = distance / calib.scale;
+                }
+                else // else, deactivate it
+                {
+                    angleActive = false;
+                }
+                ATT_LOG_DEBUG("angle button pressed: ", angleActive);
+            }
+            timer.Restart(now);
         }
+
+        if (posActive) // while position calibration is active, apply the camera to controller offset to X, Y and Z values
+        {
+            const Pose pose = mVRClient->GetControllerPoseAction();
+
+            RotateVecByQuat(posOffset, pose.rotation);
+
+            calib.posOffset[0] = pose.position.x - posOffset[0];
+            if (!lockHeightCalib)
+            {
+                calib.posOffset[1] = pose.position.y - posOffset[1];
+            }
+            calib.posOffset[2] = pose.position.z - posOffset[2];
+
+            RotateVecByQuat(posOffset, pose.rotation.inv(cv::QUAT_ASSUME_UNIT));
+        }
+
+        if (angleActive) // while rotation calibration is active, apply the camera to controller angle offsets to A, B, C values, and apply the calibScale based on distance from camera
+        {
+            const Pose pose = mVRClient->GetControllerPoseAction();
+            cv::Vec2d angle = EulerAnglesFromPos(cv::Vec3d(pose.position), calib.posOffset);
+            const double distance = Distance(cv::Vec3d(pose.position), calib.posOffset);
+
+            calib.angleOffset[1] = angle[1] - angleOffset[1];
+            if (!lockHeightCalib) // if height is locked, do not calibrate up/down rotation or scale
+            {
+                calib.angleOffset[0] = angle[0] - angleOffset[0];
+                calib.scale = distance / angleOffset[2];
+            }
+        }
+
+        // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
+        calib.angleOffset[0] = std::clamp(calib.angleOffset[0], 91 * DEG_2_RAD, 269 * DEG_2_RAD);
+
+        if (angleActive || posActive)
+        {
+            // update the calib in the gui as it wont be modified anymore
+            gui->SetManualCalib(calib);
+        }
+        // update the pre calculated calibration transformations
+        state->SetWorldTransform(gui->GetManualCalib());
+
+        cv::Vec3d stationPos = state->wtransform.translation();
+        CoordTransformOVR(stationPos);
+        // rotate y axis by 180 degrees, aka, reflect across xz plane
+        const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * state->wrotation;
+
+        // move the camera in steamvr to new calibration
+        state->mVRDriver->UpdateStation(Pose(stationPos, stationQ));
     }
 
-    // check that camera is facing correct direction. 90 degrees mean looking straight down, 270 is straight up. This ensures its not upside down.
-    calib.angleOffset[0] = std::clamp(calib.angleOffset[0], 91 * DEG_2_RAD, 269 * DEG_2_RAD);
-
-    if (angleActive || posActive)
+    static void UpdateMulticam(RefPtr<Tracker> state, tracker::TrackerUnit& unit)
     {
-        // update the calib in the gui as it wont be modified anymore
+        RefPtr<GUI> gui = state->gui;
+
+        // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
+        // instead, refine the calibration data with gradient descent
+        // the error is the diffrence of the detected trackers position to the estimated trackers position
+        // numerical derivatives are then calculated to see how X,Y,Z, A,B, scale data affects the error in position
+        // calibration values are then slightly changed in the estimated direction in order to reduce error.
+        // after a couple of seconds, the calibration data should converge
+
+        cv::Vec3d pos = unit.GetEstimatedPose().position;
+        cv::Vec2d angles = EulerAnglesFromPos(pos);
+        const double length = Length(pos);
+
+        cv::Vec3d driverPos = unit.GetPoseFromDriver().position;
+        cv::Vec2d driverAngles = EulerAnglesFromPos(driverPos);
+        const double driverLength = Length(driverPos);
+
+        pos = state->wtransform * pos;
+        driverPos = state->wtransform * driverPos;
+
+        CoordTransformOVR(pos);
+        CoordTransformOVR(driverPos);
+
+        double dX = (pos[0] - driverPos[0]) * 0.1;
+        double dY = -(pos[1] - driverPos[1]) * 0.1;
+        double dZ = (pos[2] - driverPos[2]) * 0.1;
+
+        if (std::abs(dX) > 0.01)
+        {
+            dX = 0.1 * (dX / std::fabs(dX));
+        }
+        if (std::abs(dY) > 0.1)
+        {
+            dY = 0.1 * (dY / std::abs(dY));
+        }
+        if (std::abs(dZ) > 0.1)
+        {
+            dZ = 0.1 * (dZ / std::abs(dZ));
+        }
+
+        cfg::ManualCalib::Real calib = gui->GetManualCalib();
+
+        calib.posOffset += cv::Vec3d(dX, dY, dZ);
+        calib.angleOffset += cv::Vec3d(angles[0] - driverAngles[0], angles[1] - driverAngles[1]) * 0.1;
+        calib.scale -= (1 - (driverLength / length)) * 0.1;
+
         gui->SetManualCalib(calib);
-    }
-    // update the pre calculated calibration transformations
-    SetWorldTransform(gui->GetManualCalib());
-
-    cv::Vec3d stationPos = wtransform.translation();
-    CoordTransformOVR(stationPos);
-    // rotate y axis by 180 degrees, aka, reflect across xz plane
-    const cv::Quatd stationQ = cv::Quatd(0, 0, 1, 0) * wrotation;
-
-    // move the camera in steamvr to new calibration
-    mVRDriver->UpdateStation(Pose(stationPos, stationQ));
-}
-
-void Tracker::UpdateMulticamPlayspaceCalibrator(const tracker::TrackerUnit& unit)
-{
-    // if calibration refinement with multiple cameras is active, do not send calculated poses to driver.
-    // instead, refine the calibration data with gradient descent
-    // the error is the diffrence of the detected trackers position to the estimated trackers position
-    // numerical derivatives are then calculated to see how X,Y,Z, A,B, scale data affects the error in position
-    // calibration values are then slightly changed in the estimated direction in order to reduce error.
-    // after a couple of seconds, the calibration data should converge
-
-    cv::Vec3d pos = unit.GetEstimatedPose().position;
-    cv::Vec2d angles = EulerAnglesFromPos(pos);
-    const double length = Length(pos);
-
-    cv::Vec3d driverPos = unit.GetPoseFromDriver().position;
-    cv::Vec2d driverAngles = EulerAnglesFromPos(driverPos);
-    const double driverLength = Length(driverPos);
-
-    pos = wtransform * pos;
-    driverPos = wtransform * driverPos;
-
-    CoordTransformOVR(pos);
-    CoordTransformOVR(driverPos);
-
-    double dX = (pos[0] - driverPos[0]) * 0.1;
-    double dY = -(pos[1] - driverPos[1]) * 0.1;
-    double dZ = (pos[2] - driverPos[2]) * 0.1;
-
-    if (std::abs(dX) > 0.01)
-    {
-        dX = 0.1 * (dX / std::fabs(dX));
-    }
-    if (std::abs(dY) > 0.1)
-    {
-        dY = 0.1 * (dY / std::abs(dY));
-    }
-    if (std::abs(dZ) > 0.1)
-    {
-        dZ = 0.1 * (dZ / std::abs(dZ));
+        state->SetWorldTransform(calib);
     }
 
-    cfg::ManualCalib::Real calib = gui->GetManualCalib();
-
-    calib.posOffset += cv::Vec3d(dX, dY, dZ);
-    calib.angleOffset += cv::Vec3d(angles[0] - driverAngles[0], angles[1] - driverAngles[1]) * 0.1;
-    calib.scale -= (1 - (driverLength / length)) * 0.1;
-
-    gui->SetManualCalib(calib);
-    SetWorldTransform(calib);
-}
+private:
+    bool posActive = false;
+    bool angleActive = false;
+    /// offset of controller to virtual camera, set when button is pressed
+    cv::Vec3d posOffset{};
+    /// (pitch, yaw) in radians, 3rd component is distance
+    cv::Vec3d angleOffset{};
+    utils::SteadyTimer timer{};
+};
 
 class MainLoopRunner
 {
@@ -1125,14 +1150,7 @@ public:
             grayAprilImg = tempGrayMaskedImg;
         }
 
-        if (mTracker->manualRecalibrate) // playspace calibration loop
-        {
-            mTracker->UpdatePlayspaceCalibrator(calibControllerPosActive, calibControllerAngleActive, calibControllerPosOffset, calibControllerAngleOffset, calibControllerTimer);
-        }
-        else
-        {
-            calibControllerTimer.Restart();
-        }
+        mCalibrator.Update(mTracker);
 
         april.DetectMarkers(grayAprilImg, dets);
         // frame time is how much time passed since frame was acquired.
@@ -1220,7 +1238,7 @@ public:
 
             if (mTracker->multicamAutocalib && unit.WasVisibleToDriverLastFrame())
             {
-                mTracker->UpdateMulticamPlayspaceCalibrator(unit);
+                PlayspaceCalibrator::UpdateMulticam(mTracker, unit);
                 continue; // skip sending to driver
             }
 
@@ -1269,15 +1287,8 @@ private:
 
     int framesSinceLastSeen = 0;
     static constexpr int framesToCheckAll = 20;
+    PlayspaceCalibrator mCalibrator{};
 
-    bool calibControllerPosActive = false;
-    bool calibControllerAngleActive = false;
-    /// offset of controller to virtual camera, set when button is pressed
-    cv::Vec3d calibControllerPosOffset = {0, 0, 0};
-    /// (pitch, yaw) in radians, 3rd component is distance
-    cv::Vec3d calibControllerAngleOffset = {0, 0, 0};
-
-    utils::SteadyTimer calibControllerTimer{};
     utils::SteadyTimer detectionTimer{};
 };
 

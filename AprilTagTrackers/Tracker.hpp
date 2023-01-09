@@ -61,6 +61,7 @@ struct CapturedFrame
 };
 
 class MainLoopRunner;
+class PlayspaceCalibrator;
 
 class Tracker : public ITrackerControl
 {
@@ -74,6 +75,7 @@ class Tracker : public ITrackerControl
 
 public:
     friend class MainLoopRunner;
+    friend class PlayspaceCalibrator;
 
     Tracker(const Tracker&) = delete;
     Tracker(Tracker&&) = delete;
@@ -98,8 +100,6 @@ private:
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
-    void UpdatePlayspaceCalibrator(bool& posActive, bool& angleActive, cv::Vec3d& posOffset, cv::Vec3d& angleOffset, utils::SteadyTimer& timer);
-    void UpdateMulticamPlayspaceCalibrator(const tracker::TrackerUnit& unit);
     void MainLoop();
 
     void SetTrackerUnitsFromConfig();
