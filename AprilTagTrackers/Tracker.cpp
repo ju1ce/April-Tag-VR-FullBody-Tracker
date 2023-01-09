@@ -6,8 +6,9 @@
 #include "ImageDrawing.hpp"
 #include "utils/Assert.hpp"
 
-#include <opencv2/aruco.hpp>
+#include <bal_problem.hpp>
 #include <opencv2/aruco/charuco.hpp>
+#include <opencv2/aruco.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -998,12 +999,277 @@ void Tracker::CalibrateTracker()
 
 void Tracker::RefineTracker()
 {
+    int markersPerTracker = user_config.markersPerTracker;
+    int trackerNum = user_config.trackerNum;
+
+
+    AprilTagWrapper april{user_config, aruco_config};
+
+    FrameData frame;
+    cv::Mat outImg;
+
+    // setup all variables that need to be stored for each tracker and initialize them
+    std::vector<TrackerStatus> trackerStatus = std::vector<TrackerStatus>(trackerNum, TrackerStatus());
+    for (int i = 0; i < trackerStatus.size(); i++)
+    {
+        trackerStatus[i].boardFound = false;
+        trackerStatus[i].boardRvec = cv::Vec3d(0, 0, 0);
+        trackerStatus[i].boardTvec = cv::Vec3d(0, 0, 0);
+        trackerStatus[i].prevLocValues = std::vector<std::vector<double>>(7, std::vector<double>());
+        trackerStatus[i].last_update_timestamp = std::chrono::milliseconds(0);
+        trackerStatus[i].searchSize = (int)(user_config.videoStreams[0]->searchWindow * calib_config.cameras[0]->cameraMatrix.at<double>(0,0));
+    }
+
+    RefPtr<cfg::CameraCalibration> camCalib = calib_config.cameras[0];
+
+    auto preview = gui->CreatePreviewControl();
+
+    typedef struct {
+        int point_id;
+        int camera_id;
+        cv::Point2f observed;
+    } Observation;
+    typedef struct {
+        cv::Vec3d rvec;
+        cv::Vec3d tvec;
+        cv::Mat cameraMatrix;
+        cv::Mat distCoeffs;
+    } Camera;
+
+    int num_cameras = 0;
+    int num_points = 0;
+    int num_observations = 0;
+    int num_parameters = 0;
+
+    auto point_index = std::vector<int>();
+    auto camera_index = std::vector<int>();
+    auto observations = std::vector<double>();
+    auto parameters = std::vector<double>();
+
+    int trackerBeingProcessed = -1;
+    int frameNumber = 0;
+
     // run loop until we stop it
     while (cameraRunning && mainThreadRunning)
     {
-        // TODO: Implement me
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        CopyFreshCameraImageTo(frame);
+        cv::Mat &image = frame.image;
+
+        std::chrono::steady_clock::time_point start, end;
+        // clock for timing of detection
+        start = std::chrono::steady_clock::now();
+
+        // detect and draw all markers on image
+        std::vector<int> ids;
+        std::vector<std::vector<cv::Point2f>> corners;
+        std::vector<cv::Point2f> centers;
+
+        april.detectMarkers(image, &corners, &ids, &centers, trackers);
+
+        cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0)); // draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
+
+        for (int i = 0; i < trackerNum; ++i)
+        {
+
+            // estimate the pose of current board
+            try
+            {
+                if (cv::aruco::estimatePoseBoard(corners, ids, trackers[i], camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, trackerStatus[i].boardFound && user_config.usePredictive) <= 0)
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        // remove first of the previously saved values
+                        if (trackerStatus[i].prevLocValues[j].size() > 0)
+                            trackerStatus[i].prevLocValues[j].erase(trackerStatus[i].prevLocValues[j].begin());
+                    }
+                    trackerStatus[i].boardFound = false;
+
+                    continue;
+                }
+            }
+            catch (const std::exception& e)
+            {
+                // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
+                ATT_LOG_ERROR(e.what());
+                gui->ShowPopup(lc.TRACKER_DETECTION_SOMETHINGWRONG, PopupStyle::Error);
+                mainThreadRunning = false;
+                return;
+            }
+            trackerStatus[i].boardFound = true;
+
+            // Reject detected positions that are behind the camera
+            if (trackerStatus[i].boardTvec[2]  < 0)
+            {
+                trackerStatus[i].boardFound = false;
+                continue;
+            }
+
+            // Figure out the camera aspect ratio, XZ and YZ ratio limits
+            double aspectRatio = static_cast<double>(image.cols) / static_cast<double>(image.rows);
+            double XZratioLimit = 0.5 * static_cast<double>(image.cols) / camCalib->cameraMatrix.at<double>(0,0);
+            double YZratioLimit = 0.5 * static_cast<double>(image.rows) / camCalib->cameraMatrix.at<double>(1,1);
+
+            // Figure out whether X or Y dimension is most likely to go outside the camera field of view
+            if (std::abs(trackerStatus[i].boardTvec[0] / trackerStatus[i].boardTvec[1]) > aspectRatio)
+            {
+                // Reject detections when XZ coordinate ratio goes out of camera FOV
+                if (std::abs(trackerStatus[i].boardTvec[0] / trackerStatus[i].boardTvec[2]) > XZratioLimit)
+                {
+                    trackerStatus[i].boardFound = false;
+                    continue;
+                }
+            }
+            else
+            {
+                // Reject detections when YZ coordinate ratio goes out of camera FOV
+                if (std::abs(trackerStatus[i].boardTvec[1] / trackerStatus[i].boardTvec[2]) > YZratioLimit)
+                {
+                    trackerStatus[i].boardFound = false;
+                    continue;
+                }
+            }
+
+            cv::aruco::drawAxis(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
+
+            // TODO: Modify function to be able process more than one tracker at the same time
+            if ((trackerBeingProcessed != -1) && (i != trackerBeingProcessed))
+                continue;
+
+            trackerBeingProcessed = i;
+
+            if ((frameNumber++ % (user_config.videoStreams[0]->camera.fps / 3)) != 0) continue;
+
+            int tracker_id_begin = i * markersPerTracker;
+            int tracker_id_end = (i + 1) * markersPerTracker;
+
+            // Add camera into parameter block
+            parameters.push_back(trackerStatus[i].boardRvec[0]);
+            parameters.push_back(trackerStatus[i].boardRvec[1]);
+            parameters.push_back(trackerStatus[i].boardRvec[2]);
+            parameters.push_back(trackerStatus[i].boardTvec[0]);
+            parameters.push_back(trackerStatus[i].boardTvec[1]);
+            parameters.push_back(trackerStatus[i].boardTvec[2]);
+            parameters.push_back(camCalib->cameraMatrix.at<double>(0,0));
+            parameters.push_back(camCalib->cameraMatrix.at<double>(1,1));
+            parameters.push_back(camCalib->cameraMatrix.at<double>(0,2));
+            parameters.push_back(camCalib->cameraMatrix.at<double>(1,2));
+            parameters.push_back(camCalib->distortionCoeffs.at<double>(0,0));
+            parameters.push_back(camCalib->distortionCoeffs.at<double>(0,1));
+            parameters.push_back(camCalib->distortionCoeffs.at<double>(0,2));
+            parameters.push_back(camCalib->distortionCoeffs.at<double>(0,3));
+            parameters.push_back(camCalib->distortionCoeffs.at<double>(0,4));
+            num_parameters += 15;
+
+            // Add detected points into observations
+            for (int j = 0; j < ids.size(); ++j)
+            {
+                // does marker ID belong to current tracker?
+                if ((tracker_id_begin <= ids[j]) && (ids[j] < tracker_id_end))
+                {
+                    for (int k = 0; k < corners[j].size(); ++k)
+                    {
+                        point_index.push_back((ids[j] - tracker_id_begin) * 4 + k);
+                        camera_index.push_back(num_cameras);
+                        observations.push_back(corners[j][k].x);
+                        observations.push_back(corners[j][k].y);
+                        num_observations++;
+                    }
+                }
+            }
+
+            num_cameras++;
+        }
+
+        end = std::chrono::steady_clock::now();
+        double frameTime = std::chrono::duration<double>(end - start).count();
+
+        if (gui->IsPreviewVisible())
+        {
+            // resize image, then show it
+            int cols, rows;
+            if (image.cols > image.rows)
+            {
+                cols = image.cols * drawImgSize / image.rows;
+                rows = drawImgSize;
+            }
+            else
+            {
+                cols = drawImgSize;
+                rows = image.rows * drawImgSize / image.cols;
+            }
+
+            cv::resize(image, outImg, cv::Size(cols, rows));
+            cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            cv::putText(outImg, std::to_string(num_cameras), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            if (showTimeProfile)
+            {
+                april.drawTimeProfile(outImg, cv::Point(10, 60));
+            }
+            gui->UpdatePreview(outImg);
+        }
+        // time of marker detection
     }
+
+    // Add tracker 3d points into parameter block
+    // for (int i = 0; i < trackerNum; ++i)
+    if (trackerBeingProcessed != -1)
+    {
+        int i = trackerBeingProcessed;
+
+        const std::vector<int>& ids = trackers[i]->ids;
+        const std::vector<std::vector<cv::Point3f> > objPoints = trackers[i]->objPoints;
+
+        int first_id = i * markersPerTracker;
+        int after_last_id = first_id;
+
+        for (int j = 0; j < ids.size(); ++j)
+        {
+            if (ids[j] > after_last_id)
+                after_last_id = ids[j];
+        }
+
+        ++after_last_id;
+
+        for (int j = first_id; j < after_last_id; ++j)
+        {
+            auto it = std::find(ids.begin(), ids.end(), j);
+            auto index = std::distance(ids.begin(), it);
+
+            if (index < objPoints.size())
+            {
+                for (int k = 0; k < 4; ++k)
+                {
+                    parameters.push_back(objPoints[index][k].x);
+                    parameters.push_back(objPoints[index][k].y);
+                    parameters.push_back(objPoints[index][k].z);
+                    num_points += 1;
+                    num_parameters += 3;
+                }
+            }
+            else
+            {
+                for (int k = 0; k < 4; ++k)
+                {
+                    parameters.push_back(0.0);
+                    parameters.push_back(0.0);
+                    parameters.push_back(0.0);
+                    num_points += 1;
+                    num_parameters += 3;
+                }
+            }
+        }
+    }
+
+    if (trackerBeingProcessed != -1)
+    {
+        ceres::examples::BALProblem bal_problem(num_cameras, num_points, num_observations, num_parameters, point_index.data(), camera_index.data(), observations.data(), parameters.data());
+
+#ifdef ATT_DEBUG
+        bal_problem.WriteToFile("bal_problem.txt");
+#endif
+
+    }
+
     mainThreadRunning = false;
 }
 
