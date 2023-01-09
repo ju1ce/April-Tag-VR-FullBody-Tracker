@@ -945,7 +945,7 @@ public:
             grayAprilImg = tempGrayMaskedImg;
         }
 
-        mCalibrator.Update(mTracker->mVRClient, mTracker->mVRDriver, mTracker->gui,
+        mCalibrator.Update(mTracker->mVRClient, &mTracker->mVRDriver.value(), mTracker->gui,
                            mPlayspace, mTracker->lockHeightCalib, mTracker->manualRecalibrate);
 
         april.DetectMarkers(grayAprilImg, dets);
