@@ -9,6 +9,7 @@ on:
     paths-ignore: ["**.md"]
 
 env:
+  VCPKG_VERSION: "2022.11.14"
   # read only permission if pull request
   VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,read${{ github.event_name == 'push' && 'write' || '' }}"
 
@@ -72,18 +73,21 @@ jobs:
           libudev-dev freeglut3-dev libgtk-3-dev libsecret-1-dev libgcrypt20-dev libsystemd-dev nasm
           libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
 
-      - name: Setup vcpkg (Linux)
+      - name: Clone vcpkg
+        shell: bash
+        run: |
+          git clone --filter=tree:0 --branch ${VCPKG_VERSION} https://github.com/microsoft/vcpkg.git
+
+      - name: Bootstrap vcpkg (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          git clone --filter=tree:0 https://github.com/microsoft/vcpkg
           ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Setup vcpkg (Windows)
+      - name: Bootstrap vcpkg (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          git clone --filter=tree:0 https://github.com/microsoft/vcpkg
           ./vcpkg/bootstrap-vcpkg.bat
 
       - name: Setup NuGet Credentials
@@ -99,12 +103,6 @@ jobs:
       - name: Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Cache vcpkg
-        uses: actions/cache@v3
-        with:
-          path: ./build/vcpkg_installed
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('./vcpkg.json') }}
 
       - name: CMake Configure Release
         run: >
