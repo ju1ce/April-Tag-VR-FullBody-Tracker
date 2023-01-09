@@ -27,7 +27,14 @@
         "libusb",
         "apriltag",
         "openvr",
-        "doctest"
+        "doctest",
+        {
+            "name": "ceres",
+            "default-features": false,
+            "features": [
+                "eigensparse"
+            ]
+        }
     ],
     "builtin-baseline": "f93ba152d55e1d243160e690bc302ffe8638358e"
 }

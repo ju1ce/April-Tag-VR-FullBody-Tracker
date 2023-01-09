@@ -422,6 +422,9 @@ void GUI::MainFrame::CreateLicensePage(RefPtr<wxNotebook> pages)
     auto cvLicense = NewWindow<wxTextCtrl>(nb, wxID_ANY, std::string(OPENCV_LICENSE), wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     nb->AddPage(cvLicense, "OpenCV");
+    auto ceresSolverLicense = NewWindow<wxTextCtrl>(nb, wxID_ANY, std::string(CERES_SOLVER_LICENSE), wxDefaultPosition,
+        wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+    nb->AddPage(ceresSolverLicense, "Ceres Solver");
 }
 
 /// Query OpenCV to find available camera api indices

@@ -53,6 +53,8 @@ find_package(libusb CONFIG REQUIRED)
 find_package(apriltag CONFIG REQUIRED)
 find_package(openvr CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
+find_package(Ceres CONFIG REQUIRED)
+find_package(glog CONFIG REQUIRED)
 
 target_link_libraries(AprilTagTrackers PRIVATE
     Threads::Threads
@@ -63,10 +65,13 @@ target_link_libraries(AprilTagTrackers PRIVATE
     openvr::openvr_api
     doctest::doctest
     common::semver
+    Ceres::ceres
+    glog::glog
 )
 target_include_directories(AprilTagTrackers SYSTEM PRIVATE
     ${wxWidgets_INCLUDE_DIRS}
     ${LIBUSB_INCLUDE_DIRS}
+    "ceres"
 )
 target_compile_definitions(AprilTagTrackers PRIVATE
     wxDEBUG_LEVEL=$<CONFIG:Debug>

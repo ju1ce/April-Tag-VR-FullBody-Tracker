@@ -3,6 +3,7 @@
 #include "utils/Assert.hpp"
 #include "utils/Log.hpp"
 
+#include <glog/logging.h>
 #include <opencv2/core/utils/logger.hpp>
 
 wxIMPLEMENT_APP(MyApp); // NOLINT
@@ -41,6 +42,8 @@ bool MyApp::OnInit()
 
     tracker = std::make_unique<Tracker>(userConfig, calibConfig, arucoConfig, lc);
     gui = std::make_unique<GUI>(tracker, lc, userConfig);
+
+    google::InitGoogleLogging("AprilTagTrackers");
 
     return true;
 }
