@@ -29,21 +29,54 @@ public:
         cv::Matx33d rotMat = EulerAnglesToRotationMatrix(angleOffset);
         mTransform = cv::Affine3d(rotMat, posOffset);
         mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
+        mInvTransform = mTransform.inv();
+        mInvRotation = mRotation.inv();
         mScale = scale;
     }
-
-    void Transform(cv::Point3d& pos, cv::Quatd& rot) const
+    void Set(const cfg::ManualCalib::Real& calib)
     {
-        pos = mTransform * pos;
-        rot = mRotation * rot;
+        Set(calib.posOffset, calib.angleOffset, calib.scale);
     }
-    void Transform(Pose& pose) const { Transform(pose.position, pose.rotation); }
 
+    Pose Transform(const Pose& pose) const
+    {
+        return {mTransform * pose.position, mRotation * pose.rotation};
+    }
+    Pose InvTransform(const Pose& pose) const
+    {
+        return {mInvTransform * pose.position, mInvRotation * pose.rotation};
+    }
+    cv::Point3d Transform(const cv::Point3d& pos) const { return mTransform * pos; }
+
+    Pose TransformToOVR(Pose pose) const
+    {
+        CoordTransformOVR(pose.position);
+        CoordTransformOVR(pose.rotation);
+        return Transform(pose);
+    }
+    Pose InvTransformFromOVR(const Pose& pose) const
+    {
+        Pose p = InvTransform(pose);
+        CoordTransformOVR(p.position);
+        CoordTransformOVR(p.rotation);
+        return p;
+    }
+
+    Pose GetStationPose() const { return {mTransform.translation(), mRotation}; }
+    Pose GetStationPoseOVR() const
+    {
+        Pose pose = GetStationPose();
+        CoordTransformOVR(pose.position);
+        CoordTransformOVR(pose.rotation);
+        return pose;
+    }
     double GetScale() const { return mScale; }
 
 private:
     cv::Affine3d mTransform{};
     cv::Quatd mRotation{};
+    cv::Affine3d mInvTransform{};
+    cv::Quatd mInvRotation{};
     double mScale = 0;
 };
 
@@ -136,14 +169,7 @@ private:
         gui->ShowPopup(msg, PopupStyle::Error);
     }
 
-    /// Sets the wtransform, wrotation, and wscale
-    // TODO: rename uses of world transform and manual calib to playspace calibration
-    void SetWorldTransform(const cfg::ManualCalib::Real& calib);
-    /// Calibration transformation
-    cv::Affine3d wtransform;
-    /// wtransform rotation part as a quaternion
-    cv::Quatd wrotation;
-    double wscale = 1;
+    PlayspaceCalib mPlayspace;
 
     tracker::VideoCapture mCapture;
 
