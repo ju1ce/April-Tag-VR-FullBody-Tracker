@@ -4,6 +4,7 @@
 #include "GUI.hpp"
 #include "RefPtr.hpp"
 #include "tracker/OpenVRClient.hpp"
+#include "tracker/PlayspaceCalib.hpp"
 #include "tracker/TrackerUnit.hpp"
 #include "tracker/VideoCapture.hpp"
 #include "tracker/VRDriver.hpp"
@@ -20,65 +21,6 @@
 #include <optional>
 #include <ranges>
 #include <thread>
-
-class PlayspaceCalib
-{
-public:
-    void Set(const cv::Vec3d& posOffset, const cv::Vec3d& angleOffset, double scale)
-    {
-        cv::Matx33d rotMat = EulerAnglesToRotationMatrix(angleOffset);
-        mTransform = cv::Affine3d(rotMat, posOffset);
-        mRotation = cv::Quatd::createFromRotMat(rotMat).normalize();
-        mInvTransform = mTransform.inv();
-        mInvRotation = mRotation.inv();
-        mScale = scale;
-    }
-    void Set(const cfg::ManualCalib::Real& calib)
-    {
-        Set(calib.posOffset, calib.angleOffset, calib.scale);
-    }
-
-    Pose Transform(const Pose& pose) const
-    {
-        return {mTransform * pose.position, mRotation * pose.rotation};
-    }
-    Pose InvTransform(const Pose& pose) const
-    {
-        return {mInvTransform * pose.position, mInvRotation * pose.rotation};
-    }
-    cv::Point3d Transform(const cv::Point3d& pos) const { return mTransform * pos; }
-
-    Pose TransformToOVR(Pose pose) const
-    {
-        CoordTransformOVR(pose.position);
-        CoordTransformOVR(pose.rotation);
-        return Transform(pose);
-    }
-    Pose InvTransformFromOVR(const Pose& pose) const
-    {
-        Pose p = InvTransform(pose);
-        CoordTransformOVR(p.position);
-        CoordTransformOVR(p.rotation);
-        return p;
-    }
-
-    Pose GetStationPose() const { return {mTransform.translation(), mRotation}; }
-    Pose GetStationPoseOVR() const
-    {
-        Pose pose = GetStationPose();
-        CoordTransformOVR(pose.position);
-        CoordTransformOVR(pose.rotation);
-        return pose;
-    }
-    double GetScale() const { return mScale; }
-
-private:
-    cv::Affine3d mTransform{};
-    cv::Quatd mRotation{};
-    cv::Affine3d mInvTransform{};
-    cv::Quatd mInvRotation{};
-    double mScale = 0;
-};
 
 struct TrackerStatus
 {
@@ -169,7 +111,7 @@ private:
         gui->ShowPopup(msg, PopupStyle::Error);
     }
 
-    PlayspaceCalib mPlayspace;
+    tracker::PlayspaceCalib mPlayspace;
 
     tracker::VideoCapture mCapture;
 
