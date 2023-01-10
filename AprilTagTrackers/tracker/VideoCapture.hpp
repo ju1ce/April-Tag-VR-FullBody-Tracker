@@ -11,7 +11,6 @@
 #include <memory>
 #include <mutex>
 
-
 namespace tracker
 {
 
@@ -33,9 +32,12 @@ class AwaitedFrame
 public:
     void Set(CapturedFrame& inFrame)
     {
-        std::lock_guard lock(mMutex);
-        swap(inFrame, mFrame);
-        mIsReady = true;
+        { // lock scope
+            std::lock_guard lock(mMutex);
+            swap(inFrame, mFrame);
+            mIsReady = true;
+        }
+        mReadyCond.notify_one();
     }
     void Get(CapturedFrame& outFrame)
     {
