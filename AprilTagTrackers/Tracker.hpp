@@ -29,12 +29,6 @@ struct TrackerStatus
     cv::Point2d maskCenter;
 };
 
-struct CapturedFrame
-{
-    cv::Mat image;
-    utils::SteadyTimer::TimePoint timestamp;
-};
-
 class MainLoopRunner;
 class PlayspaceCalibrator;
 
@@ -71,7 +65,7 @@ public:
 
 private:
     void CameraLoop();
-    void CopyFreshCameraImageTo(CapturedFrame& frame);
+    void CopyFreshCameraImageTo(tracker::CapturedFrame& frame);
     void CalibrateCamera();
     void CalibrateCameraCharuco();
     void CalibrateTracker();
@@ -120,7 +114,7 @@ private:
     std::mutex mCameraImageMutex{};
     std::condition_variable mImageReadyCond{};
     bool mIsImageReady = false;
-    CapturedFrame mCameraFrame{};
+    tracker::CapturedFrame mCameraFrame{};
 
     UserConfig& user_config;
     CalibrationConfig& calib_config;

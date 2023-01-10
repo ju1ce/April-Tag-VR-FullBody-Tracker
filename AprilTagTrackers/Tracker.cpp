@@ -160,7 +160,7 @@ void Tracker::CameraLoop()
     gui->SetStatus(false, StatusItem::Camera);
 }
 
-void Tracker::CopyFreshCameraImageTo(CapturedFrame& frame)
+void Tracker::CopyFreshCameraImageTo(tracker::CapturedFrame& frame)
 {
     std::unique_lock lock{mCameraImageMutex};
     mImageReadyCond.wait(lock, [&] { return mIsImageReady; });
@@ -205,7 +205,7 @@ void Tracker::StartCameraCalib()
 /// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat gray;
     cv::Mat drawImg;
 
@@ -460,7 +460,7 @@ void Tracker::CalibrateCamera()
     std::vector<cv::Point2f> corner_pts;
     bool success;
 
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat outImg;
 
     int i = 0;
@@ -710,7 +710,7 @@ void Tracker::CalibrateTracker()
         trackerUnits.push_back(std::move(unit));
     }
 
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat grayImage;
 
     math::EstimatePoseSingleMarkersResult markerPoses;
@@ -1071,7 +1071,7 @@ private:
 
     MarkerDetectionList dets{};
 
-    CapturedFrame frame{};
+    tracker::CapturedFrame frame{};
     cv::Mat drawImg{};
     cv::Mat outImg{};
     cv::Mat grayAprilImg{};

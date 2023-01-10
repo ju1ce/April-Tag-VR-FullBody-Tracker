@@ -2,6 +2,7 @@
 
 #include "config/VideoStream.hpp"
 #include "RefPtr.hpp"
+#include "utils/SteadyTimer.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -10,6 +11,12 @@
 
 namespace tracker
 {
+
+struct CapturedFrame
+{
+    cv::Mat image;
+    utils::SteadyTimer::TimePoint timestamp;
+};
 
 class VideoCapture
 {
