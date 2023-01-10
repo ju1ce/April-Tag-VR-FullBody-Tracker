@@ -7,7 +7,10 @@
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
+
 
 namespace tracker
 {
@@ -16,6 +19,38 @@ struct CapturedFrame
 {
     cv::Mat image;
     utils::SteadyTimer::TimePoint timestamp;
+};
+
+inline void swap(CapturedFrame& lhs, CapturedFrame& rhs) // NOLINT(*-naming)
+{
+    using std::swap;
+    swap(lhs.image, rhs.image);
+    swap(lhs.timestamp, rhs.timestamp);
+}
+
+class AwaitedFrame
+{
+public:
+    void Set(CapturedFrame& inFrame)
+    {
+        std::lock_guard lock(mMutex);
+        swap(inFrame, mFrame);
+        mIsReady = true;
+    }
+    void Get(CapturedFrame& outFrame)
+    {
+        std::unique_lock lock{mMutex};
+        mReadyCond.wait(lock, [&] { return mIsReady; });
+
+        mIsReady = false;
+        swap(mFrame, outFrame);
+    }
+
+private:
+    CapturedFrame mFrame{};
+    std::mutex mMutex{};
+    std::condition_variable mReadyCond{};
+    bool mIsReady = false;
 };
 
 class VideoCapture
