@@ -19,7 +19,6 @@ class MyApp : public wxApp
     std::unique_ptr<GUI> gui;
 
     UserConfig userConfig;
-    CalibrationConfig calibConfig;
     ArucoConfig arucoConfig;
     Localization lc;
 
