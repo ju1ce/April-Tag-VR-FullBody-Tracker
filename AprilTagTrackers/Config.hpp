@@ -17,6 +17,20 @@
 
 // Create definitions for each config file below
 
+// Non-user editable calibration data, long lists of numbers.
+// Potentially store this in a file.yaml.gz to reduce size,
+//  and show that it is not user editable. FileStorage has this ability built in
+class CalibrationConfig : public serial::Serializable<CalibrationConfig>
+{
+public:
+    CalibrationConfig() : Serializable(utils::GetConfigDir() / "calib.yaml") {}
+
+    REFLECTABLE_BEGIN;
+    REFLECTABLE_FIELD(cfg::List<cfg::CameraCalib>, cameras){1};
+    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnitCalib>, trackers){3};
+    REFLECTABLE_END;
+};
+
 // user editable storage
 class UserConfig : public serial::Serializable<UserConfig>
 {
@@ -53,20 +67,8 @@ public:
     REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnit>, trackers){3};
     REFLECTABLE_FIELD(cfg::Validated<int>, detectorThreads){4, cfg::GreaterEqual(1)};
     REFLECTABLE_END;
-};
 
-// Non-user editable calibration data, long lists of numbers.
-// Potentially store this in a file.yaml.gz to reduce size,
-//  and show that it is not user editable. FileStorage has this ability built in
-class CalibrationConfig : public serial::Serializable<CalibrationConfig>
-{
-public:
-    CalibrationConfig() : Serializable(utils::GetConfigDir() / "calib.yaml") {}
-
-    REFLECTABLE_BEGIN;
-    REFLECTABLE_FIELD(cfg::List<cfg::CameraCalib>, cameras){1};
-    REFLECTABLE_FIELD(cfg::List<cfg::TrackerUnitCalib>, trackers){3};
-    REFLECTABLE_END;
+    CalibrationConfig calib;
 };
 
 class ArucoConfig : public serial::Serializable<ArucoConfig>
