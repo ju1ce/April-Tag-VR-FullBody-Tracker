@@ -68,7 +68,7 @@ public:
     REFLECTABLE_FIELD(cfg::Validated<int>, detectorThreads){4, cfg::GreaterEqual(1)};
     REFLECTABLE_END;
 
-    CalibrationConfig calib;
+    CalibrationConfig calib{};
 };
 
 class ArucoConfig : public serial::Serializable<ArucoConfig>
