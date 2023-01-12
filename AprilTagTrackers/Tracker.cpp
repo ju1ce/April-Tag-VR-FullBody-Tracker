@@ -1046,6 +1046,7 @@ void Tracker::RefineTracker()
     auto camera_index = std::vector<int>();
     auto observations = std::vector<double>();
     auto parameters = std::vector<double>();
+    auto frameCountPerMarker = std::vector<int>(trackerNum * markersPerTracker, 0);
 
     int trackerBeingProcessed = -1;
     int frameNumber = 0;
@@ -1055,6 +1056,7 @@ void Tracker::RefineTracker()
     {
         CopyFreshCameraImageTo(frame);
         cv::Mat &image = frame.image;
+        cv::Mat mask = cv::Mat(image.size(), image.type(), cv::Scalar(1, 1, 1));
 
         std::chrono::steady_clock::time_point start, end;
         // clock for timing of detection
@@ -1065,9 +1067,21 @@ void Tracker::RefineTracker()
         std::vector<std::vector<cv::Point2f>> corners;
         std::vector<cv::Point2f> centers;
 
+
         april.detectMarkers(image, &corners, &ids, &centers, trackers);
 
         cv::aruco::drawDetectedMarkers(image, corners, cv::noArray(), cv::Scalar(255, 0, 0)); // draw all markers blue. We will overwrite this with other colors for markers that are part of any of the trackers that we use
+        for (int i = 0; i < corners.size(); i++)
+        {
+            std::vector<cv::Point> points;
+            for(int j = 0; j < corners[i].size(); j++){
+                points.push_back(corners[i].at(j));
+            }
+            cv::fillConvexPoly(mask, points, cv::Scalar(1, 0, 0), 8, 0);
+        }
+
+        bool noTracker = true;
+        bool tooFar = true;
 
         for (int i = 0; i < trackerNum; ++i)
         {
@@ -1097,6 +1111,7 @@ void Tracker::RefineTracker()
                 return;
             }
             trackerStatus[i].boardFound = true;
+            noTracker = false;
 
             // Reject detected positions that are behind the camera
             if (trackerStatus[i].boardTvec[2]  < 0)
@@ -1130,18 +1145,85 @@ void Tracker::RefineTracker()
                 }
             }
 
-            cv::aruco::drawAxis(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
-
             // TODO: Modify function to be able process more than one tracker at the same time
             if ((trackerBeingProcessed != -1) && (i != trackerBeingProcessed))
                 continue;
 
-            trackerBeingProcessed = i;
-
-            if ((frameNumber++ % (user_config.videoStreams[0]->camera.fps / 3)) != 0) continue;
 
             int tracker_id_begin = i * markersPerTracker;
             int tracker_id_end = (i + 1) * markersPerTracker;
+
+            std::vector<int> trackerIds;
+            std::vector<int> trackerIdsYellow;
+            std::vector<std::vector<cv::Point2f>> trackerCorners;
+            std::vector<std::vector<cv::Point2f>> trackerCornersYellow;
+            std::vector<std::vector<cv::Point2f>> trackerCornersGreen;
+
+            // Add get the marker IDs and corners for specific tracker
+            for (int j = 0; j < ids.size(); ++j)
+            {
+                // does marker ID belong to current tracker?
+                if ((tracker_id_begin <= ids[j]) && (ids[j] < tracker_id_end))
+                {
+                    trackerIds.push_back(ids[j]);
+                    trackerCorners.push_back(corners[j]);
+                    if(frameCountPerMarker[ids[j]] < 10)
+                    {
+                        trackerIdsYellow.push_back(ids[j]);
+                        trackerCornersYellow.push_back(corners[j]);
+                    }
+                    else
+                    {
+                        trackerCornersGreen.push_back(corners[j]);
+                    }
+                }
+            }
+
+            if (trackerStatus[i].boardTvec[2] > 0.30)
+            {
+                cv::aruco::drawDetectedMarkers(image, trackerCorners, cv::noArray(), cv::Scalar(255, 0, 255)); // Purple: Tracker too far away
+                for (int i = 0; i < trackerCorners.size(); i++)
+                {
+                    std::vector<cv::Point> points;
+                    for(int j = 0; j < trackerCorners[i].size(); j++){
+                        points.push_back(trackerCorners[i].at(j));
+                    }
+                    cv::fillConvexPoly(mask, points, cv::Scalar(1, 0, 1), 8, 0);
+                }
+                continue;
+            }
+
+            // Yellow: Need more snapshots
+            cv::aruco::drawDetectedMarkers(image, trackerCornersYellow, cv::noArray(), cv::Scalar(0, 255, 255));
+            for (int i = 0; i < trackerCornersYellow.size(); i++)
+            {
+                std::vector<cv::Point> points;
+                for(int j = 0; j < trackerCornersYellow[i].size(); j++){
+                    points.push_back(trackerCornersYellow[i].at(j));
+                }
+                double fillLevel = (double)frameCountPerMarker[trackerIdsYellow[i]] / 10.0;
+                points[1] =  (1 - fillLevel) * points[0] + fillLevel * points[1];
+                points[2] =  (1 - fillLevel) * points[3] + fillLevel * points[2];
+                cv::fillConvexPoly(mask, points, cv::Scalar(0, 1, 1), 8, 0);
+            }
+
+            // Green: Marker done
+            cv::aruco::drawDetectedMarkers(image, trackerCornersGreen, cv::noArray(), cv::Scalar(0, 255, 0));
+            for (int i = 0; i < trackerCornersGreen.size(); i++)
+            {
+                std::vector<cv::Point> points;
+                for(int j = 0; j < trackerCornersGreen[i].size(); j++){
+                    points.push_back(trackerCornersGreen[i].at(j));
+                }
+                cv::fillConvexPoly(mask, points, cv::Scalar(0, 1, 0), 8, 0);
+            }
+
+            tooFar = false;
+            trackerBeingProcessed = i;
+
+            cv::aruco::drawAxis(image, camCalib->cameraMatrix, camCalib->distortionCoeffs, trackerStatus[i].boardRvec, trackerStatus[i].boardTvec, 0.1);
+
+            if ((frameNumber++ % (user_config.videoStreams[0]->camera.fps / 3)) != 0) continue;
 
             // Add camera into parameter block
             parameters.push_back(trackerStatus[i].boardRvec[0]);
@@ -1162,19 +1244,17 @@ void Tracker::RefineTracker()
             num_parameters += 15;
 
             // Add detected points into observations
-            for (int j = 0; j < ids.size(); ++j)
+            for (int j = 0; j < trackerIds.size(); ++j)
             {
-                // does marker ID belong to current tracker?
-                if ((tracker_id_begin <= ids[j]) && (ids[j] < tracker_id_end))
+                ++frameCountPerMarker[trackerIds[j]];
+
+                for (int k = 0; k < trackerCorners[j].size(); ++k)
                 {
-                    for (int k = 0; k < corners[j].size(); ++k)
-                    {
-                        point_index.push_back((ids[j] - tracker_id_begin) * 4 + k);
-                        camera_index.push_back(num_cameras);
-                        observations.push_back(corners[j][k].x);
-                        observations.push_back(corners[j][k].y);
-                        num_observations++;
-                    }
+                    point_index.push_back((trackerIds[j] - tracker_id_begin) * 4 + k);
+                    camera_index.push_back(num_cameras);
+                    observations.push_back(trackerCorners[j][k].x);
+                    observations.push_back(trackerCorners[j][k].y);
+                    num_observations++;
                 }
             }
 
@@ -1199,9 +1279,18 @@ void Tracker::RefineTracker()
                 rows = image.rows * drawImgSize / image.cols;
             }
 
+            cv::multiply(image, mask, image);
             cv::resize(image, outImg, cv::Size(cols, rows));
             cv::putText(outImg, std::to_string(frameTime).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-            cv::putText(outImg, std::to_string(num_cameras), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            if (noTracker)
+                cv::putText(outImg, std::string("No trackers detected"), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            else if (trackerBeingProcessed == -1)
+                cv::putText(outImg, std::string("Tracker too far"), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            else if (tooFar)
+                cv::putText(outImg, std::string("Tracker " + std::to_string(trackerBeingProcessed) + " too far"), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            else
+                cv::putText(outImg, std::string("Calibrating tracker ") + std::to_string(trackerBeingProcessed), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            cv::putText(outImg, std::string("Frames captured: ") + std::to_string(num_cameras), cv::Point(10, 110), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
             if (showTimeProfile)
             {
                 april.drawTimeProfile(outImg, cv::Point(10, 60));
@@ -1209,6 +1298,14 @@ void Tracker::RefineTracker()
             gui->UpdatePreview(outImg);
         }
         // time of marker detection
+    }
+
+    if (gui->IsPreviewVisible())
+    {
+        outImg = cv::Mat::zeros(outImg.size(), outImg.type());
+        cv::putText(outImg, std::string("Processing"), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        cv::putText(outImg, std::string("Please wait..."), cv::Point(10, 70), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+        gui->UpdatePreview(outImg);
     }
 
     // Add tracker 3d points into parameter block
