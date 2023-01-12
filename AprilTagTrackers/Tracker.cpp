@@ -282,7 +282,7 @@ void Tracker::CalibrateCameraCharuco()
             cv::fillConvexPoly(drawImg, points.data(), points.size(), cv::Scalar::all(255));
         }
 
-        preview.Update(outImg, DRAW_IMG_SIZE);
+        preview.Update(drawImg, DRAW_IMG_SIZE);
 
         // if more than one second has passed since last calibration image, add current frame to calibration images
         // framesSinceLast++;
