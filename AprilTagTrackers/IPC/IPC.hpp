@@ -79,7 +79,7 @@ private:
 
 inline std::unique_ptr<IClient> CreateDriverClient()
 {
-    const std::string driverPath = "AprilTagPipeIn";
+    const std::string driverPath = "ApriltagPipeIn";
 #ifdef ATT_OS_WINDOWS
     return std::make_unique<WindowsNamedPipe>(driverPath);
 #else
