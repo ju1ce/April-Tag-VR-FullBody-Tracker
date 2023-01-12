@@ -72,7 +72,7 @@ void Tracker::CameraLoop()
 {
     const RefPtr<cfg::Camera> cam = &user_config.videoStreams[0]->camera;
 
-    cv::Mat img;
+    tracker::CapturedFrame frame;
     cv::Mat drawImg;
 
     utils::SteadyTimer fpsTimer{};
@@ -88,13 +88,14 @@ void Tracker::CameraLoop()
         const utils::NanoS frameTime = mFrameTimer.Get(stampBeforeCap);
         mFrameTimer.Restart(stampBeforeCap);
 
-        if (!mCapture.TryReadFrame(img))
+        if (!mCapture.TryReadFrame(frame.image))
         {
             gui->ShowPopup(lc.TRACKER_CAMERA_ERROR, PopupStyle::Error);
             cameraRunning = false;
             break;
         }
         const auto stampAfterCap = utils::SteadyTimer::Now();
+        frame.timestamp = stampAfterCap;
 
         // framerate limiter
         // constexpr int minSafeFps = 300;
@@ -127,29 +128,16 @@ void Tracker::CameraLoop()
             if (gui->IsPreviewVisible(PreviewId::Camera))
             {
                 previewTimer.Restart(stampAfterCap);
-                img.copyTo(drawImg);
+                frame.image.copyTo(drawImg);
                 cv::putText(drawImg, std::to_string(fps),
                             cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
-                const std::string resolution = std::to_string(img.cols) + "x" + std::to_string(img.rows);
+                const std::string resolution = std::to_string(frame.image.cols) + "x" + std::to_string(frame.image.rows);
                 cv::putText(drawImg, resolution, cv::Point(10, 120), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 255, 0), 2);
                 if (previewCameraCalibration) drawCalibration(drawImg, *calib_config.cameras[0]);
                 gui->UpdatePreview(drawImg, PreviewId::Camera);
             }
         }
-        { // lock scope
-            std::lock_guard lock{mCameraImageMutex};
-            // Swap avoids copying the pixel buffer. It only swaps pointers and metadata.
-            // The pixel buffer from cameraImage can be reused if the size and format matches.
-            cv::swap(img, mCameraFrame.image);
-            mCameraFrame.timestamp = stampAfterCap;
-            // TODO: does opencv really care if img.read is called on the wrong size of matrix?
-            // if (img.size() != cameraImage.size() || img.flags != cameraImage.flags)
-            // {
-            //     img.release();
-            // }
-            mIsImageReady = true;
-        }
-        mImageReadyCond.notify_one();
+        mCameraFrame.Set(frame);
 
         if (mVRClient && mVRClient->IsInit())
         {
@@ -158,16 +146,6 @@ void Tracker::CameraLoop()
     }
     mCapture.Close();
     gui->SetStatus(false, StatusItem::Camera);
-}
-
-void Tracker::CopyFreshCameraImageTo(CapturedFrame& frame)
-{
-    std::unique_lock lock{mCameraImageMutex};
-    mImageReadyCond.wait(lock, [&] { return mIsImageReady; });
-
-    mIsImageReady = false;
-    cv::swap(frame.image, mCameraFrame.image);
-    frame.timestamp = mCameraFrame.timestamp;
 }
 
 void Tracker::StartCameraCalib()
@@ -205,7 +183,7 @@ void Tracker::StartCameraCalib()
 /// function to calibrate our camera
 void Tracker::CalibrateCameraCharuco()
 {
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat gray;
     cv::Mat drawImg;
 
@@ -245,7 +223,7 @@ void Tracker::CalibrateCameraCharuco()
     int picsTaken = 0;
     while (mainThreadRunning && cameraRunning)
     {
-        CopyFreshCameraImageTo(frame);
+        mCameraFrame.Get(frame);
         const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(frame.image), DRAW_IMG_SIZE);
         frame.image.copyTo(drawImg);
         cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
@@ -460,7 +438,7 @@ void Tracker::CalibrateCamera()
     std::vector<cv::Point2f> corner_pts;
     bool success;
 
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat outImg;
 
     int i = 0;
@@ -476,7 +454,7 @@ void Tracker::CalibrateCamera()
         {
             return;
         }
-        CopyFreshCameraImageTo(frame);
+        mCameraFrame.Get(frame);
         cv::Mat& image = frame.image;
         cv::putText(image, std::to_string(i) + "/" + std::to_string(picNum), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
         const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(image), DRAW_IMG_SIZE);
@@ -710,7 +688,7 @@ void Tracker::CalibrateTracker()
         trackerUnits.push_back(std::move(unit));
     }
 
-    CapturedFrame frame;
+    tracker::CapturedFrame frame;
     cv::Mat grayImage;
 
     math::EstimatePoseSingleMarkersResult markerPoses;
@@ -720,7 +698,7 @@ void Tracker::CalibrateTracker()
     // TODO: temporary make code easier by allowing returns and handling exceptions properly within loop
     // will be refactored to another class, but easier than pulling out to another function due to amount of state
     const auto doStep = [&] {
-        CopyFreshCameraImageTo(frame);
+        mCameraFrame.Get(frame);
         // detect and draw all markers on image
         AprilTagWrapper::ConvertGrayscale(frame.image, grayImage);
         april.DetectMarkers(grayImage, dets);
@@ -839,7 +817,7 @@ public:
 
     void Update()
     {
-        mTracker->CopyFreshCameraImageTo(frame);
+        mTracker->mCameraFrame.Get(frame);
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = frame.image;
@@ -1071,7 +1049,7 @@ private:
 
     MarkerDetectionList dets{};
 
-    CapturedFrame frame{};
+    tracker::CapturedFrame frame{};
     cv::Mat drawImg{};
     cv::Mat outImg{};
     cv::Mat grayAprilImg{};
