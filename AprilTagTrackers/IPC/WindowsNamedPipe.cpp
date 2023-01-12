@@ -24,7 +24,7 @@ std::string_view WindowsNamedPipe::SendRecv(std::string_view message)
     if (FAILED(CallNamedPipeA(
             mPipeName.c_str(),
             messagePtr,
-            message.size(),
+            message.size() + 1,
             GetBufferPtr(),
             GetBufferSize(),
             &responseLength,
