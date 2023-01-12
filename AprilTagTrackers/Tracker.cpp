@@ -212,7 +212,6 @@ void Tracker::CalibrateCameraCharuco()
     std::vector<double> perViewErrors;
     std::vector<std::vector<cv::Point2f>> allCharucoCorners;
     std::vector<std::vector<int>> allCharucoIds;
-    cv::Mat outImg;
 
     std::vector<int> markerIds;
     std::vector<std::vector<cv::Point2f>> markerCorners;
@@ -224,7 +223,6 @@ void Tracker::CalibrateCameraCharuco()
     while (mainThreadRunning && cameraRunning)
     {
         mCameraFrame.Get(frame);
-        const cv::Size2i drawSize = math::ConstrainSize(math::GetMatSize(frame.image), DRAW_IMG_SIZE);
         frame.image.copyTo(drawImg);
         cv::putText(drawImg, std::to_string(picsTaken), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
 
