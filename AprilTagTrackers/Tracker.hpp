@@ -40,7 +40,6 @@ class Tracker : public ITrackerControl
     static inline const cv::Scalar COLOR_MARKER_ADDING{255, 0, 255}; /// yellow
     static inline const cv::Scalar COLOR_MARKER_ADDED{0, 255, 0}; /// green
     static inline const cv::Scalar COLOR_MARKER_FAR{255, 0, 255}; /// purple
-    static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
 public:
     friend class MainLoopRunner;

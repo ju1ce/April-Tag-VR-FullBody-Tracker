@@ -1,32 +1,52 @@
 #pragma once
 
+#include "AprilTagWrapper.hpp"
+#include "GUI.hpp"
+#include "OpenVRClient.hpp"
+#include "PlayspaceCalib.hpp"
+#include "RefPtr.hpp"
+#include "TrackerUnit.hpp"
+#include "VideoCapture.hpp"
+#include "VRDriver.hpp"
+
 namespace tracker
 {
 
 class MainLoopRunner
 {
+    static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
+    static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
+
 public:
-    explicit MainLoopRunner(RefPtr<Tracker> tracker)
-        : mTracker(tracker),
-          camCalib(mTracker->calib_config.cameras[0]),
-          videoStream(mTracker->user_config.videoStreams[0]),
-          april(AprilTagWrapper::ConvertFamily(mTracker->user_config.markerLibrary), videoStream->quadDecimate, mTracker->user_config.apriltagThreadCount),
-          trackerNum(mTracker->user_config.trackerNum),
-          mPlayspace(&mTracker->mPlayspace)
+    explicit MainLoopRunner(RefPtr<UserConfig> config,
+                            RefPtr<const CalibrationConfig> calibConfig,
+                            RefPtr<PlayspaceCalib> playspace,
+                            RefPtr<VRDriver> vrDriver)
+        : mConfig(config),
+          camCalib(calibConfig->cameras[0]),
+          videoStream(mConfig->videoStreams[0]),
+          april(AprilTagWrapper::ConvertFamily(mConfig->markerLibrary), videoStream->quadDecimate, mConfig->apriltagThreadCount),
+          trackerNum(mConfig->trackerNum),
+          mPlayspace(playspace),
+          mVRDriver(vrDriver)
     {
-        mPlayspace->Set(mTracker->user_config.manualCalib.GetAsReal());
+        mPlayspace->Set(mConfig->manualCalib.GetAsReal());
         // calculate position of camera from calibration data and send its position to steamvr
-        mTracker->mVRDriver->UpdateStation(mPlayspace->GetStationPoseOVR());
+        mVRDriver->UpdateStation(mPlayspace->GetStationPoseOVR());
     }
 
-    void Update()
+    void Update(RefPtr<AwaitedFrame> cameraFrame,
+                RefPtr<GUI> gui,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits,
+                RefPtr<IVRClient> vrClient,
+                RefPtr<const ITrackerControl> trackerCtrl)
     {
-        mTracker->mCameraFrame.Get(frame);
+        cameraFrame->Get(frame);
         // shallow copy, gray will be cloned from image and used for detection,
         // so drawing can happen on color image without clone.
         drawImg = frame.image;
         AprilTagWrapper::ConvertGrayscale(frame.image, grayAprilImg);
-        const bool previewIsVisible = mTracker->gui->IsPreviewVisible();
+        const bool previewIsVisible = gui->IsPreviewVisible();
 
         const auto stampBeforeDetect = utils::SteadyTimer::Now();
         detectionTimer.Restart(stampBeforeDetect);
@@ -34,7 +54,7 @@ public:
         bool circularWindow = videoStream->circularWindow;
 
         // if any tracker was lost for longer than 20 frames, mark circularWindow as false
-        for (const auto& unit : mTracker->mTrackerUnits)
+        for (const auto& unit : *trackerUnits)
         {
             if (!unit.WasVisibleLastFrame())
             {
@@ -57,8 +77,8 @@ public:
         const double frameTimeBeforeDetect = duration_cast<utils::FSeconds>(stampBeforeDetect - frame.timestamp).count();
         for (int i = 0; i < trackerNum; i++)
         {
-            auto& unit = mTracker->mTrackerUnits[i];
-            auto [pose, isValid] = mTracker->mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
+            auto& unit = (*trackerUnits)[i];
+            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
             pose = mPlayspace->InvTransformFromOVR(pose);
 
             std::array<cv::Point2d, 2> projected;
@@ -104,14 +124,14 @@ public:
                 if (circularWindow) // if circular window is set mask a circle around the predicted tracker point
                 {
                     cv::circle(maskSearchImg, maskCenter, searchRadius, cv::Scalar(255), -1, 8, 0);
-                    if (previewIsVisible) cv::circle(drawImg, maskCenter, searchRadius, mTracker->COLOR_MASK, 2, 8, 0);
+                    if (previewIsVisible) cv::circle(drawImg, maskCenter, searchRadius, COLOR_MASK, 2, 8, 0);
                 }
                 else // if not, mask a vertical strip top to bottom. This happens every 20 frames if a tracker is lost.
                 {
                     const int maskX = static_cast<int>(maskCenter.x);
                     const cv::Rect2i maskRect{cv::Point(maskX - searchRadius, 0), cv::Point2i(maskX + searchRadius, frame.image.rows)};
                     cv::rectangle(maskSearchImg, maskRect, cv::Scalar(255), -1);
-                    if (previewIsVisible) cv::rectangle(drawImg, maskRect, mTracker->COLOR_MASK, 3);
+                    if (previewIsVisible) cv::rectangle(drawImg, maskRect, COLOR_MASK, 3);
                 }
             }
             else
@@ -127,21 +147,20 @@ public:
             grayAprilImg = tempGrayMaskedImg;
         }
 
-        mCalibrator.Update(mTracker->mVRClient, &mTracker->mVRDriver.value(), mTracker->gui,
-                           mPlayspace, mTracker->lockHeightCalib, mTracker->manualRecalibrate);
+        mCalibrator.Update(vrClient, mVRDriver, gui, mPlayspace, trackerCtrl->lockHeightCalib, trackerCtrl->manualRecalibrate);
 
         april.DetectMarkers(grayAprilImg, dets);
         // frame time is how much time passed since frame was acquired.
         const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame.timestamp).count();
-        for (int index = 0; index < mTracker->mTrackerUnits.size(); ++index)
+        for (int index = 0; index < trackerUnits->size(); ++index)
         {
-            auto& unit = mTracker->mTrackerUnits[index];
+            auto& unit = (*trackerUnits)[index];
             // estimate the pose of current board
             const RodrPose scaledPoseFromDriver{unit.GetPoseFromDriver().position / mPlayspace->GetScale(), unit.GetPoseFromDriver().rotation};
             // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
             auto [estimatedPose, numEstimated] = math::EstimatePoseTracker(
                 dets.corners, dets.ids, unit.GetArucoBoard(), *camCalib,
-                unit.WasVisibleLastFrame() && mTracker->user_config.usePredictive,
+                unit.WasVisibleLastFrame() && mConfig->usePredictive,
                 scaledPoseFromDriver);
             estimatedPose.position *= mPlayspace->GetScale(); // unscale returned estimation;
             unit.SetEstimatedPose(estimatedPose);
@@ -155,7 +174,7 @@ public:
             }
             unit.SetWasVisibleLastFrame(true);
 
-            if (mTracker->user_config.depthSmoothing > 0 && unit.WasVisibleToDriverLastFrame() && !mTracker->manualRecalibrate)
+            if (mConfig->depthSmoothing > 0 && unit.WasVisibleToDriverLastFrame() && !trackerCtrl->manualRecalibrate)
             {
                 // depth estimation is noisy, so try to smooth it more, especialy if using multiple cameras
                 // if position is close to the position predicted by the driver, take the depth of the driver.
@@ -169,7 +188,7 @@ public:
                 const cv::Vec3d normPredict = pose.position / distPredict;
 
                 double dist = std::abs(distPredict - distDriver);
-                dist = (dist / static_cast<double>(mTracker->user_config.depthSmoothing)) + 0.1;
+                dist = (dist / static_cast<double>(mConfig->depthSmoothing)) + 0.1;
                 dist = std::clamp(dist, 0.0, 1.0);
 
                 const double distFinal = (dist * distPredict) + (1 - dist) * distDriver;
@@ -214,9 +233,9 @@ public:
                 }
             }
 
-            if (mTracker->multicamAutocalib && unit.WasVisibleToDriverLastFrame())
+            if (trackerCtrl->multicamAutocalib && unit.WasVisibleToDriverLastFrame())
             {
-                tracker::PlayspaceCalibrator::UpdateMulticam(mTracker->gui, mPlayspace, unit);
+                tracker::PlayspaceCalibrator::UpdateMulticam(gui, mPlayspace, unit);
                 continue; // skip sending to driver
             }
 
@@ -224,32 +243,33 @@ public:
             Pose poseToSend = mPlayspace->TransformToOVR(Pose(unit.GetEstimatedPose()));
 
             // send all the values
-            mTracker->mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mTracker->user_config.smoothingFactor);
+            mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mConfig->smoothingFactor);
         }
 
-        if (mTracker->gui->IsPreviewVisible())
+        if (gui->IsPreviewVisible())
         {
             // draw and display the detections
             if (!dets.ids.empty()) cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids);
-            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame.image), mTracker->DRAW_IMG_SIZE);
+            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame.image), DRAW_IMG_SIZE);
             cv::resize(drawImg, outImg, drawSize);
             cv::putText(outImg, std::to_string(frameTimeAfterDetect).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
-            if (mTracker->showTimeProfile)
+            if (false) // TODO: tracker->showTimeProfile (is this even needed?)
             {
                 april.DrawTimeProfile(outImg, cv::Point(10, 60));
             }
-            mTracker->gui->UpdatePreview(outImg);
+            gui->UpdatePreview(outImg);
         }
         // time of marker detection
     }
 
 private:
-    RefPtr<Tracker> mTracker;
-    RefPtr<const cfg::CameraCalib> camCalib{};
-    RefPtr<const cfg::VideoStream> videoStream{};
+    RefPtr<UserConfig> mConfig;
+    RefPtr<const cfg::CameraCalib> camCalib;
+    RefPtr<const cfg::VideoStream> videoStream;
     AprilTagWrapper april;
     Index trackerNum;
-    RefPtr<tracker::PlayspaceCalib> mPlayspace;
+    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<VRDriver> mVRDriver;
 
     MarkerDetectionList dets{};
 
@@ -262,9 +282,9 @@ private:
 
     int framesSinceLastSeen = 0;
     static constexpr int framesToCheckAll = 20;
-    tracker::PlayspaceCalibrator mCalibrator{};
+    PlayspaceCalibrator mCalibrator{};
 
     utils::SteadyTimer detectionTimer{};
 };
 
-}
+} // namespace tracker
