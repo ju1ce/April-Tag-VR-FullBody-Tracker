@@ -855,7 +855,8 @@ public:
         {
             auto& unit = mTracker->mTrackerUnits[i];
             auto [pose, isValid] = mTracker->mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
-            pose = mPlayspace->InvTransformFromOVR(pose);
+            if (isValid)
+                pose = mPlayspace->InvTransformFromOVR(pose);
 
             std::array<cv::Point2d, 2> projected;
             {
