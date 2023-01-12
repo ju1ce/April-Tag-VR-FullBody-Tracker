@@ -1309,13 +1309,12 @@ void Tracker::RefineTracker()
     }
 
     // Add tracker 3d points into parameter block
-    // for (int i = 0; i < trackerNum; ++i)
     if (trackerBeingProcessed != -1)
     {
         int i = trackerBeingProcessed;
 
         const std::vector<int>& ids = trackers[i]->ids;
-        const std::vector<std::vector<cv::Point3f> > objPoints = trackers[i]->objPoints;
+        std::vector<std::vector<cv::Point3f> >& objPoints = trackers[i]->objPoints;
 
         int first_id = i * markersPerTracker;
         int after_last_id = first_id;
@@ -1356,10 +1355,7 @@ void Tracker::RefineTracker()
                 }
             }
         }
-    }
 
-    if (trackerBeingProcessed != -1)
-    {
         ceres::examples::BALProblem bal_problem(num_cameras, num_points, num_observations, num_parameters, point_index.data(), camera_index.data(), observations.data(), parameters.data());
 
 #ifdef ATT_DEBUG
@@ -1367,6 +1363,26 @@ void Tracker::RefineTracker()
 #endif
 
         ceres::examples::SolveProblem(bal_problem);
+
+        auto first_point_iter = parameters.begin() + num_cameras * 15;
+
+        for (int j = first_id; j < after_last_id; ++j)
+        {
+            auto it = std::find(ids.begin(), ids.end(), j);
+            auto index = std::distance(ids.begin(), it);
+
+            if (index < objPoints.size())
+            {
+                for (int k = 0; k < 4; ++k)
+                {
+                    objPoints[index][k].x = *(first_point_iter + 0 + 3 * (k + 4 * j));
+                    objPoints[index][k].y = *(first_point_iter + 1 + 3 * (k + 4 * j));
+                    objPoints[index][k].z = *(first_point_iter + 2 + 3 * (k + 4 * j));
+                }
+            }
+        }
+
+        calib_config.Save();
     }
 
     mainThreadRunning = false;
