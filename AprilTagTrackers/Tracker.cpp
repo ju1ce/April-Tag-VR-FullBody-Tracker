@@ -5,6 +5,7 @@
 #include "Helpers.hpp"
 #include "ImageDrawing.hpp"
 #include "math/CVHelpers.hpp"
+#include "tracker/MainLoopRunner.hpp"
 #include "tracker/TrackerUnit.hpp"
 #include "utils/Assert.hpp"
 #include "utils/LogBatch.hpp"
@@ -801,14 +802,14 @@ void Tracker::CalibrateTracker()
 
 void Tracker::MainLoop()
 {
-    MainLoopRunner runner(this);
+    tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
     {
         try
         {
-            runner.Update();
+            runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
         }
         catch (const std::exception& e)
         {
