@@ -44,7 +44,7 @@ std::tuple<sockaddr_un_t, socklen_t> CreateAddress(std::string_view path)
     return {serverAddr, addrSize};
 }
 
-size_t SendRecv(std::string_view path, std::string_view message, char* bufferPtr, int bufferSize)
+size_t SendRecv(std::string_view path, std::string message, char* bufferPtr, int bufferSize)
 {
     const int socketFD = SysCall(::socket, AF_UNIX, SOCK_SEQPACKET, 0);
     try
@@ -71,7 +71,7 @@ namespace IPC
 UNIXSocket::UNIXSocket(std::string socketName)
     : mSocketPath("/tmp/" + std::move(socketName)) {}
 
-std::string_view UNIXSocket::SendRecv(std::string_view message)
+std::string_view UNIXSocket::SendRecv(std::string message)
 {
     try
     {
