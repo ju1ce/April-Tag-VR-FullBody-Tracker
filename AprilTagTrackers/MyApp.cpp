@@ -37,11 +37,11 @@ bool MyApp::OnInit()
     // since disable openvr api isnt part of the parameters, it isnt loaded properly. This ensures it is globaly disabled on every launch.
     userConfig.disableOpenVrApi = false;
 
-    calibConfig.Load();
+    userConfig.calib.Load();
     arucoConfig.Load();
     lc.LoadLang(userConfig.langCode);
 
-    tracker = std::make_unique<Tracker>(userConfig, calibConfig, arucoConfig, lc);
+    tracker = std::make_unique<Tracker>(userConfig, userConfig.calib, arucoConfig, lc);
     gui = std::make_unique<GUI>(tracker, lc, userConfig);
 
     return true;
