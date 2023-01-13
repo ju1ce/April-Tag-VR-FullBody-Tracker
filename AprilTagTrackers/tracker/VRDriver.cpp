@@ -77,17 +77,19 @@ namespace tracker
 VRDriver::VRDriver(const cfg::List<cfg::TrackerUnit>& trackers)
     : mBridge(IPC::CreateDriverClient())
 {
-    /// also checks driver version, ensures can connect
-    CmdGetTrackerCount();
-
-    int index = 0;
-    for (const auto& tracker : trackers.AsRange())
+    // Only add trackers (and station) if they were not already added
+    // also checks driver version, ensures can connect
+    if (CmdGetTrackerCount() != trackers.GetSize())
     {
-        AddTracker(index++, tracker.role);
-    }
+        int index = 0;
+        for (const auto& tracker : trackers.AsRange())
+        {
+            AddTracker(index++, tracker.role);
+        }
 
-    if (trackers.GetSize() != CmdGetTrackerCount()) throw std::runtime_error("some or all trackers were not registered with driver");
-    CmdAddStation();
+        if (trackers.GetSize() != CmdGetTrackerCount()) throw std::runtime_error("some or all trackers were not registered with driver");
+        CmdAddStation();
+    }
 }
 
 void VRDriver::UpdateTracker(int id, Pose pose, double frameTime, double smoothing)
