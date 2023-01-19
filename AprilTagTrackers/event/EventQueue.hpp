@@ -2,15 +2,12 @@
 
 #include "MessageQueue.hpp"
 #include "RefPtr.hpp"
+#include "utils/Assert.hpp"
 #include "utils/Concepts.hpp"
-#include "utils/Error.hpp"
 
-#include <functional>
 #include <new>
-#include <optional>
 #include <string_view>
 #include <unordered_map>
-#include <vector>
 
 // events have a statically generated identifier
 // uppercase is Id, e.g. EventId, eventId, GetIdFor
