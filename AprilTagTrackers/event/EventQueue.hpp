@@ -169,6 +169,9 @@ concept HandlesEvent = requires(T obj, const Event& event) { obj.OnEvent(event);
 template <typename T, typename... Events>
 concept HandlesEvents = (HandlesEvent<T, Events> && ...);
 
+template <typename T, typename Event>
+using OnEventMethodPtr = void (T::*)(const Event&);
+
 } // namespace detail
 
 template <typename Event, typename GroupTag>
@@ -181,27 +184,34 @@ public:
     template <typename>
     friend class EventQueue;
 
-private:
     ~IEventHandler()
     {
         ATT_ASSERT(!mIsBound);
     }
 
+private:
     template <typename GroupTag, std::derived_from<IEventHandler> T>
-        requires(detail::HandlesEvents<T, TEvents...> && (EventInGroup<GroupTag, TEvents> && ...))
     static void BindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
     {
+        static_assert(detail::HandlesEvents<T, TEvents...>);
+        static_assert((EventInGroup<TEvents, GroupTag> && ...));
+
         ATT_ASSERT(instance != nullptr);
-        (queue.template Bind<TEvents>(instance), ...);
+        (queue.template Bind<TEvents>(
+             instance,
+             static_cast<detail::OnEventMethodPtr<T, TEvents>>(&T::OnEvent)),
+         ...);
 
         ATT_ASSERT(!instance->mIsBound);
         instance->mIsBound = true;
     }
 
     template <typename GroupTag, std::derived_from<IEventHandler> T>
-        requires(detail::HandlesEvents<T, TEvents...> && (EventInGroup<GroupTag, TEvents> && ...))
     static void UnbindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
     {
+        static_assert(detail::HandlesEvents<T, TEvents...>);
+        static_assert((EventInGroup<TEvents, GroupTag> && ...));
+
         ATT_ASSERT(instance != nullptr);
         (queue.template Unbind<TEvents>(), ...);
 
@@ -269,7 +279,7 @@ public:
     void Bind(T* const instance)
     {
         // BindImpl will lock
-        T::IEventHandler::BindImpl(this, instance);
+        T::IEventHandler::template BindImpl<TGroupTag, T>(*this, instance);
     }
 
     template <EventInGroup<TGroupTag> TEvent>
@@ -283,7 +293,7 @@ public:
     void Unbind(T* const instance)
     {
         // UnbindImpl will lock
-        T::IEventHandler::UnbindImpl(this, instance);
+        T::IEventHandler::template UnbindImpl<TGroupTag, T>(*this, instance);
     }
 
     void ProcessEvents()
