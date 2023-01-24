@@ -8,7 +8,7 @@
 namespace evt
 {
 
-/// internally-synchronized message queue
+/// message queue
 template <typename T>
 class MessageQueue
 {
@@ -28,19 +28,18 @@ public:
     /// enqueue a message from any thread
     void Enqueue(T&& message) noexcept
     {
-        std::lock_guard lock(mMutex);
         mWriteQueue.push_back(std::move(message));
     }
 
     /// process the list of messages on this thread
+    /// @param lock expects locked, returns unlocked
     template <typename Fn>
-    void Process(Fn&& func)
+    void Process(std::unique_lock<std::mutex>& lock, Fn&& func)
     {
-        {
-            std::lock_guard lock(mMutex);
-            if (mWriteQueue.empty()) return;
-            std::swap(mWriteQueue, mReadQueue);
-        }
+        ATT_ASSERT(lock.owns_lock());
+        if (mWriteQueue.empty()) return;
+        std::swap(mWriteQueue, mReadQueue);
+        lock.unlock();
 
         for (T& message : mReadQueue)
         {

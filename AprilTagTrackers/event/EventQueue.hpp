@@ -163,10 +163,54 @@ private:
     const Fn mFunc;
 };
 
+template <typename T, typename Event>
+concept HandlesEvent = requires(T obj, const Event& event) { obj.OnEvent(event); };
+
+template <typename T, typename... Events>
+concept HandlesEvents = (HandlesEvent<T, Events> && ...);
+
 } // namespace detail
 
 template <typename Event, typename GroupTag>
 concept EventInGroup = std::derived_from<Event, EventBase<GroupTag, Event>>;
+
+template <typename... TEvents>
+class IEventHandler
+{
+public:
+    template <typename>
+    friend class EventQueue;
+
+private:
+    ~IEventHandler()
+    {
+        ATT_ASSERT(!mIsBound);
+    }
+
+    template <typename GroupTag, std::derived_from<IEventHandler> T>
+        requires(detail::HandlesEvents<T, TEvents...> && (EventInGroup<GroupTag, TEvents> && ...))
+    static void BindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
+    {
+        ATT_ASSERT(instance != nullptr);
+        (queue.template Bind<TEvents>(instance), ...);
+
+        ATT_ASSERT(!instance->mIsBound);
+        instance->mIsBound = true;
+    }
+
+    template <typename GroupTag, std::derived_from<IEventHandler> T>
+        requires(detail::HandlesEvents<T, TEvents...> && (EventInGroup<GroupTag, TEvents> && ...))
+    static void UnbindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
+    {
+        ATT_ASSERT(instance != nullptr);
+        (queue.template Unbind<TEvents>(), ...);
+
+        ATT_ASSERT(instance->mIsBound);
+        instance->mIsBound = false;
+    }
+
+    bool mIsBound = false;
+};
 
 /// Single consumer, internally-synchronized, event queue.
 /// Cannot be statically constructed. IDs are generated.
@@ -185,6 +229,8 @@ public:
         using EventType = std::remove_reference_t<Event>;
         detail::EventPtr e{};
         e.Emplace<EventType>(std::forward<Event>(event));
+
+        std::lock_guard lock(mMutex);
         mEvents.Enqueue(std::move(e));
     }
 
@@ -193,35 +239,57 @@ public:
     {
         detail::EventPtr e{};
         e.Emplace<Event>(std::forward<Args>(args)...);
+
+        std::lock_guard lock(mMutex);
         mEvents.Enqueue(std::move(e));
     }
 
     template <EventInGroup<TGroupTag> TEvent, typename T>
     void Bind(T* const instance, const detail::MemberFuncPtr<TEvent, T> memberFunc)
     {
-        mHandlers.try_emplace(
-            TEvent::Id(),
-            std::make_unique<detail::MemberFuncHandler<TEvent, T>>(instance, memberFunc));
+        auto handler = std::make_unique<
+            detail::MemberFuncHandler<TEvent, T>>(instance, memberFunc);
+
+        std::lock_guard lock(mMutex);
+        mHandlers.try_emplace(TEvent::Id(), std::move(handler));
     }
 
     template <EventInGroup<TGroupTag> TEvent,
               utils::Callable<const TEvent&> Func>
     void Bind(Func&& func)
     {
-        mHandlers.try_emplace(
-            TEvent::Id(),
-            std::make_unique<detail::FunctorHandler<TEvent, Func>>(std::forward<Func>(func)));
+        auto handler = std::make_unique<
+            detail::FunctorHandler<TEvent, Func>>(std::forward<Func>(func));
+
+        std::lock_guard lock(mMutex);
+        mHandlers.try_emplace(TEvent::Id(), std::move(handler));
+    }
+
+    template <typename T>
+    void Bind(T* const instance)
+    {
+        // BindImpl will lock
+        T::IEventHandler::BindImpl(this, instance);
     }
 
     template <EventInGroup<TGroupTag> TEvent>
     void Unbind()
     {
+        std::lock_guard lock(mMutex);
         mHandlers.erase(TEvent::Id());
+    }
+
+    template <typename T>
+    void Unbind(T* const instance)
+    {
+        // UnbindImpl will lock
+        T::IEventHandler::UnbindImpl(this, instance);
     }
 
     void ProcessEvents()
     {
-        mEvents.Process([this](detail::EventPtr& event) {
+        std::unique_lock lock(mMutex);
+        mEvents.Process(lock, [this](detail::EventPtr& event) {
             const HandlerMap::const_iterator iter = mHandlers.find(event.GetId());
             ATT_ASSERT(iter != mHandlers.cend(), "unhandled event: ", event.mDebugName);
             const AnyHandlerPtr& handler = iter->second;
@@ -232,6 +300,7 @@ public:
 private:
     MessageQueue<detail::EventPtr> mEvents;
     HandlerMap mHandlers;
+    std::mutex mMutex{}; // locks mEvents and mHandlers
 };
 
 template <typename TGroupTag>
