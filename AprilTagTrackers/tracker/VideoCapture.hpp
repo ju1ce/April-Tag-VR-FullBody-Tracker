@@ -55,6 +55,8 @@ private:
     bool mIsReady = false;
 };
 
+/// capture video from a camera
+/// wrapper for opencv VideoCapture
 class VideoCapture
 {
 public:
@@ -68,7 +70,7 @@ public:
     bool TryOpen();
     void Close();
     /// blocks till frame is ready, matches fps of camera
-    bool TryReadFrame(cv::Mat& outImage);
+    bool TryReadFrame(CapturedFrame& outFrame);
     bool IsOpen() const { return mCapture && mCapture->isOpened(); }
 
 private:

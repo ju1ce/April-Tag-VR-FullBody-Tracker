@@ -2,6 +2,7 @@
 
 #include "utils/Assert.hpp"
 #include "utils/Log.hpp"
+#include "utils/SteadyTimer.hpp"
 #include "utils/Test.hpp"
 
 #include <ps3eye/PSEyeVideoCapture.h>
@@ -86,19 +87,20 @@ void VideoCapture::Close()
     mCapture.reset();
 }
 
-bool VideoCapture::TryReadFrame(cv::Mat& outImage)
+bool VideoCapture::TryReadFrame(CapturedFrame& outFrame)
 {
     if (!mCapture) return false;
-    if (!mCapture->read(outImage) || outImage.empty()) return false;
+    if (!mCapture->read(outFrame.image) || outFrame.image.empty()) return false;
 
     if (mCameraInfo->rotateCl >= 0)
     {
-        cv::rotate(outImage, outImage, mCameraInfo->rotateCl);
+        cv::rotate(outFrame.image, outFrame.image, mCameraInfo->rotateCl);
     }
     if (mCameraInfo->mirror)
     {
-        cv::flip(outImage, outImage, 1);
+        cv::flip(outFrame.image, outFrame.image, 1);
     }
+    outFrame.timestamp = utils::SteadyTimer::Now();
     return true;
 }
 
