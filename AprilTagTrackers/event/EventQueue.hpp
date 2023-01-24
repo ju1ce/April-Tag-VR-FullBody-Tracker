@@ -4,6 +4,7 @@
 #include "RefPtr.hpp"
 #include "utils/Assert.hpp"
 #include "utils/Concepts.hpp"
+#include "utils/TypeName.hpp"
 
 #include <new>
 #include <string_view>
@@ -42,6 +43,9 @@ public:
     template <typename TEvent, typename... Args>
     void Emplace(Args&&... args)
     {
+#ifdef ATT_DEBUG
+        mDebugName = utils::TypeName<TEvent>();
+#endif
         mId = TEvent::Id();
         if constexpr (sizeof(TEvent) <= SBO_SIZE)
         {
@@ -81,6 +85,10 @@ public:
 
     int GetId() const { return mId; }
 
+#ifdef ATT_DEBUG
+    std::string_view mDebugName;
+#endif
+
 private:
     // void* or event in place
     std::aligned_storage_t<sizeof(void*), alignof(void*)> mData{};
@@ -98,11 +106,8 @@ public:
     friend class EventQueue<TGroupTag>;
     friend class detail::EventPtr;
 
-    constexpr EventBase() noexcept = default;
-
 private:
     static int Id() { return detail::ID<EventBase>; }
-    static consteval const char* Name() { return ATT_PRETTY_FUNCTION; }
 };
 
 namespace detail
@@ -169,6 +174,7 @@ template <typename TGroupTag>
 class EventQueue
 {
     using AnyHandlerPtr = std::unique_ptr<const detail::HandlerTypeErasure>;
+    // TODO: IDs are sequential, use a vector
     using HandlerMap = std::unordered_map<int, AnyHandlerPtr>;
 
 public:
@@ -217,7 +223,7 @@ public:
     {
         mEvents.Process([this](detail::EventPtr& event) {
             const HandlerMap::const_iterator iter = mHandlers.find(event.GetId());
-            ATT_ASSERT(iter != mHandlers.cend(), "unhandled event id=", event.GetId());
+            ATT_ASSERT(iter != mHandlers.cend(), "unhandled event: ", event.mDebugName);
             const AnyHandlerPtr& handler = iter->second;
             if (handler) handler->Handle(event);
         });
