@@ -172,6 +172,12 @@ concept HandlesEvents = (HandlesEvent<T, Events> && ...);
 template <typename T, typename Event>
 using OnEventMethodPtr = void (T::*)(const Event&);
 
+template <typename First, typename... Rest>
+struct PackFirst
+{
+    using Type = First;
+};
+
 } // namespace detail
 
 template <typename Event, typename GroupTag>
@@ -181,6 +187,9 @@ template <typename... TEvents>
 class IEventHandler
 {
 public:
+    using GroupTag = typename detail::PackFirst<TEvents...>::Type;
+    static_assert((EventInGroup<TEvents, GroupTag> && ...));
+
     template <typename>
     friend class EventQueue;
 
@@ -190,11 +199,10 @@ public:
     }
 
 private:
-    template <typename GroupTag, std::derived_from<IEventHandler> T>
+    template <std::derived_from<IEventHandler> T>
     static void BindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
     {
         static_assert(detail::HandlesEvents<T, TEvents...>);
-        static_assert((EventInGroup<TEvents, GroupTag> && ...));
 
         ATT_ASSERT(instance != nullptr);
         (queue.template Bind<TEvents>(
@@ -206,11 +214,10 @@ private:
         instance->mIsBound = true;
     }
 
-    template <typename GroupTag, std::derived_from<IEventHandler> T>
+    template <std::derived_from<IEventHandler> T>
     static void UnbindImpl(evt::EventQueue<GroupTag>& queue, T* const instance)
     {
         static_assert(detail::HandlesEvents<T, TEvents...>);
-        static_assert((EventInGroup<TEvents, GroupTag> && ...));
 
         ATT_ASSERT(instance != nullptr);
         (queue.template Unbind<TEvents>(), ...);
