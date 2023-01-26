@@ -9,11 +9,9 @@ namespace evt
 {
 
 // clang-format off
-struct VideoStreamStart : TKEvent<VideoStreamStart> { int idx; };
-struct VideoStreamStop : TKEvent<VideoStreamStop> { int idx; };
-struct VideoStreamCalibStart : TKEvent<VideoStreamCalibStart> { int idx; };
-struct VideoStreamCalibSave : TKEvent<VideoStreamCalibSave> { int idx; };
-struct VideoStreamCalibCancel : TKEvent<VideoStreamCalibCancel> { int idx; };
+struct VideoStream : TKEvent<VideoStream> { int idx; EnableDisable act; };
+struct VideoStreamCalibEnable : TKEvent<VideoStreamCalibEnable> { int idx; };
+struct VideoStreamCalibDisable : TKEvent<VideoStreamCalibEnable> { int idx; SubmitCancel act; };
 
 // UI: user action -> UI: send VideoStreamRequestPreview -> TK: send VideoStreamPreview
 struct VideoStreamRequestPreview : TKEvent<VideoStreamRequestPreview> { int idx; };

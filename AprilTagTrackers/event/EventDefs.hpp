@@ -30,26 +30,20 @@ struct UIErrorOf : UIEvent<UIErrorOf<TEvent>>
 
 // clang-format off
 
-struct StatusVStreamStarted : UIEvent<StatusVStreamStarted> { int idx; };
-struct StatusVStreamStopped : UIEvent<StatusVStreamStarted> { int idx; };
-struct StatusTrackingStarted : UIEvent<StatusTrackingStarted> {};
-struct StatusTrackingStopped : UIEvent<StatusTrackingStopped> {};
-struct StatusVRDriverConnected : UIEvent<StatusVRDriverConnected> {};
-struct StatusVRDriverDisconnected : UIEvent<StatusVRDriverDisconnected> {};
-struct StatusVRClientConnected : UIEvent<StatusVRClientConnected> {};
-struct StatusVRClientDisconnected : UIEvent<StatusVRClientDisconnected> {};
+enum class SubmitCancel : bool { Submit = true, Cancel = false };
+enum class EnableDisable : bool { Enable = true, Disable = false };
+using enum SubmitCancel;
+using enum EnableDisable;
 
-struct UnitCalibStart : TKEvent<UnitCalibStart> {};
-struct UnitCalibStop : TKEvent<UnitCalibStop> {};
+struct StatusVideoStream : UIEvent<StatusVideoStream> { EnableDisable act; int idx; };
+struct StatusTracking : UIEvent<StatusTracking> { EnableDisable act; };
+struct StatusVRDriver : UIEvent<StatusVRDriver> { EnableDisable act; };
+struct StatusVRClient : UIEvent<StatusVRClient> { EnableDisable act; };
 
-struct VRDriverStart : TKEvent<VRDriverStart> {};
-struct VRDriverStop : TKEvent<VRDriverStop> {};
-
-struct VRClientStart : TKEvent<VRClientStart> {};
-struct VRClientStop : TKEvent<VRClientStop> {};
-
-struct TrackingStart : TKEvent<TrackingStart> {};
-struct TrackingStop : TKEvent<TrackingStop> {};
+struct TrackerUnitCalib : TKEvent<TrackerUnitCalib> { EnableDisable act; };
+struct VRClient : TKEvent<VRClient> { EnableDisable act; };
+struct VRDriver : TKEvent<VRDriver> { EnableDisable act; };
+struct Tracking : TKEvent<Tracking> { EnableDisable act; };
 // clang-format on
 
 } // namespace evt
