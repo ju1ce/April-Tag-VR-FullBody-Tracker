@@ -170,9 +170,6 @@ concept HandlesEvent = requires(T obj, const Event& event) { obj.OnEvent(event);
 template <typename T, typename... Events>
 concept HandlesEvents = (HandlesEvent<T, Events> && ...);
 
-template <typename T, typename Event>
-using OnEventMethodPtr = void (T::*)(const Event&);
-
 template <typename First, typename... Rest>
 struct PackFirst
 {
@@ -208,7 +205,7 @@ private:
         ATT_ASSERT(instance != nullptr);
         (queue.template Bind<TEvents>(
              instance,
-             static_cast<detail::OnEventMethodPtr<T, TEvents>>(&T::OnEvent)),
+             static_cast<detail::MemberFuncPtr<TEvents, T>>(&T::OnEvent)),
          ...);
 
         ATT_ASSERT(!instance->mIsBound);
