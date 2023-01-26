@@ -102,6 +102,7 @@ template <typename TGroupTag, typename TDerived>
 class EventBase
 {
 public:
+    using GroupTag = TGroupTag;
     // type checking of EventQueue group tag
     friend class EventQueue<TGroupTag>;
     friend class detail::EventPtr;
@@ -187,7 +188,7 @@ template <typename... TEvents>
 class IEventHandler
 {
 public:
-    using GroupTag = typename detail::PackFirst<TEvents...>::Type;
+    using GroupTag = typename detail::PackFirst<TEvents...>::Type::GroupTag;
     static_assert((EventInGroup<TEvents, GroupTag> && ...));
 
     template <typename>
