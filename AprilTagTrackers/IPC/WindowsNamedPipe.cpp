@@ -16,7 +16,7 @@ constexpr int SEC_TO_MS = 1000;
 WindowsNamedPipe::WindowsNamedPipe(std::string pipeName)
     : mPipeName(R"(\\.\pipe\)" + std::move(pipeName)) {}
 
-std::string_view WindowsNamedPipe::SendRecv(std::string_view message)
+std::string_view WindowsNamedPipe::SendRecv(std::string message)
 {
     // NOLINTNEXTLINE: Remove const-ness as callnamedpipe expects a void*, but it will not be modified
     LPVOID messagePtr = reinterpret_cast<LPVOID>(const_cast<char*>(message.data()));
@@ -24,7 +24,7 @@ std::string_view WindowsNamedPipe::SendRecv(std::string_view message)
     if (FAILED(CallNamedPipeA(
             mPipeName.c_str(),
             messagePtr,
-            message.size(),
+            message.size() + 1,
             GetBufferPtr(),
             GetBufferSize(),
             &responseLength,

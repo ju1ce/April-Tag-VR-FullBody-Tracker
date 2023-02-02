@@ -52,7 +52,7 @@ class IClient : public IOBuffer<1024>
 public:
     virtual ~IClient() = default;
     /// @return temporary view of buffer, invalidated when SendRecv is called again
-    [[nodiscard]] virtual std::string_view SendRecv(std::string_view message) = 0;
+    [[nodiscard]] virtual std::string_view SendRecv(std::string message) = 0;
 };
 
 class WindowsNamedPipe : public IClient
@@ -60,7 +60,7 @@ class WindowsNamedPipe : public IClient
 public:
     explicit WindowsNamedPipe(std::string pipeName);
 
-    std::string_view SendRecv(std::string_view message) final;
+    std::string_view SendRecv(std::string message) final;
 
 private:
     std::string mPipeName;
@@ -71,7 +71,7 @@ class UNIXSocket : public IClient
 public:
     explicit UNIXSocket(std::string socketName);
 
-    std::string_view SendRecv(std::string_view message) final;
+    std::string_view SendRecv(std::string message) final;
 
 private:
     std::string mSocketPath;
@@ -79,7 +79,7 @@ private:
 
 inline std::unique_ptr<IClient> CreateDriverClient()
 {
-    const std::string driverPath = "AprilTagPipeIn";
+    const std::string driverPath = "ApriltagPipeIn";
 #ifdef ATT_OS_WINDOWS
     return std::make_unique<WindowsNamedPipe>(driverPath);
 #else
