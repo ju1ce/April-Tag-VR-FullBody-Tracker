@@ -44,7 +44,8 @@ bool ConvertMatToBitmap(const cv::Mat& matBitmap, wxBitmap& bitmap);
 inline void ReserveBitmapForMat(const cv::Mat& matBitmap, wxBitmap& bitmap)
 {
     ATT_ASSERT(matBitmap.depth() == CV_8U);
-    if (bitmap.GetWidth() == matBitmap.cols &&
+    if (bitmap.IsOk() &&
+        bitmap.GetWidth() == matBitmap.cols &&
         bitmap.GetHeight() == matBitmap.rows &&
         bitmap.GetDepth() == matBitmap.channels() * 8) return;
     bitmap.Create(matBitmap.cols, matBitmap.rows, matBitmap.channels() * 8);

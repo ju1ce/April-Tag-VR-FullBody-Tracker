@@ -44,14 +44,14 @@ std::tuple<sockaddr_un_t, socklen_t> CreateAddress(std::string_view path)
     return {serverAddr, addrSize};
 }
 
-size_t SendRecv(std::string_view path, std::string_view message, char* bufferPtr, int bufferSize)
+size_t SendRecv(std::string_view path, std::string message, char* bufferPtr, int bufferSize)
 {
     const int socketFD = SysCall(::socket, AF_UNIX, SOCK_SEQPACKET, 0);
     try
     {
         const auto [serverAddr, addrSize] = CreateAddress(path);
         SysCall(::connect, socketFD, reinterpret_cast<const sockaddr_t*>(&serverAddr), addrSize); // NOLINT: cast necessary
-        SysCall(::send, socketFD, message.data(), message.size(), 0);
+        SysCall(::send, socketFD, message.data(), message.size() + 1, 0);
         const std::size_t responseLength = SysCall(::recv, socketFD, bufferPtr, bufferSize, 0);
         ::close(socketFD);
         return responseLength;
@@ -71,7 +71,7 @@ namespace IPC
 UNIXSocket::UNIXSocket(std::string socketName)
     : mSocketPath("/tmp/" + std::move(socketName)) {}
 
-std::string_view UNIXSocket::SendRecv(std::string_view message)
+std::string_view UNIXSocket::SendRecv(std::string message)
 {
     try
     {
