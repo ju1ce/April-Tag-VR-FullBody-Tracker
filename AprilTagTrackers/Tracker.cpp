@@ -89,14 +89,13 @@ void Tracker::CameraLoop()
         const utils::NanoS frameTime = mFrameTimer.Get(stampBeforeCap);
         mFrameTimer.Restart(stampBeforeCap);
 
-        if (!mCapture.TryReadFrame(frame.image))
+        if (!mCapture.TryReadFrame(frame))
         {
             gui->ShowPopup(lc.TRACKER_CAMERA_ERROR, PopupStyle::Error);
             cameraRunning = false;
             break;
         }
-        const auto stampAfterCap = utils::SteadyTimer::Now();
-        frame.timestamp = stampAfterCap;
+        const auto stampAfterCap = frame.timestamp;
 
         // framerate limiter
         // constexpr int minSafeFps = 300;

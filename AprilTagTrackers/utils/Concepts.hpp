@@ -18,4 +18,12 @@ concept ArgsDecayAs = ((DecayAs<TValue, TArgs>) && ...);
 template <typename TValue, typename... TArgs>
 concept ArgsSameAs = ((std::same_as<TValue, TArgs>) && ...);
 
+template <typename T>
+concept UniqueTagType = !requires { sizeof(T); };
+
+template <typename T>
+concept IsVoid = std::is_void_v<T>;
+template <typename T>
+concept NotVoid = (!IsVoid<T>);
+
 } // namespace utils
