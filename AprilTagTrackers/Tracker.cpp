@@ -805,10 +805,11 @@ void Tracker::MainLoop()
     cv::Mat drawImg{};
     cv::Mat workImg{};
 
+    tracker::DummyDriver * driver = new tracker::DummyDriver{user_config.trackers};
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
-    tracker::Preprocess preprocess(&user_config, &mVRDriver.value(), gui);
+    tracker::Preprocess preprocess(&user_config, driver, gui);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
