@@ -610,13 +610,14 @@ void Tracker::Start()
         mainThread.join();
         return;
     }
-    if (!mVRClient->IsInit() || !mVRDriver)
+    //needs fix, if connect wasnt pressed then mvrclient and mvrdriver is null
+    /* if (!mVRClient->IsInit() || !mVRDriver)
     {
         gui->ShowPopup(lc.TRACKER_STEAMVR_NOTCONNECTED, PopupStyle::Error);
         mainThreadRunning = false;
         mainThread.join();
-        return;
-    }
+        //return;   ALLOW NO CONNECTION FOR TESTING PURPOSES. UNCOMMENT LATER
+    }*/
 
     gui->SetStatus(true, StatusItem::Tracker);
 
@@ -799,14 +800,34 @@ void Tracker::CalibrateTracker()
 
 void Tracker::MainLoop()
 {
-    tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+    //initializing variables used as communication between modules
+    tracker::CapturedFrame frame{};
+    cv::Mat drawImg{};
+    cv::Mat workImg{};
+
+
+    //initializing all analysis module classes
+    //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+    tracker::Preprocess preprocess(&user_config, &mVRDriver.value(), gui);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
     {
         try
         {
-            runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
+            //1. await for latast frame and save to an image to work on and image to draw on
+            //NOTE: this step does too many data copies, and should be changed in the future. Especialy since grayscaling image already does a copy.
+            mCameraFrame.Get(frame);
+            drawImg = frame.image.clone();
+            workImg = frame.image.clone();
+            //2. preprocess the frame. This includes grayscaling and masking
+            preprocess.Update(&frame, &workImg, &drawImg, &mTrackerUnits);
+            //3. run detection on frame using selected library
+            //4. run pose estimation on detections using calibrated tracker data
+            //5. convert poses to steamvr 
+            //6. send stuff to steamvr
+            //7. draw and show preview
+            //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
         }
         catch (const std::exception& e)
         {
