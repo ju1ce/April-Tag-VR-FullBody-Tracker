@@ -804,12 +804,14 @@ void Tracker::MainLoop()
     tracker::CapturedFrame frame{};
     cv::Mat drawImg{};
     cv::Mat workImg{};
+    MarkerDetectionList dets{};
 
     tracker::DummyDriver * driver = new tracker::DummyDriver{user_config.trackers};
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
     tracker::Preprocess preprocess(&user_config, driver, gui);
+    tracker::Detect detect(&user_config, driver, gui);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
@@ -822,12 +824,18 @@ void Tracker::MainLoop()
             drawImg = frame.image.clone();
             workImg = frame.image.clone();
             //2. preprocess the frame. This includes grayscaling and masking
-            preprocess.Update(&frame, &workImg, &drawImg, &mTrackerUnits);
+            preprocess.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //3. run detection on frame using selected library
+            detect.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //4. run pose estimation on detections using calibrated tracker data
             //5. convert poses to steamvr 
             //6. send stuff to steamvr
             //7. draw and show preview
+            
+            cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
+            cv::imshow("out", drawImg);
+            cv::waitKey(1); 
+
             //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
         }
         catch (const std::exception& e)

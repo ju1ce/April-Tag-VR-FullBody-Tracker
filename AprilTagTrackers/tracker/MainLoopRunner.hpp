@@ -14,6 +14,46 @@ namespace tracker
 static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
 static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
+class Detect
+{
+private:
+    utils::SteadyTimer detectionTimer{};
+    int framesSinceLastSeen = 0;
+    static constexpr int framesToCheckAll = 20;
+    cv::Mat maskSearchImg{};
+    cv::Mat tempGrayMaskedImg{};
+
+    RefPtr<UserConfig> mConfig;
+    RefPtr<const cfg::CameraCalib> camCalib;
+    RefPtr<const cfg::VideoStream> videoStream;
+    AprilTagWrapper april;
+    Index trackerNum;
+    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<VRDriver> mVRDriver;
+    RefPtr<GUI> gui;
+    RefPtr<std::vector<TrackerUnit>> trackerUnits;
+    RefPtr<IVRClient> vrClient;
+    RefPtr<const ITrackerControl> trackerCtrl;
+
+public:
+    explicit Detect(RefPtr<UserConfig> config,
+                    RefPtr<VRDriver> vrDriver,
+                    RefPtr<GUI> gui)
+
+        : april(AprilTagWrapper::ConvertFamily(config->markerLibrary), config->videoStreams[0]->quadDecimate, config->apriltagThreadCount)
+    {}
+
+    //the way image is passed should change, probably no use having 3 args for it
+    void Update(RefPtr<CapturedFrame> frame,
+                RefPtr<cv::Mat> workImg,
+                RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits)
+    {
+        april.DetectMarkers(*workImg, *dets);
+    }
+};
+
 class Preprocess
 {
 private:
@@ -54,6 +94,7 @@ public:
     void Update(RefPtr<CapturedFrame> frame,
                 RefPtr<cv::Mat> workImg,
                 RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
                 RefPtr<std::vector<TrackerUnit>> trackerUnits)
     {
 
