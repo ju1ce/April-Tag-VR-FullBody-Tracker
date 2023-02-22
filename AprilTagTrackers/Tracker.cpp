@@ -810,11 +810,15 @@ void Tracker::MainLoop()
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+
+    //TODO: instead of passsing gui, every gui accesss should probably be done through the ITrackerControl interface
     tracker::GetPose getPose(&user_config, driver, gui);
     tracker::Preprocess preprocess(&user_config, driver, gui);
     tracker::Detect detect(&user_config, driver, gui);
     tracker::EstimatePose estimatePose(&user_config, driver, gui);
     tracker::SendPose sendPose(&user_config, driver, gui);
+
+    tracker::PlayspaceCalibrator mCalibrator{};
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
@@ -843,6 +847,19 @@ void Tracker::MainLoop()
             cv::waitKey(1); 
 
             //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
+
+            //run calibration steps. TODO: slight reformat to be more in line with above steps
+            mCalibrator.Update(mVRClient, mVRDriver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
+            for (auto unit : mTrackerUnits)     //TODO:for loop to be moved into UpdateMulticam
+            {
+                if (multicamAutocalib && unit.WasVisibleToDriverLastFrame())
+                {
+                    tracker::PlayspaceCalibrator::UpdateMulticam(gui, &mPlayspace, unit);
+                    //TODO: should skip sending to driver, but that cannot be done with this setup.
+                    //should the entire sendPose step be skipped when multicamAutocalib is activated?
+                }
+            }
+
         }
         catch (const std::exception& e)
         {
