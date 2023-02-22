@@ -14,7 +14,7 @@ namespace tracker
 static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
 static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
-class Detect
+class EstimatePose
 {
 private:
     utils::SteadyTimer detectionTimer{};
@@ -26,9 +26,8 @@ private:
     RefPtr<UserConfig> mConfig;
     RefPtr<const cfg::CameraCalib> camCalib;
     RefPtr<const cfg::VideoStream> videoStream;
-    AprilTagWrapper april;
     Index trackerNum;
-    RefPtr<PlayspaceCalib> mPlayspace;
+    PlayspaceCalib mPlayspace;
     RefPtr<VRDriver> mVRDriver;
     RefPtr<GUI> gui;
     RefPtr<std::vector<TrackerUnit>> trackerUnits;
@@ -36,6 +35,131 @@ private:
     RefPtr<const ITrackerControl> trackerCtrl;
 
 public:
+    explicit EstimatePose(RefPtr<UserConfig> config,
+                        RefPtr<VRDriver> vrDriver,
+                        RefPtr<GUI> gui)
+
+        : mConfig(config),
+          camCalib(mConfig->calib.cameras[0]),
+          videoStream(mConfig->videoStreams[0]),
+          trackerNum(mConfig->trackerNum),
+          mVRDriver(vrDriver),
+          gui(gui)
+
+    {
+        mPlayspace.Set(mConfig->manualCalib.GetAsReal());
+    }
+
+    //the way image is passed should change, probably no use having 3 args for it
+    void Update(RefPtr<CapturedFrame> frame,
+                RefPtr<cv::Mat> workImg,
+                RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits)
+    {
+        const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame->timestamp).count();
+
+        for (int index = 0; index < trackerUnits->size(); ++index)
+        {
+            auto& unit = (*trackerUnits)[index];
+            // estimate the pose of current board
+            // NOTE: Pose from driver is already in local space, but scale must be aplied again. Pose should either be completely in local space or completely in global space
+            RodrPose scaledPoseFromDriver;
+            if (unit.WasVisibleToDriverLastFrame())
+                scaledPoseFromDriver = RodrPose{unit.GetPoseFromDriver().position / mPlayspace.GetScale(), unit.GetPoseFromDriver().rotation};
+            else
+                scaledPoseFromDriver = RodrPose{unit.GetEstimatedPose().position / mPlayspace.GetScale(), unit.GetEstimatedPose().rotation};                        //if we dont have information from driver, use last local pose
+            // on rare occasions, detection crashes. Should be very rare and indicate something wrong with camera or tracker calibration
+            auto [estimatedPose, numEstimated] = math::EstimatePoseTracker(
+                dets->corners, dets->ids, unit.GetArucoBoard(), *camCalib,
+                unit.WasVisibleLastFrame() && mConfig->usePredictive,
+                scaledPoseFromDriver);
+
+            estimatedPose.position *= mPlayspace.GetScale(); // unscale returned estimation;
+            unit.SetEstimatedPose(estimatedPose);
+
+            ATT_ASSERT(!std::isnan(estimatedPose.position[X]));
+
+            if (numEstimated <= 0)
+            {
+                unit.SetWasVisibleLastFrame(false);
+                continue;
+            }
+            unit.SetWasVisibleLastFrame(true);
+
+            if (mConfig->depthSmoothing > 0 && unit.WasVisibleToDriverLastFrame() && !trackerCtrl->manualRecalibrate)
+            {
+                // depth estimation is noisy, so try to smooth it more, especialy if using multiple cameras
+                // if position is close to the position predicted by the driver, take the depth of the driver.
+                // if error is big, take the calculated depth
+                // error threshold is defined in the params as depth smoothing
+                RodrPose pose = unit.GetEstimatedPose();
+
+                const double distDriver = Length(unit.GetPoseFromDriver().position);
+                const double distPredict = Length(pose.position);
+
+                const cv::Vec3d normPredict = pose.position / distPredict;
+
+                double dist = std::abs(distPredict - distDriver);
+                dist = (dist / static_cast<double>(mConfig->depthSmoothing)) + 0.1;
+                dist = std::clamp(dist, 0.0, 1.0);
+
+                const double distFinal = (dist * distPredict) + (1 - dist) * distDriver;
+
+                pose.position = normPredict * distFinal;
+                unit.SetEstimatedPose(pose);
+            }
+
+            //clean up detections: if detection is outside of what camera can see (such as behind camera), it is deemed invalid and discarded
+            {
+                const cv::Point3d position = unit.GetEstimatedPose().position;
+
+                // Reject detected positions that are behind the camera
+                if (position.z < 0)
+                {
+                    unit.SetWasVisibleLastFrame(false);
+                    continue;
+                }
+
+                // Figure out the camera aspect ratio, XZ and YZ ratio limits
+                const double aspectRatio = GetMatSize(*workImg).aspectRatio();
+                const double xzRatioLimit = 0.5 * static_cast<double>(workImg->cols) / camCalib->cameraMatrix.at<double>(0, 0);
+                const double yzRatioLimit = 0.5 * static_cast<double>(workImg->rows) / camCalib->cameraMatrix.at<double>(1, 1);
+
+                // Figure out whether X or Y dimension is most likely to go outside the camera field of view
+                if (std::abs(position.x / position.y) > aspectRatio)
+                {
+                    // Reject detections when XZ coordinate ratio goes out of camera FOV
+                    if (std::abs(position.x / position.z) > xzRatioLimit)
+                    {
+                        unit.SetWasVisibleLastFrame(false);
+                        continue;
+                    }
+                }
+                else
+                {
+                    // Reject detections when YZ coordinate ratio goes out of camera FOV
+                    if (std::abs(position.y / position.z) > yzRatioLimit)
+                    {
+                        unit.SetWasVisibleLastFrame(false);
+                        continue;
+                    }
+                }
+            }
+            //NOTE: DEBUG, remove when it is moved to its own classs
+            cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetEstimatedPose().rotation.value, unit.GetEstimatedPose().position, 0.1);
+        }
+    }
+};
+
+class Detect
+{
+private:
+
+    AprilTagWrapper april;
+
+public:
+    //merge this class with ApriltagWrapper?
     explicit Detect(RefPtr<UserConfig> config,
                     RefPtr<VRDriver> vrDriver,
                     RefPtr<GUI> gui)

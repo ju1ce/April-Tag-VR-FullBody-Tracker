@@ -812,6 +812,7 @@ void Tracker::MainLoop()
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
     tracker::Preprocess preprocess(&user_config, driver, gui);
     tracker::Detect detect(&user_config, driver, gui);
+    tracker::EstimatePose estimatePose(&user_config, driver, gui);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
@@ -823,11 +824,13 @@ void Tracker::MainLoop()
             mCameraFrame.Get(frame);
             drawImg = frame.image.clone();
             workImg = frame.image.clone();
-            //2. preprocess the frame. This includes grayscaling and masking
+            // seperate the preproccesing from getting data from driver?
+            //2. preprocess the frame. This includes grayscaling and masking.
             preprocess.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //3. run detection on frame using selected library
             detect.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //4. run pose estimation on detections using calibrated tracker data
+            estimatePose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //5. convert poses to steamvr 
             //6. send stuff to steamvr
             //7. draw and show preview
