@@ -810,10 +810,11 @@ void Tracker::MainLoop()
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
-    tracker::GetPoseFromDriver getPose(&user_config, driver, gui);
+    tracker::GetPose getPose(&user_config, driver, gui);
     tracker::Preprocess preprocess(&user_config, driver, gui);
     tracker::Detect detect(&user_config, driver, gui);
     tracker::EstimatePose estimatePose(&user_config, driver, gui);
+    tracker::SendPose sendPose(&user_config, driver, gui);
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
@@ -832,9 +833,9 @@ void Tracker::MainLoop()
             //3. run detection on frame using selected library
             detect.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //4. run pose estimation on detections using calibrated tracker data
-            estimatePose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
-            //5. convert poses to steamvr 
+            estimatePose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
             //6. send stuff to steamvr
+            sendPose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
             //7. draw and show preview
             
             cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));

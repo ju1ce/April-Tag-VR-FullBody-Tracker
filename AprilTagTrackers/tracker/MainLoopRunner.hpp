@@ -14,7 +14,50 @@ namespace tracker
 static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
 static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
-class GetPoseFromDriver
+class SendPose
+{
+private:
+
+    RefPtr<UserConfig> mConfig;
+    RefPtr<const cfg::VideoStream> videoStream;
+    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<VRDriver> mVRDriver;
+    RefPtr<std::vector<TrackerUnit>> trackerUnits;
+
+public:
+    explicit SendPose(RefPtr<UserConfig> config,
+                        RefPtr<VRDriver> vrDriver,
+                        RefPtr<GUI> gui)
+
+        : mConfig(config),
+          videoStream(mConfig->videoStreams[0]),
+          mVRDriver(vrDriver)
+
+    {}
+
+    //the way image is passed should change, probably no use having 3 args for it
+    void Update(RefPtr<CapturedFrame> frame,
+                RefPtr<cv::Mat> workImg,
+                RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits)
+    {
+        const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame->timestamp).count();
+        for (int index = 0; index < trackerUnits->size(); ++index)
+        {
+            auto& unit = (*trackerUnits)[index];
+            
+            // transform boards position based on our calibration data
+            Pose poseToSend = mPlayspace->TransformToOVR(Pose(unit.GetEstimatedPose()));
+
+            // send all the values
+            mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mConfig->smoothingFactor);
+        }
+
+    }
+};
+
+class GetPose
 {
 private:
 
@@ -27,7 +70,7 @@ private:
     RefPtr<std::vector<TrackerUnit>> trackerUnits;
 
 public:
-    explicit GetPoseFromDriver(RefPtr<UserConfig> config,
+    explicit GetPose(RefPtr<UserConfig> config,
                                RefPtr<VRDriver> vrDriver,
                                RefPtr<GUI> gui)
 
