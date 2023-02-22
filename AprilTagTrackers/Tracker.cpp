@@ -810,6 +810,7 @@ void Tracker::MainLoop()
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+    tracker::GetPoseFromDriver getPose(&user_config, driver, gui);
     tracker::Preprocess preprocess(&user_config, driver, gui);
     tracker::Detect detect(&user_config, driver, gui);
     tracker::EstimatePose estimatePose(&user_config, driver, gui);
@@ -819,12 +820,13 @@ void Tracker::MainLoop()
     {
         try
         {
-            //1. await for latast frame and save to an image to work on and image to draw on
+            //0. await for latast frame and save to an image to work on and image to draw on
             //NOTE: this step does too many data copies, and should be changed in the future. Especialy since grayscaling image already does a copy.
             mCameraFrame.Get(frame);
             drawImg = frame.image.clone();
             workImg = frame.image.clone();
-            // seperate the preproccesing from getting data from driver?
+            //1. get latest data from driver
+            getPose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //2. preprocess the frame. This includes grayscaling and masking.
             preprocess.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //3. run detection on frame using selected library

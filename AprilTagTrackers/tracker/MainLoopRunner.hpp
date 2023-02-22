@@ -14,6 +14,62 @@ namespace tracker
 static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
 static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
+class GetPoseFromDriver
+{
+private:
+
+    RefPtr<UserConfig> mConfig;
+    RefPtr<const cfg::CameraCalib> camCalib;
+    RefPtr<const cfg::VideoStream> videoStream;
+    Index trackerNum;
+    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<VRDriver> mVRDriver;
+    RefPtr<std::vector<TrackerUnit>> trackerUnits;
+
+public:
+    explicit GetPoseFromDriver(RefPtr<UserConfig> config,
+                               RefPtr<VRDriver> vrDriver,
+                               RefPtr<GUI> gui)
+
+        : mConfig(config),
+          camCalib(mConfig->calib.cameras[0]),
+          videoStream(mConfig->videoStreams[0]),
+          trackerNum(mConfig->trackerNum),
+          mVRDriver(vrDriver)
+
+    {}
+
+    //the way image is passed should change, probably no use having 3 args for it
+    void Update(RefPtr<CapturedFrame> frame,
+                RefPtr<cv::Mat> workImg,
+                RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits)
+    {
+        for (int i = 0; i < trackerNum; i++)
+        {
+            //querry the driver for every connected tracker unit
+
+            auto& unit = (*trackerUnits)[i];
+
+            const double frameTimeSinceCapture = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame->timestamp).count();
+            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTimeSinceCapture - videoStream->latency);
+
+            //convert pose to local space
+            if (isValid)
+                pose = mPlayspace->InvTransformFromOVR(pose);
+
+            //if pose was valid, set the PoseFromDriver parameter of tracker unit
+            unit.SetWasVisibleToDriverLastFrame(isValid);
+            if (isValid) // if the pose from steamvr was valid, save the predicted position and rotation
+            {
+                unit.SetWasVisibleLastFrame(true);
+                unit.SetPoseFromDriver(RodrPose(pose));
+            }
+        }
+    }
+};
+
 class EstimatePose
 {
 private:
@@ -244,16 +300,12 @@ public:
         for (int i = 0; i < trackerNum; i++)
         {
             auto& unit = (*trackerUnits)[i];
-            auto [pose, isValid] = mVRDriver->GetTracker(i, -frameTimeBeforeDetect - videoStream->latency);
-
-            if (isValid)
-                pose = mPlayspace->InvTransformFromOVR(pose);
 
             std::array<cv::Point2d, 2> projected;
             {
                 const cv::Vec3d unusedRVec{}; // used to perform change of basis
                 const cv::Vec3d unusedTVec{};
-                const std::array<cv::Point3d, 2> points{pose.position, unit.GetEstimatedPose().position};
+                const std::array<cv::Point3d, 2> points{unit.GetPoseFromDriver().position, unit.GetEstimatedPose().position};
                 cv::projectPoints(points, unusedRVec, unusedTVec, camCalib->cameraMatrix, camCalib->distortionCoeffs, projected);
             }
             const auto& [driverCenter, previousCenter] = projected;
@@ -261,11 +313,10 @@ public:
             // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
             if (previewIsVisible) cv::circle(*drawImg, driverCenter, 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
-            unit.SetWasVisibleToDriverLastFrame(isValid);
             cv::Point2d maskCenter;
-            if (isValid) // if the pose from steamvr was valid, save the predicted position and rotation
+            if (unit.WasVisibleToDriverLastFrame()) // if the pose from steamvr was valid, save the predicted position and rotation
             {
-                if (previewIsVisible) cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, pose.rotation.toRotVec(), math::ToVec(pose.position), 0.10F);
+                //if (previewIsVisible) cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetPoseFromDriver().rotation, math::ToVec(unit.GetPoseFromDriver().position), 0.10F);
 
                 if (!unit.WasVisibleLastFrame()) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
                 {
@@ -275,8 +326,6 @@ public:
                 {
                     maskCenter = previousCenter;
                 }
-                unit.SetWasVisibleLastFrame(true);
-                unit.SetPoseFromDriver(RodrPose(pose));
             }
             else
             {
