@@ -17,21 +17,13 @@ static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 class EstimatePose
 {
 private:
-    utils::SteadyTimer detectionTimer{};
-    int framesSinceLastSeen = 0;
-    static constexpr int framesToCheckAll = 20;
-    cv::Mat maskSearchImg{};
-    cv::Mat tempGrayMaskedImg{};
 
     RefPtr<UserConfig> mConfig;
     RefPtr<const cfg::CameraCalib> camCalib;
-    RefPtr<const cfg::VideoStream> videoStream;
     Index trackerNum;
     PlayspaceCalib mPlayspace;
-    RefPtr<VRDriver> mVRDriver;
-    RefPtr<GUI> gui;
     RefPtr<std::vector<TrackerUnit>> trackerUnits;
-    RefPtr<IVRClient> vrClient;
+    //TODO: set a way for interaction with gui, here trackerCtrl
     RefPtr<const ITrackerControl> trackerCtrl;
 
 public:
@@ -41,11 +33,7 @@ public:
 
         : mConfig(config),
           camCalib(mConfig->calib.cameras[0]),
-          videoStream(mConfig->videoStreams[0]),
-          trackerNum(mConfig->trackerNum),
-          mVRDriver(vrDriver),
-          gui(gui)
-
+          trackerNum(mConfig->trackerNum)
     {
         mPlayspace.Set(mConfig->manualCalib.GetAsReal());
     }

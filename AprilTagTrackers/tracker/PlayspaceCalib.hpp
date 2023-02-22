@@ -28,6 +28,7 @@ public:
         Set(calib.posOffset, calib.angleOffset, calib.scale);
     }
 
+    //NOTE: should also apply scale?
     Pose Transform(const Pose& pose) const
     {
         return {mTransform * pose.position, mRotation * pose.rotation};
