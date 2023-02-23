@@ -843,7 +843,7 @@ void Tracker::MainLoop()
             //7. draw and show preview
             
             cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
-            cv::imshow("out", drawImg);
+            cv::imshow("out", workImg);
             cv::waitKey(1); 
 
             //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);

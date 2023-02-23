@@ -399,10 +399,13 @@ public:
         if (!circularWindow) framesSinceLastSeen = 0;
 
         // define our mask image. We want to create an image where everything but circles around predicted tracker positions will be black to speed up detection.
+        //tempGrayMaskedImg is also reset to black, or background will be old frames instead of pure black
         if (GetMatSize(maskSearchImg) != GetMatSize(*workImg))
         {
             maskSearchImg.create(GetMatSize(*workImg), CV_8U);
+            tempGrayMaskedImg.create(GetMatSize(*workImg), CV_8U);
         }
+        tempGrayMaskedImg = cv::Scalar(0);
         maskSearchImg = cv::Scalar(0); // fill with empty pixels
         const int searchRadius = static_cast<int>(static_cast<double>(maskSearchImg.rows) * videoStream->searchWindow);
         bool atleastOneTrackerVisible = false;
@@ -425,12 +428,16 @@ public:
             // project point from position of tracker in camera 3d space to 2d camera pixel space, and draw a dot there
             if (previewIsVisible) cv::circle(*drawImg, driverCenter, 5, cv::Scalar(0, 0, 255), 2, 8, 0);
 
-            cv::Point2d maskCenter;
-            if (unit.WasVisibleToDriverLastFrame()) // if the pose from steamvr was valid, save the predicted position and rotation
+            cv::Point2d maskCenter{-1,-1};
+
+
+            //if unit was seen on driver but not on camera, we use the position from driver for masking. If unit was seen on camera last frame, we always use that information for masking.
+            //if neither, maskCenter is -1,-1 and deemed invalid in next check
+            if (unit.WasVisibleToDriverLastFrame()) 
             {
                 //if (previewIsVisible) cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetPoseFromDriver().rotation, math::ToVec(unit.GetPoseFromDriver().position), 0.10F);
 
-                if (!unit.WasVisibleLastFrame()) // if tracker was found in previous frame, we use that position for masking. If not, we use position from driver for masking.
+                if (!unit.WasVisibleLastFrame())
                 {
                     maskCenter = driverCenter;
                 }
@@ -443,10 +450,11 @@ public:
             {
                 if (unit.WasVisibleLastFrame())
                 {
-                    maskCenter = previousCenter; // if pose is not valid, set everything based on previous known position
+                    maskCenter = previousCenter;
                 }
             }
 
+            //only draw if unit is visible on camera
             if (maskCenter.inside(cv::Rect2d(0, 0, workImg->cols, workImg->rows)))
             {
                 atleastOneTrackerVisible = true;
@@ -471,9 +479,8 @@ public:
 
         // using copyTo with masking creates the image where everything but the locations where trackers are predicted to be is black
         if (atleastOneTrackerVisible)
-        {
-            workImg->copyTo(tempGrayMaskedImg, maskSearchImg);
-            workImg = &tempGrayMaskedImg;
+        {           
+            tempGrayMaskedImg.copyTo(*workImg, ~maskSearchImg);
         }
     }
 };
