@@ -593,31 +593,31 @@ void Tracker::Start()
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();        this causes crash if main thread is not running. Shouldnt be neccesary since, when it is running, previous check will already return?
         return;
     }
     if (calib_config.cameras[0]->cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();
         return;
     }
     if (!IsTrackerUnitsCalibrated())
     {
         gui->ShowPopup(lc.TRACKER_TRACKER_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();
         return;
     }
-    //needs fix, if connect wasnt pressed then mvrclient and mvrdriver is null
-    /* if (!mVRClient->IsInit() || !mVRDriver)
+
+    if (!mVRClient || !mVRClient->IsInit() || !mVRDriver)
     {
         gui->ShowPopup(lc.TRACKER_STEAMVR_NOTCONNECTED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();
         //return;   ALLOW NO CONNECTION FOR TESTING PURPOSES. UNCOMMENT LATER
-    }*/
+    }
 
     gui->SetStatus(true, StatusItem::Tracker);
 
