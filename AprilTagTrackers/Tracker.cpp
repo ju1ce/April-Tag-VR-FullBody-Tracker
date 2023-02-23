@@ -826,19 +826,38 @@ void Tracker::MainLoop()
     MarkerDetectionList dets{};
 
     tracker::DummyDriver * driver = new tracker::DummyDriver{user_config.trackers};
+    //tracker::VRDriver* driver =
 
     //initializing all analysis module classes
     //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
 
-    //TODO: instead of passsing gui, every gui accesss should probably be done through the ITrackerControl interface
-    tracker::GetPose getPose(&user_config, driver, gui);
-    tracker::Preprocess preprocess(&user_config, driver, gui);
-    tracker::Detect detect(&user_config, driver, gui);
-    tracker::EstimatePose estimatePose(&user_config, driver, gui);
-    tracker::SendPose sendPose(&user_config, driver, gui);
-    tracker::Draw draw(&user_config, driver, gui);
+    std::unique_ptr<tracker::GetPose> getPose;
+    std::unique_ptr<tracker::Preprocess> preprocess;
+    std::unique_ptr<tracker::Detect> detect;
+    std::unique_ptr<tracker::EstimatePose> estimatePose;
+    std::unique_ptr<tracker::SendPose> sendPose;
+    std::unique_ptr<tracker::Draw> draw;
 
-    tracker::PlayspaceCalibrator mCalibrator{};
+    std::unique_ptr<tracker::PlayspaceCalibrator> mCalibrator;
+
+    try
+    {
+        //TODO: instead of passsing gui, every gui accesss should probably be done through the ITrackerControl interface
+        getPose = std::make_unique <tracker::GetPose>(&user_config, driver, gui);
+        preprocess = std::make_unique <tracker::Preprocess>(&user_config, driver, gui);
+        detect = std::make_unique<tracker::Detect>(&user_config, driver, gui);
+        estimatePose = std::make_unique<tracker::EstimatePose>(&user_config, driver, gui);
+        sendPose = std::make_unique<tracker::SendPose>(&user_config, driver, gui);
+        draw = std::make_unique<tracker::Draw>(&user_config, driver, gui);
+
+        mCalibrator = std::make_unique<tracker::PlayspaceCalibrator>();
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);       //should use a generic somethingwrong message
+        return;
+    }
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
@@ -851,17 +870,17 @@ void Tracker::MainLoop()
             drawImg = frame.image.clone();
             workImg = frame.image.clone();
             //1. get latest data from driver
-            getPose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            getPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //2. preprocess the frame. This includes grayscaling and masking.
-            preprocess.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            preprocess->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //3. run detection on frame using selected library
-            detect.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            detect->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //4. run pose estimation on detections using calibrated tracker data
-            estimatePose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+            estimatePose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
             //6. send stuff to steamvr
-            sendPose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+            sendPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
             //7. draw and show preview
-            draw.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+            draw->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
 
             //cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
             //cv::imshow("out", workImg);
@@ -871,7 +890,7 @@ void Tracker::MainLoop()
 
             //run calibration steps. TODO: slight reformat to be more in line with above steps
             
-            mCalibrator.Update(mVRClient, driver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
+            mCalibrator->Update(mVRClient, driver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
             for (int index = 0; index < mTrackerUnits.size(); ++index)
             {
                 //draw pose from driver if available, else draw pose as detected
