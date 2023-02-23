@@ -22,6 +22,8 @@
 #include <ranges>
 #include <thread>
 
+#include "utils/Error.hpp"
+
 struct TrackerStatus
 {
     cv::Vec3d boardRvec, boardTvec, boardTvecDriver;

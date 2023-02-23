@@ -534,7 +534,16 @@ void Tracker::StartTrackerCalib()
 
 void Tracker::StartConnection()
 {
-    mVRDriver = tracker::VRDriver{user_config.trackers};
+    try
+    {
+        mVRDriver = tracker::VRDriver{user_config.trackers};
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);     //TODO: error code is no longer returned in messsage, but is available in log, so error message should be changed 
+        return;
+    }
     if (!user_config.disableOpenVrApi)
     {
         mVRClient = std::make_unique<tracker::OpenVRClient>();
@@ -543,12 +552,22 @@ void Tracker::StartConnection()
     {
         mVRClient = std::make_unique<tracker::MockOpenVRClient>();
     }
-    if (!mVRClient->CanInit())
+    if (!mVRClient->CanInit())      //CanInit() does not seem to care whether hmd is connected or not. This step may not be necessary
     {
         gui->ShowPopup("Unable to initialize steamvr client, is your hmd connected?", PopupStyle::Error);
         return;
     }
-    mVRClient->Init();
+    try
+    {
+        mVRClient->Init();
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_CLIENT_ERROR, PopupStyle::Error);     //TODO: error code is no longer returned in messsage, but is available in log, so error message should be changed 
+        return;
+    }
+    
     gui->SetStatus(true, StatusItem::Driver);
 }
 
