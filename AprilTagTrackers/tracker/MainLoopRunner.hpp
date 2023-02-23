@@ -14,13 +14,80 @@ namespace tracker
 static constexpr int DRAW_IMG_SIZE = 480; // TODO: make configurable (preview image scaler)
 static inline const cv::Scalar COLOR_MASK{255, 0, 0}; /// red
 
+class Draw
+{
+private:
+    utils::SteadyTimer detectionTimer{};
+    int framesSinceLastSeen = 0;
+    static constexpr int framesToCheckAll = 20;
+    cv::Mat maskSearchImg{};
+    cv::Mat tempGrayMaskedImg{};
+
+    RefPtr<UserConfig> mConfig;
+    RefPtr<const cfg::CameraCalib> camCalib;
+    RefPtr<const cfg::VideoStream> videoStream;
+    AprilTagWrapper april;
+    Index trackerNum;
+    RefPtr<PlayspaceCalib> mPlayspace;
+    RefPtr<VRDriver> mVRDriver;
+    RefPtr<GUI> gui;
+    RefPtr<std::vector<TrackerUnit>> trackerUnits;
+    RefPtr<IVRClient> vrClient;
+    RefPtr<const ITrackerControl> trackerCtrl;
+
+public:
+    explicit Draw(RefPtr<UserConfig> config,
+                  RefPtr<VRDriver> vrDriver,
+                  RefPtr<GUI> gui)
+
+        : mConfig(config),
+          camCalib(mConfig->calib.cameras[0]),
+          videoStream(mConfig->videoStreams[0]),
+          april(AprilTagWrapper::ConvertFamily(mConfig->markerLibrary), videoStream->quadDecimate, mConfig->apriltagThreadCount),
+          trackerNum(mConfig->trackerNum),
+          mVRDriver(vrDriver),
+          gui(gui)
+
+    {}
+
+    //the way image is passed should change, probably no use having 3 args for it
+    void Update(RefPtr<CapturedFrame> frame,
+                RefPtr<cv::Mat> workImg,
+                RefPtr<cv::Mat> drawImg,
+                RefPtr<MarkerDetectionList> dets,
+                RefPtr<std::vector<TrackerUnit>> trackerUnits)
+    {
+        if (gui->IsPreviewVisible())
+        {
+            const double frameTimeAfterDetect = duration_cast<utils::FSeconds>(utils::SteadyTimer::Now() - frame->timestamp).count();
+            // draw and display the detections
+            if (!dets->ids.empty()) cv::aruco::drawDetectedMarkers(*drawImg, dets->corners, dets->ids);
+
+            for (int index = 0; index < trackerUnits->size(); ++index)
+            {
+                auto& unit = (*trackerUnits)[index];
+                cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetEstimatedPose().rotation.value, unit.GetEstimatedPose().position, 0.1);
+            }
+
+            const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame->image), DRAW_IMG_SIZE);
+            cv::resize(*drawImg, *drawImg, drawSize);
+            cv::putText(*drawImg, std::to_string(frameTimeAfterDetect).substr(0, 5), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255));
+            if (false) // TODO: tracker->showTimeProfile (is this even needed?)
+            {
+                april.DrawTimeProfile(*drawImg, cv::Point(10, 60));
+            }
+            gui->UpdatePreview(*drawImg);
+        }
+    }
+};
+
 class SendPose
 {
 private:
 
     RefPtr<UserConfig> mConfig;
     RefPtr<const cfg::VideoStream> videoStream;
-    RefPtr<PlayspaceCalib> mPlayspace;
+    PlayspaceCalib mPlayspace;
     RefPtr<VRDriver> mVRDriver;
     RefPtr<std::vector<TrackerUnit>> trackerUnits;
 
@@ -33,7 +100,9 @@ public:
           videoStream(mConfig->videoStreams[0]),
           mVRDriver(vrDriver)
 
-    {}
+    {
+        mPlayspace.Set(mConfig->manualCalib.GetAsReal());
+    }
 
     //the way image is passed should change, probably no use having 3 args for it
     void Update(RefPtr<CapturedFrame> frame,
@@ -48,7 +117,7 @@ public:
             auto& unit = (*trackerUnits)[index];
             
             // transform boards position based on our calibration data
-            Pose poseToSend = mPlayspace->TransformToOVR(Pose(unit.GetEstimatedPose()));
+            Pose poseToSend = mPlayspace.TransformToOVR(Pose(unit.GetEstimatedPose()));
 
             // send all the values
             mVRDriver->UpdateTracker(index, poseToSend, -frameTimeAfterDetect - videoStream->latency, mConfig->smoothingFactor);
@@ -65,7 +134,7 @@ private:
     RefPtr<const cfg::CameraCalib> camCalib;
     RefPtr<const cfg::VideoStream> videoStream;
     Index trackerNum;
-    RefPtr<PlayspaceCalib> mPlayspace;
+    PlayspaceCalib mPlayspace;
     RefPtr<VRDriver> mVRDriver;
     RefPtr<std::vector<TrackerUnit>> trackerUnits;
 
@@ -80,7 +149,9 @@ public:
           trackerNum(mConfig->trackerNum),
           mVRDriver(vrDriver)
 
-    {}
+    {
+        mPlayspace.Set(mConfig->manualCalib.GetAsReal());
+    }
 
     //the way image is passed should change, probably no use having 3 args for it
     void Update(RefPtr<CapturedFrame> frame,
@@ -100,7 +171,7 @@ public:
 
             //convert pose to local space
             if (isValid)
-                pose = mPlayspace->InvTransformFromOVR(pose);
+                pose = mPlayspace.InvTransformFromOVR(pose);
 
             //if pose was valid, set the PoseFromDriver parameter of tracker unit
             unit.SetWasVisibleToDriverLastFrame(isValid);
@@ -233,8 +304,6 @@ public:
                     }
                 }
             }
-            //NOTE: DEBUG, remove when it is moved to its own classs
-            cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetEstimatedPose().rotation.value, unit.GetEstimatedPose().position, 0.1);
         }
     }
 };
