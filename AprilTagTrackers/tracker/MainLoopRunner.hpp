@@ -434,7 +434,6 @@ public:
 
             cv::Point2d maskCenter{-1,-1};
 
-
             //if unit was seen on driver but not on camera, we use the position from driver for masking. If unit was seen on camera last frame, we always use that information for masking.
             //if neither, maskCenter is -1,-1 and deemed invalid in next check
             if (unit.WasVisibleToDriverLastFrame()) 

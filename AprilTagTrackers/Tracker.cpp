@@ -851,10 +851,12 @@ void Tracker::MainLoop()
             //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
 
             //run calibration steps. TODO: slight reformat to be more in line with above steps
-            /*
-            mCalibrator.Update(mVRClient, mVRDriver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
-            for (auto unit : mTrackerUnits)     //TODO:for loop to be moved into UpdateMulticam
+            
+            mCalibrator.Update(mVRClient, driver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
+            for (int index = 0; index < mTrackerUnits.size(); ++index)
             {
+                //draw pose from driver if available, else draw pose as detected
+                auto& unit = (mTrackerUnits)[index];
                 if (multicamAutocalib && unit.WasVisibleToDriverLastFrame())
                 {
                     tracker::PlayspaceCalibrator::UpdateMulticam(gui, &mPlayspace, unit);
@@ -862,7 +864,7 @@ void Tracker::MainLoop()
                     //should the entire sendPose step be skipped when multicamAutocalib is activated?
                 }
             }
-            */
+            
         }
         catch (const std::exception& e)
         {
