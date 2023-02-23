@@ -817,6 +817,7 @@ void Tracker::MainLoop()
     tracker::Detect detect(&user_config, driver, gui);
     tracker::EstimatePose estimatePose(&user_config, driver, gui);
     tracker::SendPose sendPose(&user_config, driver, gui);
+    tracker::Draw draw(&user_config, driver, gui);
 
     tracker::PlayspaceCalibrator mCalibrator{};
 
@@ -841,10 +842,11 @@ void Tracker::MainLoop()
             //6. send stuff to steamvr
             sendPose.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
             //7. draw and show preview
-            
-            cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
-            cv::imshow("out", workImg);
-            cv::waitKey(1); 
+            draw.Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+
+            //cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
+            //cv::imshow("out", workImg);
+            //cv::waitKey(1); 
 
             //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
 

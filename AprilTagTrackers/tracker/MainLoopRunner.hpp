@@ -65,8 +65,12 @@ public:
 
             for (int index = 0; index < trackerUnits->size(); ++index)
             {
+                //draw pose from driver if available, else draw pose as detected
                 auto& unit = (*trackerUnits)[index];
-                cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetEstimatedPose().rotation.value, unit.GetEstimatedPose().position, 0.1);
+                if (unit.WasVisibleToDriverLastFrame())
+                    cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetPoseFromDriver().rotation.value, unit.GetPoseFromDriver().position, 0.1);
+                else if (unit.WasVisibleLastFrame())
+                    cv::drawFrameAxes(*drawImg, camCalib->cameraMatrix, camCalib->distortionCoeffs, unit.GetEstimatedPose().rotation.value, unit.GetEstimatedPose().position, 0.1);
             }
 
             const cv::Size2i drawSize = ConstrainSize(GetMatSize(frame->image), DRAW_IMG_SIZE);
