@@ -14,42 +14,42 @@ word:
    Connected: Connected
    Disconnected: Disconnected
 status:
-   CAMERA: "Camera: "
-   DRIVER: "SteamVR Driver: "
-   TRACKER: "Tracker Running: "
+   CAMERA: "Камера: "
+   DRIVER: "SteamVR Драйвер: "
+   TRACKER: "Статус Трекера: "
 calib:
-   X: "X (cm):"
-   Y: "Y (cm):"
-   Z: "Z (cm):"
-   PITCH: "Pitch (°):"
-   YAW: "Yaw (°):"
-   ROLL: "Roll (°):"
+   X: "X (см):"
+   Y: "Y (см):"
+   Z: "Z (см):"
+   PITCH: "Тангаж — Pitch (°):"
+   YAW: "Рыскание — Yaw (°):"
+   ROLL: "Крен — Roll (°):"
    SCALE: "Scale (%):"
 WINDOW_TITLE: "Set title bar [requires app restart]"
-WINDOW_TITLE_TOOLTIP: "Set a custom title name for the camera\n *requires restarting*"
-TAB_CAMERA: Camera
-TAB_PARAMS: Params
-TAB_LICENSE: License
-CAMERA_START_CAMERA: "1. Start/Stop camera"
-CAMERA_CALIBRATE_CAMERA: "2. Calibrate camera"
-CAMERA_CALIBRATE_TRACKERS: "3. Calibrate trackers"
-CAMERA_START_STEAMVR: "4. Start up SteamVR!"
-CAMERA_CONNECT: "5. Connect to SteamVR"
-CAMERA_START_DETECTION: "6. Start/Stop"
-CAMERA_PREVIEW_CAMERA: Preview camera
-CAMERA_PREVIEW_CALIBRATION: Preview calibration
-CAMERA_CALIBRATION_MODE: Calibration mode
-CAMERA_MULTICAM_CALIB: Refine calibration using second camera
+WINDOW_TITLE_TOOLTIP: "Поставить своё имя для этой камеры\n *необходим рестарт*"
+TAB_CAMERA: Камера
+TAB_PARAMS: Парам.
+TAB_LICENSE: Лицензия
+CAMERA_START_CAMERA: "1. Запустить/Остановить камеру"
+CAMERA_CALIBRATE_CAMERA: "2. Калибровать камеру"
+CAMERA_CALIBRATE_TRACKERS: "3. Калибровать трекеры"
+CAMERA_START_STEAMVR: "4. Запустить SteamVR!"
+CAMERA_CONNECT: "5. Подключиться к SteamVR"
+CAMERA_START_DETECTION: "6. Старт/Стоп"
+CAMERA_PREVIEW_CAMERA: Просмотр камеры
+CAMERA_PREVIEW_CALIBRATION: Просмотр калибровки
+CAMERA_CALIBRATION_MODE: Режим калибровки
+CAMERA_MULTICAM_CALIB: Уточнить калибровку с помощью второй камеры
 CAMERA_LOCK_HEIGHT: Lock camera height
-CAMERA_CALIBRATION_INSTRUCTION: "Disable SteamVR home to see the camera.\nUse your left trigger to grab the camera and move it into position, then use grip to grab trackers and move those into position.\n\nUncheck Calibration mode when done!"
+CAMERA_CALIBRATION_INSTRUCTION: "Отключите SteamVR home, чтобы увидеть камеру.\nНажмите левый триггер, чтобы захватить камеру и переместить её в нужное положение, затем используйте грип, чтобы захватить трекеры и переместить их в нужное положение.\n\nПо завершении снимите флажок «Режим калибровки»!"
 CAMERA_DISABLE_OUT: Disable out window
-CAMERA_DISABLE_OPENVR_API: Disable OpenVR API use
+CAMERA_DISABLE_OPENVR_API: Отключить использование OpenVR API
 PARAMS_CAMERA_TOOLTIP_API_1: "0: No preference\n\nCamera backends:"
 PARAMS_CAMERA_TOOLTIP_API_2: "Stream backends:"
-PARAMS_LANGUAGE: Language
-PARAMS_CAMERA: CAMERA PARAMETERS
-PARAMS_CAMERA_NAME_ID: Ip or ID of camera
-PARAMS_CAMERA_TOOLTIP_ID: "Will be a number 0-10 for USB cameras and\nhttp://<ip here>:8080/video for IP webcam)"
+PARAMS_LANGUAGE: Язык
+PARAMS_CAMERA: ПАРАМЕТРЫ КАМЕРЫ
+PARAMS_CAMERA_NAME_ID: IP или ID камеры
+PARAMS_CAMERA_TOOLTIP_ID: "Будет номером 0-10 для USB камер, и\nhttp://<IP камеры>:8080/video для IP камер)"
 PARAMS_CAMERA_NAME_API: Camera API preference
 PARAMS_CAMERA_NAME_ROT_CLOCKWISE: Rotate camera clockwise
 PARAMS_CAMERA_TOOLTIP_ROT_CLOCKWISE: "Rotate the camera 90°. Use both to rotate image 180°"
