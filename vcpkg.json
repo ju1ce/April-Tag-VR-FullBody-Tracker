@@ -31,6 +31,5 @@
         "openvr",
         "doctest",
         "taskflow"
-    ],
-    "builtin-baseline": "d744711b58844fc7adea64f5ee4a66c159fcb6e6"
+    ]
 }
