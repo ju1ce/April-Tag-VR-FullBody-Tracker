@@ -5,6 +5,7 @@
     "dependencies": [
         {
             "name": "opencv4",
+            "version": "4.6.0",
             "default-features": false,
             "features": [
                 "contrib",
@@ -16,6 +17,7 @@
         },
         {
             "name": "opencv4",
+            "version": "4.6.0",
             "default-features": false,
             "features": [
                 "world"
@@ -31,5 +33,6 @@
         "openvr",
         "doctest",
         "taskflow"
-    ]
+    ],
+    "builtin-baseline": "a7b6122f6b6504d16d96117336a0562693579933"
 }
