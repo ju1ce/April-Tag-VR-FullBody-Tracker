@@ -16,7 +16,6 @@
         },
         {
             "name": "opencv4",
-            "version": "4.6.0",
             "default-features": false,
             "features": [
                 "world"
