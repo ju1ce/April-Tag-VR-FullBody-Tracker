@@ -843,12 +843,12 @@ void Tracker::MainLoop()
     try
     {
         //TODO: instead of passsing gui, every gui accesss should probably be done through the ITrackerControl interface
-        getPose = std::make_unique <tracker::GetPose>(&user_config, driver, gui);
-        preprocess = std::make_unique <tracker::Preprocess>(&user_config, driver, gui);
-        detect = std::make_unique<tracker::Detect>(&user_config, driver, gui);
-        estimatePose = std::make_unique<tracker::EstimatePose>(&user_config, driver, gui);
-        sendPose = std::make_unique<tracker::SendPose>(&user_config, driver, gui);
-        draw = std::make_unique<tracker::Draw>(&user_config, driver, gui);
+        getPose = std::make_unique<tracker::GetPose>(&user_config, &mVRDriver.value(), gui);
+        preprocess = std::make_unique<tracker::Preprocess>(&user_config, &mVRDriver.value(), gui);
+        detect = std::make_unique<tracker::Detect>(&user_config, &mVRDriver.value(), gui);
+        estimatePose = std::make_unique<tracker::EstimatePose>(&user_config, &mVRDriver.value(), gui);
+        sendPose = std::make_unique<tracker::SendPose>(&user_config, &mVRDriver.value(), gui);
+        draw = std::make_unique<tracker::Draw>(&user_config, &mVRDriver.value(), gui);
 
         mCalibrator = std::make_unique<tracker::PlayspaceCalibrator>();
     }
@@ -870,7 +870,7 @@ void Tracker::MainLoop()
             drawImg = frame.image.clone();
             workImg = frame.image.clone();
             //1. get latest data from driver
-            getPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            //getPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //2. preprocess the frame. This includes grayscaling and masking.
             preprocess->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
             //3. run detection on frame using selected library
