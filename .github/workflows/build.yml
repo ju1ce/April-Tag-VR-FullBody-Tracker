@@ -9,7 +9,7 @@ on:
     paths-ignore: ["**.md"]
 
 env:
-  VCPKG_VERSION: "2022.11.14"
+  VCPKG_VERSION: "2023.02.24"
   # read only permission if pull request
   VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,read${{ github.event_name == 'push' && 'write' || '' }}"
 
