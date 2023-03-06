@@ -35,6 +35,12 @@ I am too bad at making actual tutorials, but I did record a short video of me se
 
 https://youtu.be/ncN8Vw_0DrE
 
+### I also have a ko-fi!
+
+https://ko-fi.com/ju1ce
+
+Donations are apreciated but not necessary!
+
 ## Build instructions:
 
 **NOTE: THIS IS ONLY FOR DEVELOPERS. IF YOU ONLY WANT TO USE APRILTAGTRACKERS AND NOT WRITE CODE, THE TUTORIAL IS ON THE [WIKI](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki)**
