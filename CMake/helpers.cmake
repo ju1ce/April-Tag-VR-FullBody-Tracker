@@ -34,7 +34,7 @@ function(att_bootstrap_vcpkg)
 
     ## If Vcpkg is already installed and set in Windows Environment, stick with it and don't enforce in-house vcpkg.
     ## Removes the possibility of vcpkg git errors, it is faster and compiles successfully. (VS 2022 17.7.5) 
-    if(NOT "${vcpkg_default_root}" STREQUAL "$ENV{VCPKG_ROOT}" AND WIN32)
+    if(NOT (WIN32 AND "${vcpkg_default_root}" STREQUAL "$ENV{VCPKG_ROOT}"))
        if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
            find_program(GIT_CMD git REQUIRED)
            execute_process(COMMAND "${GIT_CMD}" clone --filter=tree:0 "https://github.com/microsoft/vcpkg.git" "${VCPKG_ROOT}")
@@ -43,7 +43,7 @@ function(att_bootstrap_vcpkg)
                message(FATAL_ERROR "failed to clone vcpkg")
            endif()
         endif()
-	endif()
+    endif()
 
     if (NOT EXISTS "${vcpkg_cmd}")
         execute_process(COMMAND "${vcpkg_bootstrap_cmd}" -disableMetrics
