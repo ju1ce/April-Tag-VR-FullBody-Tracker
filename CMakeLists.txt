@@ -46,6 +46,7 @@ option(ATT_ENABLE_DEBUG_DRIVER "Build and install a debug/testing driver" OFF)
 option(ATT_DEBUG "Developer mode. Enable custom assert, debug logging, and debugger support. Can be used in release build." OFF)
 option(ATT_ENABLE_ANALYZER "Enable compiler static analyzers with ATT_DEBUG. CPU intensive." OFF)
 option(ATT_ENABLE_ASAN "Build with address sanitizer" OFF)
+option(ATT_ENABLE_MSVC_OPTIMIZATION_FLAGS "Additional MSVC compiler optimization flags for release build." ON)
 set(ATT_LOG_LEVEL "1" CACHE STRING "0 - Silent, 1 - Info, 2 - Debug")
 option(ATT_TEST_ENABLE_ASAN "Build tests with address sanitizer" ON)
 

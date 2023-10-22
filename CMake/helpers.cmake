@@ -82,7 +82,7 @@ function(att_default_triplet out_triplet)
     set(${out_triplet} "${triplet}" PARENT_SCOPE)
 endfunction()
 
-# adds definitions ATT_OS_<NAME> and ATT_COMP_<NAME>, and specifies compiler-specific optimization flags that prefer runtime performance over size, non-destructive.
+# adds definitions ATT_OS_<NAME> and ATT_COMP_<NAME>
 function(att_target_platform_definitions target)
     if (WIN32)
         set(os_name "WINDOWS")
@@ -96,24 +96,10 @@ function(att_target_platform_definitions target)
 
     if (MSVC)
         set(comp_name "MSVC")
-        # Note that any flag specified in build command will overwrite these. Treat them as safe defaults.
-        # MSVC flags for runtime performance over size, and suggest more aggressive inline functioning to compiler. /favor:AMD64 or INTEL64 may benefit.
-        # Eigen3 note: /arch:AVX causes crash with Refine tracker calibration, due to Eigen3. 16-byte memory alignment might fix, possibly worse performance than default SSE2.
-        # You can set /arch to AVX, AVX2 or AVX512 if you don't use calibration refinement. This should increase vectorized loop performance noticably.
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Ob3 /GA /GL /Qpar /Qpar-report:1 /Qvec-report:1" PARENT_SCOPE)
-        # Additional linker optimizations as compiler output recommends /LTCG with /GL
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /OPT:REF /OPT:ICF=6 /OPT:LBR /LTCG" PARENT_SCOPE)
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF /OPT:ICF=6 /OPT:LBR /LTCG" PARENT_SCOPE)
-        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /OPT:REF /OPT:ICF=6 /OPT:LBR /LTCG" PARENT_SCOPE)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(comp_name "CLANG")
-        # Clang compiler flags for release. Runtime performance over size. O3 is higher level, but placebo in most cases and increases code size unnecessarily. Should be profiled first. 
-        # TODO : Investigate linker flags for CLang and GCC compilers, and test ftree-vectorize along with fvect-cost-model. flto is experimental but could help.
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2" PARENT_SCOPE)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         set(comp_name "GCC")
-        # GCC compiler flags for release. Runtime performance over size. O3 is higher level, but placebo in most cases and increases code size unnecessarily. Should be profiled first.
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2" PARENT_SCOPE)
     else()
         set(comp_name "UNKNOWN")
     endif()
@@ -253,6 +239,25 @@ function(att_target_enable_asan target)
             -fsanitize=address
             -fsanitize=leak
             -fsanitize=undefined
+        )
+    endif()
+endfunction()
+
+# Non-destructive MSVC flags that prefer runtime performance over size, and suggests more aggressive inline functioning to compiler. /favor:AMD64 or INTEL64 may benefit.
+# You can add /arch to AVX, AVX2 or AVX512 if supported. This should increase vectorized loop performance noticably.
+function(att_target_msvc_release_flags target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
+            $<$<CONFIG:Release>:/Ob3>
+            $<$<CONFIG:Release>:/GA>
+            $<$<CONFIG:Release>:/GL>
+            $<$<CONFIG:Release>:/Qpar>
+            $<$<CONFIG:Release>:/Qpar-report:1>
+            $<$<CONFIG:Release>:/Qvec-report:1>
+        )
+        target_link_options(${target} PRIVATE
+            $<$<CONFIG:Release>:/OPT:ICF=6>
+            $<$<CONFIG:Release>:/LTCG>
         )
     endif()
 endfunction()
