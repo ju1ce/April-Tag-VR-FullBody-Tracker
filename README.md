@@ -45,6 +45,9 @@ Donations are apreciated but not necessary!
 
 **NOTE: THIS IS ONLY FOR DEVELOPERS. IF YOU ONLY WANT TO USE APRILTAGTRACKERS AND NOT WRITE CODE, THE TUTORIAL IS ON THE [WIKI](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/wiki)**
 
+**NOTE 2: Building in the current master is a bit broken right now. If you have problems building, refer to this [PR](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/pull/146).**
+**The repo with the fixes is [here](https://github.com/Skyrion9/April-Tag-VR-FullBody-Tracker), with a more detailed build manual [here](https://github.com/Skyrion9/April-Tag-VR-FullBody-Tracker/blob/master/WindowsBuild_Simple.md).**
+
 The project is a CMake project. You should be able to build it either using CMake and your favourite IDE/compiler, or some IDEs already support opening cmake projects directly.
 
 ### Linux prerequisites
