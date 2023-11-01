@@ -62,7 +62,7 @@ sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev lib
 
 
 ### Windows prerequisites
-Open in Visual Studio, or use the Visual Studio Command Prompt.
+Open in Visual Studio 17.8 Preview 2 or newer[(Includes a fix)](https://github.com/microsoft/vcpkg/issues/31565#issuecomment-1723267213), and use the Visual Studio Command Prompt.
 
 
 ### Clone and build
@@ -73,7 +73,7 @@ cmake -B build
 cmake --build build --config Release --target install
 ```
 
-That should be it! In case you try it before a more detailed guide is up, we are always there to help on the discord server! (link above)
+That should be it! [A more detailed guide is up](https://github.com/ju1ce/April-Tag-VR-FullBody-Tracker/blob/master/WindowsBuild_Simple.md), and we are always there to help on the (discord server)[https://discord.gg/g2ctkXB4bb]!
 
 ### Troubleshooting
 

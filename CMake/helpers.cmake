@@ -32,12 +32,16 @@ function(att_bootstrap_vcpkg)
         set(vcpkg_bootstrap_cmd "${VCPKG_ROOT}/bootstrap-vcpkg.sh")
     endif()
 
-    if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
-        find_program(GIT_CMD git REQUIRED)
-        execute_process(COMMAND "${GIT_CMD}" clone --filter=tree:0 "https://github.com/microsoft/vcpkg.git" "${VCPKG_ROOT}")
+    ## If Vcpkg is already installed and set in Windows Environment, stick with it and don't enforce in-house vcpkg.
+    ## Removes the possibility of vcpkg git errors, it is faster and compiles successfully. (VS 2022 17.7.5) 
+    if(NOT (WIN32 AND "${vcpkg_default_root}" STREQUAL "$ENV{VCPKG_ROOT}"))
+       if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
+           find_program(GIT_CMD git REQUIRED)
+           execute_process(COMMAND "${GIT_CMD}" clone --filter=tree:0 "https://github.com/microsoft/vcpkg.git" "${VCPKG_ROOT}")
 
-        if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
-            message(FATAL_ERROR "failed to clone vcpkg")
+           if (NOT EXISTS "${vcpkg_bootstrap_cmd}")
+               message(FATAL_ERROR "failed to clone vcpkg")
+           endif()
         endif()
     endif()
 
@@ -235,6 +239,25 @@ function(att_target_enable_asan target)
             -fsanitize=address
             -fsanitize=leak
             -fsanitize=undefined
+        )
+    endif()
+endfunction()
+
+# Non-destructive MSVC flags that prefer runtime performance over size, and suggests more aggressive inline functioning to compiler. /favor:AMD64 or INTEL64 may benefit.
+# You can add /arch to AVX, AVX2 or AVX512 if supported. This should increase vectorized loop performance noticably.
+function(att_target_msvc_release_flags target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE
+            $<$<CONFIG:Release>:/Ob3>
+            $<$<CONFIG:Release>:/GA>
+            $<$<CONFIG:Release>:/GL>
+            $<$<CONFIG:Release>:/Qpar>
+            $<$<CONFIG:Release>:/Qpar-report:1>
+            $<$<CONFIG:Release>:/Qvec-report:1>
+        )
+        target_link_options(${target} PRIVATE
+            $<$<CONFIG:Release>:/OPT:ICF=6>
+            $<$<CONFIG:Release>:/LTCG>
         )
     endif()
 endfunction()
