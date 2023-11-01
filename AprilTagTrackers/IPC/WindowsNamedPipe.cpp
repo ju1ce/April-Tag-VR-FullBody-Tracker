@@ -21,14 +21,14 @@ std::string_view WindowsNamedPipe::SendRecv(std::string message)
     // NOLINTNEXTLINE: Remove const-ness as callnamedpipe expects a void*, but it will not be modified
     LPVOID messagePtr = reinterpret_cast<LPVOID>(const_cast<char*>(message.data()));
     DWORD responseLength = 0;
-    if (FAILED(CallNamedPipeA(
+    if ((CallNamedPipeA(          //the FAILED() macro checks whether return was nonzero, but CallNamedPipeA returns 0 on fail
             mPipeName.c_str(),
             messagePtr,
             message.size() + 1,
             GetBufferPtr(),
             GetBufferSize(),
             &responseLength,
-            2 * SEC_TO_MS)))
+            2 * SEC_TO_MS)) == 0)
     {
         ATT_LOG_ERROR("named pipe send error: ", GetLastError());
         throw std::system_error(static_cast<int>(GetLastError()), std::system_category());

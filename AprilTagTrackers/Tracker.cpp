@@ -534,7 +534,16 @@ void Tracker::StartTrackerCalib()
 
 void Tracker::StartConnection()
 {
-    mVRDriver = tracker::VRDriver{user_config.trackers};
+    try
+    {
+        mVRDriver = tracker::VRDriver{user_config.trackers};
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_DRIVER_ERROR, PopupStyle::Error);     //TODO: error code is no longer returned in messsage, but is available in log, so error message should be changed 
+        return;
+    }
     if (!user_config.disableOpenVrApi)
     {
         mVRClient = std::make_unique<tracker::OpenVRClient>();
@@ -543,12 +552,22 @@ void Tracker::StartConnection()
     {
         mVRClient = std::make_unique<tracker::MockOpenVRClient>();
     }
-    if (!mVRClient->CanInit())
+    if (!mVRClient->CanInit())      //CanInit() does not seem to care whether hmd is connected or not. This step may not be necessary
     {
         gui->ShowPopup("Unable to initialize steamvr client, is your hmd connected?", PopupStyle::Error);
         return;
     }
-    mVRClient->Init();
+    try
+    {
+        mVRClient->Init();
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_CLIENT_ERROR, PopupStyle::Error);     //TODO: error code is no longer returned in messsage, but is available in log, so error message should be changed 
+        return;
+    }
+    
     gui->SetStatus(true, StatusItem::Driver);
 }
 
@@ -593,29 +612,30 @@ void Tracker::Start()
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTRUNNING, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();        this causes crash if main thread is not running. Shouldnt be neccesary since, when it is running, previous check will already return?
         return;
     }
     if (calib_config.cameras[0]->cameraMatrix.empty())
     {
         gui->ShowPopup(lc.TRACKER_CAMERA_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();
         return;
     }
     if (!IsTrackerUnitsCalibrated())
     {
         gui->ShowPopup(lc.TRACKER_TRACKER_NOTCALIBRATED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
+        //mainThread.join();
         return;
     }
-    if (!mVRClient->IsInit() || !mVRDriver)
+
+    if (!mVRClient || !mVRClient->IsInit() || !mVRDriver)
     {
         gui->ShowPopup(lc.TRACKER_STEAMVR_NOTCONNECTED, PopupStyle::Error);
         mainThreadRunning = false;
-        mainThread.join();
-        return;
+        //mainThread.join();
+        //return;   ALLOW NO CONNECTION FOR TESTING PURPOSES. UNCOMMENT LATER
     }
 
     gui->SetStatus(true, StatusItem::Tracker);
@@ -799,14 +819,90 @@ void Tracker::CalibrateTracker()
 
 void Tracker::MainLoop()
 {
-    tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+    //initializing variables used as communication between modules
+    tracker::CapturedFrame frame{};
+    cv::Mat drawImg{};
+    cv::Mat workImg{};
+    MarkerDetectionList dets{};
+
+    tracker::DummyDriver * driver = new tracker::DummyDriver{user_config.trackers};
+    //tracker::VRDriver* driver =
+
+    //initializing all analysis module classes
+    //tracker::MainLoopRunner runner(&user_config, &calib_config, &mPlayspace, &mVRDriver.value());
+
+    std::unique_ptr<tracker::GetPose> getPose;
+    std::unique_ptr<tracker::Preprocess> preprocess;
+    std::unique_ptr<tracker::Detect> detect;
+    std::unique_ptr<tracker::EstimatePose> estimatePose;
+    std::unique_ptr<tracker::SendPose> sendPose;
+    std::unique_ptr<tracker::Draw> draw;
+
+    std::unique_ptr<tracker::PlayspaceCalibrator> mCalibrator;
+
+    try
+    {
+        //TODO: instead of passsing gui, every gui accesss should probably be done through the ITrackerControl interface
+        getPose = std::make_unique<tracker::GetPose>(&user_config, &mVRDriver.value(), gui);
+        preprocess = std::make_unique<tracker::Preprocess>(&user_config, &mVRDriver.value(), gui);
+        detect = std::make_unique<tracker::Detect>(&user_config, &mVRDriver.value(), gui);
+        estimatePose = std::make_unique<tracker::EstimatePose>(&user_config, &mVRDriver.value(), gui);
+        sendPose = std::make_unique<tracker::SendPose>(&user_config, &mVRDriver.value(), gui);
+        draw = std::make_unique<tracker::Draw>(&user_config, &mVRDriver.value(), gui);
+
+        mCalibrator = std::make_unique<tracker::PlayspaceCalibrator>();
+    }
+    catch (const std::exception& e)
+    {
+        ATT_LOG_ERROR(e.what());
+        gui->ShowPopup(lc.CONNECT_SOMETHINGWRONG, PopupStyle::Error);       //should use a generic somethingwrong message
+        return;
+    }
 
     // run detection until camera is stopped or the start/stop button is pressed again
     while (mainThreadRunning && cameraRunning)
     {
         try
         {
-            runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
+            //0. await for latast frame and save to an image to work on and image to draw on
+            //NOTE: this step does too many data copies, and should be changed in the future. Especialy since grayscaling image already does a copy.
+            mCameraFrame.Get(frame);
+            drawImg = frame.image.clone();
+            workImg = frame.image.clone();
+            //1. get latest data from driver
+            //getPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            //2. preprocess the frame. This includes grayscaling and masking.
+            preprocess->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            //3. run detection on frame using selected library
+            detect->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits);
+            //4. run pose estimation on detections using calibrated tracker data
+            estimatePose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+            //6. send stuff to steamvr
+            sendPose->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+            //7. draw and show preview
+            draw->Update(&frame, &workImg, &drawImg, &dets, &mTrackerUnits); 
+
+            //cv::aruco::drawDetectedMarkers(drawImg, dets.corners, dets.ids, cv::Scalar(255, 0, 0));
+            //cv::imshow("out", workImg);
+            //cv::waitKey(1); 
+
+            //runner.Update(&mCameraFrame, gui, &mTrackerUnits, mVRClient.get(), this);
+
+            //run calibration steps. TODO: slight reformat to be more in line with above steps
+            
+            mCalibrator->Update(mVRClient, driver, gui, &mPlayspace, lockHeightCalib, manualRecalibrate);
+            for (int index = 0; index < mTrackerUnits.size(); ++index)
+            {
+                //draw pose from driver if available, else draw pose as detected
+                auto& unit = (mTrackerUnits)[index];
+                if (multicamAutocalib && unit.WasVisibleToDriverLastFrame())
+                {
+                    tracker::PlayspaceCalibrator::UpdateMulticam(gui, &mPlayspace, unit);
+                    //TODO: should skip sending to driver, but that cannot be done with this setup.
+                    //should the entire sendPose step be skipped when multicamAutocalib is activated?
+                }
+            }
+            
         }
         catch (const std::exception& e)
         {
